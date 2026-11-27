@@ -148,7 +148,7 @@ Summarization executes in real time without mutating reviews or persisting gener
 1. Retrieves book metadata and derived Catalog totals via `get_book` on [[service|mcp-server]].
 2. Loads `summarize_rating`, `reduce_rating_summaries`, and `analyze_book_quality` prompt templates from [[service|mcp-server]].
 3. Reads raw reviews through the in-process `GetCustomerReviews` function (capped at `30` calls/min).
-4. Screens inputs and outputs fail-closed through [[service|PresidioAPI]] PII middleware and enforces the default-deny governance policy (`Policies/rating-agent.yaml`).
+4. Screens inputs and outputs fail-closed through [[service|presidio-api]] PII middleware and enforces the default-deny governance policy (`Policies/rating-agent.yaml`).
 5. Returns metrics, sentiment analysis, brief justification, confidence level, and classification (**TopRated**, **Good**, **Bad**, or **NoData**).
 
 ## Kafka messaging contracts

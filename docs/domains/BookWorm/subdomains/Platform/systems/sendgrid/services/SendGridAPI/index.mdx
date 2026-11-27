@@ -3,48 +3,33 @@ id: sendgrid-api
 name: SendGrid API
 version: 1.0.0
 summary: |
-  External provider API used by BookWorm to submit email messages and receive
-  provider responses for notification delivery.
+  External SMTP email delivery provider used by BookWorm to submit rendered
+  order notification emails over SMTP via MailKit.
 externalSystem: true
 badges:
   - content: External
     backgroundColor: purple
     textColor: purple
-  - content: HTTP API
+  - content: SMTP
     backgroundColor: teal
     textColor: teal
 styles:
   icon: /icons/third-party/sendgrid.svg
 owners:
-  - contributor-team
-receives:
-  - id: CreateMailBatch
-    version: 1.0.0
-    group: Mail API Operations
-  - id: GetMailBatch
-    version: 1.0.0
-    group: Mail API Operations
-  - id: SendMail
-    version: 1.0.0
-    group: Mail API Operations
-specifications:
-  - type: openapi
-    path: https://raw.githubusercontent.com/twilio/sendgrid-oai/refs/heads/main/spec/yaml/tsg_mail_v3.yaml
-    name: OpenAPI V3
+  - platform-team
 ---
 
 SendGrid (`sendgrid-api`) is the external email delivery provider configured for BookWorm in Azure publish environments. At runtime, BookWorm's [[service|notification-api]] worker submits rendered MJML emails to SendGrid over **SMTP via MailKit** (`smtp://smtp.sendgrid.net:587`)—and to local **Mailpit** during development—rather than invoking SendGrid's HTTP v3 REST endpoints directly.
 
 ## Overview
 
-| Property                    | Value                                                                                                                           |
-| :-------------------------- | :------------------------------------------------------------------------------------------------------------------------------ |
-| **External provider**       | Twilio SendGrid (SMTP relay in publish mode; local Mailpit container in development)                                            |
-| **BookWorm consumer**       | [[service\|notification-api]] (`notification`) only                                                                             |
-| **Aspire wiring**           | `src/Aspire/BookWorm.AppHost/Extensions/Network/EmailExtensions.cs` (`mailpit` locally, `email` in publish mode)                |
-| **Active runtime protocol** | SMTP over TLS (port `587`) via MailKit `5.0.0` + `AddMailResiliencePipeline()`                                                  |
-| **Logical HTTP spec**       | SendGrid Mail Send OpenAPI v3 (`tsg_mail_v3.yaml` — modeled for contract completeness; not called over HTTP by current runtime) |
-| **Notification state**      | Kafka consumer + Redis 24-hour idempotency + Wolverine native DLQ — **no PostgreSQL email outbox**                              |
+| Property                    | Value                                                                                                            |
+| :-------------------------- | :--------------------------------------------------------------------------------------------------------------- |
+| **External provider**       | Twilio SendGrid (SMTP relay in publish mode; local Mailpit container in development)                             |
+| **BookWorm consumer**       | [[service\|notification-api]] (`notification`) only                                                              |
+| **Aspire wiring**           | `src/Aspire/BookWorm.AppHost/Extensions/Network/EmailExtensions.cs` (`mailpit` locally, `email` in publish mode) |
+| **Active runtime protocol** | SMTP over TLS (port `587`) via MailKit `5.0.0` + `AddMailResiliencePipeline()`                                   |
+| **Notification state**      | Kafka consumer + Redis 24-hour idempotency + Wolverine native DLQ — **no PostgreSQL email outbox**               |
 
 :::note
 Notification does **not** maintain a PostgreSQL email outbox. When SendGrid SMTP rejects or times out on a submission, MailKit's resilience pipeline retries first, followed by Wolverine retry cooldown (`50ms`, `250ms`, `1s` with jitter) and dead-letter routing to `bookworm.{env}.notification.dead-letter-queue`.
@@ -73,16 +58,6 @@ Notification switches automatically between the local Mailpit container in devel
 For production, use a verified sender and complete [domain authentication](https://www.twilio.com/docs/sendgrid/for-developers/sending-email/sender-identity); SendGrid recommends single-sender verification for testing, not production. Create an API key with only the permissions needed for this integration. SendGrid's SMTP guidance requires **Mail Send > Full Access** for mail submission; this is the Mail Send permission, not account-wide **Full Access**. For SMTP authentication, SendGrid requires the literal username `apikey` and the API key as the password.
 
 Store the key in the deployment's secret store, keep distinct keys for environments or workloads where practical, and revoke or replace keys when no longer needed or exposed. Enable two-factor authentication for SendGrid users. SendGrid displays a new key only once and cannot restore a lost key. See the official [API key guidance](https://www.twilio.com/docs/sendgrid/ui/account-and-settings/api-keys) and [SMTP integration guide](https://www.twilio.com/docs/sendgrid/for-developers/sending-email/integrating-with-the-smtp-api).
-
-## Logical OpenAPI v3 operations
-
-For teams evaluating or extending the provider contract beyond SMTP, the EventCatalog contract suite also models three SendGrid HTTP v3 operations:
-
-| Operation             | HTTP endpoint                   | Contract reference           | Runtime status                                 |
-| :-------------------- | :------------------------------ | :--------------------------- | :--------------------------------------------- |
-| **Send mail**         | `POST /v3/mail/send`            | [[command\|SendMail]]        | Logical model only (runtime uses MailKit SMTP) |
-| **Create mail batch** | `POST /v3/mail/batch`           | [[command\|CreateMailBatch]] | Logical model only (not invoked by BookWorm)   |
-| **Get mail batch**    | `GET /v3/mail/batch/{batch_id}` | [[query\|GetMailBatch]]      | Logical model only (not invoked by BookWorm)   |
 
 ## Ownership boundaries and failure semantics
 

@@ -9,49 +9,85 @@ badges:
     textColor: purple
 ---
 
-BookWorm protects domain behavior, service boundaries, and cross-service contracts through a layered automated verification strategy spanning backend **TUnit** (`1.87.12`) on **Microsoft.Testing.Platform (MTP)**, **Pact** messaging contract tests, **ArchUnitNET** structural fitness checks, **Buf** `.proto` compatibility checks, and frontend **Vitest**, **Playwright BDD**, **axe-core**, and **Turborepo** workspace boundary gates.
+## Purpose and Scope
 
-## Verification layers and verified inventory
+Testing and change safety establish evidence that code, contracts, policies, data effects, and user journeys remain acceptable from development through release. These rules apply to shared foundations and every frontend, API, worker, event, integration, and AI boundary.
 
-| Layer                                 | Tooling & runner                                                                                                                                      | Verified repository scope                                                                                                                                                                                                      | Primary command                           |
-| :------------------------------------ | :---------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------- |
-| **Backend unit tests**                | **TUnit** `1.87.12` + **MTP**, `Shouldly` `4.3.0`, `Moq` `4.21.0`, `Bogus` `35.6.5`, `Allure.TestingPlatform` (xUnit, NUnit, and MSTest are not used) | **9 `.UnitTests` projects**: Basket, Catalog, Chat, Finance, McpTools, Notification, Ordering, Rating, Scheduler                                                                                                               | `mise run test` (`test:unit`)             |
-| **Consumer-driven contract tests**    | **PactNet** `5.0.1` + `BookWorm.Testing` (consumer-then-provider order)                                                                               | **7 `.ContractTests` projects** (Basket, Catalog, Finance, Notification, Ordering, Rating, Scheduler) producing **8 committed pact files** in `tests/pacts/`                                                                   | `mise run test` (`test:contracts`)        |
-| **Backend architecture tests**        | **TngTech.ArchUnitNET.TUnit** `0.13.5`                                                                                                                | **1 project** (`tests/BookWorm.ArchTests`) checking Dependencies, Domain rules, Features (endpoints/handlers), and Infrastructure/Saga conventions                                                                             | `mise run test` (`test:unit`)             |
-| **gRPC schema checks**                | **Buf** CLI (`buf.yaml` in Catalog and Basket `Grpc/Protos/`)                                                                                         | Lints `edition = "2023"` `.proto` schemas (`BookGrpcService`, `BasketGrpcService`) and checks breaking changes against baseline                                                                                                | `mise run setup:buf`                      |
-| **Frontend unit & component tests**   | **Vitest** `^5.1.2`, `@testing-library/react`, `happy-dom`, `@vitest/coverage-v8`, `fast-check` (Storefront), `allure-vitest`                         | Covers **Storefront**, **Commerce**, **Backoffice**, and shared `@workspace/*` packages                                                                                                                                        | `bun run test` (from `src/Clients`)       |
-| **Frontend E2E, BDD & accessibility** | **Playwright** `^1.65.1`, `playwright-bdd` (`bddgen`), **`@axe-core/playwright`**, `allure-playwright`                                                | **9 Storefront** BDD features (`accessibility`, `account-management`, `ai-chatbot`, `authentication`, `checkout`, `content-pages`, `order-management`, `product-details`, `product-discovery`) + **6 Backoffice** BDD features | `bun run e2e` (from `src/Clients`)        |
-| **Frontend workspace boundaries**     | **Turborepo** (`turbo boundaries`)                                                                                                                    | Enforces 4-tier dependency graph (`config` → `foundation` → `domain` → `app`) across 3 apps and 16 packages                                                                                                                    | `bun run boundaries` (from `src/Clients`) |
-| **Pre-commit & CI quality gates**     | Husky (`.husky/pre-commit`), CSharpier `1.4.1`, Roslyn analyzers, SonarCloud (`sonar.yml`), EventCatalog linter/fitness (`docs.yml`)                  | Enforces formatting, warnings-as-errors, code coverage (`.trx`, MTP `.xml`, frontend `lcov.info`), and docs link/fitness checks                                                                                                | `mise run format` / GitHub Actions        |
+## Visual Reference
 
-:::note
-**Contract test execution order:** Consumer tests (`Category=PactConsumer`) must run before provider verification (`Category=PactProvider`) because providers validate against the pact JSON files generated by consumers in `tests/pacts/`. `mise run test` enforces this sequence automatically.
-:::
+**Verification and Release Gates**
 
-## Cross-cutting verification matrix
+<MermaidFileLoader file="mermaids/006-testing-and-change-safety-diagram-1.mmd" />
 
-When changing a shared library (`BookWorm.Chassis`, `BookWorm.ServiceDefaults`, `@workspace/*`) or service boundary, verify behavior at the owning boundary:
+## Core Rules and Standards
 
-| Concern                     | Evidence to verify                                                                                                                                                                        |
-| :-------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Authorization**           | Unauthenticated calls return `401`; missing Entra ID role (`admin`, `business_user`, `customer`) or missing service scope returns `403`.                                                  |
-| **Privacy**                 | Classified log fields redact via `AddRedaction()`; AI agent prompts and outputs pass through **Presidio** `PIIMiddleware`.                                                                |
-| **Validation and errors**   | Invalid payloads produce field-grouped `400` `ValidationProblemDetails`; concurrency faults return `412`; unhandled exceptions return `500` with `traceId` and zero internal details.     |
-| **Idempotency and retries** | Duplicate `x-request-id` returns `409 Conflict` in **Ordering API**; `5xx`/exceptions release the Redis key; duplicate Kafka `message.Id` skips cleanly in `FusionCacheIdempotencyGuard`. |
-| **Messaging**               | Pact consumer and provider tests pass across all 8 messaging pairs; CloudEvents correlation headers (`requestid`, `UserId`, W3C trace) survive hops.                                      |
-| **AI governance**           | `Policies/*.yaml` allow/deny/rate-limit rules hold; rejected prompts short-circuit before specialist agents; MCP tool-poisoning patterns are blocked.                                     |
+1. **Test at the lowest useful boundary.** Use fast unit and component tests for local behavior and raise the test level only for interaction or deployment evidence.
+2. **Verify contracts independently.** Providers and consumers must prove compatibility for APIs and event schemas before deployment.
+3. **Protect architectural boundaries.** Automated checks must prevent forbidden dependencies and preserve capability ownership.
+4. **Test behavior, not implementation.** Assert domain outcomes, observable API effects, access decisions, and recoverable failure behavior.
+5. **Require quality gates.** Formatting, static analysis, tests, security checks, contract checks, and documentation checks must pass before promotion.
+6. **Make releases reversible.** Deploy behind feature or traffic controls when rollback or staged observation is useful.
+7. **Use explicit rollback criteria.** A release halts or rolls back for health, error, latency, security, privacy, contract, or business-signal breaches agreed by the owner.
 
-## Explicit coverage gaps and risks
+<Admonition type="warning">
+	A green build proves only the evidence it exercises. Critical compatibility, privacy, migration,
+	and rollout risks require targeted tests or a documented human release gate.
+</Admonition>
 
-| Gap or risk                                 | Current repository state                                                                                      | Recommended mitigation                                                                                                                      |
-| :------------------------------------------ | :------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------ |
-| **No backend `.IntegrationTests` projects** | **0 backend `.IntegrationTests` projects** exist in `BookWorm.slnx` (despite naming guidance in `AGENTS.md`). | Rely on Pact contracts + unit tests today; add Aspire/Testcontainers integration tests for critical PostgreSQL, Cosmos DB, and Kafka flows. |
-| **No unit tests for `Catalog.Ingestion`**   | `BookWorm.Catalog.Ingestion` has no `.UnitTests` project (9 of 10 backend services have unit test projects).  | Add unit tests covering `VectorBatchProcessor` advisory-lock contention, batch size `200`, and conditional revision `DELETE`.               |
-| **No E2E features for `Commerce`**          | Storefront has 9 Playwright BDD features and Backoffice has 6; **Commerce** has unit/component tests only.    | Exercise `/basket`, `/checkout`, and `/account` flows via Storefront cross-zone checkout E2E and add dedicated Commerce E2E scenarios.      |
+## Mechanism / How It Works
 
-## Related documentation
+| Layer        | Primary Evidence                                                                                 |
+| :----------- | :----------------------------------------------------------------------------------------------- |
+| Unit         | Domain rules, validation, state transitions, pure transformations, and failure classification    |
+| Component    | UI behavior, endpoint behavior, handler behavior, policy decisions, and data access boundaries   |
+| Integration  | Real interactions among a host and its database, broker, cache, identity, or external dependency |
+| Contract     | Consumer/provider compatibility for HTTP, RPC, events, AI tools, and message envelopes           |
+| End-to-end   | Critical journeys across frontends, gateways, capabilities, and asynchronous completion          |
+| Architecture | Dependency direction, domain isolation, forbidden references, and infrastructure conventions     |
 
-- [[doc|development/005-testing]] — Exact commands and filtered test runs.
-- [[doc|development/008-testing-matrix]] — Detailed framework versions, coverage settings, and pact pairs.
-- ADR-BW-016: Layered architecture verification — Decision record behind BookWorm's verification layers.
-- [[doc|development/004-engineering-standards]] — Schema change and coding conventions.
+## Verification and Release Gates
+
+<Steps>
+	<Step title="Local evidence">
+		Run focused tests and formatting or static checks while code is still under development.
+	</Step>
+	<Step title="Change evidence">
+		Run the relevant unit, contract, architecture, integration, and user-flow checks for the changed
+		boundary.
+	</Step>
+	<Step title="Promotion gate">
+		Require security, privacy, schema, coverage, migration, and quality checks to pass before
+		deployment.
+	</Step>
+	<Step title="Controlled rollout">
+		Deploy incrementally, observe health and business signals, and retain the previous reversible
+		artifact.
+	</Step>
+	<Step title="Decision and rollback">
+		Promote when agreed criteria hold; halt or roll back when a breach is detected or the outcome
+		cannot be verified.
+	</Step>
+</Steps>
+
+## Rollout and Rollback Criteria
+
+| Concern              | Promote When                                                   | Roll Back or Halt When                                                    |
+| :------------------- | :------------------------------------------------------------- | :------------------------------------------------------------------------ |
+| Availability         | Readiness and liveness remain stable at the approved threshold | Health probes fail or traffic sheds unexpectedly                          |
+| Latency and errors   | Error and latency budgets remain within release limits         | Sustained breaches correlate with the change                              |
+| Contracts            | Consumers pass compatibility checks and replay remains safe    | Additive or breaking incompatibility appears                              |
+| Privacy and security | Policy tests pass and no secrets or PII leak is detected       | Unauthorized access, PII exposure, or policy bypass occurs                |
+| Business outcome     | Authoritative state and key journeys complete correctly        | Reconciliation gaps, duplicate side effects, or incorrect outcomes appear |
+
+## Verification and Governance
+
+- Map each shared library or boundary change to its owning test layer and contract.
+- Keep known gaps explicit and prioritize them with release risk.
+- Review failed, flaky, or skipped tests as release evidence, not merely CI noise.
+- Retain rollback evidence and operational criteria with every promoted release.
+
+## Related Documentation
+
+- [[doc|development/005-testing]] — Test commands and focused execution.
+- [[doc|development/008-testing-matrix]] — Framework and coverage details.
+- [[doc|development/006-pull-request-process]] — Pull-request and review requirements.

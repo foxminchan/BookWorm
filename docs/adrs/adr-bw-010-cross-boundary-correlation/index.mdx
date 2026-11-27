@@ -9,7 +9,7 @@ owners:
   - platform-team
 appliesTo:
   - type: domain
-    id: BookWorm
+    id: bookworm
 related:
   - id: adr-bw-005-kafka-integration-backbone
   - id: adr-bw-013-opentelemetry-observability
@@ -21,60 +21,56 @@ x-scope: "Whole system"
 
 ## Context and problem statement
 
-A single customer action—such as placing an order or submitting a book review—spans the API Gateway, synchronous gRPC lookups, asynchronous Kafka messages, Azure Durable Functions orchestrations, and outbound SMTP delivery. Without stable message identities and propagated correlation metadata, operators cannot trace failures across service boundaries, and uncoordinated contract renames disrupt Kafka routing.
+One customer action, such as placing an order or submitting a review, can pass through several parts of the system. Without stable references, teams cannot trace failures across those parts.
 
-BookWorm needs a system-wide correlation rule that connects distributed telemetry while preventing unverified correlation headers from being mistaken for security credentials.
+BookWorm needs consistent tracing without allowing tracing information to replace login or permission checks.
 
 ## Decision drivers
 
-- **Interoperability:** Preserve stable contract namespaces, topic routing metadata, and CloudEvents message identifiers across producers and consumers.
-- **Diagnosability:** Correlate logs and spans across HTTP, gRPC, and Kafka hops without logging raw business payloads or sensitive personal data.
-- **Security isolation:** Keep diagnostic correlation context strictly separate from Microsoft Entra ID authentication and authorization.
+- **Interoperability:** Preserve stable names and routing information as updates move between areas.
+- **Easy diagnosis:** Connect activity records without exposing private customer information.
+- **Security:** Keep tracing separate from login and authorization.
 
 ## Considered options
 
-1. Propagate W3C trace context, `x-request-id`, and CloudEvents message metadata across all boundaries while enforcing Entra ID authorization independently
-2. Generate isolated correlation identifiers independently at each service hop
-3. Infer causal relationships from business payload fields or log timestamps
-4. Reuse propagated `UserId` correlation headers as authorization credentials
+1. Carry one trace reference across the whole journey and check permissions independently
+2. Create a separate reference at each area
+3. Guess relationships from timestamps or customer information
+4. Use a trace reference as login or permission proof
 
 ## Decision outcome
 
-Chosen option: **Propagate W3C trace context, `x-request-id`, and CloudEvents message metadata across all boundaries while enforcing Entra ID authorization independently**, because it delivers end-to-end distributed traceability without weakening security boundaries.
+Chosen option: **Carry one trace reference across the whole journey and check permissions independently**.
 
-`BookWorm.ServiceDefaults` configures W3C `ActivityIdFormat` for OpenTelemetry tracing across ASP.NET Core, HttpClient, and gRPC calls, while `BookWorm.Constants` defines the `x-request-id` correlation header. On Kafka, `BookWorm.Chassis` uses `CloudEventsOnlyKafkaMapper` to serialize CloudEvents JSON envelopes carrying stable message IDs, W3C trace headers, `requestid`, and `UserId` context, with partition keys (`OrderId`, `BookId`, `FeedbackId`) preserving entity ordering. Correlation metadata serves strictly for routing and diagnostics; services never accept `UserId` or `x-request-id` headers in place of validated Entra ID JWTs or agent identities.
+Every request and background update will carry identifying context for routing and diagnosis. That context helps teams follow the journey without giving reading or writing permission.
+
+Permissions must still be verified through the normal secure login process.
 
 ### Consequences
 
-- **Positive:** Operators trace checkout, feedback, and ingestion chains end to end in the Aspire Dashboard and Azure Application Insights without exposing sensitive payloads in logs.
-- **Negative:** Renaming an integration-event type, namespace, or topic-routing attribute becomes a breaking contract change requiring consumer coordination under ADR-BW-017, and missing upstream headers leave explicit correlation gaps.
-- **Follow-up:** Verify message envelope compatibility through Pact contract tests and inspect Finance's Durable Task instance-ID correlation (`OrderId`) during saga changes.
+- **Positive:** Operators can follow a journey from start to finish without exposing private data.
+- **Negative:** Renaming or rerouting an update may require coordinated changes.
+- **Follow-up:** Test tracing across major journeys and whenever update names or routes change.
 
 ## Pros and cons of the options
 
-### Propagate W3C trace context, `x-request-id`, and CloudEvents message metadata across all boundaries while enforcing Entra ID authorization independently
+### Carry one trace reference across the whole journey and check permissions independently
 
-- **Good**, because W3C standards integrate natively with OpenTelemetry, YARP, gRPC, Wolverine, and Next.js `@workspace/otel`.
-- **Good**, because keeping correlation separate from authorization prevents header-spoofing privilege escalation.
-- **Bad**, because every custom trigger (such as Azure Functions Kafka triggers in Finance and Catalog Ingestion) must preserve context explicitly.
+- **Good**, because one trace works across web, internal, and background activity.
+- **Good**, because tracing cannot be used to grant privileges.
+- **Bad**, because every connected path must preserve the reference.
 
-### Generate isolated correlation identifiers independently at each service hop
+### Create a separate reference at each area
 
-- **Good**, because individual hosts require no incoming header parsing.
-- **Bad**, because operators cannot connect a failed Notification email or Finance saga retry back to the originating checkout request.
+- **Good**, because each area needs no incoming tracing setup.
+- **Bad**, because operators cannot connect later failures back to the original request.
 
-### Infer causal relationships from business payload fields or log timestamps
+### Guess relationships from timestamps or customer information
 
-- **Good**, because services avoid envelope metadata conventions.
-- **Bad**, because timestamp matching fails under concurrency and tempts teams to log sensitive customer data.
+- **Good**, because areas do not need consistent tracing context.
+- **Bad**, because this is unreliable and can expose private information.
 
-### Reuse propagated `UserId` correlation headers as authorization credentials
+### Use a trace reference as login or permission proof
 
-- **Good**, because downstream consumers avoid validating tokens.
-- **Bad**, because unverified metadata can be spoofed and violates defense-in-depth authorization requirements.
-
-## Verification and links
-
-- **Verified against:** `src/BuildingBlocks/BookWorm.Constants/`, `src/BuildingBlocks/BookWorm.Chassis/EventBus/Wolverine/KafkaTopicRouter.cs`, `src/BuildingBlocks/BookWorm.Chassis/EventBus/Wolverine/WolverineHostExtensions.cs`, `src/Aspire/BookWorm.ServiceDefaults/Extensions.cs`
-- **Related architecture:** [[doc|arc42/08-crosscutting-concepts/002-contracts-and-messaging]], [[doc|arc42/08-crosscutting-concepts/004-observability]], [[doc|development/004-engineering-standards]]
-- **Related ADRs:** ADR-BW-005, ADR-BW-013, ADR-BW-017, [[doc|arc42/09-architecture-decisions]]
+- **Good**, because downstream areas avoid extra login checks.
+- **Bad**, because tracing values can be forged and must not grant access.

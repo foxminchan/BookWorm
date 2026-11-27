@@ -4,11 +4,10 @@ name: Basket Dead Letter Queue
 version: 1.0.0
 type: stream
 summary: |
-  Native Kafka dead-letter stream where Wolverine routes integration messages
-  that exhaust Basket API listener retry policies or fail JSON
-  deserialization.
+  A Kafka topic that holds Basket API messages that could not be processed
+  after retries or because the message was invalid.
 owners:
-  - contributor-team
+  - platform-team
 address: bookworm.{env}.basket.dead-letter-queue
 parameters:
   env:
@@ -27,7 +26,9 @@ protocols:
   - kafka
 ---
 
-`bookworm.{env}.basket.dead-letter-queue` (v1.0.0) is the native Kafka dead-letter topic for Basket API. Wolverine moves an incoming envelope here when Basket API exhausts its retry policy or cannot deserialize the payload. The only Kafka listener in Basket API consumes `PlaceOrderCommand` from `bookworm.{env}.finance.place-order`.
+`bookworm.{env}.basket.dead-letter-queue` (v1.0.0) stores Basket API messages that could not be processed. Basket API uses this topic when it has exhausted its retries or when a message does not use the expected format.
+
+The topic currently receives failed order-placement messages from [[channel|bookworm.&#123;env&#125;.finance.place-order]].
 
 ## Channel information
 
@@ -35,54 +36,50 @@ protocols:
 
 ## Overview
 
-| Property              | Value                                                                                                                                                                                                                                                                |
-| :-------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**             | Shopping bounded context (**Basket API**, Aspire resource `basket`)                                                                                                                                                                                                  |
-| **Topic pattern**     | `bookworm.{env}.basket.dead-letter-queue`                                                                                                                                                                                                                            |
-| **Name derivation**   | `KafkaTopicRouter.CreateDeadLetterTopicName(applicationName, environmentName)`                                                                                                                                                                                       |
-| **Writer**            | Wolverine Kafka transport in Basket API (`EnableNativeDeadLetterQueue()`)                                                                                                                                                                                            |
-| **Source listener**   | [[channel\|bookworm.&#123;env&#125;.finance.place-order]] (`PlaceOrderCommand`)                                                                                                                                                                                      |
-| **Reader**            | None in code; operators inspect the topic manually                                                                                                                                                                                                                   |
-| **Protocol / format** | Kafka stream; original CloudEvents JSON record                                                                                                                                                                                                                       |
-| **Message store**     | None (Basket API uses Redis only and registers no Wolverine database persistence)                                                                                                                                                                                    |
-| **Source**            | `src/BuildingBlocks/BookWorm.Chassis/EventBus/Wolverine/WolverineHostExtensions.cs`, `src/BuildingBlocks/BookWorm.Chassis/EventBus/Wolverine/KafkaTopicRouter.cs`, `src/Services/Basket/BookWorm.Basket/IntegrationEvents/EventHandlers/PlaceOrderCommandHandler.cs` |
+| Property          | Value                                                                  |
+| :---------------- | :--------------------------------------------------------------------- |
+| **Owner**         | Shopping bounded context (**Basket API**)                              |
+| **Topic pattern** | `bookworm.{env}.basket.dead-letter-queue`                              |
+| **Source topic**  | [[channel\|bookworm.&#123;env&#125;.finance.place-order]]              |
+| **Message type**  | Order-placement request                                                |
+| **Protocol**      | Kafka                                                                  |
+| **Format**        | CloudEvents JSON                                                       |
+| **Readers**       | Operators or support tools that investigate or replay a failed message |
 
 ## Parameters and fields
 
-| Parameter | Type     | Required | Default       | Allowed values                         | Description                              |
-| :-------- | :------- | :------- | :------------ | :------------------------------------- | :--------------------------------------- |
-| `{env}`   | `string` | Yes      | `development` | `development`, `staging`, `production` | Kebab-case Aspire host environment name. |
+| Parameter | Type     | Required | Default       | Allowed values                         | Description                     |
+| :-------- | :------- | :------- | :------------ | :------------------------------------- | :------------------------------ |
+| `{env}`   | `string` | Yes      | `development` | `development`, `staging`, `production` | Environment for the topic name. |
 
-A dead-lettered record keeps the original `PlaceOrderCommand` CloudEvents value and Kafka key (`orderId`).
+Each record contains the original order-placement request and details about why processing failed.
 
-Wolverine 6.65.1 adds `exception-type`, `exception-message`, `exception-stack` (truncated to 8,192 characters), `failed-at` (Unix milliseconds), and `original-destination` to native dead-letter records; Kafka records also include `original-partition` and `original-offset`. The delivery-attempt count is in the `attempts` header. See the [version-pinned diagnostic header reference](https://github.com/JasperFx/wolverine/blob/V6.65.1/docs/tutorials/dead-letter-queues.md#diagnostic-headers-on-dead-letter-messages).
+The record includes an order ID and may include an error message, failure time, source topic, and number of processing attempts. These details help operators determine whether the failure is temporary or requires a message or application fix.
 
-## Routing rules
+## When a message arrives here
 
-| Exception                                                                                               | Retries before DLQ                                                                                                                        | Source                                                                                                                           |
-| :------------------------------------------------------------------------------------------------------ | :---------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------- |
-| `TimeoutException`, `HttpRequestException`, `DbUpdateConcurrencyException`, transient `NpgsqlException` | `3` retries with `50ms`, `250ms`, `1s` cooldown and full jitter                                                                           | `ConfigureDefaultErrorHandling`                                                                                                  |
-| `JsonException`, `FormatException`                                                                      | None                                                                                                                                      | `ConfigureDefaultErrorHandling`                                                                                                  |
-| Other exceptions, such as `RedisConnectionException`                                                    | Immediate DLQ on the first failure: no BookWorm policy matches, so Wolverine's continuation fallback moves the message to the error queue | `WolverineHostExtensions.ConfigureDefaultErrorHandling`; Wolverine 6.65.1 `FailureRuleCollection.DetermineExecutionContinuation` |
+- Basket API may move a message here after temporary connection or database failures have been retried.
+- Basket API may move a message here immediately when it cannot read or understand the message format.
+- Unexpected Basket API failures are also preserved here rather than discarded.
 
-This BookWorm configuration defines exception-specific policies but does not set a catch-all `MaximumAttempts` rule. Exceptions that match no policy therefore use Wolverine 6.65.1's `MoveToErrorQueue` fallback and reach the native DLQ immediately. The general three-attempt default documented by Wolverine applies when no error policies are configured; it should not be inferred for this service's custom policy set. See the [version-pinned continuation fallback](https://github.com/JasperFx/wolverine/blob/V6.65.1/src/Wolverine/ErrorHandling/FailureRuleCollection.cs) and [dead-letter guide](https://github.com/JasperFx/wolverine/blob/V6.65.1/docs/tutorials/dead-letter-queues.md#when-does-a-message-get-dead-lettered).
+The dead-letter topic is not a replacement for a normal Basket API response. It is a last-stop record for investigation and recovery.
 
 :::note
-`DeadLetterQueueExpiration = 7 days` in `WolverineHostExtensions` applies to Wolverine durable message storage. Basket API has no such store, so the Kafka topic's own retention controls how long records stay.
+Records remain in this topic according to the Kafka broker's retention policy.
 :::
 
-## Replay safety
+## Before replaying a message
 
-| Check                                                              | Why it matters                                                                                                                                                                                         |
-| :----------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Order status and soft-delete state in Ordering API                 | Replaying after the saga ended has no effect on the order.                                                                                                                                             |
-| Redis health for Basket API                                        | Separates transient outages from contract errors.                                                                                                                                                      |
-| Idempotency key `idempotency:PlaceOrderCommandHandler:{orderId:N}` | `PlaceOrderCommandHandler` releases the key when it throws, so a replay re-runs the delete. A replay after a successful delete returns `BasketDeletedCompleteIntegrationEvent` without deleting again. |
-| Shared topic                                                       | `PlaceOrderCommand` also reaches Notification; replay only to Basket API to avoid a second email.                                                                                                      |
+1. Check whether the order still exists and whether checkout has finished.
+2. Confirm that Redis is healthy and that the basket has not already been deleted.
+3. Verify whether this is a temporary service outage or a permanent message-format problem.
+4. Replay only to Basket API. The original source topic is also consumed by Notification, so replaying the original topic could send another email.
+
+Replaying a message after the basket was successfully deleted should not delete it again.
 
 ## Examples
 
-### Dead-lettered record value
+### Failed order-placement record
 
 Kafka key: `0193f1a2-1111-7d8e-9f01-23456789abcd`
 
@@ -114,7 +111,7 @@ Kafka key: `0193f1a2-1111-7d8e-9f01-23456789abcd`
 ## Related documentation
 
 - [[channel|bookworm.&#123;env&#125;.finance.place-order]] — Source topic.
-- [[service|basket-api]] — Service and Redis storage.
+- [[service|basket-api]] — Basket service documentation.
 - [[channel|bookworm.&#123;env&#125;.notification.dead-letter-queue]] — DLQ for the other `PlaceOrderCommand` consumer.
 
 <NodeGraph />

@@ -6,7 +6,7 @@ summary: |
   PostgreSQL persistence for Quartz schedules, trigger state, scheduler
   coordination, and execution history owned by the Scheduler System.
 owners:
-  - contributor-team
+  - platform-team
 container_type: database
 badges:
   - content: Database
@@ -20,13 +20,13 @@ styles:
   icon: /icons/database/postgresql.svg
 ---
 
-The Scheduler database (`schedulerdb`) is the authoritative PostgreSQL database owned exclusively by the [[service|scheduler-dashboard]] service in the Platform bounded context. It persists Quartz.NET job definitions, cluster coordination locks, bounded execution history, and Wolverine transactional outbox/inbox message envelopes.
+The Scheduler database (`schedulerdb`) is the authoritative PostgreSQL database owned exclusively by the [[service|scheduler-service]] service in the Platform bounded context. It persists Quartz.NET job definitions, cluster coordination locks, bounded execution history, and Wolverine transactional outbox/inbox message envelopes.
 
 ## Overview
 
 | Property               | Value                                                                                                          |
 | :--------------------- | :------------------------------------------------------------------------------------------------------------- |
-| **Owner**              | Platform bounded context — [[service\|scheduler-dashboard]] (`scheduler`)                                      |
+| **Owner**              | Platform bounded context — [[service\|scheduler-service]] (`scheduler`)                                        |
 | **Aspire resource ID** | `schedulerdb` (on shared `postgres` resource)                                                                  |
 | **Source**             | `src/Services/Scheduler/BookWorm.Scheduler/Extensions/Extensions.cs`, `src/Aspire/BookWorm.AppHost/AppHost.cs` |
 | **Engine**             | PostgreSQL (Azure Database for PostgreSQL Flexible Server in cloud)                                            |
@@ -94,7 +94,7 @@ Do not execute the pristine initialization script with `DropDb := 1` against a l
 
 ## Related documentation
 
-- [[service|scheduler-dashboard]] — Owning service configuration, dashboard authentication, and job orchestration.
+- [[service|scheduler-service]] — Owning service configuration, dashboard authentication, and job orchestration.
 - [[doc|platform/005-quartz-schema]] — Full PostgreSQL table definitions for all Quartz entities.
 - [[service|catalog-ingestion]] — Downstream Azure Functions consumer of `scheduler.process-vector-batch`.
 - [[doc|platform/006-api-and-contracts]] — Overview of all BookWorm services, agents, and data containers.

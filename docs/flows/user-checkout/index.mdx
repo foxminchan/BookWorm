@@ -24,14 +24,14 @@ steps:
       id: authenticate
       label: Sign in to the Storefront
   - id: authenticate
-    title: Identity Provider - Entra ID sign-in
+    title: OAuth API - Entra ID sign-in
     summary: >-
       Storefront uses Entra ID through Better Auth generic OAuth with PKCE and
       openid, profile, email, basket, and ordering scopes. Protected APIs require
       an authenticated caller; Ordering uses identity claims for Buyer ID,
       full name, and email.
-    system:
-      id: identity-provider
+    service:
+      id: oauth-api
       version: 1.0.0
     next_step:
       id: review-basket

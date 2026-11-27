@@ -1,29 +1,49 @@
 %%{init: {'theme': 'base', 'themeVariables': {'background': '#f5f5f5', 'primaryColor': '#ffffff', 'primaryTextColor': '#2d3142', 'primaryBorderColor': '#2d3142', 'secondaryColor': '#ececec', 'secondaryBorderColor': '#4f5d75', 'tertiaryColor': '#fdf2ee', 'tertiaryBorderColor': '#bf4520', 'lineColor': '#4f5d75', 'textColor': '#2d3142', 'clusterBkg': '#f8f9fa', 'clusterBorder': '#bfc0c0', 'fontFamily': 'Geist, system-ui, sans-serif'}}}%%
-flowchart LR
-	browser["User Browser\n(Customer / Staff)"]
-	entra["Microsoft Entra ID\n(OIDC / JWT / Agent IDs)"]
-	gw["API Gateway\n(YARP Public Ingress)"]
-	fe["Storefront, Commerce, Backoffice\n(Next.js 16 + Better Auth)"]
-	apis["Backend APIs\n(Catalog, Basket, Ordering, Rating, Chat, MCP)"]
-	presidio["Presidio\n(Analyzer & Anonymizer :3000)"]
-	foundry["Microsoft Foundry\n(ModelRouter / Decision1)"]
+flowchart TB
 
-	browser -->|"HTTPS"| gw
-	gw -->|"HTTP Zones"| fe
-	fe <-->|"OAuth2 / OIDC via /entra"| entra
-	gw -->|"HTTPS + Entra ID JWT"| apis
-	apis -->|"Validate JWT & Roles/Scopes"| entra
-	apis --> |"HTTP/S: Anonymize PII"| presidio
-	apis --> |"HTTPS: Redacted Prompts"| foundry
+	subgraph External["External Trust Boundary"]
+		User["Customer / Staff"]
+		Edge["Public Entry and Gateway"]
+	end
 
-	classDef focal fill:#fdf2ee,stroke:#bf4520,stroke-width:2px,color:#2d3142
+	subgraph Product["Application Trust Boundary"]
+		FE["Authenticated Experience"]
+		API["Protected APIs and Workers"]
+		Policy["Role, Scope, and Tool Policy"]
+	end
+
+	subgraph Automation["Delegated Trust Boundary"]
+		Agent["AI Agent or Integration"]
+		Workload["Federated Workload Identity"]
+		Privacy["PII Screening and Redaction"]
+	end
+
+	subgraph Protected["Protected Systems"]
+		Data["Authoritative Data"]
+		Model["External Model"]
+		Secrets["Managed Secrets"]
+		Logs["Redacted Telemetry"]
+	end
+
+	User -->|"Authenticate"| Edge
+	Edge -->|"Verify identity and audience"| FE
+	FE -->|"Authorized request"| API
+	API -->|"Evaluate role and permission"| Policy
+	Policy -->|"Permitted operation"| Data
+	API -->|"Tool or model request"| Agent
+	Agent -->|"Claims-bound workload identity"| Workload
+	Workload -->|"Minimum privilege"| Model
+	Agent --> Privacy
+	Privacy -->|"Anonymized prompt and result"| Model
+	API -->|"Classified data without raw secrets"| Logs
+	Agent -->|"Redacted operational context"| Logs
+	Policy -->|"Managed credential lookup"| Secrets
+
+	classDef boundary fill:#fdf2ee,stroke:#bf4520,stroke-width:2px,color:#2d3142
 	classDef service fill:#ffffff,stroke:#2d3142,stroke-width:1.2px,color:#2d3142
-	classDef store fill:#ececec,stroke:#4f5d75,stroke-width:1.2px,color:#2d3142
-	classDef input fill:#eef1f6,stroke:#5a6580,stroke-width:1.2px,color:#2d3142
-	classDef ext fill:#f5f5f5,stroke:#949eb2,stroke-width:1px,stroke-dasharray:4 3,color:#4f5d75
-	class apis focal
-	class gw service
-	class browser,fe input
-	class entra,presidio,foundry ext
-	linkStyle 3 stroke:#bf4520,stroke-width:2px
-	linkStyle 4 stroke:#bf4520,stroke-width:2px
+	classDef data fill:#ececec,stroke:#4f5d75,stroke-width:1.2px,color:#2d3142
+	classDef external fill:#eef1f6,stroke:#5a6580,stroke-width:1.2px,color:#2d3142
+	class Policy,Privacy boundary
+	class Edge,FE,API,Agent,Workload service
+	class Data,Secrets,Logs data
+	class User,Model external

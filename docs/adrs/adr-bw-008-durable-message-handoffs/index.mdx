@@ -9,7 +9,7 @@ owners:
   - platform-team
 appliesTo:
   - type: domain
-    id: BookWorm
+    id: bookworm
 related:
   - id: adr-bw-005-kafka-integration-backbone
   - id: adr-bw-012-operation-aware-resilience
@@ -21,73 +21,56 @@ x-scope: "Whole system (Kafka-enabled services)"
 
 ## Context and problem statement
 
-A service process can crash or restart between updating local state and publishing or acknowledging a Kafka message. Relying solely on in-memory message dispatch loses pending outbound events during failures. However, not every BookWorm service owns a PostgreSQL database: earlier documentation inaccurately assumed PostgreSQL Wolverine outboxes across Finance, Rating, and Notification, creating severe drift from the live runtime architecture.
+An area can stop or restart after saving a change but before notifying another area. Without durable handoffs, pending updates can be lost.
 
-BookWorm needs an accurate whole-system rule that pairs Wolverine Kafka messaging with each service's actual persistence and idempotency mechanism while keeping transport durability distinct from end-to-end business completion.
+BookWorm needs background updates to survive restarts and to avoid applying the same update twice. It must use each area's existing storage instead of forcing every area to adopt the same storage.
 
 ## Decision drivers
 
-- **Recoverability:** Preserve pending message handoffs across process restarts on stateful transactional services.
-- **Architectural honesty:** Align messaging durability with each service's real backing store rather than forcing unused PostgreSQL databases onto stateless or non-relational services.
-- **Explicit delivery semantics:** Treat Kafka and Wolverine handoffs as at-least-once and require consumer idempotency rather than claiming exactly-once distributed transactions.
+- **Recoverability:** Preserve pending updates across restarts.
+- **Architectural honesty:** Match protection to what each area already uses.
+- **Clear delivery:** Treat background updates as potentially repeated and protect against duplicate effects.
 
 ## Considered options
 
-1. Match Wolverine durability and idempotency to each service's native persistence model
-2. Mandate PostgreSQL Wolverine inbox/outbox tables on every Kafka-enabled service
-3. Publish directly to Kafka in memory without any durable handoff or idempotency guard
-4. Coordinate distributed two-phase commit transactions across databases, Kafka, and SMTP providers
+1. Match durable handoffs to each area's existing storage
+2. Require the same relational storage for every background-messaging area
+3. Send updates directly from memory without protection
+4. Create one transaction across every database and outside provider
 
 ## Decision outcome
 
-Chosen option: **Match Wolverine durability and idempotency to each service's native persistence model**, because it protects stateful domain writes without forcing unnecessary relational databases onto Cosmos DB, Durable Functions, Redis, or stateless worker services.
+Chosen option: **Match durable handoffs to each area's existing storage**.
 
-Current verified messaging durability per Kafka-enabled service:
+Stateful areas preserve their outgoing updates with their own records. Areas using Redis, task orchestration, or temporary workers use those mechanisms without adding storage they do not need.
 
-| Service                                     | Backing store                                                    | Verified messaging durability and idempotency mechanism                                                                           |
-| :------------------------------------------ | :--------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------- |
-| **Catalog API** (`catalog`)                 | PostgreSQL (`catalogdb`)                                         | Wolverine PostgreSQL outbox/inbox (`wolverine` schema) + Redis FusionCache idempotency                                            |
-| **Catalog Ingestion** (`catalog-ingestion`) | PostgreSQL (`catalogdb`) + Qdrant                                | Kafka trigger + Wolverine PostgreSQL outbox (`catalogdb`)                                                                         |
-| **Ordering API** (`ordering`)               | PostgreSQL (`orderingdb`, EF Core + Marten)                      | Wolverine PostgreSQL outbox/inbox (`wolverine` schema) + Redis idempotency                                                        |
-| **Scheduler** (`scheduler`)                 | PostgreSQL (`schedulerdb`)                                       | Wolverine PostgreSQL outbox/inbox (`wolverine` schema)                                                                            |
-| **Rating API** (`rating`)                   | Azure Cosmos DB (`ratingdb` / `feedbacks`)                       | Wolverine Cosmos DB persistence (`WolverineFx.CosmosDb`) + Redis idempotency                                                      |
-| **Finance** (`finance`)                     | Azure Durable Task Scheduler (`finance-taskhub`) + Azure Storage | Durable Functions saga state replay + Kafka triggers + Wolverine Kafka publisher (no PostgreSQL)                                  |
-| **Basket API** (`basket`)                   | Redis                                                            | Wolverine Kafka + Redis 24-hour `IIntegrationEventIdempotencyGuard` (no SQL outbox)                                               |
-| **Notification** (`notification`)           | Redis (idempotency only)                                         | Stateless Kafka consumer + MailKit resilience pipeline + Redis 24-hour `IIntegrationEventIdempotencyGuard` (no PostgreSQL outbox) |
-
-Across all hosts, Wolverine configures CloudEvents JSON serialization, jittered retry cooldowns (`50ms`, `250ms`, `1s`), and per-service Kafka dead-letter queues (`bookworm.{environment-kebab}.{service-kebab}.dead-letter-queue`).
+Every background update may be delivered more than once. Receiving areas must recognize repeats and avoid applying them twice.
 
 ### Consequences
 
-- **Positive:** Stateful services eliminate local dual-write gaps using their native stores, while Finance, Basket API, and Notification avoid provisioning unneeded PostgreSQL instances.
-- **Negative:** Operators and contributors must verify each host's exact durability and retry configuration rather than assuming one universal PostgreSQL outbox across the platform.
-- **Follow-up:** Keep consumers idempotent against duplicate delivery and consult the superseding system ADRs for Rating, Finance, and Notification storage details.
+- **Positive:** Areas preserve updates without adding unnecessary storage.
+- **Negative:** Operators must understand the different protection methods used by each area.
+- **Follow-up:** Review duplicate handling and recovery whenever a background update changes.
 
 ## Pros and cons of the options
 
-### Match Wolverine durability and idempotency to each service's native persistence model
+### Match durable handoffs to each area's existing storage
 
-- **Good**, because Catalog, Ordering, Scheduler, and Rating align message durability with their authoritative stores while Finance delegates workflow durability to Durable Task Scheduler.
-- **Good**, because Notification and Basket remain lean without extra relational schema operations.
-- **Bad**, because persistence troubleshooting differs across PostgreSQL, Cosmos DB, Durable Task Scheduler, and Redis idempotency paths.
+- **Good**, because durable work stays close to the area's authoritative information.
+- **Good**, because lightweight areas avoid expensive extra storage.
+- **Bad**, because recovery differs depending on the area.
 
-### Mandate PostgreSQL Wolverine inbox/outbox tables on every Kafka-enabled service
+### Require the same relational storage for every background-messaging area
 
-- **Good**, because every messaging service uses identical SQL envelope tables.
-- **Bad**, because it introduces unnecessary PostgreSQL databases, migrations, and operational failure modes for Finance, Rating, Basket API, and Notification.
+- **Good**, because every messaging area uses the same storage pattern.
+- **Bad**, because some areas need unnecessary databases and maintenance.
 
-### Publish directly to Kafka in memory without any durable handoff or idempotency guard
+### Send updates directly from memory without protection
 
-- **Good**, because host registration requires minimal configuration.
-- **Bad**, because crashes between database commits and broker sends lose integration events permanently.
+- **Good**, because setup is minimal.
+- **Bad**, because a restart can permanently lose pending updates.
 
-### Coordinate distributed two-phase commit transactions across databases, Kafka, and SMTP providers
+### Create one transaction across every database and outside provider
 
-- **Good**, because it aims for cross-system atomicity.
-- **Bad**, because external brokers and SMTP providers do not participate in ACID database transactions, and distributed locks severely degrade availability.
-
-## Verification and links
-
-- **Verified against:** `src/Aspire/BookWorm.AppHost/AppHost.cs`, `src/BuildingBlocks/BookWorm.Chassis/EventBus/Wolverine/WolverineHostExtensions.cs`, `src/Services/Rating/BookWorm.Rating/Extensions/Extensions.cs`, `src/Services/Finance/BookWorm.Finance/Extensions/Extensions.cs`, `src/Services/Notification/BookWorm.Notification/Extensions/Extensions.cs`
-- **Related architecture:** [[doc|arc42/08-crosscutting-concepts/002-contracts-and-messaging]], [[doc|arc42/07-deployment-view]]
-- **Related ADRs:** ADR-BW-005, ADR-BW-012, Rating Cosmos DB ADR, Finance Durable Task Scheduler ADR, Notification Stateless Kafka Worker ADR
+- **Good**, because it attempts to make every part succeed together.
+- **Bad**, because outside providers cannot join one database transaction and distributed coordination reduces availability.

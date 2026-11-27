@@ -9,59 +9,64 @@ badges:
     textColor: purple
 ---
 
-BookWorm protects services from invalid inputs, duplicate submissions, traffic spikes, and transient downstream outages by combining a pre-handler `FluentValidation` pipeline (`Mediator.SourceGenerator`), standardized RFC 9457 `ProblemDetails` exception mapping, layered ASP.NET Core rate limiting, atomic Redis idempotency guards, and targeted Polly/FusionCache resilience policies.
+## Purpose and Scope
 
-## Request validation and error-handling pipeline
+Validation, error handling, and resilience protect public and internal boundaries from malformed work, overload, partial failure, and repeated delivery. These rules apply to HTTP and RPC endpoints, message consumers, external calls, schedulers, and workflows across every building block.
 
-This flowchart shows how an incoming HTTP request traverses rate limiting, optional idempotency, `FluentValidation`, and standardized exception mapping before reaching domain persistence.
+## Visual Reference
+
+**Request Validation and Recovery**
 
 <MermaidFileLoader file="mermaids/003-validation-errors-and-resilience-diagram-1.mmd" />
 
-### Standardized HTTP and gRPC error mapping
+## Core Rules and Standards
 
-Each API host explicitly registers `AddValidationExceptionHandler()`, `AddNotFoundExceptionHandler()`, `AddGlobalExceptionHandler()`, and `AddProblemDetails()` from `BookWorm.Chassis.Exceptions` (gRPC services add `GrpcExceptionInterceptor`).
+1. **Validate at the trust boundary.** Reject malformed shape, ranges, identities, required fields, and authorization state before domain execution.
+2. **Use a stable error contract.** Return machine-readable problem details with type, status, title, detail, instance, and correlation without exposing stack traces or secrets.
+3. **Separate expected and unexpected failures.** Validation and not-found conditions are caller errors; conflicts represent state; unhandled faults indicate incidents.
+4. **Bound overload controls.** Limit concurrency and request rate per source or user and shed work with a retry hint where appropriate.
+5. **Make mutations retry-safe.** Require an operation identifier for duplicate-sensitive writes and retain intent until the authoritative outcome is known.
+6. **Classify retries.** Retry only bounded transient faults; never retry validation, authorization, permanent deserialization, or destructive ambiguous work automatically.
+7. **Compensate or confirm.** After a timeout or partial failure, verify authoritative state or execute an explicitly approved compensating action.
 
-| Exception or condition                                                         | Handler                                                | HTTP status                 | Caller response behavior                                                                   |
-| :----------------------------------------------------------------------------- | :----------------------------------------------------- | :-------------------------- | :----------------------------------------------------------------------------------------- |
-| `FluentValidation.ValidationException`                                         | `ValidationExceptionHandler`                           | `400 Bad Request`           | Field-grouped `ValidationProblemDetails`                                                   |
-| `ArgumentException`, `ArgumentNullException`, `ArgumentOutOfRangeException`    | `GlobalExceptionHandler`                               | `400 Bad Request`           | Safe generic message + `traceId`                                                           |
-| Domain not-found exception                                                     | `NotFoundExceptionHandler`                             | `404 Not Found`             | `ProblemDetails` without internal stack trace                                              |
-| `InvalidOperationException`, `NotSupportedException`, duplicate `x-request-id` | `GlobalExceptionHandler` / `IdempotencyEndpointFilter` | `409 Conflict`              | State conflict or duplicate operation `ProblemDetails`                                     |
-| `DbUpdateConcurrencyException`                                                 | `GlobalExceptionHandler`                               | `412 Precondition Failed`   | Prompts caller to retry with latest entity version / ETag                                  |
-| Rate limiter rejection                                                         | `AddRateLimiting()`                                    | `429 Too Many Requests`     | `ProblemDetails` + `Retry-After` header                                                    |
-| Any unhandled exception                                                        | `GlobalExceptionHandler`                               | `500 Internal Server Error` | Flushes `GlobalLogBuffer`, logs full error internally, returns generic message + `traceId` |
+<Admonition type="warning">
+	A retry, acknowledgement, or successful transport call does not prove business completion.
+	Consumers and callers must verify final state or receive a durable outcome.
+</Admonition>
 
-## Rate limiting and load shedding
+## Mechanism / How It Works
 
-`AddRateLimiting()` in `BookWorm.ServiceDefaults` (`Kestrel/RateLimiterExtensions.cs`) protects API hosts against burst traffic and resource exhaustion:
+| Condition                             | Standard Response                                                                      |
+| :------------------------------------ | :------------------------------------------------------------------------------------- |
+| Invalid input                         | Return 400 with field-level or operation-level problem details                         |
+| Unauthenticated or forbidden          | Return 401 or 403 without leaking protected resource details                           |
+| Missing resource                      | Return 404 unless availability concealment is an explicit policy                       |
+| State conflict or duplicate operation | Return 409 or the standard precondition response and preserve the existing state       |
+| Preconditions not met                 | Return 412 and direct the caller to refresh the authoritative version                  |
+| Capacity exceeded                     | Return 429 with retry guidance                                                         |
+| Unexpected fault                      | Return 500 or 503 with correlation; log full diagnostics only inside protected systems |
 
-- **Global chained limiter:** Combines concurrency load-shedding (`PermitLimit = 100`, `QueueLimit = 0`) with a per-IP/Host fixed-window limiter (`30` requests per `1 minute`, `QueueLimit = 0`).
-- **Named `PerUserRateLimit` policy:** Token bucket keyed by user `NameIdentifier` (`TokenLimit = 30`, `TokensPerPeriod = 20`, `ReplenishmentPeriod = 10s`, `QueueLimit = 5`), applied to expensive endpoints such as **Chat API** `/ag-ui`.
-- **Kestrel transport limits:** `RequestHeadersTimeout = 10s`, HTTP/2 `MaxStreamsPerConnection = 250`, `InitialConnectionWindowSize = 1 MB`, `InitialStreamWindowSize = 768 KB`, `KeepAlivePingDelay = 30s`, `KeepAlivePingTimeout = 10s`.
+## Resilience Pattern
 
-## Idempotency controls
+| Step        | Rule                                                                                 |
+| :---------- | :----------------------------------------------------------------------------------- |
+| Admission   | Enforce transport limits and request or user quotas                                  |
+| Idempotency | Create or confirm the operation key before executing side effects                    |
+| Validation  | Run schema and domain preconditions before persistence                               |
+| Execution   | Apply operation-specific timeouts and cancellation                                   |
+| Retry       | Use bounded attempts, jitter, and backoff for classified transient faults            |
+| Containment | Use circuit-breaking or fail-fast behavior to protect downstream dependencies        |
+| Recovery    | Reconcile, replay, compensate, or escalate according to the capability's state model |
 
-| Boundary                                       | Mechanism                                                           | Scope & TTL                                                                                                                                        | Failure / rollback behavior                                                                                                                                           |
-| :--------------------------------------------- | :------------------------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Ordering API** HTTP writes (`POST`, `PATCH`) | `IdempotencyEndpointFilter` + `RequestManager.TryCreateAsync`       | Requires `x-request-id` header; atomic Redis `StringSetAsync(..., When.NotExists)` keyed as `{method}:{path}:{requestId}` for **1 hour (`3600s`)** | Returns `409 Conflict` on duplicate key; automatically deletes the Redis key if the handler returns `>= 500` or throws an unhandled exception so safe retries succeed |
-| **Kafka integration event consumers**          | `IIntegrationEventIdempotencyGuard` (`FusionCacheIdempotencyGuard`) | Atomic Redis `SET NX` keyed as `idempotency:{consumerName}:{eventId:N}` for **24 hours** (mirrored to FusionCache L1)                              | Releases the Redis key on handler failure so Wolverine retries can re-execute                                                                                         |
+## Verification and Governance
 
-## Capability-specific resilience policies
+- Test invalid, unauthorized, duplicate, concurrent, timed-out, and unavailable-dependency cases.
+- Verify that 429 responses include retry guidance and that retries do not amplify load.
+- Confirm idempotency keys are removed or released only after a safe retry outcome.
+- Require a final-state check or compensation test for every distributed mutation.
 
-- **Outbound `HttpClient` defaults:** `BookWorm.ServiceDefaults` configures service discovery and the standard resilience handler with **budgeted retries** (`UseBudgetedRetries()`) to prevent retry storms across service hops.
-- **FusionCache (L1 + L2 Redis):** `BookWorm.Chassis.Caching` configures FusionCache `2.10.0` with Redis distributed cache, Redis backplane, distributed Redis locking, **2-hour fail-safe** (serving stale values during backing-store outages), and soft/hard timeouts.
-- **Notification SMTP pipeline (`AddMailResiliencePipeline`):** Wraps `MailKitSender` in a Polly pipeline combining a circuit breaker, exponential backoff retry with jitter, and a **30-second timeout** for transient `CommandException`, `ProtocolException`, `IOException`, `TimeoutException`, and `TimeoutRejectedException` faults. Notification uses Redis idempotency and Kafka DLQ—not a database outbox (see [[doc|arc42/06-runtime-view/005-notification-delivery-and-maintenance]]).
-- **Finance checkout saga:** `OrderOrchestrator` (Azure Durable Functions) enforces `MaxAttempts: 3` and `MaxRetryTimeout: 00:30:00` before running compensation without mutating authoritative order status in **Ordering API** (see [[doc|arc42/06-runtime-view/001-checkout-and-order-coordination]]).
-- **Wolverine Kafka retries:** Retries transient transport/DB faults with `50ms`, `250ms`, and `1s` full-jitter cooldowns before routing exhausted messages to per-service native DLQs (see [[doc|arc42/08-crosscutting-concepts/002-contracts-and-messaging]]).
+## Related Documentation
 
-## Operational limits and trade-offs
-
-- **Per-host registration required:** Exception handlers, rate limiting, and idempotency filters live in shared packages but take effect only when registered on each host's startup and endpoint pipeline.
-- **Retries do not prove business completion:** Always confirm final state against the owning service rather than assuming a retried HTTP call, Kafka command, or SMTP send completed exactly once.
-- **No universal retry budget:** Safe reads and idempotent state checks use automated retries; mutating commands and external side effects rely on explicit idempotency keys and bounded compensations.
-
-## Related documentation
-
-- [[doc|arc42/08-crosscutting-concepts/004-observability]] — `GlobalLogBuffer` flushing and `traceId` correlation across services.
-- [[doc|arc42/06-runtime-view/001-checkout-and-order-coordination]] — Ordering idempotency and Finance saga timeout behavior.
-- [[doc|arc42/06-runtime-view/005-notification-delivery-and-maintenance]] — MailKit Polly pipeline and Redis idempotency.
+- [[doc|arc42/08-crosscutting-concepts/002-contracts-and-messaging]] — Delivery guarantees and envelope handling.
+- [[doc|arc42/08-crosscutting-concepts/004-observability]] — Trace and error correlation.
+- [[doc|arc42/06-runtime-view]] — End-to-end exception and compensation scenarios.

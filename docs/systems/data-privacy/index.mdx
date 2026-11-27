@@ -7,9 +7,9 @@ summary: |
   information in the Reviews feedback-summarization and Chat agent pipelines.
 scope: external
 owners:
-  - contributor-team
+  - platform-team
 services:
-  - id: PresidioAPI
+  - id: presidio-api
     version: 1.0.0
 badges:
   - content: External
@@ -34,7 +34,7 @@ reuse Book Agent's wrapped chat client.
 ## Responsibilities and boundary
 
 Presidio provides PII detection and anonymization through
-[[service|PresidioAPI]]. The Reviews system retains ownership of
+[[service|presidio-api]]. The Reviews system retains ownership of
 [[entity|feedback]], its database, and the generated read-time summary.
 Privacy processing does not modify persisted feedback or Catalog's rating
 projection.

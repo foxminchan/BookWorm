@@ -1,6 +1,6 @@
 ---
 title: Business Context
-summary: Business roles and interactions at the boundary of the complete BookWorm platform.
+summary: Domain actors and information exchanged across the BookWorm system boundary.
 owners:
   - contributor-team
 badges:
@@ -9,46 +9,24 @@ badges:
     textColor: blue
 ---
 
-This view treats the complete BookWorm platform as a single black box and maps the business actors, external partners, and domain-level outcomes exchanged across its boundary. Use it to validate customer journeys, administrative workflows, and third-party dependencies independently of internal service topology or transport protocols.
+This view describes BookWorm as one system and identifies the people and external providers that exchange domain information or business value with it.
 
-## Black-box business context diagram
-
-The diagram below illustrates the business exchanges between customers, store administrators, BookWorm, and its active external partners.
+## System Boundary
 
 <MermaidFileLoader file="mermaids/002-business-context-diagram-1.mmd" />
 
-## Business value flow
+## Communication Partners Table
 
-BookWorm's primary commerce journey progresses through six connected business stages:
+| Communication Partner       | Type (User / System) | Inputs (to System)                                                       | Outputs (from System)                                                                                                | Business Purpose                                                      |
+| :-------------------------- | :------------------- | :----------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------- |
+| **Customers**               | User                 | Book searches, basket changes, checkout requests, questions, and reviews | Catalog and pricing information, basket status, order confirmation and history, recommendations, and review listings | Discover books, purchase selected books, and engage with the store    |
+| **Store Administrators**    | User                 | Catalog changes, order decisions, and review moderation                  | Catalog worklists, order status, and review queues                                                                   | Operate and maintain the bookstore                                    |
+| **Identity Provider**       | System               | Identity confirmation and user roles                                     | Sign-in and access confirmation requests                                                                             | Verify customers and staff before protected bookstore activities      |
+| **AI Service**              | System               | Recommendations, conversation responses, and review summaries            | Book and feedback context for guidance                                                                               | Improve discovery and provide informed customer and review assistance |
+| **Email Delivery Provider** | System               | Delivery status and delivery failures                                    | Order, account, and notification email content                                                                       | Inform customers about accepted purchases and account or store events |
 
-1. **Discovery:** A customer browses, searches, or asks conversational questions about books.
-2. **Authoritative product facts:** **Catalog** provides current book details, pricing, availability, and derived rating summaries.
-3. **Purchase intent:** **Shopping** captures and persists the customer's pre-order `Basket`.
-4. **Order acceptance and lifecycle:** **Ordering** validates the basket against current **Catalog** facts, accepts the `Order`, and manages lifecycle transitions (`New`, `Cancelled`, `Completed`).
-5. **Operational follow-up:** **Platform** sends transactional order emails (**Notification**) and refreshes search embeddings on schedule (**Scheduler**).
-6. **Ongoing engagement:** **Reviews** captures customer `Feedback` and **Conversational** guides future discovery, while store administrators manage catalog records, orders, and reviews through **Backoffice**.
+## Risks & External Influences
 
-## Business data exchanges
-
-| Communication partner                       | Information sent to BookWorm                                                                                             | Information or outcome from BookWorm                                                                                                | Status in codebase                               |
-| :------------------------------------------ | :----------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------- |
-| **Customers**                               | Search and browse queries, basket updates, checkout submissions, book reviews (`Feedback`), and conversational questions | Authoritative book details and pricing, accepted order confirmations and history, review listings, and Catalog-grounded AI guidance | Implemented (**Storefront**, **Commerce**)       |
-| **Store administrators and business users** | Book/author/category/publisher updates, order completion or cancellation actions, and feedback moderation decisions      | Real-time order dashboards, catalog management views, review queues, and scheduled job history                                      | Implemented (**Backoffice**, Quartz Dashboard)   |
-| **Microsoft Entra ID**                      | Authenticated user tokens, app roles (`admin`, `business_user`, `customer`), API scopes, and agent identity assertions   | Sign-in and token-exchange requests                                                                                                 | Implemented                                      |
-| **Microsoft Foundry**                       | Conversational responses, routing/tool decisions, AI review summaries, and vector embeddings                             | Anonymized user prompts, book metadata for embeddings, and feedback sets for summarization                                          | Implemented                                      |
-| **SendGrid / Mailpit**                      | Synchronous SMTP relay acceptance or rejection (not proof of recipient inbox delivery)                                   | Rendered order placement, completion, and cancellation emails                                                                       | Implemented (Mailpit locally; SendGrid in cloud) |
-| **Payment provider**                        | —                                                                                                                        | Conceptual payment settlement handoff (not implemented; **Finance** handles post-checkout saga coordination only)                   | Out of scope / not implemented                   |
-| **Physical fulfillment provider**           | —                                                                                                                        | Conceptual warehouse/shipping handoff (not implemented; **Ordering** tracks logical status only)                                    | Out of scope / not implemented                   |
-
-## Stakeholder alignment and scope limits
-
-- **Black-box clarity vs. contract precision:** Treating BookWorm as a black box helps product managers, business analysts, and architects agree on business scope quickly, while exact wire formats, retry semantics, and authentication flows live in [[doc|arc42/03-context-and-scope/003-technical-context]] and service contract references.
-- **SMTP acceptance is not inbox delivery:** Outbound notification exchanges confirm only whether the SMTP relay accepted a message; bounce tracking or end-user inbox confirmation requires external provider webhooks not currently configured.
-- **Operating stakeholders:** Product stakeholders prioritize journeys and quality goals; domain teams own bounded-context rules and contracts; platform and operations teams sustain shared infrastructure and incident triage (see [[doc|arc42/01-introduction-and-goals/004-stakeholders]]).
-
-## Related architecture documentation
-
-- [[doc|arc42/03-context-and-scope/001-overview]] — What sits inside vs. outside the BookWorm boundary.
-- [[doc|arc42/03-context-and-scope/003-technical-context]] — Concrete technical channels and protocols realizing these business exchanges.
-- [[doc|arc42/01-introduction-and-goals/002-requirements-overview]] — System-level functional requirements (`BW-R1`-`BW-R8`).
-- [[doc|arc42/06-runtime-view]] — Step-by-step interaction scenarios across internal services.
+- Identity, role, and profile information must be accurate and protected because incorrect or outdated information can deny access or expose customer activity.
+- AI-generated guidance depends on the quality and currency of book and feedback context; unsuitable or inaccurate output can affect purchasing decisions.
+- Email delivery depends on an external provider, so acceptance by the provider does not guarantee that a customer receives or reads a message.

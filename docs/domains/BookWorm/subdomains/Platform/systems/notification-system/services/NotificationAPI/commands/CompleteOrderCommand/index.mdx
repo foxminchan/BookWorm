@@ -1,6 +1,6 @@
 ---
 id: CompleteOrderCommand
-name: Complete order
+name: Send order completed notification
 version: 1.0.0
 badges:
   - content: Order Lifecycle
@@ -11,7 +11,7 @@ summary: |
   and submit a completed-order email.
 schemaPath: schema.json
 owners:
-  - contributor-team
+  - platform-team
 ---
 
 `CompleteOrderCommand` (`BookWorm.Contracts.CompleteOrderCommand`) is an asynchronous Kafka integration command published by **Finance** and consumed by **Notification** to render and submit a completed-order customer email. It never mutates order state in **Ordering API**.

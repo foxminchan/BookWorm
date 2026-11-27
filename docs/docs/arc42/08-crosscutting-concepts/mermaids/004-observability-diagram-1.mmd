@@ -1,25 +1,44 @@
 %%{init: {'theme': 'base', 'themeVariables': {'background': '#f5f5f5', 'primaryColor': '#ffffff', 'primaryTextColor': '#2d3142', 'primaryBorderColor': '#2d3142', 'secondaryColor': '#ececec', 'secondaryBorderColor': '#4f5d75', 'tertiaryColor': '#fdf2ee', 'tertiaryBorderColor': '#bf4520', 'lineColor': '#4f5d75', 'textColor': '#2d3142', 'clusterBkg': '#f8f9fa', 'clusterBorder': '#bfc0c0', 'fontFamily': 'Geist, system-ui, sans-serif'}}}%%
-flowchart LR
-	fe["Storefront, Commerce, Backoffice\n(Next.js 16 + @workspace/otel)"]
-	apis["Backend APIs & Workers\n(.NET 11 + ServiceDefaults)"]
-	fns["Finance & Catalog Ingestion\n(Azure Functions + OTel 1.2.0)"]
-	otlp["OTLP Collector / Endpoint\n(OTEL_EXPORTER_OTLP_ENDPOINT)"]
-	local["Aspire Dashboard\n(Local: https://localhost:17290)"]
-	cloud["Azure Log Analytics & ACA Dashboard\n(90d Prod / 30d non-Prod)"]
+flowchart TB
 
-	fe -->|"OTLP Proto Traces"| otlp
-	apis -->|"OTLP Traces, Metrics, Logs"| otlp
-	fns -->|"OTLP Traces & Logs"| otlp
-	otlp -->|"Local Run Mode"| local
-	otlp -->|"Publish / Azure Mode"| cloud
+	subgraph Sources["Instrumented Sources"]
+		UI["Web Experiences"]
+		API["APIs and Workers"]
+		AI["AI and External Integrations"]
+	end
+
+	subgraph Evidence["Correlation and Redaction"]
+		Context["Trace and Request Context"]
+		Redact["PII and Secret Redaction"]
+		Health["Liveness and Readiness"]
+	end
+
+	subgraph Signals["Telemetry Signals"]
+		Trace["Distributed Traces"]
+		Log["Structured Logs"]
+		Metric["Metrics"]
+	end
+
+	Backend["Local or Cloud Telemetry Backend"]
+
+	UI --> Context
+	API --> Context
+	AI --> Context
+	Context --> Redact
+	Context --> Health
+	Redact --> Trace
+	Redact --> Log
+	Context --> Metric
+	Health --> Metric
+	Trace --> Backend
+	Log --> Backend
+	Metric --> Backend
 
 	classDef focal fill:#fdf2ee,stroke:#bf4520,stroke-width:2px,color:#2d3142
 	classDef service fill:#ffffff,stroke:#2d3142,stroke-width:1.2px,color:#2d3142
 	classDef store fill:#ececec,stroke:#4f5d75,stroke-width:1.2px,color:#2d3142
 	classDef input fill:#eef1f6,stroke:#5a6580,stroke-width:1.2px,color:#2d3142
-	classDef ext fill:#f5f5f5,stroke:#949eb2,stroke-width:1px,stroke-dasharray:4 3,color:#4f5d75
-	class otlp focal
-	class local,cloud service
-	class fe,apis,fns input
-	linkStyle 0 stroke:#bf4520,stroke-width:2px
-	linkStyle 1 stroke:#bf4520,stroke-width:2px
+	class Context,Redact focal
+	class Health,Trace,Log,Metric service
+	class UI,API,AI input
+	class Backend store

@@ -9,7 +9,7 @@ owners:
   - contributor-team
 appliesTo:
   - type: domain
-    id: BookWorm
+    id: bookworm
 related:
   - id: adr-bw-001-capability-aligned-boundaries
   - id: adr-bw-007-derived-eventually-consistent-views
@@ -24,71 +24,56 @@ x-scope: "Whole system"
 
 ## Context and problem statement
 
-Catalog products, customer baskets, accepted orders, feedback reviews, chat sessions, scheduled jobs, and workflow state each follow distinct lifecycles and consistency rules. Allowing multiple services to read or write shared database tables lets consumers bypass domain invariants and prevents independent schema evolution.
+Books, shopping carts, orders, reviews, chat sessions, and scheduled work have different lifecycles and rules. If several areas can freely change the same records, one area may bypass another area's checks and make independent changes difficult.
 
-BookWorm requires an unambiguous data-ownership rule that pairs each business model with one owning capability and enforces contract-based integration across boundaries.
+BookWorm needs one clear owner for each kind of business information.
 
 ## Decision drivers
 
-- **Correctness:** Guarantee that one owning capability enforces every domain invariant and state transition.
-- **Evolvability:** Allow internal schemas and storage engines to change without breaking hidden database consumers.
-- **Clear accountability:** Separate shared infrastructure provisioning from logical business ownership.
+- **Correctness:** One responsible area should enforce every rule and status change.
+- **Easy evolution:** Storage details should change without breaking other areas.
+- **Clear accountability:** One area should own both the information and the decisions about it.
 
 ## Considered options
 
-1. Keep business state and persistence access strictly capability-owned
-2. Store all business entities in a shared mutable database schema
-3. Route all persistence through a central data-access service
-4. Mandate physically separate database servers for every service
+1. Give each business area ownership of its own information
+2. Store every kind of business information in one shared place
+3. Route every storage request through one central area
+4. Use physically separate storage for every area
 
 ## Decision outcome
 
-Chosen option: **Keep business state and persistence access strictly capability-owned**, because it preserves domain encapsulation while letting each bounded context select the storage engine suited to its access patterns.
+Chosen option: **Give each business area ownership of its own information**.
 
-Each service owns its logical database, container, cache namespace, or blob container:
+Each area will store and protect the information it needs. It may choose the kind of storage that best matches how customers use that information.
 
-- **Catalog:** PostgreSQL (`catalogdb`), Qdrant (`vectordb`), and Azure Blob Storage (`catalog-blob`).
-- **Shopping (Basket API):** Redis (`IBasketRepository`).
-- **Ordering (Ordering API):** PostgreSQL (`orderingdb` with EF Core and Marten event store).
-- **Ordering (Finance):** Azure Durable Task Scheduler (`durable-task-scheduler` / `finance-taskhub`) and Azure Storage host state.
-- **Reviews (Rating API):** Azure Cosmos DB (`ratingdb` / `feedbacks`).
-- **Conversational (Chat API):** Azure Blob Storage (`chatting-blob`, `ag-ui/` prefix).
-- **Platform (Scheduler):** PostgreSQL (`schedulerdb`).
-- **Platform (Notification):** Stateless worker using Redis for 24-hour integration-event idempotency only.
-
-Logical ownership does not prohibit multiple databases (`catalogdb`, `orderingdb`, `schedulerdb`) from sharing one managed PostgreSQL Flexible Server instance when each database remains isolated to its owner.
+Shared equipment may reduce costs, but private information remains separated and owned by the responsible area.
 
 ### Consequences
 
-- **Positive:** Services can switch persistence engines independently—such as moving Rating API to Azure Cosmos DB or Finance to Durable Task Scheduler—without changing downstream contracts.
-- **Negative:** Cross-context queries cannot use SQL joins and must rely on gRPC/HTTP calls, read projections, or API composition; multi-service workflows cannot share one ACID database transaction.
-- **Follow-up:** Maintain engine-specific storage decisions in dedicated system ADRs under `explanation/adrs/systems/` and verify zero cross-context DbContext references in `tests/BookWorm.ArchTests`.
+- **Positive:** An area can change how it stores information without changing agreements with its customers or partners.
+- **Negative:** Information across areas cannot be combined with a single direct database query.
+- **Follow-up:** Document storage choices for each area and check that areas do not bypass ownership boundaries.
 
 ## Pros and cons of the options
 
-### Keep business state and persistence access strictly capability-owned
+### Give each business area ownership of its own information
 
-- **Good**, because every state change passes through the owning service's validation, authorization, and domain events.
-- **Good**, because bounded contexts choose purpose-built engines (PostgreSQL, Cosmos DB, Redis, Qdrant, Azure Blob Storage, Durable Task Scheduler).
-- **Bad**, because cross-domain reporting and workflows require asynchronous projections or synchronous composition.
+- **Good**, because every change passes through the responsible area's checks.
+- **Good**, because each area can choose suitable storage.
+- **Bad**, because reports and work that span several areas require additional coordination.
 
-### Store all business entities in a shared mutable database schema
+### Store every kind of business information in one shared place
 
-- **Good**, because queries can join across catalogs, baskets, orders, and reviews in one statement.
-- **Bad**, because schema changes break unrelated services and bypass domain validation rules.
+- **Good**, because combined reports are simpler to build.
+- **Bad**, because a change for one area can break or bypass another area.
 
-### Route all persistence through a central data-access service
+### Route every storage request through one central area
 
-- **Good**, because database credentials stay concentrated in one component.
-- **Bad**, because it creates a single scaling bottleneck and strips bounded contexts of autonomous model ownership.
+- **Good**, because storage access is concentrated in one place.
+- **Bad**, because the central area can become a bottleneck and still must understand many kinds of business work.
 
-### Mandate physically separate database servers for every service
+### Use physically separate storage for every area
 
-- **Good**, because physical server isolation eliminates noisy-neighbor resource contention.
-- **Bad**, because it exceeds logical ownership requirements and inflates cloud infrastructure cost for small databases.
-
-## Verification and links
-
-- **Verified against:** `src/Aspire/BookWorm.AppHost/AppHost.cs`, `src/Services/Rating/BookWorm.Rating/Extensions/Extensions.cs`, `src/Services/Finance/BookWorm.Finance/Extensions/Extensions.cs`, `src/Services/Notification/BookWorm.Notification/Extensions/Extensions.cs`, `src/Services/Chat/BookWorm.Chat/Orchestration/WorkflowRegistration.cs`
-- **Related architecture:** [[doc|arc42/02-architecture-constraints]], [[doc|arc42/05-building-block-view]], [[doc|platform/003-data-ai-and-messaging-resources]]
-- **Related ADRs:** ADR-BW-001, ADR-BW-007, Rating Cosmos DB ADR, Finance Durable Task Scheduler ADR, Chat Blob Sessions ADR
+- **Good**, because each area's storage is isolated.
+- **Bad**, because this adds unnecessary cost and complexity for many small areas.

@@ -134,7 +134,7 @@ The workflow persists conversation session state and Microsoft Foundry memory in
 
 ### Privacy and Governance Middleware
 
-QA and Book Agent register PII middleware directly; the two researchers inherit Book Agent's wrapped chat client. For non-empty text, the middleware calls [[service|PresidioAPI]] using [[command|AnalyzeText]] and, when PII is detected, [[command|AnonymizeText]]. It filters input and output; streaming output is buffered until filtering completes. Middleware failures propagate rather than bypassing privacy processing.
+QA and Book Agent register PII middleware directly; the two researchers inherit Book Agent's wrapped chat client. For non-empty text, the middleware calls [[service|presidio-api]] using [[command|AnalyzeText]] and, when PII is detected, [[command|AnonymizeText]]. It filters input and output; streaming output is buffered until filtering completes. Middleware failures propagate rather than bypassing privacy processing.
 
 The Chat host also applies per-agent governance policies: QA has no permitted catalog tools; Book Agent and its researchers are allow-listed for their documented Catalog tools and delegation paths.
 

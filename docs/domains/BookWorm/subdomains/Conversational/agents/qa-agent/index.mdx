@@ -69,22 +69,22 @@ Settings are declared in `qa-agent.yaml`:
 
 `QAAgentRegistration.AddQAAgent()` wraps the shared `IChatClient` and applies `WithBookWormGovernance(sp, key)` using `Policies/chat-agents.yaml` (`default_action: deny`):
 
-| Layer                                | Component / rule                                                 | Behavior                                                                                                                                    |
-| :----------------------------------- | :--------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Middleware 1**                     | `UseAGUIClientContext()`                                         | Propagates active AG-UI client context                                                                                                      |
-| **Middleware 2**                     | `UseDecisionToolSelection()`                                     | Filters candidate tools via Microsoft-Decision-1 (`CreateQAAgentToolSelectionOptions()`)                                                    |
-| **Middleware 3**                     | `UsePIIMiddleware(sp)`                                           | Screens input and buffered streaming output via [[service\|PresidioAPI]] (`AnalyzeText` / `AnonymizeText` → `<PII>`); fails closed on error |
-| **Middleware 4**                     | `UseGuardrailMiddleware()`                                       | Enforces prompt and output guardrails                                                                                                       |
-| **Middleware 5**                     | `UseAIContextProviders(CompactionPipelineFactory.CreateLight())` | Applies lightweight history compaction                                                                                                      |
-| **Allow rules (priority 60)**        | `qa-agent-run`, `qa-agent-skills-and-handoff`                    | Permits `agent_run`, `agent_run_streaming`, `load_skill`, `read_skill_resource`, and `handoff_to_book` for `did:mesh:bookworm:qa`           |
-| **Explicit deny rule (priority 70)** | `qa-agent-deny-catalog-tools`                                    | Explicitly denies `search_catalog`, `get_book`, `list_categories`, and `list_authors` as defense-in-depth                                   |
-| **Conversation Guardian**            | `conversation_guardian` & `multi_turn_injection_patterns`        | Detects escalating rhetoric, offensive patterns, handoff loops (`max_conversation_turns: 30`), and multi-turn prompt injection              |
+| Layer                                | Component / rule                                                 | Behavior                                                                                                                                     |
+| :----------------------------------- | :--------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Middleware 1**                     | `UseAGUIClientContext()`                                         | Propagates active AG-UI client context                                                                                                       |
+| **Middleware 2**                     | `UseDecisionToolSelection()`                                     | Filters candidate tools via Microsoft-Decision-1 (`CreateQAAgentToolSelectionOptions()`)                                                     |
+| **Middleware 3**                     | `UsePIIMiddleware(sp)`                                           | Screens input and buffered streaming output via [[service\|presidio-api]] (`AnalyzeText` / `AnonymizeText` → `<PII>`); fails closed on error |
+| **Middleware 4**                     | `UseGuardrailMiddleware()`                                       | Enforces prompt and output guardrails                                                                                                        |
+| **Middleware 5**                     | `UseAIContextProviders(CompactionPipelineFactory.CreateLight())` | Applies lightweight history compaction                                                                                                       |
+| **Allow rules (priority 60)**        | `qa-agent-run`, `qa-agent-skills-and-handoff`                    | Permits `agent_run`, `agent_run_streaming`, `load_skill`, `read_skill_resource`, and `handoff_to_book` for `did:mesh:bookworm:qa`            |
+| **Explicit deny rule (priority 70)** | `qa-agent-deny-catalog-tools`                                    | Explicitly denies `search_catalog`, `get_book`, `list_categories`, and `list_authors` as defense-in-depth                                    |
+| **Conversation Guardian**            | `conversation_guardian` & `multi_turn_injection_patterns`        | Detects escalating rhetoric, offensive patterns, handoff loops (`max_conversation_turns: 30`), and multi-turn prompt injection               |
 
 ## Related documentation
 
 - [[service|chat-api]] — Hosting AG-UI server, `chat-workflow` orchestration, and Microsoft-Decision-1 routing.
 - [[agent|book-agent]] — Target specialist for `handoff_to_book` transfers.
-- [[service|PresidioAPI]] — PII analysis and anonymization sidecars invoked by middleware.
+- [[service|presidio-api]] — PII analysis and anonymization sidecars invoked by middleware.
 - [[doc|platform/006-api-and-contracts]] — Overview of all BookWorm services, agents, and data containers.
 
 <NodeGraph />

@@ -7,7 +7,7 @@ summary: |
   notification messages and receive provider delivery outcomes.
 scope: external
 owners:
-  - contributor-team
+  - platform-team
 services:
   - id: sendgrid-api
     version: 1.0.0
@@ -36,25 +36,25 @@ SendGrid serves as BookWorm's external email delivery boundary, isolating third-
 
 ## 3. How It Works
 
-The [[system|notification-system]] prepares notification messages and submits them through [[service|sendgrid-api]], while SendGrid handles external validation, routing, rate limiting, and delivery processing.
+The [[system|notification-system]] renders notification messages and submits them to [[service|sendgrid-api]] over SMTP via MailKit, while SendGrid handles external validation, routing, rate limiting, and delivery processing.
 
 <ContextDiagram />
 
-SendGrid never owns BookWorm's notification state or business outcomes. The [[system|notification-system]] retains full ownership of the [[entity|outbox]] record, retry decisions, and the distinction between a pending, failed, or successfully submitted email.
+SendGrid never owns BookWorm's notification state or business outcomes. The [[system|notification-system]] retains full ownership of Redis message-ID idempotency, retry decisions, and dead-letter routing.
 
-| Concern             | SendGrid responsibility                                      | BookWorm responsibility                                |
-| ------------------- | ------------------------------------------------------------ | ------------------------------------------------------ |
-| Message submission  | Accept email requests through the SendGrid API               | Build the request from an outbox item                  |
-| Provider validation | Validate provider-specific request details                   | Validate required application fields before submission |
-| Delivery processing | Route and process the message with downstream mail providers | Track the provider response against the outbox item    |
-| Failures and limits | Return errors for invalid requests, outages, or rate limits  | Preserve pending work and decide when to retry         |
-| Business meaning    | Deliver the supplied message                                 | Own the business event and notification content        |
+| Concern             | SendGrid responsibility                                      | BookWorm responsibility                                     |
+| ------------------- | ------------------------------------------------------------ | ----------------------------------------------------------- |
+| Message submission  | Accept email requests over SMTP                              | Render the MIME message from the inbound Kafka command      |
+| Provider validation | Validate provider-specific request details                   | Validate required application fields before submission      |
+| Delivery processing | Route and process the message with downstream mail providers | Handle SMTP acceptance or transient failure via MailKit     |
+| Failures and limits | Return errors for invalid requests, outages, or rate limits  | Retry transiently and route exhausted messages to Kafka DLQ |
+| Business meaning    | Deliver the supplied message                                 | Own the business event and notification content             |
 
 A provider response indicates only whether SendGrid accepted or rejected a submission—not whether the underlying business operation succeeded or the message reached the recipient's inbox.
 
 ## 4. Trade-offs & Lessons Learned
 
-- **Bounded reliability over naive retries**: Pending outbox records must survive provider outages, temporary failures should be retried in a controlled manner, rate limits must be observable without infinite retry loops, and permanent rejections must be captured with enough non-sensitive context for diagnosis.
+- **Bounded reliability over naive retries**: Temporary failures are retried in a controlled manner via MailKit resilience and Wolverine cooldowns, rate limits must be observable without infinite retry loops, and exhausted failures move to the Kafka dead-letter queue (`bookworm.{env}.notification.dead-letter-queue`).
 - **Exactly-once expectation management**: A successful submission updates BookWorm's internal state once, yet distributed communication means rare duplicates or ambiguous outcomes must still be accounted for operationally.
 - **Strict data minimization**: Credentials must stay out of code, documentation, and logs, while email addresses and message bodies are treated as sensitive data accessible only to components required for delivery and authorized support.
 

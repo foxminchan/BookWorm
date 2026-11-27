@@ -9,26 +9,26 @@ badges:
     textColor: blue
 ---
 
-This chapter defines the strategic baseline for the complete BookWorm online bookstore platform—its business purpose, eight essential system requirements, five prioritized quality goals, and key stakeholder roles. Use it to align product, architecture, engineering, and operations decisions before diving into individual bounded contexts or deployment details.
+This chapter defines the strategic baseline for BookWorm: its business purpose, essential requirements, priority quality goals, and key stakeholders. Use it to align product, engineering, architecture, and operations decisions.
 
 ## Scope and architectural baseline
 
-- **System under documentation:** The full BookWorm platform—three Next.js 16 web applications (**Storefront**, **Commerce**, and **Backoffice**) behind a YARP **API Gateway**, backed by ten .NET 11 services across six bounded contexts (**Catalog**, **Shopping**, **Ordering**, **Reviews**, **Conversational**, and **Platform**) orchestrated with **Aspire** 17.
-- **Architectural priority order:** When trade-offs arise, BookWorm prioritizes qualities in descending order: (1) **Correctness**, (2) **Interoperability**, (3) **Deployability**, (4) **Modifiability**, and (5) **Operability**.
-- **Baseline boundaries:** This chapter synthesizes requirements and quality priorities from the live codebase and architecture baseline. It does not replace a stakeholder-approved product backlog or formal production service-level agreements (SLAs).
+- **System scope:** BookWorm includes the customer storefront, commerce workflows, back-office management, and shared platform capabilities.
+- **Architectural priority order:** (1) **Correctness**, (2) **Interoperability**, (3) **Deployability**, (4) **Modifiability**, and (5) **Operability**.
+- **Baseline boundaries:** This chapter summarizes the current architecture. It does not replace a stakeholder-approved product backlog or formal service targets.
 
 ## Chapter map
 
-| Section                                                            | Focus                                                                                 | Audience                                 |
-| :----------------------------------------------------------------- | :------------------------------------------------------------------------------------ | :--------------------------------------- |
-| [[doc\|arc42/01-introduction-and-goals/001-introduction]]          | Business purpose, six bounded contexts, external boundaries, and high-level use cases | Architects, contributors, stakeholders   |
-| [[doc\|arc42/01-introduction-and-goals/002-requirements-overview]] | Eight traceable system-level requirements (`BW-R1`-`BW-R8`) and capability mapping    | Architects, contributors, product owners |
-| [[doc\|arc42/01-introduction-and-goals/003-quality-goals]]         | Top five prioritized quality goals, scenarios, and verification evidence              | Architects, contributors, operators      |
-| [[doc\|arc42/01-introduction-and-goals/004-stakeholders]]          | Six stakeholder roles, expectations, and documentation routing                        | All audiences                            |
+| Section                                                            | Focus                                                               | Audience                                 |
+| :----------------------------------------------------------------- | :------------------------------------------------------------------ | :--------------------------------------- |
+| [[doc\|arc42/01-introduction-and-goals/001-introduction]]          | Business purpose, six areas, external boundaries, and primary users | Architects, contributors, stakeholders   |
+| [[doc\|arc42/01-introduction-and-goals/002-requirements-overview]] | Essential system requirements and capability ownership              | Architects, contributors, product owners |
+| [[doc\|arc42/01-introduction-and-goals/003-quality-goals]]         | Prioritized quality goals and success scenarios                     | Architects, contributors, operators      |
+| [[doc\|arc42/01-introduction-and-goals/004-stakeholders]]          | Stakeholder roles, expectations, and documentation routes           | All audiences                            |
 
 ## Key principles established in this chapter
 
-- **Single authoritative owner per domain record:** **Catalog** owns product facts and pricing; **Shopping** owns mutable pre-order baskets; **Ordering** owns accepted order lifecycles; **Reviews** owns individual `Feedback` records; **Conversational** provides grounded AI discovery; **Platform** supplies enabling infrastructure without owning business state.
+- **Single owner for each domain record:** Catalog owns products and pricing; Shopping owns baskets; Ordering owns accepted orders; Reviews owns feedback; Conversational provides guided discovery; Platform supplies shared capabilities.
 - **Explicit gaps over implied commitments:** Where numerical latency, availability, or recovery budgets and named approver contacts are not yet formally signed off, this chapter labels them as proposed rather than claiming operational guarantees.
 
 ## Related architecture documentation

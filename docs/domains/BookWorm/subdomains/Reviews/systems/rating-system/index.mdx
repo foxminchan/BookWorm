@@ -111,7 +111,7 @@ Before review text reaches the AI model—and before output is returned—a priv
 
 - Reviews owns the [[entity|feedback]] aggregate and [[container|rating-database]]; other domains must use integration contracts rather than reading or writing the database directly.
 - [[system|mcp-tools]] supplies Catalog-backed book details (`get_book` MCP tool) and reusable review-analysis prompts to [[agent|rating-agent]]; Reviews retains ownership of feedback and summarization orchestration.
-- [[service|PresidioAPI]] in [[system|data-privacy]] is invoked by the chat pipeline's PII middleware to detect and redact email addresses, phone numbers, and credit-card data; Presidio does not own feedback storage or determine classifications.
+- [[service|presidio-api]] in [[system|data-privacy]] is invoked by the chat pipeline's PII middleware to detect and redact email addresses, phone numbers, and credit-card data; Presidio does not own feedback storage or determine classifications.
 - [[agent|rating-agent]] reads raw reviews through `GetCustomerReviews` under a read-only agent governance policy.
 
 ### HTTP API (`v1`)

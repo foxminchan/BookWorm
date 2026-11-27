@@ -11,7 +11,7 @@ summary: |
   and submit a new-order email.
 schemaPath: schema.json
 owners:
-  - contributor-team
+  - platform-team
 ---
 
 `PlaceOrderCommand` (`BookWorm.Contracts.PlaceOrderCommand`) is an asynchronous Kafka integration command published by **Finance** after checkout and consumed independently by **Basket API** (to delete the customer's Redis basket) and **Notification** (to send a new-order confirmation email). Neither consumer creates or modifies orders in **Ordering API**.

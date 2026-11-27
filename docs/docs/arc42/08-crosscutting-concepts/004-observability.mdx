@@ -9,57 +9,57 @@ badges:
     textColor: purple
 ---
 
-BookWorm instruments every .NET service through `BookWorm.ServiceDefaults` (`OpenTelemetry` `1.21.0`) and every Next.js microfrontend (**Storefront**, **Commerce**, **Backoffice**) through `@workspace/otel` so traces, metrics, and structured logs correlate end-to-end via W3C trace context. Telemetry exports over OTLP to the local **Aspire Dashboard** during development and to **Azure Log Analytics** (with Aspire Dashboard enabled on Azure Container Apps) in cloud deployments.
+## Purpose and Scope
 
-## Telemetry pipeline overview
+Observability provides a consistent evidence model for diagnosing frontends, APIs, workers, data pipelines, and external dependencies. It governs signal names, correlation, privacy, health semantics, and retention across all deployed building blocks.
 
-This flowchart shows how backend services, Azure Functions, and frontend microfrontends emit correlated OpenTelemetry signals to local and cloud backends.
+## Visual Reference
+
+**Observability Pipeline**
 
 <MermaidFileLoader file="mermaids/004-observability-diagram-1.mmd" />
 
-## Signals, sampling, and log buffering
+## Core Rules and Standards
 
-| Signal                 | Backend instrumentation (`BookWorm.ServiceDefaults` & `BookWorm.Chassis`)                                                                                                                                             | Sampling & filtering                                                                                                          |
-| :--------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------- |
-| **Distributed traces** | W3C `ActivityIdFormat`; ASP.NET Core, `HttpClient`, gRPC client (`Instrumentation.GrpcNetClient`), route fixer, `BookWorm` trace source, `Wolverine`, `Confluent.Kafka`, and `chat-workflow` (`.WithOpenTelemetry()`) | Excludes `/health` and `/alive`; `AlwaysOnSampler` in Development; exports via OTLP when `OTEL_EXPORTER_OTLP_ENDPOINT` is set |
-| **Metrics**            | ASP.NET Core, `HttpClient`, .NET Runtime, `BookWorm` meter, `Wolverine` meter, `CommandHandlerMetrics`, `QueryHandlerMetrics`, and request latency telemetry                                                          | Exported over OTLP alongside traces                                                                                           |
-| **Structured logs**    | Log enrichment, `GlobalLogBuffering`, and `PerIncomingRequestLogBuffering`; `GlobalExceptionHandler` flushes `GlobalLogBuffer` on unhandled errors to preserve preceding debug context                                | Trace-based log sampler in Development; `RandomProbabilisticSampler` in non-Development                                       |
-| **Frontend traces**    | `@workspace/otel` (`@opentelemetry/sdk-node` + OTLP proto exporter) wired via `.WithOtlpExporter()` in AppHost                                                                                                        | Correlates browser-to-gateway HTTP requests with backend W3C traces                                                           |
+1. **Propagate one correlation chain.** Carry trace, request, and operation identifiers across HTTP, RPC, events, and scheduled work.
+2. **Emit structured data.** Use stable field names and structured attributes; avoid embedding sensitive or variable narrative into identifiers.
+3. **Capture the three signals.** Distributed traces explain causality, logs explain local events, and metrics quantify behavior and failure rates.
+4. **Protect telemetry data.** Apply PII and secret redaction before export; do not place payloads or credentials into trace attributes.
+5. **Instrument dependencies consistently.** Cover inbound, outbound, database, broker, cache, external AI, and health interactions according to the capability boundary.
+6. **Separate liveness and readiness.** Liveness identifies an unusable process; readiness identifies whether the process can serve required work.
+7. **Use health as a contract.** Every probe must test a meaningful dependency or process state and avoid cascading load into external systems.
 
-### Privacy-conscious logging and correlation
+<Admonition type="warning">
+	Telemetry proves that an operation or step occurred. It does not prove that an asynchronous
+	business outcome completed; final state must be reconciled through the owning capability.
+</Admonition>
 
-- **Non-serializing CQRS logging:** `LoggingBehavior` records message and response type names, elapsed execution time, and property names without serializing raw payload values. Classified properties log explicitly as redacted.
-- **HMAC redaction:** Hosts handling sensitive customer fields (**Basket API**, **Ordering API**, **Notification**) enable `AddRedaction()` (`HMAC__Key`) to mask sensitive values and apply deterministic HMAC redaction to PII (see [[doc|arc42/08-crosscutting-concepts/001-security-and-privacy]]).
-- **Messaging correlation:** `UseEventFramework()` logs message start at `Debug` level and propagates W3C trace context, `requestid`, and `UserId` in CloudEvents envelope metadata without placing message bodies into trace attributes.
-- **Error-to-trace correlation:** `GlobalExceptionHandler` returns `traceId` (`Activity.Current?.Id ?? httpContext.TraceIdentifier`) inside RFC 9457 `ProblemDetails` so support teams can jump directly to the failing distributed trace.
+## Mechanism / How It Works
 
-## Health checks and operational liveness
+| Signal | Minimum Convention                                                                                                    |
+| :----- | :-------------------------------------------------------------------------------------------------------------------- |
+| Trace  | One request or operation ID chain across synchronous and asynchronous hops; include outcome and dependency attributes |
+| Log    | Timestamp, severity, component, trace and correlation IDs, event reason, and redacted operation context               |
+| Metric | Stable service and operation names; success, failure, latency, saturation, and retry or queue indicators              |
+| Health | Explicit liveness and readiness checks, environment-aware probe endpoints, and dependency timeout bounds              |
 
-| Check / signal                           | Registered by                                  | Tags / schedule                                                     | Availability                               |
-| :--------------------------------------- | :--------------------------------------------- | :------------------------------------------------------------------ | :----------------------------------------- |
-| Default process liveness (`"self"`)      | `BookWorm.ServiceDefaults`                     | `live`                                                              | All .NET hosts                             |
-| Wolverine bus & listeners                | `UseEventFramework()`                          | `live`, `ready` (`AddWolverine`); `ready` (`AddWolverineListeners`) | All Kafka-enabled hosts                    |
-| MailKit SMTP health                      | `BookWorm.Notification` (`MailKitHealthCheck`) | Readiness                                                           | **Notification**                           |
-| Presidio health (`/health`)              | `BookWorm.Hosting.Presidio`                    | Container health probe (port `3000`)                                | `presidio-analyzer`, `presidio-anonymizer` |
-| Commerce frontend health (`/api/health`) | `@bookworm/commerce`                           | HTTP probe                                                          | **Commerce**                               |
-| Scheduler heartbeat (`HeartbeatJob`)     | `BookWorm.Scheduler` (`jobs.json`)             | Every 30 seconds UTC (`0/30 * * * * ?`)                             | **Scheduler**                              |
+## Correlation and Privacy
 
-:::warning
-**Development-only default health endpoints:** `MapDefaultEndpoints()` in `BookWorm.ServiceDefaults` maps `/health` (all checks) and `/alive` (`live` tag) **only when `app.Environment.IsDevelopment()` is true**. Verify explicit Container Apps probe paths and host configuration before relying on HTTP health endpoints in Staging or Production.
-:::
+- Generate or preserve a correlation identifier at the external ingress boundary.
+- Forward that identifier in downstream calls and integration envelopes.
+- Include the same identifier in user-visible error details only when safe to do so.
+- Record entity identifiers and operation names when useful, but do not log raw prompts, secrets, payment details, or full customer payloads.
+- Route sensitive or high-volume diagnostic context through the same redaction and retention controls as other telemetry.
 
-## Local and cloud telemetry endpoints
+## Verification and Governance
 
-- **Local Aspire Dashboard (`launchSettings.json`):** HTTPS profile runs Dashboard at `https://localhost:17290` (`http://localhost:15061`) with OTLP on `https://localhost:21066`; HTTP profile runs Dashboard at `http://localhost:15061` with OTLP on `http://localhost:19005`.
-- **Cloud (Azure Container Apps):** `AzureExtensions.ContainerApp.cs` enables the managed Aspire Dashboard (`WithDashboard()`) and provisions Azure Log Analytics with **90-day retention in Production** and **30-day retention in non-Production**.
+- Test that end-to-end traces survive frontend, gateway, API, worker, and broker hops.
+- Verify metric cardinality and ensure untrusted values cannot create unbounded label sets.
+- Alert on symptom indicators such as error rate and latency, then diagnose with correlated traces and logs.
+- Review probe behavior and telemetry retention for each environment before release.
 
-## Operational limits and trade-offs
+## Related Documentation
 
-- **Telemetry proves execution, not business completion:** A span or log entry proves code executed, not that an asynchronous business outcome completed. Always verify final state in the owning service.
-- **No implicit SLAs:** Sampling ratios, buffer sizes, and retention windows are implementation defaults—formal availability, latency, and alerting targets must be agreed per environment.
-
-## Related documentation
-
-- ADR-BW-013: OpenTelemetry observability — Formal decision record for unified OpenTelemetry instrumentation.
-- [[doc|operational/002-observability-and-diagnostics]] — Practical Aspire Dashboard and Log Analytics KQL queries.
-- [[doc|arc42/08-crosscutting-concepts/001-security-and-privacy]] — HMAC log redaction and PII boundaries.
+- [[doc|operational/002-observability-and-diagnostics]] — Operational dashboards and diagnostic procedures.
+- [[doc|arc42/08-crosscutting-concepts/001-security-and-privacy]] — Redaction and PII boundaries.
+- [[doc|arc42/08-crosscutting-concepts/003-validation-errors-and-resilience]] — Error and retry behavior.

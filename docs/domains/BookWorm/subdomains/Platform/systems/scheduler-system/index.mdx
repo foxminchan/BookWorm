@@ -8,46 +8,15 @@ summary: |
   business data processed by each job.
 scope: internal
 owners:
-  - contributor-team
+  - platform-team
 services:
-  - id: scheduler-dashboard
+  - id: scheduler-service
     version: 1.0.0
 flows:
   - id: product-ingestion
     version: 1.0.0
 containers:
   - id: scheduler-database
-    version: 1.0.0
-entities:
-  - id: qrtz-job-details
-    version: 1.0.0
-  - id: qrtz-triggers
-    version: 1.0.0
-  - id: qrtz-simple-triggers
-    version: 1.0.0
-  - id: qrtz-simprop-triggers
-    version: 1.0.0
-  - id: qrtz-cron-triggers
-    version: 1.0.0
-  - id: qrtz-blob-triggers
-    version: 1.0.0
-  - id: qrtz-calendars
-    version: 1.0.0
-  - id: qrtz-paused-trigger-grps
-    version: 1.0.0
-  - id: qrtz-paused-job-grps
-    version: 1.0.0
-  - id: qrtz-fired-triggers
-    version: 1.0.0
-  - id: qrtz-scheduler-state
-    version: 1.0.0
-  - id: qrtz-locks
-    version: 1.0.0
-  - id: qrtz-execution-history
-    version: 1.0.0
-  - id: qrtz-misfire-history
-    version: 1.0.0
-  - id: qrtz-job-status
     version: 1.0.0
 relationships:
   - id: product-catalog-system
@@ -118,12 +87,12 @@ The Scheduler must not read or write Catalog, Notification, or other domain tabl
 
 ### Scheduled work and contracts
 
-- **Catalog vector maintenance**: Invokes [[command|ProcessCatalogVectorBatch]] on [[service|catalog-ingestion]] as an authenticated Quartz job. Catalog Ingestion uses [[container|catalog-vector]], acquires its own database advisory lock, processes a bounded batch, and acknowledges only revisions that remain current. Target endpoints reject missing or invalid credentials and distinguish unauthorized callers from callers using the wrong client identity.
-- **Notification maintenance**: Coordinates resend (making failed/eligible work runnable), cleanup (removing or archiving records no longer eligible for retry or audit), and heartbeat/health jobs against [[system|notification-system]], which owns the durable [[entity|outbox]] state and delivery eligibility.
+- **Catalog vector maintenance**: Runs `ProcessVectorBatchJob` every five minutes UTC and publishes [[event|ProcessVectorBatchIntegrationEvent]] to `scheduler.process-vector-batch` via Wolverine's PostgreSQL outbox. [[service|catalog-ingestion]] consumes that event via `[KafkaTrigger]`, acquires a PostgreSQL advisory lock on `catalogdb`, updates [[container|catalog-vector]], and acknowledges unchanged revisions.
+- **Liveness monitoring**: Runs `HeartbeatJob` every 30 seconds UTC for internal operational liveness telemetry.
 
 ### Persistence, reliability, and security
 
-- **Quartz persistence**: Operational state resides in `scheduler-database` across [[entity|qrtz-job-details]], [[entity|qrtz-triggers]], cron/simple/blob/calendar tables, paused trigger/job-group tables, [[entity|qrtz-fired-triggers]], [[entity|qrtz-scheduler-state]], locks, job-status, execution-history, and misfire-history entities. Consumers must not query Quartz tables as a job API or infer Catalog/Notification business state from scheduler rows.
+- **Quartz persistence**: Operational state resides in [[container|scheduler-database]] across Quartz.NET tables (`qrtz_job_details`, `qrtz_triggers`, `qrtz_cron_triggers`, `qrtz_simple_triggers`, `qrtz_simprop_triggers`, `qrtz_blob_triggers`, `qrtz_calendars`, `qrtz_paused_trigger_grps`, `qrtz_paused_job_grps`, `qrtz_fired_triggers`, `qrtz_scheduler_state`, `qrtz_locks`, `qrtz_job_status`, `qrtz_execution_history`, and `qrtz_misfire_history`). Consumers must not query Quartz tables as a job API or infer Catalog business state from scheduler rows.
 - **Reliability**: Durable trigger state survives restarts; misfires must remain visible and follow configured recovery policies (never silently skipped); non-concurrent jobs and target-side locks prevent overlapping work; failed invocations remain observable with job, trigger, target, and execution context; retries must be bounded and idempotent.
 - **Monitoring & secrets**: Operators monitor scheduler-instance check-ins, fired-trigger age, misfire/failure counts, execution duration, and last successful run, comparing them against pending vector updates (Catalog) or outbox state and provider health (Notification). Outbound credentials belong in runtime secret configuration; authorization headers, notification content, and personal data must never appear in Quartz metadata or routine logs.
 

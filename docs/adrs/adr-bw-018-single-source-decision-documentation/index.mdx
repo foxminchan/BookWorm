@@ -9,7 +9,7 @@ owners:
   - contributor-team
 appliesTo:
   - type: domain
-    id: BookWorm
+    id: bookworm
 related:
   - id: adr-bw-016-layered-architecture-verification
   - id: adr-bw-017-compatible-contract-evolution
@@ -20,60 +20,56 @@ x-scope: "Whole system (documentation and governance)"
 
 ## Context and problem statement
 
-BookWorm documents architectural structure across arc42 chapters while recording individual whole-system and per-system design decisions in ADRs. Copying full decision rationale or lifecycle status into arc42 Section 9 creates duplicate sources of truth that drift out of sync whenever a service switches backing stores (such as Rating moving to Azure Cosmos DB or Finance adopting Azure Durable Task Scheduler).
+BookWorm describes its structure in one place and records decisions in another. Copying the full explanation into both places can leave them out of date when a choice changes.
 
-BookWorm needs one single-source documentation rule that keeps each decision authoritative in one MADR file while using the ADR register strictly as a navigable index.
+BookWorm needs one authoritative record for each decision, with an index that only helps readers find it.
 
 ## Decision drivers
 
-- **Traceability:** Give architects and contributors one canonical location to inspect decision context, alternatives, consequences, and superseding links.
-- **Zero duplication:** Prevent conflicting status labels and stale rationale between arc42 chapters and individual ADRs.
-- **Clear scope separation:** Distinguish whole-system platform principles (`platform/`) from system-specific implementation decisions (`systems/`).
+- **Traceability:** Give readers one place to review the reason for a decision and any later replacement.
+- **No duplication:** Prevent conflicting descriptions and statuses.
+- **Clear scope:** Separate whole-system choices from choices that belong to one specific area.
 
 ## Considered options
 
-1. Store one authoritative MADR file per decision split into `platform/` and `systems/`, indexed from a single ADR register
-2. Embed full decision rationale inline inside arc42 Section 9
-3. Flatten all system-specific ADRs into one ungrouped root folder
-4. Keep ADRs exclusively inside individual bounded-context folders with no central register
+1. Keep one authoritative record per decision and index those records centrally
+2. Copy full explanations into the overall design chapters
+3. Put every decision in one ungrouped folder
+4. Keep decisions only inside individual area folders
 
 ## Decision outcome
 
-Chosen option: **Store one authoritative MADR file per decision split into `platform/` and `systems/`, indexed from a single ADR register**, because it preserves clear ownership between whole-system and system-level decisions while giving readers one entry point to discover active and superseded records.
+Chosen option: **Keep one authoritative record per decision and index those records centrally**.
 
-Whole-system platform decisions (`ADR-BW-001` through `ADR-BW-018`) reside under `explanation/adrs/platform/`, and system-specific decisions—including superseding records when runtime architecture evolves—reside under `explanation/adrs/systems/`. The ADR register ([[doc|arc42/09-architecture-decisions]], corresponding to arc42 Section 9) lists stable IDs, scopes, statuses, and relative links without copying full decision prose. Whenever a service replaces a previously documented technology choice, maintainers add a new superseding MADR record and update lifecycle links rather than silently rewriting history.
+Whole-system decisions remain separate from system-specific decisions. The index shows which decisions are active and which have been replaced.
+
+When an area replaces a previous choice, maintainers add a new record and link it to the old one instead of rewriting history.
 
 ### Consequences
 
-- **Positive:** Readers navigate directly from arc42 views or `llms.txt` to one canonical decision record with verified source links and explicit lifecycle status.
-- **Negative:** Adding or superseding a decision requires updating both the ADR file's metadata and its entry in the central register.
-- **Follow-up:** Surface active platform and superseding system ADRs in `llms.txt` and keep reconstructed platform records marked `Proposed` until formally accepted by maintainers.
+- **Positive:** Readers find one clear record with its current status and history.
+- **Negative:** Adding or replacing a decision requires updating both the record and the index.
+- **Follow-up:** Keep the index and active decisions current and mark reconstructed decisions as proposed until approved.
 
 ## Pros and cons of the options
 
-### Store one authoritative MADR file per decision split into `platform/` and `systems/`, indexed from a single ADR register
+### Keep one authoritative record per decision and index those records centrally
 
-- **Good**, because every decision has one canonical URL, stable ID, and explicit `Superseded by` chain.
-- **Good**, because separating `platform/` and `systems/` prevents cross-cutting principles from being buried inside service folders.
-- **Bad**, because contributors must remember to register new or superseding ADRs in `explanation/adrs/index.md`.
+- **Good**, because every decision has one clear location and replacement history.
+- **Good**, because whole-system choices are not buried inside one area's records.
+- **Bad**, because contributors must maintain both the record and index.
 
-### Embed full decision rationale inline inside arc42 Section 9
+### Copy full explanations into the overall design chapters
 
-- **Good**, because readers can scroll through every decision on one long page.
-- **Bad**, because long inline prose duplicates individual ADRs and causes rapid status and accuracy drift.
+- **Good**, because readers can see every decision on one page.
+- **Bad**, because duplicate explanations quickly become inconsistent.
 
-### Flatten all system-specific ADRs into one ungrouped root folder
+### Put every decision in one ungrouped folder
 
-- **Good**, because every ADR sits in a single directory.
-- **Bad**, because mixing 18 platform principles with dozens of local service records obscures scope and ownership.
+- **Good**, because every decision is easy to locate by folder.
+- **Bad**, because whole-system and area-specific decisions lose their clear scope.
 
-### Keep ADRs exclusively inside individual bounded-context folders with no central register
+### Keep decisions only inside individual area folders
 
-- **Good**, because local service teams manage their files in isolation.
-- **Bad**, because whole-system decisions lack a clear home and cross-cutting readers miss superseded system records.
-
-## Verification and links
-
-- **Verified against:** `docs/adrs/`, `docs/docs/arc42/09-architecture-decisions/index.mdx`, `docs-review/01-style-guide.md`
-- **Related architecture:** [[doc|arc42/09-architecture-decisions]], [[doc|arc42/00-c4-overview]]
-- **Related ADRs:** ADR-BW-016, ADR-BW-017
+- **Good**, because local teams manage their own decisions.
+- **Bad**, because whole-system decisions become fragmented and replacements may be missed.

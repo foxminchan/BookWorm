@@ -1,38 +1,84 @@
-%%{init: {'theme': 'base', 'themeVariables': {'background': '#f5f5f5', 'primaryColor': '#ffffff', 'primaryTextColor': '#2d3142', 'primaryBorderColor': '#2d3142', 'secondaryColor': '#ececec', 'secondaryBorderColor': '#4f5d75', 'tertiaryColor': '#fdf2ee', 'tertiaryBorderColor': '#bf4520', 'lineColor': '#4f5d75', 'textColor': '#2d3142', 'clusterBkg': '#f8f9fa', 'clusterBorder': '#bfc0c0', 'fontFamily': 'Geist, system-ui, sans-serif'}}}%%
-flowchart LR
-	r1["BW-R1\nBook discovery"]
-	r2["BW-R2\nBasket & checkout"]
-	r3["BW-R3\nOrder lifecycle"]
-	r4["BW-R4\nCustomer feedback"]
-	r5["BW-R5\nAI assistance"]
-	r6["BW-R6\nPlatform ops"]
-	r78["BW-R7 & BW-R8\nAutonomy & contracts"]
+%%{init: {'theme': 'base', 'themeVariables': {'fontFamily': 'Geist, system-ui, sans-serif', 'primaryColor': '#ffffff', 'primaryTextColor': '#2d3142', 'primaryBorderColor': '#2d3142', 'secondaryColor': '#ececec', 'tertiaryColor': '#ececec', 'textColor': '#2d3142', 'lineColor': '#8a94a8', 'edgeLabelBackground': '#ffffff', 'requirementBackground': '#ffffff', 'requirementBorderColor': '#2d3142', 'requirementBorderSize': '1.2', 'requirementTextColor': '#2d3142', 'relationColor': '#8a94a8', 'relationLabelBackground': '#ffffff', 'relationLabelColor': '#2d3142'}}}%%
+requirementDiagram
 
-	catalog["Catalog\n(Postgres + Qdrant + gRPC)"]
-	shopping["Shopping\n(Basket API + Redis)"]
-	ordering["Ordering\n(Ordering API + Finance)"]
-	reviews["Reviews\n(Rating API + Cosmos DB)"]
-	conv["Conversational\n(Chat API + MCP Tools)"]
-	platform["Platform\n(Scheduler + Notification)"]
-	checks["Contract & Fitness Checks\n(PactNet, ArchUnitNET, Buf)"]
+	functionalRequirement BW_R1 {
+	id: "BW-R1"
+	text: "Book discovery and catalog management"
+	risk: medium
+	verifymethod: test
+}
+	functionalRequirement BW_R2 {
+	id: "BW-R2"
+	text: "Basket and checkout"
+	risk: medium
+	verifymethod: test
+}
+	functionalRequirement BW_R3 {
+	id: "BW-R3"
+	text: "Order lifecycle"
+	risk: medium
+	verifymethod: test
+}
+	functionalRequirement BW_R4 {
+	id: "BW-R4"
+	text: "Customer feedback"
+	risk: medium
+	verifymethod: test
+}
+	functionalRequirement BW_R5 {
+	id: "BW-R5"
+	text: "Conversational assistance"
+	risk: medium
+	verifymethod: test
+}
+	functionalRequirement BW_R6 {
+	id: "BW-R6"
+	text: "Shared platform capabilities"
+	risk: medium
+	verifymethod: test
+}
+	designConstraint BW_R7 {
+	id: "BW-R7"
+	text: "Independent capability evolution"
+	risk: medium
+	verifymethod: analysis
+}
+	interfaceRequirement BW_R8 {
+	id: "BW-R8"
+	text: "Explicit integration contracts"
+	risk: medium
+	verifymethod: test
+}
 
-	r1 -->|"Satisfied by"| catalog
-	r2 -->|"Satisfied by"| shopping
-	r2 -->|"Validates prices via gRPC"| catalog
-	r3 -->|"Satisfied by"| ordering
-	r4 -->|"Satisfied by"| reviews
-	r5 -->|"Satisfied by"| conv
-	r6 -->|"Satisfied by"| platform
-	r78 -->|"Verified by"| checks
+	element Catalog {
+	type: "bounded context"
+}
+	element Shopping {
+	type: "bounded context"
+}
+	element Ordering {
+	type: "bounded context"
+}
+	element Reviews {
+	type: "bounded context"
+}
+	element Conversational {
+	type: "bounded context"
+}
+	element Platform {
+	type: "bounded context"
+}
+	element AllContexts {
+	type: "all bounded contexts"
+}
 
-	classDef focal fill:#fdf2ee,stroke:#bf4520,stroke-width:2px,color:#2d3142
-	classDef service fill:#ffffff,stroke:#2d3142,stroke-width:1.2px,color:#2d3142
-	classDef store fill:#ececec,stroke:#4f5d75,stroke-width:1.2px,color:#2d3142
-	classDef input fill:#eef1f6,stroke:#5a6580,stroke-width:1.2px,color:#2d3142
-	classDef ext fill:#f5f5f5,stroke:#949eb2,stroke-width:1px,stroke-dasharray:4 3,color:#4f5d75
-	class r2 focal
-	class ordering,conv,platform,checks service
-	class catalog,shopping,reviews store
-	class r1,r3,r4,r5,r6,r78 input
-	linkStyle 1 stroke:#bf4520,stroke-width:2px
-	linkStyle 2 stroke:#bf4520,stroke-width:2px
+	Catalog - satisfies -> BW_R1
+	Shopping - satisfies -> BW_R2
+	Ordering - satisfies -> BW_R2
+	Ordering - satisfies -> BW_R3
+	Reviews - satisfies -> BW_R4
+	Catalog - satisfies -> BW_R4
+	Conversational - satisfies -> BW_R5
+	Platform - satisfies -> BW_R6
+	AllContexts - satisfies -> BW_R7
+	AllContexts - satisfies -> BW_R8

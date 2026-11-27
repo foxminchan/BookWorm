@@ -53,15 +53,15 @@ Scheduler triggers Catalog Ingestion every five minutes over Kafka; the worker a
 
 ## Trigger and batch execution contract
 
-| Property                     | Value                                                                                                           |
-| :--------------------------- | :-------------------------------------------------------------------------------------------------------------- |
-| **Function name**            | `ProcessVectorBatch`                                                                                            |
-| **Inbound event**            | [[event\|ProcessVectorBatchIntegrationEvent]]                                                                   |
-| **Kafka topic**              | `scheduler.process-vector-batch` (`AppendPrefix = false`)                                                       |
-| **Consumer group**           | `catalog-ingestion`                                                                                             |
-| **Cadence**                  | Every 5 minutes UTC (`0 0/5 * * * ?`), dispatched by [[service\|scheduler-dashboard]] (`ProcessVectorBatchJob`) |
-| **Batch limit**              | Up to `200` pending updates per invocation (controlled by the worker, not the trigger payload)                  |
-| **Target Qdrant collection** | `data-bookworm-snippets`                                                                                        |
+| Property                     | Value                                                                                                         |
+| :--------------------------- | :------------------------------------------------------------------------------------------------------------ |
+| **Function name**            | `ProcessVectorBatch`                                                                                          |
+| **Inbound event**            | [[event\|ProcessVectorBatchIntegrationEvent]]                                                                 |
+| **Kafka topic**              | `scheduler.process-vector-batch` (`AppendPrefix = false`)                                                     |
+| **Consumer group**           | `catalog-ingestion`                                                                                           |
+| **Cadence**                  | Every 5 minutes UTC (`0 0/5 * * * ?`), dispatched by [[service\|scheduler-service]] (`ProcessVectorBatchJob`) |
+| **Batch limit**              | Up to `200` pending updates per invocation (controlled by the worker, not the trigger payload)                |
+| **Target Qdrant collection** | `data-bookworm-snippets`                                                                                      |
 
 ### Processing steps per invocation
 
@@ -74,12 +74,12 @@ Scheduler triggers Catalog Ingestion every five minutes over Kafka; the worker a
 
 ## Failure semantics and operational checks
 
-| Condition                              | Behavior                                                                                        | Recovery behavior                                                                                                 |
-| :------------------------------------- | :---------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------- |
-| Advisory lock held by another instance | Invocation returns immediately with no side effects                                             | Wait for active batch to complete                                                                                 |
-| Embedding or Qdrant failure            | Exception propagates; affected rows are not acknowledged and remain in `pending_vector_updates` | Next 5-minute trigger retries automatically; verify Foundry RBAC and Qdrant connectivity                          |
-| Growing `pending_vector_updates` queue | Catalog writes continue normally while semantic search lags behind                              | Inspect [[service\|scheduler-dashboard]] execution history, `pending_vector_updates` count/age, and Function logs |
-| Concurrent edit during active batch    | Revision mismatch prevents premature acknowledgment                                             | Newer revision is processed on the next scheduled cycle                                                           |
+| Condition                              | Behavior                                                                                        | Recovery behavior                                                                                               |
+| :------------------------------------- | :---------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------- |
+| Advisory lock held by another instance | Invocation returns immediately with no side effects                                             | Wait for active batch to complete                                                                               |
+| Embedding or Qdrant failure            | Exception propagates; affected rows are not acknowledged and remain in `pending_vector_updates` | Next 5-minute trigger retries automatically; verify Foundry RBAC and Qdrant connectivity                        |
+| Growing `pending_vector_updates` queue | Catalog writes continue normally while semantic search lags behind                              | Inspect [[service\|scheduler-service]] execution history, `pending_vector_updates` count/age, and Function logs |
+| Concurrent edit during active batch    | Revision mismatch prevents premature acknowledgment                                             | Newer revision is processed on the next scheduled cycle                                                         |
 
 `VectorBatchProcessor` uses PostgreSQL advisory lock key `740031001` via `pg_try_advisory_lock($1)` and releases it in a `finally` block. Its per-invocation read limit is 200 pending updates.
 
@@ -95,7 +95,7 @@ Scheduler triggers Catalog Ingestion every five minutes over Kafka; the worker a
 
 - [[doc|platform/006-api-and-contracts]] — Consolidated service and messaging directory.
 - [[service|catalog-api]] — Authoritative Catalog service that enqueues vector updates.
-- [[service|scheduler-dashboard]] — Scheduler triggering `ProcessVectorBatchJob`.
+- [[service|scheduler-service]] — Scheduler triggering `ProcessVectorBatchJob`.
 - [[container|catalog-database]] — PostgreSQL `pending_vector_updates` queue and triggers.
 - [[container|catalog-vector]] — Qdrant collection reference.
 

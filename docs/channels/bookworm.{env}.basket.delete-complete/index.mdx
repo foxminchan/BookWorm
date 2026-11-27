@@ -27,71 +27,23 @@ protocols:
   - kafka
 ---
 
-`bookworm.{env}.basket.delete-complete` (v1.0.0) is the Kafka topic owned by Basket API that reports successful checkout basket cleanup to Finance. Basket API publishes `BasketDeletedCompleteIntegrationEvent` as the result of handling `PlaceOrderCommand`. The event reports basket state only; it does not indicate order completion.
+Basket publishes this topic after checkout cleanup succeeds. Finance uses the confirmation to continue the order workflow; it does not mean the order itself is complete.
+
+**Producer:** Basket service. **Consumer:** Finance order coordination.
+
+A repeated checkout request may also produce this confirmation when the basket was already handled. Finance ignores duplicate confirmations once it has recorded the outcome.
 
 ## Channel information
 
 <ChannelInformation />
 
-## Overview
+## Topic and message
 
-| Property                | Value                                                                                                                                                                                                                                                                                                              |
-| :---------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**               | Shopping bounded context (**Basket API**, Aspire resource `basket`)                                                                                                                                                                                                                                                |
-| **Topic pattern**       | `bookworm.{env}.basket.delete-complete` (`AppendPrefix = true`)                                                                                                                                                                                                                                                    |
-| **Producer**            | [[service\|basket-api]] (`PlaceOrderCommandHandler` cascaded message via Wolverine)                                                                                                                                                                                                                                |
-| **Consumer**            | [[service\|order-orchestration]] (`BasketDeletedCompleteTrigger`, Azure Functions `[KafkaTrigger]`, consumer group `finance`)                                                                                                                                                                                      |
-| **Message contract**    | [[event\|BasketDeletedCompleteIntegrationEvent]] (`BookWorm.Contracts.BasketDeletedCompleteIntegrationEvent`)                                                                                                                                                                                                      |
-| **Protocol / format**   | Kafka stream, CloudEvents JSON (`application/json`, camelCase)                                                                                                                                                                                                                                                     |
-| **Partition key**       | `OrderId` (`opts.MessagePartitioning.ByPropertyNamed("OrderId")` in Basket API)                                                                                                                                                                                                                                    |
-| **Delivery guarantee**  | At-least-once                                                                                                                                                                                                                                                                                                      |
-| **Dead-letter channel** | None (Finance consumes via Azure Functions `KafkaTrigger`)                                                                                                                                                                                                                                                         |
-| **Source**              | `src/Services/Basket/BookWorm.Basket/IntegrationEvents/Events/BasketDeletedCompleteIntegrationEvent.cs`, `src/Services/Basket/BookWorm.Basket/IntegrationEvents/EventHandlers/PlaceOrderCommandHandler.cs`, `src/Services/Finance/BookWorm.Finance/Features/Orders/BasketDeletion/BasketDeletedCompleteTrigger.cs` |
+The topic is `bookworm.{env}.basket.delete-complete`. Replace `{env}` with `development`, `staging`, or `production`. Messages are CloudEvents JSON and are keyed by `orderId` so outcomes for an order stay together. The example shows the order ID, deleted basket ID, and order total.
 
-## Parameters and fields
+## Operations and recovery
 
-### Topic parameters
-
-| Parameter | Type     | Required | Default       | Allowed values                         | Description                              |
-| :-------- | :------- | :------- | :------------ | :------------------------------------- | :--------------------------------------- |
-| `{env}`   | `string` | Yes      | `development` | `development`, `staging`, `production` | Kebab-case Aspire host environment name. |
-
-### Payload fields
-
-| Name           | Type                 | Required | Default                 | Constraints               | Description                                  |
-| :------------- | :------------------- | :------- | :---------------------- | :------------------------ | :------------------------------------------- |
-| `id`           | `string` (UUID)      | Yes      | `Guid.CreateVersion7()` | UUID v7                   | Integration-event identifier.                |
-| `creationDate` | `string` (date-time) | Yes      | `DateTime.UtcNow`       | ISO 8601 UTC              | Creation timestamp.                          |
-| `orderId`      | `string` (UUID)      | Yes      | —                       | Valid UUID; partition key | Order and Durable Task instance identifier.  |
-| `basketId`     | `string` (UUID)      | Yes      | —                       | Valid UUID                | Basket that was deleted.                     |
-| `totalMoney`   | `number` (`decimal`) | Yes      | —                       | Non-negative              | Order total copied from `PlaceOrderCommand`. |
-
-### Headers and envelope metadata
-
-| Header / attribute     | Location            | Value / source                                             | Description                         |
-| :--------------------- | :------------------ | :--------------------------------------------------------- | :---------------------------------- |
-| `specversion`          | CloudEvents JSON    | `"1.0"`                                                    | CloudEvents specification version.  |
-| `type` / `messagetype` | CloudEvents JSON    | `BookWorm.Contracts.BasketDeletedCompleteIntegrationEvent` | Explicit `[MessageIdentity]` alias. |
-| `source`               | CloudEvents JSON    | `urn:bookworm:book-worm.basket`                            | Producer URN.                       |
-| `traceparent`          | Kafka header & JSON | W3C Trace Context                                          | Distributed tracing.                |
-| `requestid`            | Envelope header     | Propagated from the incoming `PlaceOrderCommand`           | Log correlation.                    |
-
-## Delivery, partitioning, and consumer behavior
-
-- **When Basket API publishes:** `PlaceOrderCommandHandler` returns this event in two cases. First, when `IBasketRepository.DeleteBasketAsync` returns `true`. Second, when the 24-hour Redis idempotency key for the `OrderId` already exists, so a repeat command is answered without another delete.
-- **Partitioning:** Keyed by `OrderId`.
-- **Finance consumption:** `BasketDeletedCompleteTrigger` deserializes the CloudEvents `data` object and raises external event `BasketDeletedCompleteIntegrationEvent` on `OrderOrchestrator` instance `orderId`. `BasketDeletedCompleteStep` marks the basket deleted, registers a `DeleteBasketFailedCommand` compensation, and publishes [[channel|bookworm.&#123;env&#125;.finance.delete-basket-complete]].
-- **Duplicates:** The orchestrator waits for this event only while `Order.BasketDeleted` is `false`. Extra raised events are not processed again.
-
-## Error responses and dead-letter behavior
-
-| Condition                          | Handling behavior                                                                | Recovery behavior                                                      |
-| :--------------------------------- | :------------------------------------------------------------------------------- | :--------------------------------------------------------------------- |
-| Malformed CloudEvents payload      | `CloudEventsMessageParser.Deserialize` throws in `BasketDeletedCompleteTrigger`. | Inspect `finance` Functions logs and consumer group `finance` offsets. |
-| Durable Task Scheduler unreachable | `RaiseEventAsync` throws.                                                        | Restore `finance-taskhub` connectivity.                                |
-| Orchestration already terminal     | Durable Task ignores events for finished instances.                              | Inspect instance status by `orderId`.                                  |
-
-The Finance and Catalog Ingestion `host.json` files contain no Kafka retry or commit overrides. With `Microsoft.Azure.Functions.Worker.Extensions.Kafka` 4.3.3 defaults, `CommitOnFailure` is `true`: a failed invocation's offset is stored for auto-commit and the message is not retried. If disabled, the extension retries the message in place up to five times, then force-commits and skips it. See the versioned [`KafkaOptions`](https://github.com/Azure/azure-functions-kafka-extension/blob/4.3.3/src/Microsoft.Azure.WebJobs.Extensions.Kafka/Config/KafkaOptions.cs), [`SingleItemFunctionExecutor`](https://github.com/Azure/azure-functions-kafka-extension/blob/4.3.3/src/Microsoft.Azure.WebJobs.Extensions.Kafka/Trigger/SingleItemFunctionExecutor.cs), and [`AsyncCommitStrategy`](https://github.com/Azure/azure-functions-kafka-extension/blob/4.3.3/src/Microsoft.Azure.WebJobs.Extensions.Kafka/Trigger/AsyncCommitStrategy.cs) sources.
+If Finance does not progress, check the Kafka record and Finance service logs using the order ID. Confirm that the order workflow is active before replaying. Replaying a successful cleanup confirmation is safe after the outcome has been recorded; do not treat it as an order-completion signal.
 
 ## Examples
 
@@ -124,9 +76,8 @@ Kafka key: `0193f1a2-1111-7d8e-9f01-23456789abcd` (`orderId`)
 
 ## Related documentation
 
-- [[event|BasketDeletedCompleteIntegrationEvent]] — Event contract.
-- [[channel|bookworm.&#123;env&#125;.finance.place-order]] — Command that triggers this event.
-- [[channel|bookworm.&#123;env&#125;.basket.delete-failed]] — Failure counterpart.
-- [[channel|bookworm.&#123;env&#125;.finance.delete-basket-complete]] — Finance follow-up command.
+- [[channel|bookworm.&#123;env&#125;.finance.place-order]]
+- [[channel|bookworm.&#123;env&#125;.basket.delete-failed]]
+- [[channel|bookworm.&#123;env&#125;.finance.delete-basket-complete]]
 
 <NodeGraph />

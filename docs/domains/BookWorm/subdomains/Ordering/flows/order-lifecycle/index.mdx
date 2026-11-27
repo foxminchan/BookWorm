@@ -57,25 +57,59 @@ steps:
     service:
       id: order-orchestration
       version: 1.0.0
-    next_step:
-      id: order-complete
-      label: Wait for explicit ordering status changes
+    next_steps:
+      - id: finance-complete
+        label: Wait for explicit ordering completion event
+      - id: finance-cancel
+        label: Wait for explicit ordering cancellation event
   - id: order-complete
     title: Ordering publishes order-completion status
     message:
       id: OrderStatusChangedToCompleteIntegrationEvent
       version: 1.0.0
     next_step:
-      id: notification-complete
-      label: Notification may emit the completion email
+      id: finance-complete
+      label: Finance consumes completion event
   - id: order-cancel
     title: Ordering publishes order-cancellation status
     message:
       id: OrderStatusChangedToCancelIntegrationEvent
       version: 1.0.0
     next_step:
+      id: finance-cancel
+      label: Finance consumes cancellation event
+  - id: finance-complete
+    title: Finance emits CompleteOrderCommand
+    service:
+      id: order-orchestration
+      version: 1.0.0
+    next_step:
+      id: complete-order-command
+      label: Publish CompleteOrderCommand to Kafka
+  - id: complete-order-command
+    title: CompleteOrderCommand
+    message:
+      id: CompleteOrderCommand
+      version: 1.0.0
+    next_step:
+      id: notification-complete
+      label: Notification consumes CompleteOrderCommand
+  - id: finance-cancel
+    title: Finance emits CancelOrderCommand
+    service:
+      id: order-orchestration
+      version: 1.0.0
+    next_step:
+      id: cancel-order-command
+      label: Publish CancelOrderCommand to Kafka
+  - id: cancel-order-command
+    title: CancelOrderCommand
+    message:
+      id: CancelOrderCommand
+      version: 1.0.0
+    next_step:
       id: notification-cancel
-      label: Notification may emit the cancellation email
+      label: Notification consumes CancelOrderCommand
   - id: notification-complete
     title: Notification renders and sends the completion message
     service:

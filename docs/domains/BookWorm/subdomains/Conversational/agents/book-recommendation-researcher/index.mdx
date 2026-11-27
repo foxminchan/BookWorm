@@ -93,7 +93,7 @@ Settings are declared in `recommendation-researcher.yaml`:
 
 - `UseAGUIClientContext()` — Propagates active AG-UI run context.
 - `UseDecisionToolSelection()` — Filters candidate tools via Microsoft-Decision-1.
-- `UsePIIMiddleware(sp)` — Screens input and output text via [[service|PresidioAPI]] (`AnalyzeText` and `AnonymizeText` replacing detected PII with `<PII>`); fails closed on error.
+- `UsePIIMiddleware(sp)` — Screens input and output text via [[service|presidio-api]] (`AnalyzeText` and `AnonymizeText` replacing detected PII with `<PII>`); fails closed on error.
 - `UseGuardrailMiddleware()` — Enforces prompt and output guardrails.
 - `UseAIContextProviders(CompactionPipelineFactory.CreateFull(...))` — Applies context compaction.
 

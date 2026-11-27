@@ -43,9 +43,9 @@ This index consolidates every HTTP `v1`, gRPC, AG-UI, Model Context Protocol (MC
 | [[service\|chat-api]]            | `chatting`                                 | `/chatting/*` (`/ag-ui`, `/agents`) | `5026` / `7132`            | AG-UI, Agent Discovery, MCP client, A2A client | `customer` or `admin` + `chatting_read/write`; `chatAgentId`                   | Azure Blob (`chatting-blob`, prefix `ag-ui/`)              |
 | [[service\|mcp-server]]          | `mcptools`                                 | Internal only (custom CORS)         | `5243` / `7193`            | MCP Streamable HTTP (`/mcp`), gRPC client      | `mcptools_read`                                                                | Stateless                                                  |
 | [[service\|notification-api]]    | `notification`                             | Internal only                       | `5259` / `7036`            | Kafka worker, MailKit SMTP                     | Internal worker + Managed Identity (Redis)                                     | Redis idempotency only (no PostgreSQL)                     |
-| [[service\|scheduler-dashboard]] | `scheduler`, `quartz-dashboard`            | `/quartz` (separate UI container)   | `5062` / `7062`            | Quartz.NET + Dashboard Agent, Kafka            | `quartz-dashboard`: Entra ID OIDC `admin` role                                 | PostgreSQL (`schedulerdb` + Wolverine outbox)              |
-| [[service\|oauthapi]]            | `entra`, `entra-agent-identities`          | `/entra/*`                          | External                   | OAuth 2.0 / OIDC                               | Roles: `admin`, `business_user`, `customer`                                    | External provider                                          |
-| [[service\|PresidioAPI]]         | `presidio-analyzer`, `presidio-anonymizer` | Internal only                       | Container `3000`           | HTTP PII `/analyze`, `/anonymize`              | Internal network boundary                                                      | Stateless containers                                       |
+| [[service\|scheduler-service]]   | `scheduler`, `quartz-dashboard`            | `/quartz` (separate UI container)   | `5062` / `7062`            | Quartz.NET + Dashboard Agent, Kafka            | `quartz-dashboard`: Entra ID OIDC `admin` role                                 | PostgreSQL (`schedulerdb` + Wolverine outbox)              |
+| [[service\|oauth-api]]           | `entra`, `entra-agent-identities`          | `/entra/*`                          | External                   | OAuth 2.0 / OIDC                               | Roles: `admin`, `business_user`, `customer`                                    | External provider                                          |
+| [[service\|presidio-api]]        | `presidio-analyzer`, `presidio-anonymizer` | Internal only                       | Container `3000`           | HTTP PII `/analyze`, `/anonymize`              | Internal network boundary                                                      | Stateless containers                                       |
 | [[service\|sendgrid-api]]        | `mailpit` (Dev) / `email` (Azure)          | Internal only                       | SMTP `587`                 | MailKit SMTP (logical OpenAPI v3)              | API key secret (`EMAIL_SMTP_PASSWORD`)                                         | External provider                                          |
 
 ## Protocol interaction overview
@@ -113,9 +113,9 @@ Topics follow `bookworm.{env}.{owner}.{topic}` (`AppendPrefix = true`), except `
 - **Conversational:** [[container|chat-session-blob]] (Azure Blob)
 - **Platform:** [[container|scheduler-database]] (PostgreSQL — see also [[doc|platform/005-quartz-schema]])
 
-### Domain entities (11)
+### Domain entities (10)
 
-- **Catalog:** [[entity|book]], [[entity|author]], [[entity|book-author]], [[entity|category]], [[entity|publisher]]
+- **Catalog:** [[entity|book]], [[entity|author]], [[entity|category]], [[entity|publisher]]
 - **Shopping:** [[entity|basket]], [[entity|basket-item]]
 - **Ordering:** [[entity|order]], [[entity|order-item]], [[entity|buyer]]
 - **Reviews:** [[entity|feedback]]

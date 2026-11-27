@@ -83,7 +83,7 @@ Where `<book.name>`, `<book.description>`, `<author_1, author_2>`, `<category.na
 
 ## Ingestion batching and concurrency
 
-[[service|scheduler-dashboard]] triggers `ProcessVectorBatchFunction` every 5 minutes UTC via the unprefixed Kafka topic `scheduler.process-vector-batch` (consumer group `catalog-ingestion`).
+[[service|scheduler-service]] triggers `ProcessVectorBatchFunction` every 5 minutes UTC via the unprefixed Kafka topic `scheduler.process-vector-batch` (consumer group `catalog-ingestion`).
 
 - **Batch size:** Reads at most `200` rows per run (`BatchSize = 200`), ordered by `pending_vector_updates.updated_at, book_id`.
 - **Single-writer coordination:** Acquires PostgreSQL session advisory lock `740031001` (`pg_try_advisory_lock`) before reading the queue and releases it in `finally`; concurrent invocations exit early (`return 0`).

@@ -9,7 +9,7 @@ owners:
   - platform-team
 appliesTo:
   - type: domain
-    id: BookWorm
+    id: bookworm
 related:
   - id: adr-bw-008-durable-message-handoffs
   - id: adr-004-finance-bounded-scheduled-retries
@@ -22,69 +22,56 @@ x-scope: "Whole system"
 
 ## Context and problem statement
 
-Network calls, databases, Kafka brokers, AI endpoints, and external SMTP servers experience transient failures. Retrying a read-only catalog query has very different consequences from retrying an order checkout, a compensation command, or an outbound customer email. Applying one aggressive retry policy blindly amplifies dependency load and triggers duplicate external side effects.
+Network calls and outside services can fail temporarily. Retrying a harmless search has different consequences from retrying an order, a refund, or an email.
 
-BookWorm requires an operation-aware resilience strategy that reuses safe platform defaults while tailoring timeouts, retries, circuit breakers, and idempotency guards to each capability's side-effect semantics.
+BookWorm needs protection matched to the work being performed. It must avoid repeated attempts that duplicate customer actions or overload another system.
 
 ## Decision drivers
 
-- **Transient recoverability:** Survive brief network or dependency blips without failing customer requests prematurely.
-- **Side-effect safety:** Prevent duplicate order actions, emails, or cascading retry storms under concurrent or repeated execution.
-- **Bounded load and visibility:** Enforce explicit retry budgets, timeouts, rate limits, and dead-letter routing so failures remain observable.
+- **Transient recoverability:** Recover from short interruptions without failing unnecessarily.
+- **Side-effect safety:** Prevent duplicate orders, emails, or refunds.
+- **Controlled failure:** Set clear limits and record failures so teams can respond.
 
 ## Considered options
 
-1. Apply shared budgeted defaults with operation-specific resilience, idempotency, and compensation policies
-2. Apply one identical retry policy to every synchronous and asynchronous operation
-3. Disable retries and resilience pipelines across all services
-4. Treat an HTTP or message idempotency key as a distributed ACID transaction
+1. Use shared limits plus protection matched to each operation
+2. Retry every operation in the same way
+3. Disable retries everywhere
+4. Assume duplicate protection guarantees an all-or-nothing outcome everywhere
 
 ## Decision outcome
 
-Chosen option: **Apply shared budgeted defaults with operation-specific resilience, idempotency, and compensation policies**, because each capability chooses failure handling matched to its idempotency and external side effects.
+Chosen option: **Use shared limits plus protection matched to each operation**.
 
-Verified resilience mechanisms across BookWorm:
+BookWorm will limit retries and waiting time for quick requests. It will pause temporarily failing systems when repeated attempts would be harmful. It will recognize repeated updates and undo work when an automated correction is possible.
 
-- **Outbound HTTP clients (`BookWorm.ServiceDefaults`):** Standard resilience handler with budgeted retries (`UseBudgetedRetries()`) to cap retry amplification, plus Kestrel connection limits and global/per-user rate limiters (`100` concurrent limit, `30 req/min` per IP, `PerUserRateLimit` token bucket).
-- **Caching (`BookWorm.Chassis`):** FusionCache (`2.10.0`) L1/L2 caching with Redis backplane, distributed locking, soft/hard timeouts, and 2-hour fail-safe stale fallback.
-- **Kafka messaging (`BookWorm.Chassis`):** Wolverine retry cooldowns (`50ms`, `250ms`, `1s` with full jitter), per-service dead-letter queues, and 24-hour Redis `IIntegrationEventIdempotencyGuard` for duplicate suppression.
-- **Email delivery (Notification):** Dedicated Polly pipeline combining a circuit breaker, exponential jittered retry (handling transient MailKit `CommandException`, `ProtocolException`, `IOException`, and timeouts), and a `30s` timeout.
-- **Order saga (Finance):** Azure Durable Functions replayable orchestration with configurable `MaxAttempts`, `MaxRetryTimeout`, and explicit compensation activities (`PublishCancelOrderActivity`).
-- **Scheduled jobs (Scheduler):** Quartz.NET persistent PostgreSQL store with misfire handling and 30-day execution history.
-
-No retry policy, broker acknowledgment, or 24-hour idempotency cache claims exactly-once external side effects.
+No retry or duplicate-guard system should be described as guaranteeing that every outside action happens exactly once.
 
 ### Consequences
 
-- **Positive:** Transient failures recover automatically within bounded retry budgets while non-idempotent side effects are guarded by explicit idempotency checks and compensating actions.
-- **Negative:** Contributors must analyze timeouts, duplicate delivery, and failure paths at every new integration boundary rather than relying on one global setting.
-- **Follow-up:** Define environment-specific production latency and retry budgets when formal production SLOs are established.
+- **Positive:** Temporary failures recover without removing important protections.
+- **Negative:** Every new connection must define suitable timeouts and duplicate handling.
+- **Follow-up:** Set live limits only after service-level performance needs are known.
 
 ## Pros and cons of the options
 
-### Apply shared budgeted defaults with operation-specific resilience, idempotency, and compensation policies
+### Use shared limits plus protection matched to each operation
 
-- **Good**, because read-heavy paths use fail-safe caching and budgeted HTTP retries while saga and SMTP workflows use bounded retries, circuit breakers, and compensations.
-- **Good**, because explicit dead-letter queues and circuit breakers surface sustained outages quickly.
-- **Bad**, because resilience settings live across several layers and must be reviewed per workflow.
+- **Good**, because quick reads and sensitive actions receive appropriate handling.
+- **Good**, because sustained failures remain visible.
+- **Bad**, because settings must be reviewed for every workflow.
 
-### Apply one identical retry policy to every synchronous and asynchronous operation
+### Retry every operation in the same way
 
-- **Good**, because configuration lives in a single global policy.
-- **Bad**, because blind retries duplicate non-idempotent side effects and can trigger cascading overload during downstream outages.
+- **Good**, because configuration is simple.
+- **Bad**, because blind retries can duplicate sensitive actions and overload other systems.
 
-### Disable retries and resilience pipelines across all services
+### Disable retries everywhere
 
-- **Good**, because services never issue duplicate outbound requests.
-- **Bad**, because routine cloud network glitches immediately fail customer checkouts, emails, and background jobs.
+- **Good**, because the system never repeats an outside action.
+- **Bad**, because a short interruption immediately fails customer work.
 
-### Treat an HTTP or message idempotency key as a distributed ACID transaction
+### Assume duplicate protection guarantees an all-or-nothing outcome everywhere
 
-- **Good**, because teams write less compensating code.
-- **Bad**, because TTL-bounded caches (such as Redis 24-hour guards) and external SMTP providers cannot guarantee atomic, exactly-once execution.
-
-## Verification and links
-
-- **Verified against:** `src/Aspire/BookWorm.ServiceDefaults/Extensions.cs`, `src/Aspire/BookWorm.ServiceDefaults/Kestrel/RateLimiterExtensions.cs`, `src/BuildingBlocks/BookWorm.Chassis/EventBus/Wolverine/WolverineHostExtensions.cs`, `src/Services/Notification/BookWorm.Notification/Infrastructure/Senders/ResilienceExtensions.cs`, `src/Services/Finance/BookWorm.Finance/Features/Orders/Orchestration/OrderOrchestrator.cs`
-- **Related architecture:** [[doc|arc42/08-crosscutting-concepts/003-validation-errors-and-resilience]], [[doc|arc42/06-runtime-view]]
-- **Related ADRs:** ADR-BW-008, Finance Durable Task Scheduler ADR, Notification Stateless Kafka Worker ADR, [[doc|arc42/09-architecture-decisions]]
+- **Good**, because teams write less recovery code.
+- **Bad**, because outside providers and temporary guards cannot guarantee one exact outcome.

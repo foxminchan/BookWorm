@@ -3,9 +3,9 @@ id: product-ingestion
 name: Product Ingestion
 version: 1.0.0
 summary: >-
-  Catalog API persists product changes in PostgreSQL; Scheduler obtains an
-  access token through Entra ID before invoking Catalog Ingestion to
-  refresh or remove Qdrant vectors and acknowledge durable queued revisions
+  Catalog API persists product changes in PostgreSQL; Scheduler publishes
+  ProcessVectorBatchIntegrationEvent over Kafka to trigger Catalog Ingestion
+  to refresh or remove Qdrant vectors and acknowledge durable queued revisions
   without losing concurrent updates.
 owners:
   - contributor-team
@@ -52,7 +52,7 @@ steps:
       The job disallows concurrent execution and uses FireOnceNow for misfires.
       Invocation failures are logged and reported to Quartz.
     service:
-      id: scheduler-dashboard
+      id: scheduler-service
       version: 1.0.0
     next_step:
       id: request-vector-batch

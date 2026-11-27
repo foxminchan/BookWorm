@@ -1,27 +1,46 @@
-%%{init: {'theme': 'base', 'themeVariables': {'actorBkg': '#ffffff', 'actorBorder': '#2d3142', 'actorTextColor': '#2d3142', 'actorLineColor': '#bfc0c0', 'signalColor': '#4f5d75', 'signalTextColor': '#2d3142', 'labelBoxBkgColor': '#f5f5f5', 'labelBoxBorderColor': '#4f5d75', 'labelTextColor': '#2d3142', 'loopTextColor': '#4f5d75', 'noteBkgColor': '#fdf2ee', 'noteBorderColor': '#bf4520', 'noteTextColor': '#2d3142', 'activationBkgColor': '#ececec', 'activationBorderColor': '#4f5d75', 'fontFamily': 'Geist, system-ui, sans-serif'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': {'actorBkg': '#ffffff', 'actorBorder': '#2d3142', 'actorTextColor': '#2d3142', 'actorLineColor': '#bfc0c0', 'signalColor': '#4f5d75', 'signalTextColor': '#2d3142', 'fontFamily': 'Geist, system-ui, sans-serif'}}}%%
 sequenceDiagram
 	autonumber
-	participant Client as Commerce MFE\n(Next.js 16)
-	participant GW as API Gateway\n(YARP)
-	participant Ord as Ordering API\n(.NET 11 + Marten/PG)
-	participant Bsk as Basket API\n(.NET 11 + Redis)
-	participant Cat as Catalog API\n(.NET 11 + PG)
-	participant Fin as Finance\n(Durable Functions)
-	participant Notif as Notification\n(Kafka + MailKit)
+	participant Commerce as Commerce
+	participant Gateway as API Gateway
+	participant Ordering as Ordering API
+	participant Basket as Basket API
+	participant Catalog as Catalog API
+	participant Finance as Finance
+	participant Notification as Notification
 
-	Client ->> GW: HTTPS POST /ordering/api/v1/orders (x-request-id)
-	GW ->> Ord: Forward POST /api/v1/orders (Entra ID JWT)
-	Ord ->> Bsk: gRPC basket.v1.BasketGrpcService/GetBasket
-	Bsk -->> Ord: Persisted item quantities
-	Ord ->> Cat: gRPC book.v1.BookGrpcService/GetBooks
-	Cat -->> Ord: Authoritative book details & prices
-	Ord ->> Ord: Persist Order snapshot + Marten event + PG outbox
-	Ord -->> Client: 201 Created (orderId)
-	Ord ->> Fin: Kafka: UserCheckedOutIntegrationEvent (key: OrderId)
-	Fin ->> Fin: Start OrderOrchestrator in finance-taskhub
-	Fin ->> Bsk: Kafka: PlaceOrderCommand (key: OrderId)
-	Fin ->> Notif: Kafka: PlaceOrderCommand (key: OrderId)
-	Notif ->> Notif: Redis 24h idempotency -> MJML -> MailKit SMTP
-	Bsk ->> Bsk: Delete basket in Redis
-	Bsk ->> Fin: Kafka: BasketDeletedComplete / FailedIntegrationEvent
-	Fin ->> Ord: Kafka: DeleteBasketComplete / FailedCommand
+	Commerce ->> Gateway: Synchronous checkout request
+	Gateway ->> Ordering: Synchronous validated request
+	Ordering ->> Basket: Synchronous basket read
+	Basket -->> Ordering: Current quantities
+	Ordering ->> Catalog: Synchronous catalog and price read
+	Catalog -->> Ordering: Authoritative book data
+
+	alt Duplicate request or basket/catalog read failure
+		Ordering -->> Commerce: Return prior order or reject without commit
+	else New request and reads succeed
+		Ordering ->> Ordering: Commit order and purchase-time snapshot
+		Ordering -->> Commerce: Synchronous order identifier
+		Ordering -->> Finance: Asynchronous checkout fact
+	end
+
+	Finance ->> Finance: Start order workflow
+
+	par Independent downstream work
+		Finance -->> Basket: Asynchronous basket cleanup command
+		Finance -->> Notification: Asynchronous email command
+	end
+
+	alt Basket cleanup succeeds
+		Basket ->> Basket: Delete basket
+		Basket -->> Finance: Cleanup succeeded
+	else Basket cleanup fails or times out
+		Basket -->> Finance: Cleanup failed
+		Finance ->> Finance: Retry bounded cleanup attempts
+
+		opt Retry limit exhausted
+			Finance -->> Notification: Compensation email command
+		end
+	end
+
+	Notification ->> Notification: Apply idempotency and send email

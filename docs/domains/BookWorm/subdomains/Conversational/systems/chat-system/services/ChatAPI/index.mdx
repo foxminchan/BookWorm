@@ -83,7 +83,7 @@ Chat API does **not** host A2A server endpoints (`/a2a/{agentName}` or gRPC A2A 
 ## Downstream integrations and boundaries
 
 - **MCP Tools ([[service|mcp-server]]):** `book`, `catalog-researcher`, and `recommendation-researcher` connect over Streamable HTTP (`/mcp`) with OBO token exchange and load only `search_catalog`, `get_book`, `list_categories`, and `list_authors`. `qa` loads no MCP tools.
-- **Presidio PII middleware ([[service|PresidioAPI]]):** Every specialist agent runs fail-closed PII detection (`POST /analyze`) and anonymization (`POST /anonymize`) on inputs and outputs. Presidio failures propagate and abort the turn rather than bypassing privacy checks.
+- **Presidio PII middleware ([[service|presidio-api]]):** Every specialist agent runs fail-closed PII detection (`POST /analyze`) and anonymization (`POST /anonymize`) on inputs and outputs. Presidio failures propagate and abort the turn rather than bypassing privacy checks.
 - **Read-only business boundary:** Chat API never places orders, modifies baskets, writes reviews, or publishes Kafka integration events.
 
 ### Error responses
@@ -106,7 +106,7 @@ Chat API does **not** host A2A server endpoints (`/a2a/{agentName}` or gRPC A2A 
 - [[agent|book-agent]] — Primary catalog and recommendation specialist.
 - [[agent|qa-agent]] — Store-policy specialist.
 - [[container|chat-session-blob]] — Azure Blob Storage (`chatting-blob`) session persistence.
-- [[service|PresidioAPI]] — PII detection and anonymization sidecars.
+- [[service|presidio-api]] — PII detection and anonymization sidecars.
 - [[service|mcp-server]] — Read-only Catalog MCP server.
 
 <NodeGraph />

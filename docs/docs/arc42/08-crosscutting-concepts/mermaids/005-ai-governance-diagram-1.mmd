@@ -1,26 +1,33 @@
 %%{init: {'theme': 'base', 'themeVariables': {'background': '#f5f5f5', 'primaryColor': '#ffffff', 'primaryTextColor': '#2d3142', 'primaryBorderColor': '#2d3142', 'secondaryColor': '#ececec', 'secondaryBorderColor': '#4f5d75', 'tertiaryColor': '#fdf2ee', 'tertiaryBorderColor': '#bf4520', 'lineColor': '#4f5d75', 'textColor': '#2d3142', 'clusterBkg': '#f8f9fa', 'clusterBorder': '#bfc0c0', 'fontFamily': 'Geist, system-ui, sans-serif'}}}%%
-flowchart LR
-	in["User Prompt\n(AG-UI / A2A)"]
-	screen["1. Input Validation\n(Length + Prompt Injection)"]
-	route["2. Decision Router + HITL\n(MicrosoftDecision1 + RequestPort)"]
-	pii["3. Presidio & Guardrails\n(PII Anonymization + Untrusted Isolation)"]
-	gov["4. Governance Kernel\n(Deny-by-Default YAML + Circuit Breaker)"]
-	tools["5. Scoped Tools & Models\n(ModelRouter, MCP Tools, Rating A2A)"]
+flowchart TB
+	Input["User or External Input"]
+	Screen["Input and Prompt Screening"]
+	Route["Domain and Confidence Routing"]
+	Privacy["PII Anonymization and Isolation"]
+	Policy["Deny-by-Default Policy"]
+	Identity["Caller and Agent Isolation"]
+	Action["Approved Model or Tool"]
+	Human["Human Clarification or Approval"]
+	Audit["Audit and Evaluation Record"]
 
-	in -->|"Entra JWT + Claims Isolation"| screen
-	screen -->|"Accepted"| route
-	route -->|"In-Scope Route"| pii
-	pii -->|"Redacted Context"| gov
-	gov -->|"Policy Allowed"| tools
+	Input -->|"Authenticated context"| Screen
+	Screen -->|"Accepted"| Route
+	Screen -->|"Unsafe or malformed"| Audit
+	Route -->|"High confidence"| Privacy
+	Route -->|"Low confidence or out of scope"| Human
+	Privacy --> Identity
+	Identity -->|"Claims and workload verified"| Policy
+	Policy -->|"Explicit allow"| Action
+	Policy -->|"Denied or uncertain"| Human
+	Action --> Audit
+	Human -->|"Approved or clarified"| Audit
+	Human -->|"Rejected"| Audit
 
 	classDef focal fill:#fdf2ee,stroke:#bf4520,stroke-width:2px,color:#2d3142
 	classDef service fill:#ffffff,stroke:#2d3142,stroke-width:1.2px,color:#2d3142
 	classDef store fill:#ececec,stroke:#4f5d75,stroke-width:1.2px,color:#2d3142
 	classDef input fill:#eef1f6,stroke:#5a6580,stroke-width:1.2px,color:#2d3142
-	classDef ext fill:#f5f5f5,stroke:#949eb2,stroke-width:1px,stroke-dasharray:4 3,color:#4f5d75
-	class screen focal
-	class route,gov,tools service
-	class in input
-	class pii ext
-	linkStyle 0 stroke:#bf4520,stroke-width:2px
-	linkStyle 1 stroke:#bf4520,stroke-width:2px
+	class Screen,Privacy,Policy focal
+	class Route,Identity,Action,Human service
+	class Audit store
+	class Input input

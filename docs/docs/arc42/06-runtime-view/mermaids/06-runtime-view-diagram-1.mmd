@@ -1,29 +1,46 @@
-%%{init: {'theme': 'base', 'themeVariables': {'background': '#f5f5f5', 'primaryColor': '#ffffff', 'primaryTextColor': '#2d3142', 'primaryBorderColor': '#2d3142', 'secondaryColor': '#ececec', 'secondaryBorderColor': '#4f5d75', 'tertiaryColor': '#fdf2ee', 'tertiaryBorderColor': '#bf4520', 'lineColor': '#4f5d75', 'textColor': '#2d3142', 'clusterBkg': '#f8f9fa', 'clusterBorder': '#bfc0c0', 'fontFamily': 'Geist, system-ui, sans-serif'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': {'background': '#f5f5f5', 'primaryTextColor': '#2d3142', 'lineColor': '#4f5d75', 'fontFamily': 'Geist, system-ui, sans-serif'}}}%%
 flowchart LR
-	customer["Customer\n(Browser)"]
-	gateway["API Gateway\n(YARP Reverse Proxy)"]
-	commerce["Commerce & Storefront\n(Next.js 16 MFEs)"]
-	sync["Ordering, Catalog, Rating, Chat\n(.NET 11 APIs)"]
-	kafka["Kafka Broker\n(CloudEvents JSON)"]
-	async["Finance, Catalog Ingestion, Notification\n(Workers & Functions)"]
-	scheduler["Scheduler\n(Quartz.NET)"]
 
-	customer -->|"HTTPS"| gateway
-	gateway -->|"HTTP Zones"| commerce
-	commerce -->|"HTTPS REST / AG-UI"| sync
-	sync -->|"gRPC / A2A / MCP"| sync
-	sync -->|"Kafka Events"| kafka
-	scheduler --> |"Cron: Kafka Event"| kafka
-	kafka -->|"Kafka Consumers & Triggers"| async
+	subgraph request["Customer Request"]
+		direction TB
+		customer["Customer or Administrator"]
+		gateway["API Gateway"]
+		edge["Storefront, Commerce, and Backoffice"]
+		customer -->|"HTTPS"| gateway
+		gateway -->|"HTTPS"| edge
+	end
 
-	classDef focal fill:#fdf2ee,stroke:#bf4520,stroke-width:2px,color:#2d3142
-	classDef service fill:#ffffff,stroke:#2d3142,stroke-width:1.2px,color:#2d3142
-	classDef store fill:#ececec,stroke:#4f5d75,stroke-width:1.2px,color:#2d3142
-	classDef input fill:#eef1f6,stroke:#5a6580,stroke-width:1.2px,color:#2d3142
-	classDef ext fill:#f5f5f5,stroke:#949eb2,stroke-width:1px,stroke-dasharray:4 3,color:#4f5d75
+	subgraph services["Synchronous Services"]
+		direction TB
+		sync["Ordering API<br/>Catalog API<br/>Basket API<br/>Rating API<br/>Chat API"]
+	end
+
+	subgraph eventWork["Event-Driven Work"]
+		direction TB
+		scheduler["Scheduler"]
+		broker["Kafka Broker"]
+		async["Finance<br/>Notification<br/>Catalog Ingestion"]
+		scheduler -.->|"Scheduled trigger"| broker
+		broker -.->|"Asynchronous delivery"| async
+	end
+
+	stores[("Authoritative and Derived State")]
+
+	request -->|"Synchronous requests"| services
+	services -->|"Direct data calls"| stores
+	services -.->|"Asynchronous facts or commands"| eventWork
+	eventWork -->|"State updates or side effects"| stores
+
+	classDef focal fill:#fdf2ee,stroke:#bf4520,stroke-width:2px
+	classDef syncNode fill:#ffffff,stroke:#2d3142,stroke-width:1.5px
+	classDef asyncNode fill:#eef1f6,stroke:#5a6580,stroke-width:1.5px
+	classDef storeNode fill:#ececec,stroke:#4f5d75
 	class sync focal
-	class gateway,async service
-	class customer,commerce,scheduler input
-	class kafka ext
-	linkStyle 2 stroke:#bf4520,stroke-width:2px
-	linkStyle 3 stroke:#bf4520,stroke-width:2px
+	class customer,gateway,edge syncNode
+	class broker,scheduler,async asyncNode
+	class stores storeNode
+	linkStyle 0,1,4,5,7 stroke:#bf4520,stroke-width:2px
+	linkStyle 2,3,6 stroke:#5a6580,stroke-width:2px,stroke-dasharray:5 4
+	style request fill:#f8f9fa,stroke:#bfc0c0
+	style services fill:#fdf2ee,stroke:#bf4520,stroke-width:2px
+	style eventWork fill:#f8f9fa,stroke:#bfc0c0

@@ -1,23 +1,21 @@
-%%{init: {'theme': 'base', 'themeVariables': {'background': '#f5f5f5', 'primaryColor': '#ffffff', 'primaryTextColor': '#2d3142', 'primaryBorderColor': '#2d3142', 'secondaryColor': '#ececec', 'secondaryBorderColor': '#4f5d75', 'tertiaryColor': '#fdf2ee', 'tertiaryBorderColor': '#bf4520', 'lineColor': '#4f5d75', 'textColor': '#2d3142', 'clusterBkg': '#f8f9fa', 'clusterBorder': '#bfc0c0', 'fontFamily': 'Geist, system-ui, sans-serif'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': {'background': '#f5f5f5', 'primaryTextColor': '#2d3142', 'lineColor': '#4f5d75', 'fontFamily': 'Geist, system-ui, sans-serif'}}}%%
 flowchart LR
-    quartz["Scheduler\n(Quartz.NET 4.8.1)"]
-    pg[("PostgreSQL\n(schedulerdb + wolverine outbox)")]
-    kafka["Kafka Broker\n(scheduler.process-vector-batch)"]
-    ingest["Catalog Ingestion\n(Azure Functions Worker)"]
-    otel["OpenTelemetry\n(Aspire Dashboard / Log Analytics)"]
+	scheduler["Scheduler"]
+	state[("Scheduled Jobs and History")]
+	broker["Kafka Broker"]
+	ingestion["Catalog Ingestion"]
+	heartbeat["Operational Liveness"]
 
-    quartz <-->|"SQL: Persist triggers & 30d history"| pg
-    quartz -->|"Every 5 min UTC: ProcessVectorBatchIntegrationEvent"| kafka
-    kafka -->|"KafkaTrigger (group: catalog-ingestion)"| ingest
-    quartz -->|"Every 30s UTC: HeartbeatJob log/telemetry"| otel
+	scheduler -->|"Persist and recover schedules"| state
+	scheduler -.->|"Every 5 minutes: batch trigger"| broker
+	broker -.->|"Asynchronous batch request"| ingestion
+	scheduler -.->|"Every 30 seconds: heartbeat"| heartbeat
 
-	classDef focal fill:#fdf2ee,stroke:#bf4520,stroke-width:2px,color:#2d3142
-	classDef service fill:#ffffff,stroke:#2d3142,stroke-width:1.2px,color:#2d3142
-	classDef store fill:#ececec,stroke:#4f5d75,stroke-width:1.2px,color:#2d3142
-	classDef input fill:#eef1f6,stroke:#5a6580,stroke-width:1.2px,color:#2d3142
-	classDef ext fill:#f5f5f5,stroke:#949eb2,stroke-width:1px,stroke-dasharray:4 3,color:#4f5d75
-	class quartz focal
-	class ingest,otel service
-	class pg,kafka store
-	linkStyle 0 stroke:#bf4520,stroke-width:2px
-	linkStyle 1 stroke:#bf4520,stroke-width:2px
+	classDef focal fill:#fdf2ee,stroke:#bf4520,stroke-width:2px
+	classDef service fill:#ffffff,stroke:#2d3142,stroke-width:1.5px
+	classDef asyncNode fill:#eef1f6,stroke:#5a6580,stroke-width:1.5px
+	classDef store fill:#ececec,stroke:#4f5d75
+	class scheduler focal
+	class ingestion,heartbeat service
+	class broker asyncNode
+	class state store

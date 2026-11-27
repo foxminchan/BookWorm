@@ -1,25 +1,27 @@
-%%{init: {'theme': 'base', 'themeVariables': {'actorBkg': '#ffffff', 'actorBorder': '#2d3142', 'actorTextColor': '#2d3142', 'actorLineColor': '#bfc0c0', 'signalColor': '#4f5d75', 'signalTextColor': '#2d3142', 'labelBoxBkgColor': '#f5f5f5', 'labelBoxBorderColor': '#4f5d75', 'labelTextColor': '#2d3142', 'loopTextColor': '#4f5d75', 'noteBkgColor': '#fdf2ee', 'noteBorderColor': '#bf4520', 'noteTextColor': '#2d3142', 'activationBkgColor': '#ececec', 'activationBorderColor': '#4f5d75', 'fontFamily': 'Geist, system-ui, sans-serif'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': {'actorBkg': '#ffffff', 'actorBorder': '#2d3142', 'actorTextColor': '#2d3142', 'actorLineColor': '#bfc0c0', 'signalColor': '#4f5d75', 'signalTextColor': '#2d3142', 'fontFamily': 'Geist, system-ui, sans-serif'}}}%%
 sequenceDiagram
 	autonumber
-	participant Client as Storefront / Backoffice\n(Next.js 16)
-	participant GW as API Gateway\n(YARP)
-	participant Rating as Rating API\n(.NET 11 + Cosmos DB)
-	participant Kafka as Kafka Broker\n(CloudEvents JSON)
-	participant Cat as Catalog API\n(.NET 11 + PostgreSQL)
+	participant Client as Storefront or Backoffice
+	participant Gateway as API Gateway
+	participant Rating as Rating API
+	participant Broker as Kafka Broker
+	participant Catalog as Catalog API
 
-	Client ->> GW: HTTPS POST /rating/api/v1/feedbacks (Entra ID JWT)
-	GW ->> Rating: Forward POST /api/v1/feedbacks
-	Rating ->> Rating: Validate & persist Feedback in Cosmos DB (ratingdb/feedbacks, /bookId)
-	Rating -->> Client: 201 Created
-	Rating ->> Kafka: FeedbackCreatedIntegrationEvent (key: BookId/FeedbackId)
-	Kafka ->> Cat: Deliver to Catalog API (PostgreSQL inbox + Redis idempotency)
+	Client ->> Gateway: Synchronous feedback create or delete
+	Gateway ->> Rating: Synchronous validated request
+	Rating ->> Rating: Commit authoritative feedback
+	Rating -->> Client: Synchronous write result
+	Rating -->> Broker: Asynchronous feedback fact
+	Broker -->> Catalog: Durable delivery
 
-	alt Book exists in catalogdb
-		Cat ->> Cat: Recalculate derived average rating & review count on Book
-	else Book does not exist
-		Cat ->> Kafka: BookUpdatedRatingFailedIntegrationEvent
-		Kafka ->> Rating: Deliver compensation event
-		Rating ->> Rating: Delete invalid Feedback from Cosmos DB
+	alt Duplicate event
+		Catalog ->> Catalog: Ignore through idempotency guard
+	else Existing book
+		Catalog ->> Catalog: Recalculate derived rating summary
+	else Missing or deleted book
+		Catalog -->> Broker: Asynchronous failed-projection fact
+		Broker -->> Rating: Compensation delivery
+		Rating ->> Rating: Delete invalid feedback
+	else Temporary processing failure
+		Catalog ->> Catalog: Retry, then dead-letter if exhausted
 	end
-
-	Note over Client,Cat: Deletion path: DELETE /rating/api/v1/feedbacks/{id} -> FeedbackDeletedIntegrationEvent -> Catalog decrements derived summary

@@ -1,6 +1,6 @@
 ---
 title: Checkout and Order Coordination
-summary: Runtime path from checkout through Order creation and Finance-coordinated Basket cleanup.
+summary: Checkout creation and asynchronous basket and email coordination.
 owners:
   - contributor-team
 badges:
@@ -9,61 +9,39 @@ badges:
     textColor: purple
 ---
 
-Customer checkout converts a mutable Redis basket into an authoritative, purchase-time order snapshot in **Ordering API** (PostgreSQL + Marten) before handing post-checkout basket cleanup and email dispatch to **Finance** (Azure Durable Functions). This split returns an immediate `201 Created` order ID to **Commerce** while isolating checkout latency from asynchronous cleanup and email delivery.
+Checkout converts a mutable basket into an authoritative purchase-time order, then delegates basket cleanup and email delivery to asynchronous coordination. The synchronous portion establishes the order before the customer receives the order identifier.
 
-## Scope and constraints
+## Purpose & Trigger
 
-- **Scope:** Synchronous order creation from **Commerce** (`/basket`, `/checkout`) through **API Gateway** (YARP) to **Ordering API**, synchronous gRPC reads to **Basket API** and **Catalog API**, and asynchronous saga coordination across **Finance**, **Basket API**, **Ordering API**, and **Notification**.
-- **Out of scope:** Payment gateway settlement (**Finance** is an order-coordination saga orchestrator, not a payment processor) and post-order administrative fulfillment workflows.
-- **Key constraints:** Mutating `POST` and `PATCH` endpoints on **Ordering API** require an `x-request-id` header enforced by `IdempotencyEndpointFilter` (atomic Redis `SET NX`, 1-hour TTL). All checkout Kafka topics partition by `OrderId` to preserve per-order message ordering.
+The flow creates an order with immutable item and price snapshots while keeping external cleanup outside the ordering transaction. It starts when an authenticated customer submits a checkout request.
 
-## Building block view
+## Visual References
 
-| Building block   | Bounded context | Technology                                                                                           | Owned state / responsibility                                                                                                  | Source path                                       |
-| :--------------- | :-------------- | :--------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------ |
-| **Commerce**     | Edge (Frontend) | Next.js 16 microfrontend (MFE) (`@bookworm/commerce`)                                                | Authenticated `/basket`, `/checkout`, and `/account` UI; shares Entra ID session with **Storefront**                          | `src/Clients/apps/commerce`                       |
-| **API Gateway**  | Edge            | YARP Reverse Proxy (`gateway`)                                                                       | Sole public ingress routing `/checkout/*` to **Commerce** and `/ordering/*` to **Ordering API**                               | `src/Aspire/BookWorm.AppHost/Extensions/Proxy`    |
-| **Ordering API** | Ordering        | .NET 11 Minimal API, EF Core + Marten (PostgreSQL `orderingdb`), Redis, Wolverine                    | Authoritative orders, purchase-time item/price snapshots, statuses (`New`, `Cancelled`, `Completed`), PostgreSQL outbox/inbox | `src/Services/Ordering/BookWorm.Ordering`         |
-| **Basket API**   | Shopping        | .NET 11 Minimal API + gRPC, Redis (`redis`), Wolverine                                               | Customer-scoped pre-order baskets; serves `GetBasket` over gRPC and deletes baskets on `PlaceOrderCommand`                    | `src/Services/Basket/BookWorm.Basket`             |
-| **Catalog API**  | Catalog         | .NET 11 Minimal API + gRPC, PostgreSQL (`catalogdb`)                                                 | Authoritative book metadata and prices served via gRPC `GetBooks`                                                             | `src/Services/Catalog/BookWorm.Catalog`           |
-| **Finance**      | Ordering        | Azure Durable Functions (`OrderOrchestrator`), Durable Task Scheduler (`finance-taskhub`), Wolverine | Stateful saga coordinating basket deletion, retries, and email commands (no PostgreSQL DB)                                    | `src/Services/Finance/BookWorm.Finance`           |
-| **Notification** | Platform        | .NET 11 Worker, Wolverine, MailKit, Mjml.Net, Redis                                                  | Stateless email worker sending confirmation/cancellation emails with 24-hour Redis idempotency                                | `src/Services/Notification/BookWorm.Notification` |
-
-## Runtime view
-
-This sequence diagram traces synchronous order creation followed by Finance-coordinated basket cleanup and email notification.
+_Checkout and Order Coordination_
 
 <MermaidFileLoader file="mermaids/001-checkout-and-order-coordination-diagram-1.mmd" />
 
-### Step-by-step behavior
+## Step-by-Step Walkthrough
 
-1. **Idempotent checkout submission:** **Commerce** submits `POST /ordering/api/v1/orders` through **API Gateway** with a unique `x-request-id` header and Microsoft Entra ID bearer token (`customer` role + `ordering_write` scope). **Ordering API** atomically claims `POST:/api/v1/orders:{requestId}` in Redis (`When.NotExists`, 1-hour TTL), returning `409 Conflict` for duplicates and deleting the key if a `5xx` error or exception occurs.
-2. **Authoritative fact assembly:** **Ordering API** reads current item quantities from **Basket API** over gRPC (`GetBasket`) and resolves authoritative book titles and prices from **Catalog API** over gRPC (`GetBooks`).
-3. **Order persistence and immediate response:** **Ordering API** persists the new `Order` with an immutable purchase-time item/price snapshot in PostgreSQL (`orderingdb`), records the domain event in Marten (`OrderSummary` projection), writes `UserCheckedOutIntegrationEvent` to its PostgreSQL Wolverine outbox in the same transaction, and returns `201 Created` with the order ID.
-4. **Saga start and parallel fan-out:** **Finance** receives `UserCheckedOutIntegrationEvent` (`bookworm.{env}.ordering.user-checked-out`) via Kafka trigger, starts an `OrderOrchestrator` instance correlated by `OrderId` in Azure Durable Task Scheduler (`finance-taskhub`), registers a `CancelOrderCommand` compensation if an email address exists, and publishes `PlaceOrderCommand` (`bookworm.{env}.finance.place-order`).
-5. **Independent downstream consumption:**
-   - **Basket API** consumes `PlaceOrderCommand`, deletes the customer's basket from Redis, and publishes `BasketDeletedCompleteIntegrationEvent` (`bookworm.{env}.basket.delete-complete`) or `BasketDeletedFailedIntegrationEvent` (`bookworm.{env}.basket.delete-failed`).
-   - **Notification** consumes `PlaceOrderCommand` independently, checks its 24-hour Redis idempotency guard, renders the MJML order confirmation template, and sends the email via MailKit SMTP (Mailpit locally, SendGrid SMTP in cloud).
-6. **Outcome forwarding and compensation:** **Finance** forwards the basket outcome to **Ordering API** via `DeleteBasketCompleteCommand` (`bookworm.{env}.finance.delete-basket-complete`) or `DeleteBasketFailedCommand` (`bookworm.{env}.finance.delete-basket-failed`). On cleanup failure, **Ordering API** may soft-delete the order if still present without changing its business status to `Cancelled` or publishing a business cancellation event.
+1. Commerce sends the checkout request through API Gateway, including the caller's idempotency identity.
+2. Ordering API synchronously reads current basket quantities from Basket API and authoritative book and price data from Catalog API.
+3. Ordering API records the order and purchase-time snapshots, commits the state, and returns the order identifier. This synchronous response does not mean basket cleanup or email delivery has completed.
+4. Ordering API publishes a checkout fact asynchronously. Finance starts a workflow correlated by the order identifier.
+5. Finance publishes basket cleanup and email commands independently. Basket API and Notification consume the commands in separate paths.
+6. Basket API deletes the basket and reports success or failure asynchronously.
+7. Notification applies idempotency and submits the email independently of basket cleanup.
+8. Finance records the basket outcome and reconciles the workflow. A timeout or repeated failure triggers bounded compensation rather than a distributed transaction.
 
-## Timeout, retry, and consistency rules
+## Error Handling & Edge Cases
 
-- **Bounded retry window:** `OrderStateMachine` defaults (`src/Services/Finance/BookWorm.Finance/appsettings.json`) set `MaxAttempts: 3` and `MaxRetryTimeout: 00:30:00` (30 minutes). If basket cleanup remains unresolved when a timer expires, **Finance** reissues `PlaceOrderCommand` (up to 2 reissues after the initial publish).
-- **Duplicate downstream work:** Reissuing `PlaceOrderCommand` triggers both **Basket API** and **Notification** again. Deleting an already-absent basket is safe, while a reissued `PlaceOrderCommand` with a new message ID can cause **Notification** to send a second confirmation email.
-- **Timeout expiration does not cancel the order:** When all 3 attempts exhaust the coordination window, **Finance** runs its registered compensation—publishing `CancelOrderCommand` (`bookworm.{env}.finance.cancel-order`) to **Notification** if customer email details exist—and terminates the orchestration. **Finance** does not call **Ordering API** to transition the order to `Cancelled`.
-- **Authoritative status verification:** Never infer order status from a missing basket, an expired Finance orchestration, or a cancellation email. Always read authoritative order status (`New`, `Cancelled`, `Completed`) from **Ordering API**.
+- Repeated checkout requests use the same idempotency identity and must not create a second order.
+- Basket or catalog read failures leave checkout uncommitted and allow a caller retry.
+- Kafka retries may duplicate downstream commands; basket deletion and email delivery must remain repeatable safely.
+- A missing basket outcome is bounded by a workflow timeout and retry limit.
+- Timeout compensation may notify the customer, but it does not by itself change the authoritative order status.
 
-## Quality scenarios and known risks
+## Quality & Consistency Notes
 
-| Quality attribute / risk | Scenario or exposure                                                                                                 | Current mitigation or gap                                                                                                                        |
-| :----------------------- | :------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Performance**          | Checkout completes while SMTP provider is slow or degraded.                                                          | Order commits synchronously in **Ordering API** (`201 Created`); basket cleanup and email dispatch run asynchronously via Kafka and **Finance**. |
-| **Data consistency**     | Book price changes in **Catalog API** immediately after checkout.                                                    | **Ordering API** stores an immutable purchase-time price snapshot at order creation; later catalog price edits do not alter existing orders.     |
-| **Compensation clarity** | Finance times out after 30 minutes and sends a cancellation email while the order remains `New` in **Ordering API**. | Documented operational boundary: support and operators verify order state in **Ordering API** and follow Ordering runbooks.                      |
-
-## Related architecture decisions
-
-| ADR                                      | Decision summary                                                                                               | Status    |
-| :--------------------------------------- | :------------------------------------------------------------------------------------------------------------- | :-------- |
-| ADR: Stateless Kafka notification worker | Decouples order email delivery via stateless Kafka + Redis idempotency.                                        | Accepted  |
-| [[doc\|arc42/09-architecture-decisions]] | Platform and system ADRs covering Durable Functions orchestration, Marten event sourcing, and gRPC boundaries. | Reference |
+- Checkout latency depends on basket and catalog reads, plus the synchronous order commit; slow email delivery is outside this critical path.
+- The order preserves purchase-time prices and remains independent of later catalog changes.
+- Basket cleanup, email delivery, and workflow completion are eventually consistent with the committed order.

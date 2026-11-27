@@ -1,6 +1,6 @@
 ---
 title: Infrastructure Level 1
-summary: Logical deployment overview and software-to-infrastructure mapping for BookWorm.
+summary: Cloud environments, trust boundaries, and building-block placement.
 owners:
   - contributor-team
 badges:
@@ -9,53 +9,40 @@ badges:
     textColor: blue
 ---
 
-BookWorm deploys to Azure through **Aspire 17** (`aspire deploy`) into a single Azure Container Apps environment (`aca`, `Consumption` workload profile) paired with passwordless Azure-managed data, AI, and identity services. All 16 core Container Apps (the YARP `API Gateway`, three Next.js 16 microfrontends, ten .NET 11 backend services/functions, and two Presidio containers) plus `quartz-dashboard` run side-by-side with local-container parity during development.
+## Overview and Motivation
 
-## System distribution
+Azure deployments place application workloads in Azure Container Apps and stateful dependencies in Azure-managed services, with Confluent Cloud, Qdrant Cloud, SendGrid, and Microsoft Entra ID as separate service boundaries. Local development substitutes persistent containers and emulators for most managed resources. The environments preserve logical topology but use different capacity and resilience settings, balancing operability and security with development cost.
 
-This Level-1 deployment diagram shows external ingress, internal Azure Container Apps compute, managed Azure backing stores, and external cloud providers.
+## Production Infrastructure Topology
 
-<MermaidFileLoader file="mermaids/001-infrastructure-level-1-diagram-1.mmd" />
+<LikeC4View viewId="bookwormDeployment" project="deployment" />
 
-:::note
-`API Gateway` is the sole externally exposed application ingress. `quartz-dashboard` also exposes an external HTTP endpoint strictly protected by Microsoft Entra ID OpenID Connect (`admin` role) for operational job visibility.
-:::
+The view emphasizes environment and service boundaries. The mapping below provides the per-building-block placement, scaling, and security detail.
 
-## Building block to infrastructure mapping
+## Building Block to Infrastructure Mapping
 
-| Software building block                          | Azure infrastructure element                                                                                                                              | Verified deployment fact (`AppHost.cs`)                                                                                                                            | Open production item                                 |
-| :----------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------- |
-| **Storefront**, **Commerce**, and **Backoffice** | 3 internal Container Apps (`oven/bun:1-alpine` standalone Next.js 16 on port `3000`)                                                                      | Built programmatically via `AddDockerfileBuilder`; `Storefront` and `Backoffice` use Entra ID Better Auth; `Commerce` shares customer session (`WithoutEntraId()`) | CDN, custom DNS, TLS certificates                    |
-| **API Gateway** (`gateway`)                      | External Container App (`Aspire.Hosting.Yarp`)                                                                                                            | Routes `/catalog`, `/basket`, `/ordering`, `/rating`, `/chatting`, `/entra`, `/backoffice`, Commerce MFE routes, and Storefront catch-all                          | Max replica caps, WAF, custom domain                 |
-| **Catalog API** and **Catalog Ingestion**        | 2 internal Container Apps + PostgreSQL `catalogdb` + Qdrant `vectordb` + Blob `catalog-blob` + Redis + Foundry                                            | `Catalog API` serves REST/gRPC; `Catalog Ingestion` runs Kafka-triggered Azure Functions using `StorageBlobDataOwner` and `CognitiveServicesUser`                  | Qdrant Cloud tier, backup, and rebuild strategy      |
-| **Basket API** (`basket`)                        | Internal Container App + Azure Managed Redis (`redis`)                                                                                                    | Authoritative basket state and idempotency in Redis; shares Redis cluster with `catalog`, `ordering`, `rating`, and `notification`                                 | Eviction policy and key namespace isolation          |
-| **Ordering API** and **Finance**                 | 2 internal Container Apps + PostgreSQL `orderingdb` + Durable Task Scheduler (`finance-taskhub`) + Azure Storage + Kafka                                  | `Ordering API` uses EF Core + Marten on `orderingdb`; `Finance` runs Azure Durable Functions on Durable Task Scheduler (no PostgreSQL)                             | Broker sizing and DTS IP allowlist tightening        |
-| **Rating API**, **Chat API**, and **MCP Tools**  | 3 internal Container Apps + Cosmos DB (`ratingdb`/`feedbacks`) + Blob (`chatting-blob`) + Presidio (`presidio-analyzer`, `presidio-anonymizer`) + Foundry | `Rating API` uses Cosmos DB; `Chat API` stores AG-UI sessions in `chatting-blob`; `MCP Tools` is stateless (`/mcp`, custom CORS, not behind YARP)                  | Model quotas, region pinning, private endpoints      |
-| **Scheduler** and **Quartz Dashboard**           | Internal `scheduler` Container App + external `quartz-dashboard` Container App + PostgreSQL `schedulerdb`                                                 | Persists Quartz jobs/history in `schedulerdb`; publishes `ProcessVectorBatchIntegrationEvent` to Kafka topic `scheduler.process-vector-batch`                      | Multi-replica Quartz clustering and failover         |
-| **Notification** (`notification`)                | Internal Container App + Kafka + Azure Managed Redis + SendGrid SMTP                                                                                      | Stateless `MailKit` + `Mjml.Net` consumer with Redis 24-hour idempotency and HMAC validation; no PostgreSQL database                                               | SMTP deliverability SLAs and bounce handling         |
-| **Identity and Agent Identities**                | Microsoft Entra ID + `entra-agent-identities.bicep`                                                                                                       | Provisions app roles (`admin`, `business_user`, `customer`), managed identities, and agent identities (`blueprintAppId`, `chatAgentId`, `ratingAgentId`)           | Tenant conditional access and private network policy |
+| Infrastructure Node                                         | Hosted Building Blocks (from Sec 5)                                                                                                                                                                      | Scaling & Availability                                                                                                                                                               | Key Security / Network Boundary                                                                                         |
+| :---------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------- |
+| Azure Container Apps public ingress                         | API Gateway; Scheduler's Quartz Dashboard                                                                                                                                                                | Gateway and dashboard are separate apps; the published baseline declares a minimum of one replica but no maximum or application-specific scale rules; deployed values are unverified | HTTPS from the public network; dashboard access is protected by Microsoft Entra ID and the `admin` role                 |
+| Azure Container Apps internal workloads                     | Storefront, Commerce, Backoffice; Catalog API, Catalog Ingestion, Basket API, Ordering API, Finance, Rating API, Chat API, MCP Tools, Notification, Scheduler; Presidio supports Chat API and Rating API | Consumption profile; workload limits and capacity targets remain to be defined; no multi-region application deployment is established                                                | Internal app ingress is not public ingress; it does not imply a VNet or private endpoint boundary                       |
+| Azure PostgreSQL Flexible Server                            | Catalog API, Ordering API, Scheduler                                                                                                                                                                     | Development uses a smaller tier without zone redundancy; Staging and Production use zone-redundant HA with 14- and 35-day backups respectively                                       | Service-scoped identity and encrypted connections; production geo-redundant backup is enabled                           |
+| Azure Managed Redis and Azure Cosmos DB                     | Redis: Catalog API, Basket API, Ordering API, Rating API, Notification; Cosmos DB: Rating API                                                                                                            | Redis HA is enabled in Staging and Production; Cosmos DB is serverless in Development and Staging, provisioned in Production                                                         | Azure workload identity and role-based access; Cosmos local authentication is disabled outside Development              |
+| Azure Storage and Durable Task Scheduler                    | Storage: Catalog API, Catalog Ingestion, Chat API, Finance; Durable Task Scheduler: Finance                                                                                                              | Storage redundancy increases from locally redundant in Development to zone-redundant in Staging and geo-zone-redundant in Production; task scheduler uses Consumption tier           | Private data is not publicly anonymous; access uses scoped identity roles. Private endpoints are not currently declared |
+| Microsoft Foundry                                           | Catalog API, Catalog Ingestion, Chat API, Rating API                                                                                                                                                     | Model capacity and regional availability depend on provider deployment quotas                                                                                                        | Azure role-based access from workload identities; model endpoints remain a managed-service boundary                     |
+| External providers: Confluent Cloud, Qdrant Cloud, SendGrid | Kafka integrations across Catalog, Shopping, Ordering, Reviews, and Platform; Qdrant for Catalog; SMTP for Notification                                                                                  | Provider availability and quotas are external dependencies; recovery and failover are provider-specific                                                                              | Separate provider trust boundary; encrypted connections and protected connection credentials                            |
+| Azure Container Registry and Log Analytics                  | Images and operational telemetry for the hosted Section 5 building blocks                                                                                                                                | Log retention is 30 days in non-Production and 90 days in Production; registry and workspace service limits apply                                                                    | Azure control-plane access and scoped workload permissions                                                              |
+| Microsoft Entra ID                                          | User authentication for customer and staff applications; managed identities and agent identities for service access                                                                                      | Identity availability and token lifetimes follow tenant configuration                                                                                                                | Tenant and token-validation boundary; OIDC for users and workload identity for Azure resource access                    |
 
-`WithEntraId` registers read/write scopes for six .NET APIs (12 scopes total). The generated `temp/` Bicep snapshot sets the gateway target port to `5000`, `activeRevisionsMode: 'Single'`, and `minReplicas: 1` for all 17 Container Apps; it declares neither `maxReplicas` nor per-environment overrides. These are snapshot values, not verified settings in a deployed environment.
+## Quality and Operational Characteristics
 
-## Local development vs. Azure parity
+- API Gateway is the customer-facing application entry point. Quartz Dashboard is a separate externally reachable administrative endpoint protected by Microsoft Entra ID; other application ingress is internal to the Container Apps environment.
+- User authentication uses Microsoft Entra ID. Workloads use managed identities and scoped roles for Azure resources; external provider connections use encrypted transport and protected credentials.
+- PostgreSQL has zone-redundant HA in Staging and Production, with 14- and 35-day backup retention; Production enables geo-redundant backups. Redis HA is enabled in those environments. Multi-region application recovery is not established.
+- The published Container Apps baseline does not define workload-specific maximum replicas or scale triggers. Capacity limits, traffic targets, and recovery objectives must be established before production commitments, and deployed settings must be verified.
+- Internal ingress describes application routing, not network isolation: no VNet or private endpoints are currently declared for managed dependencies.
 
-Aspire 17 substitutes persistent local containers and emulators for managed Azure and external cloud services in run mode, while using real Microsoft Entra ID app registration with a local development certificate.
+## Related Views
 
-| Resource                   | Local development (`mise run run`)                  | Azure publish (`aspire deploy`)                                                 |
-| :------------------------- | :-------------------------------------------------- | :------------------------------------------------------------------------------ |
-| **PostgreSQL**             | Local Postgres container + `pgAdmin` + Postgres MCP | Azure PostgreSQL Flexible Server (`catalogdb`, `orderingdb`, `schedulerdb`)     |
-| **Cosmos DB**              | Cosmos DB emulator + Data Explorer                  | Azure Cosmos DB (`ratingdb` / `feedbacks`, partition key `/bookId`)             |
-| **Redis**                  | Local Redis container + `RedisInsight`              | Azure Managed Redis (`BalancedB0` / `BalancedB1` / `BalancedB5`)                |
-| **Storage**                | Azurite emulator + Azure Storage Explorer           | Azure Storage Account (`catalog-blob`, `chatting-blob`, Functions host storage) |
-| **Durable Task Scheduler** | Durable Task Scheduler emulator                     | Azure Durable Task Scheduler (`Consumption` SKU, `finance-taskhub`)             |
-| **Kafka**                  | Local Kafka container + Kafka UI                    | External connection string `ConnectionStrings__broker` (Confluent Cloud)        |
-| **Qdrant**                 | Local Qdrant container                              | External connection string `ConnectionStrings__vectordb` (Qdrant Cloud)         |
-| **Email (SMTP)**           | **Mailpit** container (SMTP port `587`)             | SendGrid SMTP (`smtp://smtp.sendgrid.net:587` default)                          |
-| **Microsoft Entra ID**     | Entra ID app registration + local dev certificate   | Entra ID + Federated Managed Identity + `entra-agent-identities.bicep`          |
-| **Dev tooling**            | `Scalar` API Reference + `MCP Inspector`            | Not provisioned in publish mode                                                 |
-
-## Related documentation and architecture decisions
-
-- [[doc|arc42/07-deployment-view/002-infrastructure-level-2]] — Service-level dependencies, SKU matrix across environments, and open production gaps.
-- ADR-BW-015: Explicit environment configuration — Boundary between logical topology and environment configuration.
-- [[doc|operational/001-azure-deployment-guide]] — Operator guide for running `aspire deploy`.
+- [[doc\|arc42/05-building-block-view]] — Static ownership of the hosted building blocks.
+- [[doc\|arc42/06-runtime-view]] — Interactions between building blocks.
+- [[doc\|arc42/07-deployment-view/002-infrastructure-level-2]] — Selective compute and ingress detail.

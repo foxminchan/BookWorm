@@ -1,12 +1,12 @@
 ---
 id: ProcessVectorBatchIntegrationEvent
-name: Process Vector Batch
+name: Process vector batch
 version: 1.0.0
 summary: |
   Integration event published by Scheduler every five minutes to trigger
   Catalog Ingestion vector batch processing over Kafka.
 owners:
-  - contributor-team
+  - platform-team
 badges:
   - content: Integration Event
     backgroundColor: orange
@@ -22,7 +22,7 @@ schemaPath: schema.json
 | Property              | Value                                                                                                                                          |
 | :-------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Owner**             | Platform bounded context (`Scheduler`)                                                                                                         |
-| **Producer**          | [[service\|scheduler-dashboard]] (`BookWorm.Scheduler`, Quartz `ProcessVectorBatchJob`)                                                        |
+| **Producer**          | [[service\|scheduler-service]] (`BookWorm.Scheduler`, Quartz `ProcessVectorBatchJob`)                                                          |
 | **Consumer**          | [[service\|catalog-ingestion]] (`BookWorm.Catalog.Ingestion`, Azure Function `ProcessVectorBatchFunction`, consumer group `catalog-ingestion`) |
 | **Source**            | `src/Services/Scheduler/BookWorm.Scheduler/IntegrationEvents/ProcessVectorBatchIntegrationEvent.cs`                                            |
 | **Protocol / format** | Kafka + CloudEvents JSON (Wolverine producer, Azure Functions `[KafkaTrigger]` consumer)                                                       |

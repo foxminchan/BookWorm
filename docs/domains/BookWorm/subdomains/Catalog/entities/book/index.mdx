@@ -101,7 +101,7 @@ owners:
 | `totalReviews`        | `int`                  | Yes            | `0`                        | Derived                                           | Rating summary count from Reviews events   |
 | `categoryId`          | `CategoryId` (`Guid`)  | No             | —                          | FK to `categories.id`; `ON DELETE SET NULL`       | Owning category                            |
 | `publisherId`         | `PublisherId` (`Guid`) | No             | —                          | FK to `publishers.id`; `ON DELETE SET NULL`       | Owning publisher                           |
-| `bookAuthors`         | `BookAuthor[]`         | —              | `[]`                       | Child rows in `book_authors`                      | Author links; see [[entity\|book-author]]  |
+| `bookAuthors`         | `BookAuthor[]`         | —              | `[]`                       | Child rows in `book_authors`                      | Join links to `Author` (`book_authors`)    |
 | `isDeleted`           | `bool`                 | Yes            | `false`                    | Global query filter `!IsDeleted`                  | Soft-delete flag                           |
 | `createdAt`           | `DateTime`             | Yes            | `NOW() AT TIME ZONE 'UTC'` | UTC                                               | Creation timestamp                         |
 | `lastModifiedAt`      | `DateTime`             | No             | `NOW() AT TIME ZONE 'UTC'` | UTC                                               | Last modification timestamp                |
@@ -123,13 +123,13 @@ The `Book` constructor accepts a nullable description, but `BookConfiguration` m
 
 ## Relationships
 
-| Related entity                                  | Cardinality                         | Mapping                                                     |
-| :---------------------------------------------- | :---------------------------------- | :---------------------------------------------------------- |
-| [[entity\|category]]                            | Many books to zero or one category  | `category_id`, `ON DELETE SET NULL`, `AutoInclude()`        |
-| [[entity\|publisher]]                           | Many books to zero or one publisher | `publisher_id`, `ON DELETE SET NULL`, `AutoInclude()`       |
-| [[entity\|author]]                              | Many-to-many                        | Through [[entity\|book-author]]; cascade delete from `Book` |
-| [[entity\|feedback]]                            | One book to many feedback records   | Cross-service reference by `bookId`; no foreign key         |
-| [[entity\|basket-item]], [[entity\|order-item]] | Referenced by ID                    | Cross-service references; no foreign key                    |
+| Related entity                                  | Cardinality                         | Mapping                                                                                |
+| :---------------------------------------------- | :---------------------------------- | :------------------------------------------------------------------------------------- |
+| [[entity\|category]]                            | Many books to zero or one category  | `category_id`, `ON DELETE SET NULL`, `AutoInclude()`                                   |
+| [[entity\|publisher]]                           | Many books to zero or one publisher | `publisher_id`, `ON DELETE SET NULL`, `AutoInclude()`                                  |
+| [[entity\|author]]                              | Many-to-many                        | Join table `book_authors` (`book_id` cascade delete from `Book`, `author_id` restrict) |
+| [[entity\|feedback]]                            | One book to many feedback records   | Cross-service reference by `bookId`; no foreign key                                    |
+| [[entity\|basket-item]], [[entity\|order-item]] | Referenced by ID                    | Cross-service references; no foreign key                                               |
 
 ## Examples
 
@@ -162,6 +162,5 @@ The `Book` constructor accepts a nullable description, but `BookConfiguration` m
 
 ## Related documentation
 
-- [[entity|author]] — Author records linked to books.
-- [[entity|book-author]] — Join entity between books and authors.
+- [[entity|author]] — Author records linked to books via `book_authors`.
 - [[entity|feedback]] — Source of the derived rating summary.

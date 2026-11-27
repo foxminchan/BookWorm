@@ -25,76 +25,23 @@ deadLetterChannel:
   version: 1.0.0
 ---
 
-`bookworm.{env}.finance.delete-basket-failed` (v1.0.0) is the Kafka topic owned by Finance that instructs Ordering API to recover from a failed basket cleanup by soft-deleting the order. Finance publishes `DeleteBasketFailedCommand` either when Basket API reports deletion failure or during LIFO saga compensation if a downstream orchestration step fails. This channel is separate from Basket API's upstream `bookworm.{env}.basket.delete-failed` integration event.
+Finance publishes this command when Basket reports that checkout cleanup failed, or when the workflow must compensate for a later failure. Ordering consumes it to soft-delete the order record; the order's business status is not changed.
+
+**Producer:** Finance order coordination. **Consumer:** Ordering service.
+
+This topic is distinct from Basket's upstream failure event: [[channel|bookworm.&#123;env&#125;.basket.delete-failed]].
 
 ## Channel information
 
 <ChannelInformation />
 
-## Overview
+## Topic and message
 
-| Property                | Value                                                                                                                                                                                                                                                                                           |
-| :---------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**               | Ordering bounded context (**Finance**, Aspire resource `finance`)                                                                                                                                                                                                                               |
-| **Topic pattern**       | `bookworm.{env}.finance.delete-basket-failed` (`AppendPrefix = true`)                                                                                                                                                                                                                           |
-| **Producer**            | [[service\|order-orchestration]] (`PublishDeleteBasketFailedActivity` via Wolverine)                                                                                                                                                                                                            |
-| **Consumer**            | [[service\|order-api]] (`DeleteBasketFailedCommandHandler` via Wolverine)                                                                                                                                                                                                                       |
-| **Message contract**    | [[command\|DeleteBasketFailedCommand]] (`BookWorm.Contracts.DeleteBasketFailedCommand`)                                                                                                                                                                                                         |
-| **Protocol / format**   | Kafka stream, CloudEvents JSON (`application/json`, camelCase via `JsonSerializerDefaults.Web`)                                                                                                                                                                                                 |
-| **Partition key**       | `OrderId` (configured via `opts.MessagePartitioning.ByPropertyNamed("OrderId")` in Finance)                                                                                                                                                                                                     |
-| **Delivery guarantee**  | At-least-once                                                                                                                                                                                                                                                                                   |
-| **Dead-letter channel** | [[channel\|bookworm.&#123;env&#125;.ordering.dead-letter-queue]]                                                                                                                                                                                                                                |
-| **Source**              | `src/Services/Finance/BookWorm.Finance/Contracts/IntegrationCommands/DeleteBasketFailedCommand.cs`, `src/Services/Ordering/BookWorm.Ordering/IntegrationEvents/EventHandlers/DeleteBasketFailedCommandHandler.cs`, `src/BuildingBlocks/BookWorm.Chassis/EventBus/Wolverine/KafkaTopicRouter.cs` |
+The topic is `bookworm.{env}.finance.delete-basket-failed`. Replace `{env}` with `development`, `staging`, or `production`. Messages are CloudEvents JSON keyed by `orderId` and carry basket and order details. Failed Ordering messages go to [[channel|bookworm.&#123;env&#125;.ordering.dead-letter-queue]].
 
-## Parameters and fields
+## Operations and recovery
 
-### Topic parameters
-
-`KafkaTopicRouter.CreateTopicName` resolves the topic name using the host project prefix (`bookworm`), kebab-case environment name, owning service (`finance`), and topic (`delete-basket-failed`).
-
-| Parameter | Type     | Required | Default       | Allowed values                         | Description                                                                   |
-| :-------- | :------- | :------- | :------------ | :------------------------------------- | :---------------------------------------------------------------------------- |
-| `{env}`   | `string` | Yes      | `development` | `development`, `staging`, `production` | Kebab-case Aspire host environment name (`IHostEnvironment.EnvironmentName`). |
-
-### Payload fields
-
-The CloudEvents `data` object carries the camelCase JSON representation of `DeleteBasketFailedCommand`.
-
-| Name           | Type                 | Required | Default                 | Constraints                               | Description                                                                 |
-| :------------- | :------------------- | :------- | :---------------------- | :---------------------------------------- | :-------------------------------------------------------------------------- |
-| `id`           | `string` (UUID)      | Yes      | `Guid.CreateVersion7()` | UUID v7 inherited from `IntegrationEvent` | Unique command identifier used by Ordering API for idempotency tracking.    |
-| `creationDate` | `string` (date-time) | Yes      | `DateTime.UtcNow`       | ISO 8601 UTC timestamp                    | UTC timestamp when Finance created the command.                             |
-| `basketId`     | `string` (UUID)      | Yes      | —                       | Valid UUID                                | Basket identifier whose cleanup failed (populated from Finance saga state). |
-| `email`        | `string \| null`     | No       | `null`                  | Nullable email address                    | Customer email address when present on the saga state.                      |
-| `orderId`      | `string` (UUID)      | Yes      | —                       | Valid UUID; Kafka partition key           | Identifier of the order to soft-delete in Ordering API.                     |
-| `totalMoney`   | `number` (`decimal`) | Yes      | —                       | Non-negative decimal                      | Order total associated with the checkout attempt.                           |
-
-### Headers and envelope metadata
-
-| Header / attribute     | Location            | Value / source                                 | Description                                                                   |
-| :--------------------- | :------------------ | :--------------------------------------------- | :---------------------------------------------------------------------------- |
-| `specversion`          | CloudEvents JSON    | `"1.0"`                                        | CloudEvents specification version written by Wolverine's `CloudEventsMapper`. |
-| `type` / `messagetype` | CloudEvents JSON    | `BookWorm.Contracts.DeleteBasketFailedCommand` | Message identity resolved from `Type.FullName`.                               |
-| `source`               | CloudEvents JSON    | `urn:bookworm:book-worm.finance`               | Producer URN formatted as `urn:bookworm:{applicationName.ToKebabCase()}`.     |
-| `traceparent`          | Kafka header & JSON | W3C Trace Context                              | Propagates OpenTelemetry distributed traces from Finance to Ordering API.     |
-| `requestid`            | Envelope header     | Propagated from upstream checkout request      | Correlates checkout and recovery logs across services.                        |
-| `x-user-id` / `userid` | Envelope header     | Propagated `NameIdentifier` claim when present | Preserves user context across async hops when available.                      |
-
-## Delivery, partitioning, and consumer behavior
-
-- **Finance publication triggers:** Finance invokes `PublishDeleteBasketFailedActivity` (Durable Task activity retry policy: `3` attempts, `5s` initial delay, `2.0x` backoff) in two scenarios:
-  1. **Direct basket failure:** `BasketDeletedFailedStep` transitions the saga to terminal `OrderStatus.BasketDeletionFailed` and publishes `DeleteBasketFailedCommand`.
-  2. **Saga compensation:** `BasketDeletedCompleteStep` registers `PublishDeleteBasketFailedActivity` on `OrderSagaCompensations` so a later `TaskFailedException` or `FinanceDomainException` triggers LIFO rollback.
-- **Partitioning:** Finance keys Kafka messages by `OrderId` so recovery commands for the same order stay on one partition within this topic.
-- **Ordering API consumption and idempotency:** Ordering API listens with Wolverine's PostgreSQL durable inbox (`orderingdb`, `wolverine` schema, 1-hour `KeepAfterMessageHandling`, 7-day `DeadLetterQueueExpiration`). `DeleteBasketFailedCommandHandler` guards execution with `IIntegrationEventIdempotencyGuard` (24-hour Redis/FusionCache key `idempotency:DeleteBasketFailedCommandHandler:{id:N}`), fetches the `Order` by `orderId`, calls `order.Delete()` to soft-delete it if found, and commits through EF Core without changing business `Status` (`New`, `Cancelled`, or `Completed`).
-
-## Error responses and dead-letter behavior
-
-| Condition                                                                                                                                              | Handling behavior                                                                                                                                                         | Recovery behavior                                                                                                        |
-| :----------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :----------------------------------------------------------------------------------------------------------------------- |
-| Matching `Order` not found in `orderingdb`                                                                                                             | `DeleteBasketFailedCommandHandler` returns cleanly as an idempotent no-op.                                                                                                | Expected when the order was already deleted or never persisted; no retry or DLQ routing occurs.                          |
-| Transient database or infrastructure failure (`TimeoutException`, `HttpRequestException`, `DbUpdateConcurrencyException`, transient `NpgsqlException`) | `IIntegrationEventIdempotencyGuard.ExecuteAsync` releases the Redis key on failure; Wolverine retries with `50ms`, `250ms`, and `1s` cooldown intervals plus full jitter. | After retries exhaust, Wolverine moves the envelope to [[channel\|bookworm.&#123;env&#125;.ordering.dead-letter-queue]]. |
-| `JsonException` or `FormatException`                                                                                                                   | Immediately moved to [[channel\|bookworm.&#123;env&#125;.ordering.dead-letter-queue]] with zero retries.                                                                  | Inspect contract compatibility between Finance and Ordering API before replaying.                                        |
+Verify the order state and failure context before replaying because this command soft-deletes the order record. If the order is already absent, handling is a no-op. For a dead-lettered message, restore database or service health and confirm the payload matches the intended order before replay.
 
 ## Examples
 
@@ -129,10 +76,9 @@ Kafka header: `traceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7
 
 ## Related documentation
 
-- [[command|DeleteBasketFailedCommand]] — Command payload contract and Ordering API handler details.
-- [[channel|bookworm.&#123;env&#125;.basket.delete-failed]] — Upstream Basket API failure event channel triggering this command.
-- [[channel|bookworm.&#123;env&#125;.finance.delete-basket-complete]] — Success-path counterpart for basket cleanup.
-- [[channel|bookworm.&#123;env&#125;.ordering.dead-letter-queue]] — Native Kafka DLQ receiving failed Ordering API envelopes.
-- [[service|order-api]] — Consumer service architecture and soft-delete persistence.
+- [[channel|bookworm.&#123;env&#125;.basket.delete-failed]]
+- [[channel|bookworm.&#123;env&#125;.finance.delete-basket-complete]]
+- [[channel|bookworm.&#123;env&#125;.ordering.dead-letter-queue]]
+- [[service|order-api]]
 
 <NodeGraph />

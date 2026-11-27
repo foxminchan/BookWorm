@@ -36,11 +36,11 @@ owners:
 
 ## Parameters and fields
 
-| Name          | Type                | Required | Default               | Constraints                   | Description                                 |
-| :------------ | :------------------ | :------- | :-------------------- | :---------------------------- | :------------------------------------------ |
-| `id`          | `AuthorId` (`Guid`) | Yes      | `uuidv7()` (database) | Primary key                   | Unique author identifier                    |
-| `name`        | `string`            | Yes      | —                     | Non-whitespace; max 100 chars | Author display name                         |
-| `bookAuthors` | `BookAuthor[]`      | —        | `[]`                  | Inverse navigation            | Links to books; see [[entity\|book-author]] |
+| Name          | Type                | Required | Default               | Constraints                   | Description                           |
+| :------------ | :------------------ | :------- | :-------------------- | :---------------------------- | :------------------------------------ |
+| `id`          | `AuthorId` (`Guid`) | Yes      | `uuidv7()` (database) | Primary key                   | Unique author identifier              |
+| `name`        | `string`            | Yes      | —                     | Non-whitespace; max 100 chars | Author display name                   |
+| `bookAuthors` | `BookAuthor[]`      | —        | `[]`                  | Inverse navigation            | Join links to `Book` (`book_authors`) |
 
 ## Invariants and behavior
 
@@ -50,9 +50,9 @@ owners:
 
 ## Relationships
 
-| Related entity   | Cardinality  | Mapping                                                             |
-| :--------------- | :----------- | :------------------------------------------------------------------ |
-| [[entity\|book]] | Many-to-many | Through [[entity\|book-author]] (`author_id`, `ON DELETE RESTRICT`) |
+| Related entity   | Cardinality  | Mapping                                                       |
+| :--------------- | :----------- | :------------------------------------------------------------ |
+| [[entity\|book]] | Many-to-many | Join table `book_authors` (`author_id`, `ON DELETE RESTRICT`) |
 
 ## Examples
 
@@ -71,5 +71,4 @@ owners:
 
 ## Related documentation
 
-- [[entity|book]] — Aggregate that credits authors.
-- [[entity|book-author]] — Join entity and delete rules.
+- [[entity|book]] — Aggregate that credits authors via `book_authors` (`ON DELETE RESTRICT`).

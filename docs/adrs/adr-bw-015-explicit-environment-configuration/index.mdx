@@ -9,7 +9,7 @@ owners:
   - platform-team
 appliesTo:
   - type: domain
-    id: BookWorm
+    id: bookworm
 related:
   - id: adr-bw-003-aspire-shared-service-defaults
   - id: adr-bw-005-kafka-integration-backbone
@@ -21,65 +21,58 @@ x-scope: "Whole system"
 
 ## Context and problem statement
 
-BookWorm runs locally with Aspire-managed containers and emulators (`aspire start`), yet deploys to Azure Container Apps (`Development`, `Staging`, and `Production`) through Aspire 17 (`aspire deploy`). Several platform capabilities—including Kafka transport activation, OTLP telemetry export, Cosmos DB persistence, and development-only health/OpenAPI routes—change behavior based on environment settings and connection strings. Inferring production topology from local containers or legacy `azd` instructions causes operational drift.
+BookWorm can run locally for development and be released to live environments. Some features change based on the environment, including background messaging, monitoring, stored information, and safe testing routes.
 
-BookWorm needs a strict separation between logical architecture contracts and explicit per-environment infrastructure configuration.
+BookWorm needs to keep the overall design separate from details that change in each environment.
 
 ## Decision drivers
 
-- **Operational accuracy:** Prevent teams from assuming local emulator defaults match Staging or Production SKUs, HA settings, or security postures.
-- **Conditional clarity:** Make environment-gated behaviors (such as dev-only `/health` and `/openapi`, or conditional Kafka/OTLP wiring) explicit and verifiable.
-- **Single deployment workflow:** Align cloud provisioning with the verified Aspire 17 `aspire deploy` model rather than stale CLI assumptions.
+- **Operational accuracy:** Do not assume local test tools match live reliability or security settings.
+- **Clear differences:** Make environment-specific behavior visible and testable.
+- **Single release workflow:** Use one established process to prepare and release environments.
 
 ## Considered options
 
-1. Separate logical service architecture from explicit per-environment configuration and Aspire 17 `aspire deploy` targets
-2. Treat local Aspire emulator wiring as the production deployment topology
-3. Assume all environments share identical SKUs, connection strings, and middleware settings
-4. Hard-code a fixed physical production topology inside logical architecture ADRs
+1. Separate the overall design from explicit environment settings
+2. Treat local test setup as the live setup
+3. Assume every environment uses identical settings
+4. Record a fixed live setup inside the overall design decisions
 
 ## Decision outcome
 
-Chosen option: **Separate logical service architecture from explicit per-environment configuration and Aspire 17 `aspire deploy` targets**, because it keeps domain contracts portable while recording concrete differences between local run mode and Azure publish mode.
+Chosen option: **Separate the overall design from explicit environment settings**.
 
-In `src/Aspire/BookWorm.AppHost/AppHost.cs` and `.github/workflows/apphost-cd.yml`:
+Local and live environments will use the same business agreements but may use different supporting equipment.
 
-- **Local run mode (`mise run run` / `aspire start`):** Runs local containers and emulators (PostgreSQL + pgAdmin, Cosmos DB emulator + Data Explorer, Azurite + Storage Explorer, Redis + RedisInsight, Kafka + Kafka UI, Qdrant, Mailpit, Durable Task Scheduler emulator, Scalar API Reference, and MCP Inspector).
-- **Cloud publish mode (`aspire deploy` via Aspire 17 CLI — no `azure.yaml` or `azd up`):** Provisions Azure Container Apps (`Consumption` workload profile), environment-tiered Azure Managed Redis (`BalancedB0`/`B1`/`B5`), Azure PostgreSQL Flexible Server (`Standard_B1ms`/`D2ds_v5`/`D4ds_v5`, PgBouncer and zone-redundant HA in non-Dev), Azure Cosmos DB (`DisableLocalAuth = true` in non-Dev), Azure Storage (`StandardLrs`/`Zrs`/`Gzrs`), custom Bicep for Durable Task Scheduler and Entra ID Agent Identities, and external connection strings for Confluent Cloud Kafka, Qdrant Cloud, and SendGrid SMTP.
+Local environments may use lightweight tools and test versions. Live environments use managed services, stronger security, and availability settings appropriate to the deployment.
 
-Every environment deployment must verify active broker connectivity, OTLP export, authentication RBAC, and health probes directly on the target host.
+Every release must verify that connections, monitoring, login permissions, and health checks work in the target environment.
 
 ### Consequences
 
-- **Positive:** Logical architecture diagrams remain stable across environments while operators have an exact matrix of local vs. cloud backing resources and SKUs.
-- **Negative:** Teams must maintain explicit environment documentation and secrets (`KAFKA_BROKER`, `QDRANT_CLOUD_CONNECTION`, SMTP credentials, Azure OIDC variables) for each deployment tier.
-- **Follow-up:** Keep cloud deployment guides synchronized with `.github/workflows/apphost-cd.yml` and `AppHost.cs` whenever Aspire hosting extensions change.
+- **Positive:** Overall diagrams remain stable while environment choices remain visible.
+- **Negative:** Teams must maintain environment settings and protected connection details separately.
+- **Follow-up:** Update environment guidance whenever live setup or release processes change.
 
 ## Pros and cons of the options
 
-### Separate logical service architecture from explicit per-environment configuration and Aspire 17 `aspire deploy` targets
+### Separate the overall design from explicit environment settings
 
-- **Good**, because local developer onboarding stays self-contained with emulators while cloud environments enforce production SKUs, HA, and managed identities.
-- **Good**, because `aspire deploy` derives Azure provisioning directly from `AppHost.cs` and two minimal Bicep modules.
-- **Bad**, because environment-conditional switches (such as `IsDevelopment()` gates on `/health` and Mailpit) must be checked carefully before promoting releases.
+- **Good**, because local development remains simple while live environments receive stronger protection and availability.
+- **Good**, because business agreements stay portable.
+- **Bad**, because environment switches must be checked before promotion.
 
-### Treat local Aspire emulator wiring as the production deployment topology
+### Treat local test setup as the live setup
 
 - **Good**, because documentation covers only one configuration.
-- **Bad**, because emulators lack production durability, HA, TLS termination, and RBAC guarantees.
+- **Bad**, because local tools do not provide live durability, availability, or security guarantees.
 
-### Assume all environments share identical SKUs, connection strings, and middleware settings
+### Assume every environment uses identical settings
 
-- **Good**, because fewer environment flags exist.
-- **Bad**, because it conceals critical differences such as Dev burstable SKUs, `AlwaysOnSampler`, and local-auth restrictions in Staging and Production.
+- **Good**, because fewer settings exist.
+- **Bad**, because it hides important differences in size, monitoring, security, and availability.
 
-### Hard-code a fixed physical production topology inside logical architecture ADRs
+### Record a fixed live setup inside the overall design decisions
 
-- **Good**, because every ADR carries concrete hosting details.
-- **Bad**, because routine SKU or cloud region updates invalidate whole-system logical decision records.
-
-## Verification and links
-
-- **Verified against:** `aspire.config.json`, `mise.toml`, `.github/workflows/apphost-cd.yml`, `src/Aspire/BookWorm.AppHost/AppHost.cs`, `src/Aspire/BookWorm.AppHost/Extensions/Infrastructure/`
-- **Related architecture:** [[doc|arc42/07-deployment-view]], [[doc|platform/001-platform-overview]], [[doc|operational/001-azure-deployment-guide]]
-- **Related ADRs:** ADR-BW-003, ADR-BW-005, ADR-BW-013, [[doc|arc42/09-architecture-decisions]]
+- **Good**, because every decision carries concrete hosting details.
+- **Bad**, because routine infrastructure updates invalidate logical architecture decisions.

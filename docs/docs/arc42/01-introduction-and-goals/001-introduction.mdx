@@ -9,48 +9,50 @@ badges:
     textColor: blue
 ---
 
-BookWorm is an online bookstore and commerce platform built with .NET 11, Aspire 17, and Next.js 16 that supports book discovery, basket management, checkout, order lifecycle tracking, customer reviews, and AI-assisted guidance. To prevent data-ownership blur as capabilities grow, BookWorm decomposes its domain into six bounded contexts with explicit integration contracts and keeps commodity infrastructure outside its core business logic.
+BookWorm is an online bookstore platform. It helps customers find books, maintain a basket, place and track orders, share reviews, and receive AI-assisted guidance. Store teams use it to manage catalog and customer information.
+
+The platform separates its responsibilities into six areas so that each area can grow and change without taking ownership of another area's information.
 
 ## Business purpose and user roles
 
-BookWorm serves two primary user groups through three Next.js 16 microfrontends (MFEs) routed behind a single YARP **API Gateway**:
+BookWorm serves two primary user groups:
 
-- **Customers:** Discover and search books, converse with an AI shopping assistant (**Storefront**), manage a persisted basket, submit checkout requests, track accepted orders (**Commerce**), and publish book reviews.
-- **Store administrators and business users:** Manage books, authors, categories, publishers, customer orders, buyer records, and feedback moderation through **Backoffice**, and monitor scheduled jobs through the Quartz Dashboard.
+- **Customers:** Find and compare books, ask for recommendations, maintain a basket, place checkout requests, track orders, and publish reviews.
+- **Store administrators and business users:** Manage books, authors, categories, publishers, customer orders, buyer information, and review moderation.
 
 ## Platform scope and bounded contexts
 
-Each bounded context owns its domain rules and authoritative persistence. No service accesses another context's database directly.
+Each area owns its business rules and records. Services share information only through clearly defined interfaces.
 
-| Bounded context    | Deployable services                    | Authoritative responsibility                                                                                                                                       |
-| :----------------- | :------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Catalog**        | **Catalog API**, **Catalog Ingestion** | Authoritative book facts, authors, categories, publishers, pricing, cover assets, hybrid vector search, and derived rating summary                                 |
-| **Shopping**       | **Basket API**                         | Customer-scoped mutable pre-order `Basket` state stored in Redis                                                                                                   |
-| **Ordering**       | **Ordering API**, **Finance**          | Accepted `Order` aggregates, purchase-time snapshots, lifecycle statuses (`New`, `Cancelled`, `Completed`), and Durable Task post-checkout coordination            |
-| **Reviews**        | **Rating API**                         | Individual customer `Feedback` records in Azure Cosmos DB and AI-generated review summaries                                                                        |
-| **Conversational** | **Chat API**, **MCP Tools**            | Multi-agent book discovery and store-policy assistance grounded in Catalog and Reviews via Microsoft Agent Framework, AG-UI, A2A, and Model Context Protocol (MCP) |
-| **Platform**       | **Notification**, **Scheduler**        | Enabling capabilities—Kafka-triggered transactional emails and Quartz.NET scheduled jobs—without owning business domain state                                      |
+| Bounded context    | Deployable services                                           | Authoritative responsibility                                                                      |
+| :----------------- | :------------------------------------------------------------ | :------------------------------------------------------------------------------------------------ |
+| **Catalog**        | [[service\|catalog-api]], [[service\|catalog-ingestion]]      | Book details, authors, categories, publishers, prices, cover images, search, and rating summaries |
+| **Shopping**       | [[service\|basket-api]]                                       | Baskets and customer selections before checkout                                                   |
+| **Ordering**       | [[service\|order-api]], [[service\|order-orchestration]]      | Accepted orders, purchase details, order status, and post-checkout coordination                   |
+| **Reviews**        | [[service\|rating-api]]                                       | Customer feedback and review summaries                                                            |
+| **Conversational** | [[service\|chat-api]], [[service\|mcp-server]]                | Guided book discovery and assistance based on catalog and review information                      |
+| **Platform**       | [[service\|notification-api]], [[service\|scheduler-service]] | Shared notifications and scheduled work, without owning a business area                           |
 
 ## System boundary and external dependencies
 
-The diagram below shows the complete BookWorm platform boundary, its two user roles, its six internal bounded contexts, and its verified external providers.
+The diagram shows the BookWorm platform boundary, its users, its six internal areas, and its external services.
 
 <MermaidFileLoader file="mermaids/001-introduction-diagram-1.mmd" />
 
 ### Verified vs. unimplemented external boundaries
 
-- **Implemented external integrations:** **Microsoft Entra ID** handles user authentication, role/scope authorization (`admin`, `business_user`, `customer`), and Entra Agent Identities. **Microsoft Foundry** hosts the `chat` (`ModelRouter`), `decision` (`MicrosoftDecision1`), and `embedding` (Cohere `EmbedV40`) models. **SendGrid** SMTP (cloud) and **Mailpit** (local) deliver outbound emails. In cloud deployments, **Confluent Cloud** provides Kafka and **Qdrant Cloud** provides vector storage. Internal **Presidio** sidecars handle PII detection and anonymization.
-- **Out-of-scope conceptual boundaries:** External payment settlement gateways and physical shipping fulfillment providers are **not implemented** in the current BookWorm repository. **Finance** (`BookWorm.Finance`) is an Azure Functions + Durable Task Scheduler post-checkout saga that coordinates basket cleanup and notification commands—it does not process payments.
+- **Implemented external integrations:** Identity and access services authenticate users and control access for customers, administrators, and business users. AI model services provide conversational, decision-support, and search capabilities. Email services send messages in local and cloud environments. Messaging distributes work between services, while vector storage enables semantic search. Internal privacy services detect and remove sensitive personal information.
+- **Out-of-scope conceptual boundaries:** Payment providers and shipping providers are not implemented. Post-checkout coordination manages basket cleanup and notifications; it does not accept or settle payments.
 
 ## Architectural scope trade-offs
 
-- **Bounded contexts over a shared model:** Isolating domain data prevents hidden cross-service coupling and protects checkout invariants, at the cost of requiring explicit REST, gRPC, and Kafka contracts between services.
-- **Enabling platform vs. business ownership:** Keeping **Notification** and **Scheduler** strictly supportive prevents shared infrastructure from accumulating commerce logic or becoming a deployment bottleneck.
-- **Delegated commodity services:** Relying on **Microsoft Entra ID**, **Microsoft Foundry**, and managed SMTP/Kafka/Qdrant services lets teams focus on bookstore domain logic while enforcing strict boundary contracts.
+- **Separate areas over a shared model:** Keeping domain data separate prevents hidden dependencies and protects checkout accuracy. It requires clear interfaces between areas.
+- **Shared services vs. business ownership:** Keeping notification and scheduled work separate prevents shared infrastructure from taking over commerce responsibilities.
+- **Specialist services:** Using established identity, AI, email, messaging, and search services lets the team focus on bookstore capabilities.
 
 ## Related architecture documentation
 
-- [[doc|arc42/01-introduction-and-goals/002-requirements-overview]] — Essential functional and architectural requirements (`BW-R1`-`BW-R8`).
+- [[doc|arc42/01-introduction-and-goals/002-requirements-overview]] — Essential functional and architectural requirements.
 - [[doc|arc42/01-introduction-and-goals/003-quality-goals]] — Top five prioritized quality goals and acceptance evidence.
 - [[doc|arc42/01-introduction-and-goals/004-stakeholders]] — Stakeholder roles and their documentation needs.
 - [[doc|arc42/02-architecture-constraints]] — Technical, organizational, and coding constraints.

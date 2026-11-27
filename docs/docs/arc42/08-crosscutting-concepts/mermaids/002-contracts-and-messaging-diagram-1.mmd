@@ -1,25 +1,40 @@
 %%{init: {'theme': 'base', 'themeVariables': {'background': '#f5f5f5', 'primaryColor': '#ffffff', 'primaryTextColor': '#2d3142', 'primaryBorderColor': '#2d3142', 'secondaryColor': '#ececec', 'secondaryBorderColor': '#4f5d75', 'tertiaryColor': '#fdf2ee', 'tertiaryBorderColor': '#bf4520', 'lineColor': '#4f5d75', 'textColor': '#2d3142', 'clusterBkg': '#f8f9fa', 'clusterBorder': '#bfc0c0', 'fontFamily': 'Geist, system-ui, sans-serif'}}}%%
-flowchart LR
-	pgSvc["Catalog, Ordering, Scheduler\n(Wolverine + PG Outbox/Inbox)"]
-	cosSvc["Rating API\n(Wolverine + Cosmos DB)"]
-	redSvc["Basket, Notification\n(Wolverine + Redis 24h Guard)"]
-	fnSvc["Finance, Catalog Ingestion\n(Azure Functions KafkaTrigger)"]
-	kafka["Kafka Broker\n(CloudEvents JSON, Partitioned)"]
-	dlq["Per-Service Native DLQ\n(bookworm.{env}.{svc}.dead-letter-queue)"]
+flowchart TB
 
-	pgSvc <-->|"CloudEvents + PG Outbox"| kafka
-	cosSvc <-->|"CloudEvents + Cosmos Persistence"| kafka
-	redSvc <-->|"CloudEvents + Redis SET NX"| kafka
-	fnSvc <-->|"KafkaTrigger / Publisher"| kafka
-	kafka -->|"Exhausted Retries / JsonException (7d)"| dlq
+	subgraph Owners["Capability Owners"]
+		API["Owned HTTP / RPC Contract"]
+		Event["Owned Integration Event"]
+		Outbox["Durable or Idempotency Record"]
+	end
+
+	subgraph Delivery["Delivery Boundary"]
+		Broker["Event Transport"]
+		Retry["Bounded Retry and Classification"]
+	end
+
+	subgraph Consumers["Consumers"]
+		Sync["Synchronous Consumer"]
+		Worker["Asynchronous Consumer"]
+		Duplicate["Duplicate and Replay Check"]
+	end
+
+	Poison["Review Queue"]
+
+	API -->|"Versioned request / response"| Sync
+	Event -->|"Envelope with identity and trace"| Outbox
+	Outbox -->|"At-least-once publish"| Broker
+	Broker --> Retry
+	Retry -->|"Valid delivery"| Worker
+	Retry -->|"Permanent or exhausted"| Poison
+	Worker --> Duplicate
+	Duplicate -->|"First or reconciled effect"| Broker
+	Duplicate -->|"Duplicate"| Worker
+	Sync -->|"Pact and schema result"| API
 
 	classDef focal fill:#fdf2ee,stroke:#bf4520,stroke-width:2px,color:#2d3142
 	classDef service fill:#ffffff,stroke:#2d3142,stroke-width:1.2px,color:#2d3142
 	classDef store fill:#ececec,stroke:#4f5d75,stroke-width:1.2px,color:#2d3142
-	classDef input fill:#eef1f6,stroke:#5a6580,stroke-width:1.2px,color:#2d3142
-	classDef ext fill:#f5f5f5,stroke:#949eb2,stroke-width:1px,stroke-dasharray:4 3,color:#4f5d75
-	class kafka focal
-	class fnSvc,dlq service
-	class pgSvc,cosSvc,redSvc store
-	linkStyle 0 stroke:#bf4520,stroke-width:2px
-	linkStyle 1 stroke:#bf4520,stroke-width:2px
+	classDef external fill:#eef1f6,stroke:#5a6580,stroke-width:1.2px,color:#2d3142
+	class Broker,Retry focal
+	class API,Event,Sync,Worker,Duplicate service
+	class Outbox,Poison store

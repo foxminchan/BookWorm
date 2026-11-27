@@ -1,35 +1,45 @@
-%%{init: {'theme': 'base', 'themeVariables': {'actorBkg': '#ffffff', 'actorBorder': '#2d3142', 'actorTextColor': '#2d3142', 'actorLineColor': '#bfc0c0', 'signalColor': '#4f5d75', 'signalTextColor': '#2d3142', 'labelBoxBkgColor': '#f5f5f5', 'labelBoxBorderColor': '#4f5d75', 'labelTextColor': '#2d3142', 'loopTextColor': '#4f5d75', 'noteBkgColor': '#fdf2ee', 'noteBorderColor': '#bf4520', 'noteTextColor': '#2d3142', 'activationBkgColor': '#ececec', 'activationBorderColor': '#4f5d75', 'fontFamily': 'Geist, system-ui, sans-serif'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': {'actorBkg': '#ffffff', 'actorBorder': '#2d3142', 'actorTextColor': '#2d3142', 'actorLineColor': '#bfc0c0', 'signalColor': '#4f5d75', 'signalTextColor': '#2d3142', 'fontFamily': 'Geist, system-ui, sans-serif'}}}%%
 sequenceDiagram
 	autonumber
-	participant UI as Storefront\n(Next.js 16 + AG-UI)
-	participant Chat as Chat API\n(Agent Framework /ag-ui)
-	participant Blob as Azure Blob Storage\n(chatting-blob/ag-ui/)
-	participant Dec as Microsoft Foundry\n(MicrosoftDecision1)
-	participant PII as Presidio\n(Analyzer & Anonymizer)
-	participant LLM as Microsoft Foundry\n(ModelRouter)
-	participant MCP as MCP Tools\n(/mcp -> Catalog gRPC)
-	participant Rating as Rating API\n(A2A gRPC /agents)
+	participant Storefront as Storefront
+	participant Chat as Chat API
+	participant Foundry as Microsoft Foundry
+	participant Presidio as Presidio
+	participant MCP as MCP Tools
+	participant Catalog as Catalog API
+	participant Rating as Rating API
+	participant Session as Conversation State
 
-	UI ->> Chat: HTTPS POST /chatting/ag-ui (Entra ID JWT, PerUserRateLimit)
-	Chat ->> Blob: Load conversation session state
-	Chat ->> Chat: InputValidationExecutor (length + prompt-injection check)
-	Chat ->> Dec: DecisionRouterExecutor (language, scope, route confidence)
+	Storefront ->> Chat: Synchronous chat turn
+	Chat ->> Session: Load conversation state
+	Chat ->> Chat: Validate prompt and caller
 
-	alt Low confidence in-scope route
-		Chat -->> UI: RequestPort HITL disambiguation prompt
-		UI ->> Chat: Customer selects intended route
+	alt Unsafe or out-of-scope prompt
+		Chat -->> Storefront: Bounded rejection
+	else Accepted prompt
+		Chat ->> Foundry: Synchronous route decision
+		Foundry -->> Chat: Book, policy, or rating route
+
+		opt Intent needs clarification
+			Chat -->> Storefront: Synchronous disambiguation request
+			Storefront ->> Chat: Clarified route
+		end
+
+		alt Book or policy specialist
+			Chat ->> Presidio: Synchronous PII anonymization
+			Presidio -->> Chat: Sanitized prompt
+			Chat ->> Foundry: Synchronous specialist request
+			Foundry ->> MCP: Read-only tool call
+			MCP ->> Catalog: Synchronous catalog read
+			Catalog -->> MCP: Grounding facts
+			MCP -->> Foundry: Tool result
+		else Rating specialist
+			Chat ->> Rating: Synchronous review request
+			Rating -->> Chat: Grounded review summary
+		end
+
+		Chat ->> Presidio: Synchronous output filtering
+		Presidio -->> Chat: Filtered response
+		Chat ->> Session: Persist updated state
+		Chat -->> Storefront: Stream response
 	end
-
-	alt Book or QA specialist
-		Chat ->> PII: Anonymize PII in outbound prompt
-		Chat ->> LLM: Run BookAgent (or sub-researchers) / QAAgent
-		LLM ->> MCP: MCP Streamable HTTP: search_catalog / get_book (Policies/mcp-tools.yaml)
-		MCP -->> LLM: Grounded Catalog facts
-		LLM -->> Chat: Draft response (PII-checked)
-	else Rating specialist (book ID present)
-		Chat ->> Rating: Remote A2A gRPC (Entra Agent Identity, rating_read scope)
-		Rating -->> Chat: Grounded review summary
-	end
-	Chat ->> Chat: ResponseFormatterExecutor
-	Chat ->> Blob: Persist updated session transcript
-	Chat -->> UI: Stream formatted AG-UI response

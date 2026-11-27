@@ -9,7 +9,7 @@ owners:
   - contributor-team
 appliesTo:
   - type: domain
-    id: BookWorm
+    id: bookworm
   - type: system
     id: chat-system
   - type: system
@@ -27,65 +27,59 @@ x-scope: "Whole system (Chat API, Rating API, MCP Tools)"
 
 ## Context and problem statement
 
-Chat API, Rating API, and MCP Tools process untrusted customer prompts and user-authored review text before invoking Microsoft Foundry models (`ModelRouter`, `MicrosoftDecision1`, Cohere `EmbedV40`) and tool endpoints. Rebuilding prompt-injection defenses, PII redaction, and tool-access policies separately inside each agent creates security drift, whereas assuming a shared library automatically protects every code path leaves newly added AI routes unexamined.
+Chat assistance, review summaries, and connected AI tools handle customer words and review text. They may use models and external tools, so one bad input or one overly broad permission could cause harm.
 
-BookWorm needs a composable AI governance model that shares reusable security middleware while enforcing explicit per-agent policies and tool boundaries.
+BookWorm needs shared safety controls while also requiring each AI capability to declare its own permissions and limits.
 
 ## Decision drivers
 
-- **Defense in depth:** Combine PII detection/anonymization, input/output guardrails, policy enforcement, and scoped identities on every AI execution path.
-- **Least privilege:** Restrict each agent and Model Context Protocol (MCP) tool to the minimum read-only data and permissions required.
-- **Explicit coverage verification:** Require every new model call or agent route to register governance policies explicitly rather than assuming global coverage.
+- **Defensive layers:** Check personal data, instructions, results, and permissions before and after AI activity.
+- **Minimum access:** Give each AI capability only the data and actions it needs.
+- **Explicit verification:** Require every new AI route to declare and test its safety controls.
 
 ## Considered options
 
-1. Compose shared `BookWorm.Chassis` AI governance, Presidio PII middleware, and per-service YAML policies across Chat API, Rating API, and MCP Tools
-2. Rely solely on system-prompt instructions to restrict model behavior
-3. Implement isolated governance and PII controls independently inside each AI service
-4. Assume registering a governance package once protects every AI code path automatically
+1. Use shared safety controls plus specific rules for each AI capability
+2. Rely only on instructions given to the model
+3. Build separate safety controls for every AI area
+4. Assume one shared package protects every AI route
 
 ## Decision outcome
 
-Chosen option: **Compose shared `BookWorm.Chassis` AI governance, Presidio PII middleware, and per-service YAML policies across Chat API, Rating API, and MCP Tools**, because it reuses verified middleware while tailoring tool permissions, identity rings, and guardrails per agent.
+Chosen option: **Use shared safety controls plus specific rules for each AI capability**.
 
-BookWorm composes four verified layers:
+BookWorm will combine:
 
-- **Policy kernel (`Microsoft.AgentGovernance.Extensions` `5.0.0`):** `GovernanceKernel` in `BookWorm.Chassis` enforces base rules (`Policies/default.yaml`) plus service-specific policies (`Policies/chat-agents.yaml` in Chat API, `Policies/rating-agent.yaml` in Rating API, and `Policies/mcp-tools.yaml` in MCP Tools).
-- **PII protection (Presidio):** Internal `presidio-analyzer` and `presidio-anonymizer` sidecars back `PIIMiddleware` on Chat API and Rating API to detect and anonymize PII before model invocation.
-- **Guardrails and deterministic routing:** `GuardrailMiddleware`, `RatingOutputGuardrailMiddleware`, `DecisionToolSelectionMiddleware`, and Microsoft-Decision-1 (`IDecisionClient`) validate inputs, restrict tool selection, and separate trusted instructions from untrusted content.
-- **Agent identity isolation:** Microsoft Entra ID Agent Identities (`entra-agent-identities.bicep` provisioning `blueprintAppId`, `chatAgentId`, and `ratingAgentId`) and `UseClaimsBasedAgentIsolation()` isolate agent permissions from end-user tokens.
+- Shared rules that apply across AI features
+- Personal-data protection that removes or masks sensitive values
+- Input and output checks that reject unsafe requests or results
+- Separate identities and permissions for each AI capability
 
 ### Consequences
 
-- **Positive:** Chat API, Rating API, and MCP Tools share consistent PII filtering, injection detection, and policy telemetry while preserving least-privilege tool lists per agent.
-- **Negative:** Running Presidio sidecars and governance middleware adds runtime latency, container dependencies, and YAML policy maintenance.
-- **Follow-up:** Review YAML policy files, tool allowlists, and Presidio failure behavior whenever adding a new agent, skill, or MCP tool.
+- **Positive:** AI areas share consistent privacy and safety controls while keeping permissions separate.
+- **Negative:** Safety tools add work and may slow a response.
+- **Follow-up:** Review rules and permissions whenever a new AI capability or tool is added.
 
 ## Pros and cons of the options
 
-### Compose shared `BookWorm.Chassis` AI governance, Presidio PII middleware, and per-service YAML policies across Chat API, Rating API, and MCP Tools
+### Use shared safety controls plus specific rules for each AI capability
 
-- **Good**, because security primitives live in one audited chassis layer while permissions stay scoped to each service's YAML policy.
-- **Good**, because Entra ID Agent Identities and claims isolation bound cross-agent A2A and MCP calls.
-- **Bad**, because PII detection and guardrails remain defense-in-depth controls rather than an absolute guarantee against novel prompt-injection attacks.
+- **Good**, because proven controls are reused while permissions remain narrow.
+- **Good**, because one AI capability cannot automatically inherit another's permissions.
+- **Bad**, because no safety control can guarantee protection from every new attack.
 
-### Rely solely on system-prompt instructions to restrict model behavior
+### Rely only on instructions given to the model
 
-- **Good**, because services avoid extra middleware and sidecar containers.
-- **Bad**, because prompt text provides no enforceable runtime boundary against prompt injection or unauthorized tool invocation.
+- **Good**, because setup is simple.
+- **Bad**, because instructions are not an enforceable security boundary.
 
-### Implement isolated governance and PII controls independently inside each AI service
+### Build separate safety controls for every AI area
 
-- **Good**, because every agent has full local autonomy over its filters.
-- **Bad**, because security fixes must be duplicated across Chat API, Rating API, and MCP Tools, inviting policy drift.
+- **Good**, because each capability controls its own safeguards.
+- **Bad**, because fixes must be repeated and rules may drift apart.
 
-### Assume registering a governance package once protects every AI code path automatically
+### Assume one shared package protects every AI route
 
-- **Good**, because onboarding a new endpoint looks faster initially.
-- **Bad**, because direct `IChatClient` calls or new endpoints can bypass middleware unless explicitly verified during code review.
-
-## Verification and links
-
-- **Verified against:** `src/BuildingBlocks/BookWorm.Chassis/AI/`, `src/Services/Chat/BookWorm.Chat/Extensions/Extensions.cs`, `src/Services/Rating/BookWorm.Rating/Extensions/Extensions.cs`, `src/Services/McpTools/BookWorm.McpTools/`, `src/Integrations/BookWorm.Hosting.Presidio/`, `src/Aspire/BookWorm.AppHost/Infra/entra-agent-identities.bicep`
-- **Related architecture:** [[doc|arc42/08-crosscutting-concepts/005-ai-governance]], [[doc|arc42/06-runtime-view/004-conversational-book-discovery]], [[doc|arc42/08-crosscutting-concepts/001-security-and-privacy]]
-- **Related ADRs:** Chat Blob Sessions ADR, Rating Cosmos DB ADR, [[doc|arc42/09-architecture-decisions]]
+- **Good**, because adding a route appears faster initially.
+- **Bad**, because direct AI calls or missed registration can bypass safeguards.

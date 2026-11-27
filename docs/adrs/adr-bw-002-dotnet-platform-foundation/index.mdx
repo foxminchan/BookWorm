@@ -9,7 +9,7 @@ owners:
   - contributor-team
 appliesTo:
   - type: domain
-    id: BookWorm
+    id: bookworm
 related:
   - id: adr-bw-003-aspire-shared-service-defaults
   - id: adr-bw-009-local-cqrs-building-blocks
@@ -20,60 +20,59 @@ x-scope: "Whole system (backend services)"
 
 ## Context and problem statement
 
-BookWorm's backend services share building blocks (`BookWorm.Chassis`, `BookWorm.SharedKernel`, `BookWorm.Constants`), Aspire service defaults, TUnit testing utilities, and centralized package versions. Introducing competing backend runtimes or per-service package version pinning would fragment tooling, duplicate integration plumbing, and complicate cross-service upgrades.
+BookWorm's main parts already share common tools for running, checking, protecting, connecting, and testing the system. They also use one approach for keeping supporting software consistent.
 
-BookWorm needs an explicit platform baseline that preserves backend consistency without restricting browser clients, infrastructure containers, or external providers to .NET.
+If each part chose a different foundation or different versions of supporting software, teams would need to maintain more tools, repeat connection work, and spend more time upgrading the system. BookWorm needs one clear foundation for its main parts while allowing websites, helper programs, and external providers to use the technology that suits them.
 
 ## Decision drivers
 
-- **Reuse:** Share common hosting, telemetry, security, messaging, and testing libraries across all backend services.
-- **Maintainability:** Prevent runtime fragmentation and inconsistent dependency versions across the solution.
-- **Contributor onboarding:** Preserve uniform C# coding conventions, analyzers, and build workflows.
+- **Reuse:** Let the main parts share proven tools for everyday needs.
+- **Easy to maintain:** Prevent different foundations and inconsistent software versions from spreading across the system.
+- **Easy for newcomers:** Give new contributors one consistent way to build and check the software.
+- **Reliable upgrades:** Make improvements and security updates easier to apply across the main parts.
 
 ## Considered options
 
-1. Standardize backend services on the repository .NET and C# baseline with Central Package Management
-2. Allow polyglot backend service runtimes by default
-3. Migrate backend services to another runtime ecosystem
-4. Pin NuGet package versions independently in each service project
+1. Use one established foundation and manage supporting software centrally
+2. Let each main part choose its own foundation
+3. Move all main parts to a different foundation
+4. Choose supporting software versions independently for each main part
 
 ## Decision outcome
 
-Chosen option: **Standardize backend services on the repository .NET and C# baseline with Central Package Management**, because it maximizes library reuse and keeps build, analyzer, and security standards uniform across all 10 backend projects.
+Chosen option: **Use one established foundation and manage supporting software centrally**.
 
-Services target the repository SDK (`11.0.100` in `global.json`) and framework settings (`net11.0`, C# preview features, nullable reference types, `TreatWarningsAsErrors`, and `EnforceCodeStyleInBuild` in `Directory.Build.props`). Package versions stay centralized in `Versions.props` and `Directory.Packages.props` with transitive pinning enabled. Future .NET upgrades follow the repository baseline rather than freezing this ADR to a single release. Browser clients (`src/Clients/` on Next.js 16 and Bun), sidecars (Presidio), and backing stores remain free to use their native runtimes.
+All main parts will use the foundation already selected for the project. They will follow the same setup, quality, and security rules, and supporting software will have approved versions managed from one place.
+
+This decision does not limit future upgrades. Future foundation improvements will follow the project's approved approach. Websites, helper programs, and stored information systems can continue using the approaches that work best for them.
 
 ### Consequences
 
-- **Positive:** Backend services reuse shared building blocks, CSharpier formatting, Roslyn analyzers, and TUnit test tooling without reimplementation.
-- **Negative:** SDK and shared-package upgrades require compatibility verification across every backend project in `BookWorm.slnx`.
-- **Follow-up:** Confirm formal acceptance of this reconstructed decision and continue enforcing Central Package Management in code review.
+- **Positive:** Main parts share reliable tools without repeating the same work.
+- **Positive:** Security fixes and updates can reach every main part consistently.
+- **Positive:** Contributors work with familiar rules and expectations.
+- **Negative:** Foundation or shared-tool upgrades require checks across every main part.
+- **Follow-up:** Record formal approval and continue checking that supporting software remains centrally managed.
 
 ## Pros and cons of the options
 
-### Standardize backend services on the repository .NET and C# baseline with Central Package Management
+### Use one established foundation and manage supporting software centrally
 
-- **Good**, because every backend service shares one build toolchain, analyzer ruleset, and dependency graph.
-- **Good**, because security patches and library updates propagate from one central location.
-- **Bad**, because services cannot adopt an alternative backend runtime without an explicit architectural exception.
+- **Good**, because every main part shares the same setup tools and quality rules.
+- **Good**, because approved improvements and security fixes can be introduced in one controlled place.
+- **Bad**, because a main part cannot choose a different foundation without a formal exception.
 
-### Allow polyglot backend service runtimes by default
+### Let each main part choose its own foundation
 
-- **Good**, because individual teams can select language ecosystems tailored to specific workloads.
-- **Bad**, because each additional runtime requires separate telemetry, auth, messaging, and CI/CD implementations.
+- **Good**, because teams can select a foundation that suits a particular need.
+- **Bad**, because each new foundation requires separate monitoring, security, communication, and release work.
 
-### Migrate backend services to another runtime ecosystem
+### Move all main parts to a different foundation
 
-- **Good**, because it could align with a different ecosystem if a strong business driver emerged.
-- **Bad**, because migration carries high rewrite cost with no documented product or operational driver.
+- **Good**, because it could align the system with a different approach if strong needs emerged.
+- **Bad**, because moving to it would require substantial rewriting without a clear benefit for customers or day-to-day operation.
 
-### Pin NuGet package versions independently in each service project
+### Choose supporting software versions independently for each main part
 
-- **Good**, because one service can upgrade a dependency ahead of others.
-- **Bad**, because version drift breaks binary compatibility with `BookWorm.Chassis` and increases dependency maintenance cost.
-
-## Verification and links
-
-- **Verified against:** `global.json`, `Directory.Build.props`, `Directory.Packages.props`, `Versions.props`, `BookWorm.slnx`
-- **Related architecture:** [[doc|arc42/02-architecture-constraints]], [[doc|development/004-engineering-standards]]
-- **Related ADRs:** ADR-BW-003, ADR-BW-009, [[doc|arc42/09-architecture-decisions]]
+- **Good**, because one main part could upgrade supporting software before the others.
+- **Bad**, because different versions can stop the main parts from working together and create extra maintenance.

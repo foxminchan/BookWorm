@@ -7,7 +7,7 @@ summary: |
   templates, and submits messages through SMTP via MailKit.
 scope: internal
 owners:
-  - contributor-team
+  - platform-team
 services:
   - id: notification-api
     version: 1.0.0
@@ -66,7 +66,7 @@ The Notification System owns BookWorm's order email workflow from template rende
 - [[service|notification-api]] consumes Finance order-placement, cancellation, and completion commands, renders emails with `MjmlTemplateRenderer` using MJML templates, and builds MIME messages.
 - Messages are submitted over SMTP using MailKit protected by a configured mail resilience pipeline (MailPit in development; a configured SMTP provider such as [[system|sendgrid]] elsewhere).
 - **Important implementation note**: The current implementation does not call the SendGrid HTTP API and does not maintain a separate PostgreSQL database.
-- In the service architecture graph, [[service|notification-api]] connects to [[service|sendgrid-api]] via [[command|SendMail]] as a logical submission relationship; this does not alter the underlying SMTP transport.
+- [[service|notification-api]] delivers rendered MIME messages to [[service|sendgrid-api]] exclusively over SMTP via `MailKitSender` (`Components.Email` in publish mode; `Components.MailPit` in development).
 
 ### Responsibilities and Boundaries
 

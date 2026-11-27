@@ -9,7 +9,7 @@ owners:
   - contributor-team
 appliesTo:
   - type: domain
-    id: BookWorm
+    id: bookworm
 related:
   - id: adr-bw-017-compatible-contract-evolution
   - id: adr-bw-018-single-source-decision-documentation
@@ -20,69 +20,61 @@ x-scope: "Whole system"
 
 ## Context and problem statement
 
-No single test suite catches every defect in a distributed microservices and microfrontend platform. Unit tests verify domain logic quickly but miss Kafka schema drift; end-to-end browser tests validate customer flows but cannot enforce internal dependency rules or exhaustive edge cases.
+No single test catches every problem in a system with many connected areas. Small checks verify business rules quickly but may miss communication changes. Full browser journeys confirm customer behavior but cannot cover every internal rule.
 
-BookWorm requires an explicit layered verification strategy that assigns each class of architectural risk—domain behavior, structural boundaries, message contracts, Protobuf evolution, and user journeys—to a dedicated automated check.
+BookWorm needs several kinds of checks, each aimed at a different risk.
 
 ## Decision drivers
 
-- **Domain correctness:** Catch business-rule and handler regressions rapidly during local development and CI.
-- **Cross-service compatibility:** Verify Kafka producer/consumer schemas and gRPC `.proto` definitions independently before release.
-- **Structural governance:** Enforce Vertical Slice Architecture, DDD conventions, and frontend monorepo boundaries automatically.
+- **Business correctness:** Catch rule mistakes quickly.
+- **Area compatibility:** Verify that connected areas understand each other's information.
+- **Structure:** Prevent areas from bypassing ownership or violating agreed boundaries.
 
 ## Considered options
 
-1. Maintain distinct automated verification layers across unit, architecture, contract, schema, and browser E2E suites
-2. Rely on unit tests alone
-3. Rely on full-stack end-to-end tests alone
-4. Rely on manual pull-request code review alone
+1. Use separate automated checks for business rules, structure, agreements, information formats, and customer journeys
+2. Rely on small unit checks alone
+3. Rely on full browser journeys alone
+4. Rely on manual review alone
 
 ## Decision outcome
 
-Chosen option: **Maintain distinct automated verification layers across unit, architecture, contract, schema, and browser E2E suites**, because each layer targets a different failure class at the fastest practical feedback speed.
+Chosen option: **Use separate automated checks for business rules, structure, agreements, information formats, and customer journeys**.
 
-Verified test layers in the BookWorm repository:
+BookWorm will combine:
 
-- **Backend unit tests (`mise run test` → `test:unit`):** **TUnit `1.87.12`** on Microsoft.Testing.Platform (MTP) with `Shouldly` `4.3.0`, `Moq` `4.21.0`, `Bogus` `35.6.5`, and `Allure.TestingPlatform` across **9 `.UnitTests` projects** (`Basket`, `Catalog`, `Chat`, `Finance`, `McpTools`, `Notification`, `Ordering`, `Rating`, `Scheduler`; no unit test project currently exists for `BookWorm.Catalog.Ingestion`).
-- **Architecture fitness tests:** `TngTech.ArchUnitNET.TUnit` (`0.13.5`) in `tests/BookWorm.ArchTests` validating bounded-context dependencies, domain primitives, sealed endpoints/handlers, and saga conventions.
-- **Asynchronous contract tests (`mise run test` → `test:contracts`):** `PactNet` (`5.0.1`) across **7 `.ContractTests` projects** generating and verifying **8 pact files** in `tests/pacts/` (`PactConsumer` runs before `PactProvider`).
-- **gRPC contract checks:** Protocol Buffer linting and breaking-change validation (`mise run setup:buf`).
-- **Frontend unit, boundary, and E2E tests (`src/Clients`):** `turbo boundaries` enforcing 4-tier workspace isolation, `vitest` (`^5.1.2`) + `@testing-library/react` (`^16.3.3`), and `@playwright/test` (`^1.65.1`) + `playwright-bdd` (`^9.2.1`) + `@axe-core/playwright` (`^4.14.1`) covering 9 Storefront and 6 Backoffice BDD features (Commerce currently has unit/component tests only, with no Playwright E2E feature files).
-- **Documentation quality gates (`docs/`):** `bun run check` (`eventcatalog-linter` + Prettier) and `bun run fitness` (`eventcatalog fitness check`).
-
-Backend `.IntegrationTests` projects are currently **0** in `BookWorm.slnx`; this ADR documents the active verification layers rather than claiming full container-backed backend integration coverage.
+- Fast business-rule checks
+- Architecture checks that enforce boundaries
+- Producer and consumer agreement checks
+- Information-format compatibility checks
+- Customer browser journeys
+- Documentation quality checks
 
 ### Consequences
 
-- **Positive:** Teams get fast feedback on domain logic, deterministic Pact verification between producers and consumers, automated boundary enforcement, and accessibility-checked UI journeys.
-- **Negative:** Maintaining multiple suites, committed pact baselines, and Allure/SonarCloud pipelines requires disciplined CI upkeep, and the absence of backend `.IntegrationTests` leaves real database/emulator query behavior reliant on unit mocks and manual Aspire validation.
-- **Follow-up:** Evaluate adding targeted backend `.IntegrationTests` for Cosmos DB, PostgreSQL/Marten, and Durable Task Scheduler edge cases, plus Commerce E2E coverage.
+- **Positive:** Teams receive fast, targeted feedback across all major risk areas.
+- **Negative:** Multiple test types require maintenance and discipline.
+- **Follow-up:** Add stronger checks where database and emulator behavior are not yet covered.
 
 ## Pros and cons of the options
 
-### Maintain distinct automated verification layers across unit, architecture, contract, schema, and browser E2E suites
+### Use separate automated checks for business rules, structure, agreements, information formats, and customer journeys
 
-- **Good**, because every architectural risk—domain logic, coupling, message contracts, Protobuf compatibility, and UI accessibility—has a targeted automated gate.
-- **Good**, because running `PactConsumer` before `PactProvider` validates asynchronous integration without spinning up a full Kafka cluster.
-- **Bad**, because contributors must understand and maintain multiple test frameworks (`TUnit`, `ArchUnitNET`, `PactNet`, `Vitest`, `Playwright BDD`).
+- **Good**, because each risk has a suitable automated check.
+- **Good**, because connected-area agreements can be tested without starting every live service.
+- **Bad**, because contributors must maintain several kinds of checks.
 
-### Rely on unit tests alone
+### Rely on small unit checks alone
 
-- **Good**, because execution finishes in seconds with zero external dependencies.
-- **Bad**, because mocked unit tests cannot detect broken Kafka message contracts, Protobuf incompatibilities, or broken frontend routing.
+- **Good**, because checks run quickly.
+- **Bad**, because they cannot detect broken agreements or website behavior.
 
-### Rely on full-stack end-to-end tests alone
+### Rely on full browser journeys alone
 
-- **Good**, because tests exercise real browser interactions across deployed services.
-- **Bad**, because E2E suites are slower, harder to isolate, and do not enforce internal C# architecture rules or exhaustive error paths.
+- **Good**, because tests exercise real customer interactions.
+- **Bad**, because they are slower and do not cover every internal rule.
 
-### Rely on manual pull-request code review alone
+### Rely on manual review alone
 
-- **Good**, because human reviewers apply nuanced domain judgment.
-- **Bad**, because manual inspection misses subtle serialization, dependency, and regression bugs reliably caught by automated suites.
-
-## Verification and links
-
-- **Verified against:** `BookWorm.slnx`, `mise.toml`, `Directory.Packages.props`, `tests/BookWorm.ArchTests/BookWorm.ArchTests.csproj`, `tests/BookWorm.Testing/BookWorm.Testing.csproj`, `tests/pacts/`, `src/Clients/package.json`, `src/Clients/turbo.json`
-- **Related architecture:** [[doc|arc42/08-crosscutting-concepts/006-testing-and-change-safety]], [[doc|development/008-testing-matrix]], [[doc|development/005-testing]]
-- **Related ADRs:** ADR-BW-009, ADR-BW-017, ADR-BW-018, [[doc|arc42/09-architecture-decisions]]
+- **Good**, because humans apply judgment.
+- **Bad**, because manual inspection misses many subtle communication and repeated-change mistakes.

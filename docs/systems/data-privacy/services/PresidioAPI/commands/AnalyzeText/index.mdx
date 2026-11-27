@@ -8,7 +8,7 @@ badges:
     textColor: red
 summary: Detects PII entities in one text string or a batch, returning entity types, text offsets, confidence scores, and optional analysis explanations.
 owners:
-  - contributor-team
+  - platform-team
 schemaPath: schema.json
 operation:
   method: POST
@@ -79,7 +79,7 @@ The upstream OpenAPI document lists only `200 OK` for `POST /analyze`; it does n
 ## Related documentation
 
 - [[command|AnonymizeText]] — Transform text using detections returned by `AnalyzeText`.
-- [[service|PresidioAPI]] — Overview of the Presidio Analyzer and Anonymizer sidecars.
+- [[service|presidio-api]] — Overview of the Presidio Analyzer and Anonymizer sidecars.
 - [[query|GetRecognizers]] — List active Presidio Analyzer recognizers.
 - [[query|GetSupportedEntities]] — List detectable PII entity types.
 

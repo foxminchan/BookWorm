@@ -1,6 +1,6 @@
 ---
 id: CancelOrderCommand
-name: Cancel order
+name: Send order cancelled notification
 version: 1.0.0
 badges:
   - content: Order Lifecycle
@@ -11,7 +11,7 @@ summary: |
   and submit a canceled-order email.
 schemaPath: schema.json
 owners:
-  - contributor-team
+  - platform-team
 ---
 
 `CancelOrderCommand` (`BookWorm.Contracts.CancelOrderCommand`) is an asynchronous Kafka integration command published by **Finance** and consumed by **Notification** to render and submit a canceled-order customer email. It never mutates order state in **Ordering API**.

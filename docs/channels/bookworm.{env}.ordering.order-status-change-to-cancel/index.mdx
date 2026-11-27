@@ -22,82 +22,23 @@ protocols:
   - kafka
 ---
 
-`bookworm.{env}.ordering.order-status-change-to-cancel` (v1.0.0) is the Kafka topic owned by Ordering API that reports an `Order` transitioning from `New` to `Cancelled`. Finance consumes `OrderStatusChangedToCancelIntegrationEvent` through an Azure Functions Kafka trigger to signal the running `OrderOrchestrator` saga instance. This channel reports business cancellation state and is distinct from order soft deletion and Finance's downstream `CancelOrderCommand`.
+Ordering publishes this event when an order changes from New to Cancelled. Finance consumes it to update the checkout workflow and may ask Notification to send a cancellation email.
+
+**Producer:** Ordering service. **Consumer:** Finance order coordination.
+
+This is a business status event, not an order soft-delete notification and not a confirmation that an email was delivered. Finance consumes it directly; failures do not use a service dead-letter topic.
 
 ## Channel information
 
 <ChannelInformation />
 
-## Overview
+## Topic and message
 
-| Property                | Value                                                                                                                                                                                                                                                                                         |
-| :---------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**               | Ordering bounded context (**Ordering API**, Aspire resource `ordering`)                                                                                                                                                                                                                       |
-| **Topic pattern**       | `bookworm.{env}.ordering.order-status-change-to-cancel` (`AppendPrefix = true`)                                                                                                                                                                                                               |
-| **Producer**            | [[service\|order-api]] (`EventMapper` + Wolverine PostgreSQL outbox in `orderingdb`)                                                                                                                                                                                                          |
-| **Consumer**            | [[service\|order-orchestration]] (`OrderCancelledTrigger`, Azure Functions `[KafkaTrigger]`, consumer group `finance`)                                                                                                                                                                        |
-| **Message contract**    | [[event\|OrderStatusChangedToCancelIntegrationEvent]] (`BookWorm.Contracts.OrderStatusChangedToCancelIntegrationEvent`)                                                                                                                                                                       |
-| **Protocol / format**   | Kafka stream, CloudEvents JSON (`application/json`, camelCase via `JsonSerializerDefaults.Web`)                                                                                                                                                                                               |
-| **Partition key**       | `OrderId` (configured via `opts.MessagePartitioning.ByPropertyNamed("OrderId")` in Ordering API)                                                                                                                                                                                              |
-| **Delivery guarantee**  | At-least-once                                                                                                                                                                                                                                                                                 |
-| **Dead-letter channel** | None (Finance consumes via Azure Functions `KafkaTrigger`, not a Wolverine native DLQ listener)                                                                                                                                                                                               |
-| **Source**              | `src/Services/Ordering/BookWorm.Ordering/IntegrationEvents/Events/OrderStatusChangedToCancelIntegrationEvent.cs`, `src/Services/Ordering/BookWorm.Ordering/Infrastructure/EventMapper.cs`, `src/Services/Finance/BookWorm.Finance/Features/Orders/OrderCancellation/OrderCancelledTrigger.cs` |
+The topic is `bookworm.{env}.ordering.order-status-change-to-cancel`. Replace `{env}` with `development`, `staging`, or `production`. Messages are CloudEvents JSON keyed by `orderId` and may include customer contact details and order total. The `basketId` field in this event represents the buyer identifier in current messages; do not assume it identifies a Basket service record. Finance may publish [[channel|bookworm.&#123;env&#125;.finance.cancel-order]].
 
-## Parameters and fields
+## Operations and recovery
 
-### Topic parameters
-
-`KafkaTopicRouter.CreateTopicName` resolves the topic name using the host project prefix (`bookworm`), kebab-case environment name, owning service (`ordering`), and topic (`order-status-change-to-cancel`).
-
-| Parameter | Type     | Required | Default       | Allowed values                         | Description                                                                   |
-| :-------- | :------- | :------- | :------------ | :------------------------------------- | :---------------------------------------------------------------------------- |
-| `{env}`   | `string` | Yes      | `development` | `development`, `staging`, `production` | Kebab-case Aspire host environment name (`IHostEnvironment.EnvironmentName`). |
-
-### Payload fields
-
-The CloudEvents `data` object carries the camelCase JSON representation of `OrderStatusChangedToCancelIntegrationEvent`.
-
-| Name           | Type                 | Required | Default                 | Constraints                               | Description                                                                  |
-| :------------- | :------------------- | :------- | :---------------------- | :---------------------------------------- | :--------------------------------------------------------------------------- |
-| `id`           | `string` (UUID)      | Yes      | `Guid.CreateVersion7()` | UUID v7 inherited from `IntegrationEvent` | Unique integration-event identifier.                                         |
-| `creationDate` | `string` (date-time) | Yes      | `DateTime.UtcNow`       | ISO 8601 UTC timestamp                    | UTC timestamp when Ordering API created the event.                           |
-| `orderId`      | `string` (UUID)      | Yes      | —                       | Valid UUID; Kafka partition key           | Identifier of the canceled order and target `OrderOrchestrator` instance ID. |
-| `basketId`     | `string` (UUID)      | Yes      | —                       | Valid UUID                                | Populated by Ordering's `EventMapper` from `Order.BuyerId`.                  |
-| `fullName`     | `string \| null`     | No       | `null`                  | Nullable string                           | Customer display name from `ClaimsPrincipal` (`ClaimConstants.Name`).        |
-| `email`        | `string \| null`     | No       | `null`                  | Nullable email address                    | Customer email address from `ClaimsPrincipal` (`ClaimTypes.Email`).          |
-| `totalMoney`   | `number` (`decimal`) | Yes      | —                       | Non-negative decimal                      | Total monetary amount of the canceled order.                                 |
-
-:::note
-`BookWorm.Ordering/Infrastructure/EventMapper.cs` currently populates `basketId` with `Order.BuyerId`. Downstream consumers must not assume `basketId` is an independent Basket API identifier.
-:::
-
-### Headers and envelope metadata
-
-| Header / attribute     | Location            | Value / source                                                  | Description                                                                      |
-| :--------------------- | :------------------ | :-------------------------------------------------------------- | :------------------------------------------------------------------------------- |
-| `specversion`          | CloudEvents JSON    | `"1.0"`                                                         | CloudEvents specification version written by Wolverine's `CloudEventsMapper`.    |
-| `type` / `messagetype` | CloudEvents JSON    | `BookWorm.Contracts.OrderStatusChangedToCancelIntegrationEvent` | Explicit `[MessageIdentity]` alias for cross-service deserialization.            |
-| `source`               | CloudEvents JSON    | `urn:bookworm:book-worm.ordering`                               | Producer URN formatted as `urn:bookworm:{applicationName.ToKebabCase()}`.        |
-| `traceparent`          | Kafka header & JSON | W3C Trace Context                                               | Propagates OpenTelemetry distributed traces from Ordering API to Finance.        |
-| `requestid`            | Envelope header     | Propagated from cancel-order HTTP request                       | Correlates cancellation requests across Ordering API, Finance, and Notification. |
-| `x-user-id` / `userid` | Envelope header     | `ClaimTypes.NameIdentifier` from HTTP context                   | Carries caller identity across async hops.                                       |
-
-## Delivery, partitioning, and consumer behavior
-
-- **Transactional outbox:** Ordering API publishes `OrderStatusChangedToCancelIntegrationEvent` through Wolverine's PostgreSQL outbox (`orderingdb`, `wolverine` schema) bound to EF Core transactions (`UsePostgresOutbox`), guaranteeing at-least-once dispatch after committing the `Order` status change.
-- **Partitioning:** Ordering API partitions by `OrderId` so events for the same order stay on a single partition within this topic.
-- **Finance Durable Functions consumption:** `OrderCancelledTrigger` listens on `%KafkaTopics:OrderStatusChangedToCancel%` with `ConsumerGroup = "finance"`, unwraps the CloudEvents `data` object via `CloudEventsMessageParser.Deserialize`, and invokes `client.RaiseEventAsync(orderId, "OrderStatusChangedToCancelIntegrationEvent", @event)` against Durable Task Scheduler (`finance-taskhub`).
-- **Saga transition:** `OrderCancelledStep` transitions the `OrderOrchestrator` aggregate to terminal `OrderStatus.Cancelled` and, when `Order.CanSendNotification` is true (both `FullName` and `Email` are non-blank), dispatches `CancelOrderCommand` on [[channel|bookworm.&#123;env&#125;.finance.cancel-order]].
-
-## Error responses and dead-letter behavior
-
-| Condition                                                                                         | Handling behavior                                                                                                                                                                                                        | Recovery behavior                                                                                                                                                 |
-| :------------------------------------------------------------------------------------------------ | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Invalid JSON or malformed CloudEvents envelope                                                    | `CloudEventsMessageParser.Deserialize` throws `JsonException` or `InvalidOperationException` inside `OrderCancelledTrigger`.                                                                                             | Inspect `finance` Azure Functions logs and Kafka consumer group `finance` offsets; Finance does not configure a Wolverine native DLQ for incoming Kafka triggers. |
-| Durable Task Scheduler (`finance-taskhub`) unreachable                                            | `client.RaiseEventAsync` fails inside `OrderCancelledTrigger`.                                                                                                                                                           | Verify Durable Task Scheduler health and Azure Functions host logs before replaying or resetting offsets.                                                         |
-| Order already in terminal saga state (`Completed`, `Cancelled`, `BasketDeletionFailed`, `Failed`) | `OrderLifecycleDecider` rejects non-terminal transitions with `FinanceDomainException` if an orchestration is still executing; events raised to an already completed orchestration instance are ignored by Durable Task. | Inspect `OrderOrchestrator` instance status (`orderId`) in Durable Task Scheduler.                                                                                |
-
-The Finance and Catalog Ingestion `host.json` files contain no Kafka retry or commit overrides. With `Microsoft.Azure.Functions.Worker.Extensions.Kafka` 4.3.3 defaults, `CommitOnFailure` is `true`: a failed invocation's offset is stored for auto-commit and the message is not retried. If disabled, the extension retries the message in place up to five times, then force-commits and skips it. See the versioned [`KafkaOptions`](https://github.com/Azure/azure-functions-kafka-extension/blob/4.3.3/src/Microsoft.Azure.WebJobs.Extensions.Kafka/Config/KafkaOptions.cs), [`SingleItemFunctionExecutor`](https://github.com/Azure/azure-functions-kafka-extension/blob/4.3.3/src/Microsoft.Azure.WebJobs.Extensions.Kafka/Trigger/SingleItemFunctionExecutor.cs), and [`AsyncCommitStrategy`](https://github.com/Azure/azure-functions-kafka-extension/blob/4.3.3/src/Microsoft.Azure.WebJobs.Extensions.Kafka/Trigger/AsyncCommitStrategy.cs) sources.
+If Finance does not reflect the cancellation, check the Finance worker logs, consumer progress, and workflow status for the order ID. The trigger does not have a dedicated dead-letter topic; verify what happened before resetting offsets or replaying, since duplicate or late events may arrive after the workflow has ended. Protect customer data when sharing diagnostic details.
 
 ## Examples
 
@@ -133,10 +74,9 @@ Kafka header: `traceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7
 
 ## Related documentation
 
-- [[event|OrderStatusChangedToCancelIntegrationEvent]] — Event contract and domain mapping details.
-- [[channel|bookworm.&#123;env&#125;.finance.cancel-order]] — Downstream command channel carrying `CancelOrderCommand` to Notification.
-- [[channel|bookworm.&#123;env&#125;.ordering.user-checked-out]] — Checkout event channel that starts `OrderOrchestrator`.
-- [[service|order-api]] — Producing service and `orderingdb` transactional outbox.
-- [[service|order-orchestration]] — Azure Functions Durable Task saga consuming this channel.
+- [[channel|bookworm.&#123;env&#125;.finance.cancel-order]]
+- [[channel|bookworm.&#123;env&#125;.ordering.user-checked-out]]
+- [[service|order-api]]
+- [[service|order-orchestration]]
 
 <NodeGraph />

@@ -1,6 +1,6 @@
 ---
 title: Notification Delivery and Maintenance
-summary: Runtime email outbox lifecycle and scheduled retry and cleanup requests.
+summary: Email delivery attempts and scheduled platform maintenance.
 owners:
   - contributor-team
 badges:
@@ -9,77 +9,43 @@ badges:
     textColor: purple
 ---
 
-BookWorm decouples customer email delivery from checkout workflows using a stateless Kafka consumer worker (**Notification**, `BookWorm.Notification`) with Redis-backed idempotency, Polly SMTP resilience, and native Kafka dead-letter queuing—without a PostgreSQL email outbox database. Scheduled platform maintenance runs independently in **Scheduler** (`BookWorm.Scheduler`) using Quartz.NET backed by PostgreSQL (`schedulerdb`) to trigger catalog vector indexing and emit operational heartbeats.
+Notification delivers transactional email commands independently of order state, while Scheduler initiates recurring catalog and liveness work. Kafka redelivery and external SMTP acceptance are distinct reliability boundaries.
 
-:::note
-**Architecture reconciliation:** Earlier BookWorm documentation described a PostgreSQL email outbox in Notification and hourly Scheduler resend/cleanup jobs. Those components are not present in the codebase. Notification processes Kafka commands statelessly with Redis idempotency, and Scheduler runs only `ProcessVectorBatchJob` and `HeartbeatJob`. See ADR: Stateless Kafka notification worker.
-:::
+## Purpose & Trigger
 
-## Scope and constraints
+The flow sends order email when Finance publishes a command and executes platform maintenance on schedule. Email and scheduled work are independent processes.
 
-- **Scope:** Outbound transactional order emails triggered by **Finance** (`PlaceOrderCommand`, `CompleteOrderCommand`, `CancelOrderCommand`) through **Notification**, and recurring platform jobs triggered by **Scheduler**.
-- **Out of scope:** Order lifecycle state transitions (owned by **Ordering API**), saga state management (owned by **Finance**), and downstream vector embedding computation (see [[doc|arc42/06-runtime-view/002-catalog-search-index-maintenance]]).
-- **Key constraints:** Notification has no REST/gRPC API (exposing only `/health` and `/alive` in Development) and no relational database. Scheduler has no REST/gRPC API beyond the Entra ID-protected Quartz Dashboard (`/quartz`, `admin` role) and starts explicitly in local Aspire runs (`.WithExplicitStart()`).
+## Visual References
 
-## Building block view
-
-| Building block              | Bounded context        | Technology                                                                                   | Owned state / responsibility                                                                                               | Source path                                                         |
-| :-------------------------- | :--------------------- | :------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------ |
-| **Notification**            | Platform               | .NET 11 Worker (`Sdk.Worker`), Wolverine, MailKit `5.0.0`, Mjml.Net `4.15.0`                 | Consumes Finance order email commands, deduplicates via Redis, renders MJML templates, submits MIME emails over SMTP       | `src/Services/Notification/BookWorm.Notification`                   |
-| **Redis** (`redis`)         | Shared infrastructure  | Redis / Azure Managed Redis + FusionCache                                                    | Stores 24-hour integration-event idempotency keys (`idempotency:{handler}:{eventId}`) for Notification                     | `src/BuildingBlocks/BookWorm.Chassis/EventBus/Idempotency`          |
-| **Mailpit / SendGrid SMTP** | External / Local email | Mailpit container (Dev, port `587`); SendGrid SMTP (`smtp://smtp.sendgrid.net:587`, Publish) | Accepts rendered SMTP submissions from MailKit                                                                             | `src/Aspire/BookWorm.AppHost/Extensions/Network/EmailExtensions.cs` |
-| **Scheduler**               | Platform               | .NET 11 (`Sdk.Web`), Quartz.NET `4.8.1`, Wolverine                                           | Runs recurring cron jobs, persists schedules and 30-day execution history (up to 100k entries) in PostgreSQL `schedulerdb` | `src/Services/Scheduler/BookWorm.Scheduler`                         |
-
-## Runtime view: Stateless email delivery
-
-This sequence diagram traces an order notification command from **Finance** through Kafka, Redis idempotency checks, MJML rendering, and resilient MailKit SMTP submission.
+_Transactional Email Delivery_
 
 <MermaidFileLoader file="mermaids/005-notification-delivery-and-maintenance-diagram-1.mmd" />
 
-### Delivery flow details
-
-1. **Command ingestion:** **Finance** publishes `PlaceOrderCommand` (`bookworm.{env}.finance.place-order`), `CompleteOrderCommand` (`bookworm.{env}.finance.complete-order`), or `CancelOrderCommand` (`bookworm.{env}.finance.cancel-order`), partitioned by `OrderId`.
-2. **Idempotency guard:** Each Wolverine handler wraps execution in `IIntegrationEventIdempotencyGuard` (`FusionCacheIdempotencyGuard`). When Redis is configured, the guard executes an atomic `StringSetAsync(..., When.NotExists)` with a **24-hour TTL** and mirrors the entry in FusionCache L1. Duplicate deliveries with the same `message.Id` return without re-sending.
-3. **Blank-email safeguard:** `OrderNotificationHelper.SendAsync` returns early when `email` is `null` or whitespace, preventing template rendering or SMTP errors for orders without customer email addresses.
-4. **Template rendering and MIME construction:** `MjmlTemplateRenderer` compiles `Templates/Orders/OrderEmail.mjml` inside `Templates/_Layout.mjml`, and `OrderMimeMessageBuilder` produces the `MimeMessage`.
-5. **Resilient SMTP handoff:** `MailKitSender` executes inside the named `Notification` Polly resilience pipeline (`AddMailResiliencePipeline`):
-   - **Circuit breaker** handling transient `CommandException`, `ProtocolException`, `IOException`, `TimeoutException`, and `TimeoutRejectedException`.
-   - **Exponential backoff retry with jitter** for the same transient fault predicate.
-   - **30-second timeout** per attempt (`TimeoutStrategyOptions.Timeout = TimeSpan.FromSeconds(30)`).
-   - **Environment routing:** Local development targets the **Mailpit** container (`mailpit` resource); cloud deployments target parameterized SMTP (`email` resource, defaulting to `smtp://smtp.sendgrid.net:587`).
-6. **Failure recovery and DLQ:** If SMTP submission still fails, the idempotency guard deletes the Redis key so a subsequent retry can run. Wolverine retries transient exceptions with `50ms`, `250ms`, and `1s` full-jitter cooldowns before routing exhausted envelopes to `bookworm.{env}.notification.dead-letter-queue` (7-day expiration). Deserialization failures (`JsonException`, `FormatException`) move directly to the DLQ.
-
-## Runtime view: Scheduled platform maintenance
-
-**Scheduler** operates independently of Notification. It loads two durable Quartz.NET jobs from `src/Services/Scheduler/BookWorm.Scheduler/jobs.json` and stores job state in PostgreSQL `schedulerdb` alongside a Wolverine PostgreSQL outbox (`wolverine` schema).
-
-This flowchart shows the two active scheduled jobs in Scheduler and their downstream targets.
+_Scheduled Platform Maintenance_
 
 <MermaidFileLoader file="mermaids/005-notification-delivery-and-maintenance-diagram-2.mmd" />
 
-| Quartz job              | Cron schedule (UTC)                 | Misfire policy | Concurrency                     | Runtime behavior                                                                                                                                       |
-| :---------------------- | :---------------------------------- | :------------- | :------------------------------ | :----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ProcessVectorBatchJob` | `0 0/5 * * * ?` (every 5 minutes)   | `FireOnceNow`  | `[DisallowConcurrentExecution]` | Publishes `ProcessVectorBatchIntegrationEvent` via Wolverine to unprefixed Kafka topic `scheduler.process-vector-batch` to wake **Catalog Ingestion**. |
-| `HeartbeatJob`          | `0/30 * * * * ?` (every 30 seconds) | `FireOnceNow`  | Default                         | Emits a periodic scheduler heartbeat signal for operational liveness visibility.                                                                       |
+## Step-by-Step Walkthrough
 
-## Consistency, retries, and operational boundaries
+1. Finance publishes an order email command asynchronously and associates it with the order.
+2. Kafka delivers the command to Notification. Notification claims a 24-hour idempotency key before processing.
+3. A duplicate event identifier exits without rendering or sending email.
+4. For a new identifier with a usable recipient, Notification renders the email and submits it through the protected SMTP path.
+5. The SMTP relay's acceptance is a handoff result, not proof of mailbox delivery.
+6. Scheduler persists scheduled jobs and starts them independently on their cron intervals.
+7. The catalog batch job publishes an asynchronous trigger for Catalog Ingestion.
+8. The heartbeat job records liveness independently of email delivery.
 
-- **SMTP acceptance does not guarantee inbox delivery:** A `250 OK` response from Mailpit or SendGrid confirms only that the SMTP relay accepted the message, not that it reached the recipient's mailbox.
-- **At-least-once semantics across retries and Finance reissues:** Redis idempotency prevents duplicate sends for exact redeliveries of the same `message.Id` within 24 hours. However, if **Finance** reissues a new `PlaceOrderCommand` with a new message ID after a saga timeout, or if an SMTP connection drops after server acceptance, a customer can still receive a duplicate email.
-- **No database cleanup backlog:** Because Notification stores no email rows in PostgreSQL, there is no outbox table to prune and no hourly cleanup job to monitor. Monitor Kafka consumer lag, `bookworm.{env}.notification.dead-letter-queue` depth, MailKit health checks (`MailKitHealthCheck`), and SMTP provider health directly.
-- **PII protection in logs:** Notification enables HMAC redaction (`AddRedaction()` with `HMAC__Key`) so customer email addresses and personal details stay masked in structured logs.
+## Error Handling & Edge Cases
 
-## Quality scenarios and known risks
+- Missing recipient addresses skip rendering and delivery.
+- SMTP failures retry within a bounded resilience policy and release idempotency after an exhausted attempt.
+- Kafka retries then route exhausted commands to the notification dead-letter queue.
+- A newly reissued command with a new identifier may create a duplicate because broker delivery and Finance reissue semantics differ.
+- Scheduler failure and email worker failure are observed independently.
 
-| Quality attribute / risk | Scenario or exposure                                                | Current mitigation or gap                                                                                                                                                                                                                      |
-| :----------------------- | :------------------------------------------------------------------ | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Reliability**          | SendGrid SMTP experiences a 2-minute outage during peak checkout.   | Polly circuit breaker + exponential jitter retry + 30s timeout isolate transient faults; Wolverine retries (`50ms / 250ms / 1s`) and moves exhausted messages to `bookworm.{env}.notification.dead-letter-queue` (7-day retention) for replay. |
-| **Idempotency**          | Kafka redelivers a `PlaceOrderCommand` after a worker restart.      | `FusionCacheIdempotencyGuard` deduplicates by `message.Id` in Redis for 24 hours; separate `message.Id` reissues from Finance saga retries can still produce duplicate emails.                                                                 |
-| **Observability**        | Operators inspect Scheduler green runs assuming emails are healthy. | Scheduler has no link to Notification; monitor Notification consumer lag, DLQ depth, and `MailKitHealthCheck` directly (see [[doc\|operational/002-observability-and-diagnostics]]).                                                           |
+## Quality & Consistency Notes
 
-## Related architecture decisions
-
-| ADR                                      | Decision summary                                                                                                                  | Status    |
-| :--------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------- | :-------- |
-| ADR: Stateless Kafka notification worker | Replaces a PostgreSQL email outbox and scheduled resend/cleanup jobs with a stateless Kafka + MailKit + Redis idempotency worker. | Accepted  |
-| [[doc\|arc42/09-architecture-decisions]] | Full catalog of platform and system architecture decisions, including superseded outbox ADRs.                                     | Reference |
+- Email delivery is at-least-once when failures or broker redeliveries occur.
+- The idempotency key prevents exact redelivery duplicates for 24 hours.
+- Scheduled work and inbox delivery may be healthy while search freshness or mailbox delivery is degraded.

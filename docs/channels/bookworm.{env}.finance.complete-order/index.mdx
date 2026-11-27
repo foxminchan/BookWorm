@@ -25,75 +25,23 @@ deadLetterChannel:
   version: 1.0.0
 ---
 
-`bookworm.{env}.finance.complete-order` (v1.0.0) is the Kafka topic owned by Finance that delivers `CompleteOrderCommand` to Notification for completed-order emails. Finance publishes the command from the `OrderOrchestrator` saga after Ordering API reports completion. A successful SMTP submission does not confirm final recipient delivery, and no result event is published back.
+Finance publishes this command after Ordering reports that an order is complete. Notification consumes it to submit a completion email when customer contact details are available.
+
+**Producer:** Finance order coordination. **Consumer:** Notification service.
+
+A successful email submission is not proof of final delivery, and no delivery result is sent back to Finance.
 
 ## Channel information
 
 <ChannelInformation />
 
-## Overview
+## Topic and message
 
-| Property                | Value                                                                                                                                                                                                                                                                                         |
-| :---------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**               | Ordering bounded context (**Finance**, Aspire resource `finance`)                                                                                                                                                                                                                             |
-| **Topic pattern**       | `bookworm.{env}.finance.complete-order` (`AppendPrefix = true`)                                                                                                                                                                                                                               |
-| **Producer**            | [[service\|order-orchestration]] (`PublishCompleteOrderActivity` via Wolverine)                                                                                                                                                                                                               |
-| **Consumer**            | [[service\|notification-api]] (`CompleteOrderCommandHandler` via Wolverine)                                                                                                                                                                                                                   |
-| **Message contract**    | [[command\|CompleteOrderCommand]] (`BookWorm.Contracts.CompleteOrderCommand`)                                                                                                                                                                                                                 |
-| **Protocol / format**   | Kafka stream, CloudEvents JSON (`application/json`, camelCase via `JsonSerializerDefaults.Web`)                                                                                                                                                                                               |
-| **Partition key**       | `OrderId` (`opts.MessagePartitioning.ByPropertyNamed("OrderId")` in Finance)                                                                                                                                                                                                                  |
-| **Delivery guarantee**  | At-least-once                                                                                                                                                                                                                                                                                 |
-| **Dead-letter channel** | [[channel\|bookworm.&#123;env&#125;.notification.dead-letter-queue]]                                                                                                                                                                                                                          |
-| **Source**              | `src/Services/Finance/BookWorm.Finance/Contracts/IntegrationCommands/CompleteOrderCommand.cs`, `src/Services/Notification/BookWorm.Notification/IntegrationEvents/EventHandlers/CompleteOrderCommandHandler.cs`, `src/BuildingBlocks/BookWorm.Chassis/EventBus/Wolverine/KafkaTopicRouter.cs` |
+The topic is `bookworm.{env}.finance.complete-order`. Replace `{env}` with `development`, `staging`, or `production`. Messages are CloudEvents JSON keyed by `orderId` and include customer details and order total. Notification skips delivery when no usable email address is present. Failed messages go to [[channel|bookworm.&#123;env&#125;.notification.dead-letter-queue]].
 
-## Parameters and fields
+## Operations and recovery
 
-### Topic parameters
-
-| Parameter | Type     | Required | Default       | Allowed values                         | Description                                                                   |
-| :-------- | :------- | :------- | :------------ | :------------------------------------- | :---------------------------------------------------------------------------- |
-| `{env}`   | `string` | Yes      | `development` | `development`, `staging`, `production` | Kebab-case Aspire host environment name (`IHostEnvironment.EnvironmentName`). |
-
-### Payload fields
-
-| Name           | Type                 | Required | Default                 | Constraints                                                     | Description                                                          |
-| :------------- | :------------------- | :------- | :---------------------- | :-------------------------------------------------------------- | :------------------------------------------------------------------- |
-| `id`           | `string` (UUID)      | Yes      | `Guid.CreateVersion7()` | UUID v7 inherited from `IntegrationEvent`                       | Unique message identifier; Notification idempotency key.             |
-| `creationDate` | `string` (date-time) | Yes      | `DateTime.UtcNow`       | ISO 8601 UTC timestamp                                          | UTC timestamp when Finance created the command.                      |
-| `orderId`      | `string` (UUID)      | Yes      | —                       | Valid UUID; Kafka partition key                                 | Identifier of the completed order.                                   |
-| `fullName`     | `string \| null`     | No       | `null`                  | Nullable in the contract; Finance only publishes when non-blank | Customer display name; Notification defaults `null` to `"Customer"`. |
-| `email`        | `string \| null`     | No       | `null`                  | Nullable in the contract; Finance only publishes when non-blank | Recipient address; Notification skips delivery if blank.             |
-| `totalMoney`   | `number` (`decimal`) | Yes      | —                       | Non-negative decimal                                            | Order total shown in the email.                                      |
-
-### Headers and envelope metadata
-
-| Header / attribute     | Location            | Value / source                                 | Description                                                    |
-| :--------------------- | :------------------ | :--------------------------------------------- | :------------------------------------------------------------- |
-| `specversion`          | CloudEvents JSON    | `"1.0"`                                        | CloudEvents specification version.                             |
-| `type` / `messagetype` | CloudEvents JSON    | `BookWorm.Contracts.CompleteOrderCommand`      | Message identity from `Type.FullName`.                         |
-| `source`               | CloudEvents JSON    | `urn:bookworm:book-worm.finance`               | Producer URN (`urn:bookworm:{applicationName.ToKebabCase()}`). |
-| `traceparent`          | Kafka header & JSON | W3C Trace Context                              | Distributed trace propagation.                                 |
-| `requestid`            | Envelope header     | Propagated from upstream request               | Cross-service log correlation.                                 |
-| `x-user-id` / `userid` | Envelope header     | Propagated `NameIdentifier` claim when present | User context across async hops.                                |
-
-## Delivery, partitioning, and consumer behavior
-
-- **Publication trigger:** `OrderCompletedStep` moves the saga to terminal `OrderStatus.Completed`. If `Order.CanSendNotification` is true (both `FullName` and `Email` non-blank), it calls `PublishCompleteOrderActivity` (Durable Task retry policy: `3` attempts, `5s` initial delay, `2.0x` backoff).
-- **Partitioning:** Records are keyed by `OrderId`. Ordering holds within this topic only, not across lifecycle topics.
-- **Consumer processing:** `CompleteOrderCommandHandler` acquires a 24-hour Redis/FusionCache key (`idempotency:CompleteOrderCommandHandler:{id:N}`), skips blank `email`, renders the `Orders/OrderEmail` MJML template with subject `"BookWorm: Your Order Has Been Completed and Shipped"`, and sends through `MailKitSender` (Mailpit locally, SendGrid SMTP in cloud). Notification has no database or email outbox.
-- **Duplicates:** Redeliveries of the same `id` are suppressed for 24 hours. A newly issued command with a new `id` sends another email.
-
-## Error responses and dead-letter behavior
-
-| Condition                                                                                                                                 | Handling behavior                                                                                            | Recovery behavior                                                                      |
-| :---------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------- |
-| `email` is blank                                                                                                                          | `OrderNotificationHelper.SendAsync` returns without sending.                                                 | Expected no-op.                                                                        |
-| Transient SMTP failure (`CommandException` transient, `ProtocolException`, `IOException`, `TimeoutException`, `TimeoutRejectedException`) | Retried inside the `Notification` Polly pipeline (circuit breaker, exponential jitter retry, `30s` timeout). | Succeeds without DLQ if SMTP recovers.                                                 |
-| Exhausted SMTP retries or MJML rendering failure                                                                                          | `MailKitSender` throws `NotificationException`; the idempotency guard releases its Redis key.                | Envelope reaches [[channel\|bookworm.&#123;env&#125;.notification.dead-letter-queue]]. |
-| `TimeoutException`, `HttpRequestException`, `DbUpdateConcurrencyException`, transient `NpgsqlException`                                   | Wolverine retries at `50ms`, `250ms`, `1s` with full jitter.                                                 | Moved to the Notification DLQ after retries.                                           |
-| `JsonException` or `FormatException`                                                                                                      | Moved to the Notification DLQ with zero retries.                                                             | Fix producer schema drift before replay.                                               |
-
-`NotificationException` is not matched by the explicit BookWorm policies. BookWorm does not configure a catch-all `MaximumAttempts` rule, so Wolverine 6.65.1's unmatched-exception fallback moves it to the native DLQ on the first failure. See the [version-pinned continuation fallback](https://github.com/JasperFx/wolverine/blob/V6.65.1/src/Wolverine/ErrorHandling/FailureRuleCollection.cs) and [dead-letter guide](https://github.com/JasperFx/wolverine/blob/V6.65.1/docs/tutorials/dead-letter-queues.md#when-does-a-message-get-dead-lettered).
+Check the mail provider's activity before replaying: a timeout can occur after acceptance and replay may send a duplicate. The same message is protected against prompt duplicate processing, but a newly issued message can send another email. Do not use this channel to change order status. Keep customer contact details out of incident notes.
 
 ## Examples
 
@@ -127,9 +75,8 @@ Kafka key: `0193f1a2-1111-7d8e-9f01-23456789abcd` (`orderId`)
 
 ## Related documentation
 
-- [[command|CompleteOrderCommand]] — Command payload and consumer handling.
-- [[channel|bookworm.&#123;env&#125;.ordering.order-status-change-to-complete]] — Upstream event that triggers this command.
-- [[channel|bookworm.&#123;env&#125;.notification.dead-letter-queue]] — DLQ for failed Notification envelopes.
-- [[channel|bookworm.&#123;env&#125;.finance.cancel-order]] — Cancellation counterpart.
+- [[channel|bookworm.&#123;env&#125;.ordering.order-status-change-to-complete]]
+- [[channel|bookworm.&#123;env&#125;.notification.dead-letter-queue]]
+- [[channel|bookworm.&#123;env&#125;.finance.cancel-order]]
 
 <NodeGraph />

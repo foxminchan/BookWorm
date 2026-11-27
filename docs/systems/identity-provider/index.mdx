@@ -7,9 +7,9 @@ summary: |
   provides OAuth-compatible identity verification for protected APIs.
 scope: external
 owners:
-  - contributor-team
+  - platform-team
 services:
-  - id: oauthapi
+  - id: oauth-api
     version: 1.0.0
 flows:
   - id: product-ingestion
@@ -38,7 +38,7 @@ badges:
 
 ## Context Diagram
 
-The Identity Provider is an external security boundary. [[domain|BookWorm]] applications
+The Identity Provider is an external security boundary. [[domain|bookworm]] applications
 delegate authentication to the provider and validate the resulting identity
 before allowing access to protected operations.
 
@@ -48,7 +48,7 @@ before allowing access to protected operations.
 
 The Identity Provider authenticates users and issues the identity information
 used by BookWorm APIs to establish an authenticated caller. Its integration
-surface is represented by [[service|oauthapi]], the OAuth API exposed by the
+surface is represented by [[service|oauth-api]], the OAuth API exposed by the
 provider.
 
 BookWorm remains responsible for authorization decisions inside each
@@ -59,7 +59,7 @@ grant access to every operation.
 
 ## Services
 
-The system's integration surface is provided by [[service|oauthapi]], which
+The system's integration surface is provided by [[service|oauth-api]], which
 handles OAuth-based authentication and identity verification.
 
 ## Responsibilities

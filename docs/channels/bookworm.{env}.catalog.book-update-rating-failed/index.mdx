@@ -29,70 +29,23 @@ deadLetterChannel:
   version: 1.0.0
 ---
 
-`bookworm.{env}.catalog.book-update-rating-failed` (v1.0.0) is the Kafka topic owned by Catalog API that sends a compensating signal to Rating API. Catalog API publishes `BookUpdatedRatingFailedIntegrationEvent` when a `FeedbackCreatedIntegrationEvent` references a book that does not exist. Rating API then deletes the orphaned Feedback record.
+Catalog publishes this compensation signal when a new feedback submission refers to a book it cannot find. Rating uses it to remove the orphaned feedback record.
+
+**Producer:** Catalog service. **Consumer:** Rating service.
+
+A feedback deletion for an unknown book is ignored and does not produce this signal.
 
 ## Channel information
 
 <ChannelInformation />
 
-## Overview
+## Topic and message
 
-| Property                | Value                                                                                                                                                                                                                                      |
-| :---------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**               | Catalog bounded context (**Catalog API**, Aspire resource `catalog`)                                                                                                                                                                       |
-| **Topic pattern**       | `bookworm.{env}.catalog.book-update-rating-failed` (`AppendPrefix = true`)                                                                                                                                                                 |
-| **Producer**            | [[service\|catalog-api]] (`FeedbackCreatedIntegrationEventHandler` cascaded message, PostgreSQL outbox in `catalogdb`)                                                                                                                     |
-| **Consumer**            | [[service\|rating-api]] (`BookUpdatedRatingFailedIntegrationEventHandler` via Wolverine)                                                                                                                                                   |
-| **Message contract**    | [[event\|BookUpdatedRatingFailedIntegrationEvent]] (`BookWorm.Contracts.BookUpdatedRatingFailedIntegrationEvent`)                                                                                                                          |
-| **Protocol / format**   | Kafka stream, CloudEvents JSON (`application/json`, camelCase)                                                                                                                                                                             |
-| **Partition key**       | `FeedbackId` (`opts.MessagePartitioning.ByPropertyNamed("BookId", "FeedbackId")` in Catalog API; the event has no `BookId`)                                                                                                                |
-| **Delivery guarantee**  | At-least-once                                                                                                                                                                                                                              |
-| **Dead-letter channel** | [[channel\|bookworm.&#123;env&#125;.rating.dead-letter-queue]]                                                                                                                                                                             |
-| **Source**              | `src/Services/Catalog/BookWorm.Catalog/IntegrationEvents/EventHandlers/FeedbackCreatedIntegrationEventHandler.cs`, `src/Services/Rating/BookWorm.Rating/IntegrationEvents/EventHandlers/BookUpdatedRatingFailedIntegrationEventHandler.cs` |
+The topic is `bookworm.{env}.catalog.book-update-rating-failed`. Replace `{env}` with `development`, `staging`, or `production`. Messages are CloudEvents JSON keyed by `feedbackId`. The example identifies the feedback whose rating could not be applied.
 
-## Parameters and fields
+## Operations and recovery
 
-### Topic parameters
-
-| Parameter | Type     | Required | Default       | Allowed values                         | Description                              |
-| :-------- | :------- | :------- | :------------ | :------------------------------------- | :--------------------------------------- |
-| `{env}`   | `string` | Yes      | `development` | `development`, `staging`, `production` | Kebab-case Aspire host environment name. |
-
-### Payload fields
-
-| Name           | Type                 | Required | Default                 | Constraints               | Description                                   |
-| :------------- | :------------------- | :------- | :---------------------- | :------------------------ | :-------------------------------------------- |
-| `id`           | `string` (UUID)      | Yes      | `Guid.CreateVersion7()` | UUID v7                   | Event identifier; Rating API idempotency key. |
-| `creationDate` | `string` (date-time) | Yes      | `DateTime.UtcNow`       | ISO 8601 UTC              | Creation timestamp.                           |
-| `feedbackId`   | `string` (UUID)      | Yes      | —                       | Valid UUID; partition key | Feedback whose rating could not be applied.   |
-
-### Headers and envelope metadata
-
-| Header / attribute     | Location            | Value / source                                                 | Description                         |
-| :--------------------- | :------------------ | :------------------------------------------------------------- | :---------------------------------- |
-| `specversion`          | CloudEvents JSON    | `"1.0"`                                                        | CloudEvents specification version.  |
-| `type` / `messagetype` | CloudEvents JSON    | `BookWorm.Contracts.BookUpdatedRatingFailedIntegrationEvent`   | Explicit `[MessageIdentity]` alias. |
-| `source`               | CloudEvents JSON    | `urn:bookworm:book-worm.catalog`                               | Producer URN.                       |
-| `traceparent`          | Kafka header & JSON | W3C Trace Context                                              | Distributed tracing.                |
-| `requestid`            | Envelope header     | Propagated from the incoming `FeedbackCreatedIntegrationEvent` | Log correlation.                    |
-
-## Delivery, partitioning, and consumer behavior
-
-- **Producer:** `FeedbackCreatedIntegrationEventHandler` looks up the book in `catalogdb`. If the book is missing, it returns this event as a Wolverine cascaded message, published through the PostgreSQL outbox (`catalogdb`, `wolverine` schema).
-- **Not emitted for deletes:** `FeedbackDeletedIntegrationEventHandler` treats a missing book as a no-op and publishes nothing.
-- **Partitioning:** Keyed by `FeedbackId`.
-- **Consumer:** `BookUpdatedRatingFailedIntegrationEventHandler` acquires a 24-hour Redis/FusionCache key (`idempotency:BookUpdatedRatingFailedIntegrationEventHandler:{id:N}`), loads the Feedback from Cosmos DB (`ratingdb` / `feedbacks`), calls `feedback.Revert()`, deletes it, and saves. A missing Feedback is a no-op, so replays are safe.
-
-## Error responses and dead-letter behavior
-
-| Condition                                                                                               | Handling behavior                                                                                                    | Recovery behavior                                                                                                                |
-| :------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------- |
-| Feedback already deleted                                                                                | Handler returns without changes.                                                                                     | None needed.                                                                                                                     |
-| `TimeoutException`, `HttpRequestException`, `DbUpdateConcurrencyException`, transient `NpgsqlException` | Redis key released; Wolverine retries at `50ms`, `250ms`, `1s` with full jitter.                                     | Moved to [[channel\|bookworm.&#123;env&#125;.rating.dead-letter-queue]] after retries.                                           |
-| `JsonException` or `FormatException`                                                                    | No retries.                                                                                                          | Moved to the Rating DLQ.                                                                                                         |
-| Cosmos DB errors (`CosmosException`)                                                                    | Not matched by a configured rule; Wolverine's continuation fallback moves the message to the native DLQ immediately. | `WolverineHostExtensions.ConfigureDefaultErrorHandling`; Wolverine 6.65.1 `FailureRuleCollection.DetermineExecutionContinuation` |
-
-BookWorm configures exception-specific policies but does not set a catch-all `MaximumAttempts` rule. An exception that matches none of them, including `CosmosException`, uses Wolverine 6.65.1's `MoveToErrorQueue` fallback and reaches the native DLQ on the first failure. The [version-pinned continuation fallback](https://github.com/JasperFx/wolverine/blob/V6.65.1/src/Wolverine/ErrorHandling/FailureRuleCollection.cs) and [dead-letter guide](https://github.com/JasperFx/wolverine/blob/V6.65.1/docs/tutorials/dead-letter-queues.md#when-does-a-message-get-dead-lettered) distinguish this configured-policy case from the general default used when no error policies are configured.
+Before replaying, verify that the book is still absent and that Rating storage is available. If the feedback record has already been removed, processing is a safe no-op. If the book exists, investigate the projection or message mismatch rather than replaying repeatedly. Failed messages are sent to the Rating dead-letter topic.
 
 ## Examples
 
@@ -123,9 +76,8 @@ Kafka key: `0193f1b0-3333-7d8e-9f01-23456789abcd` (`feedbackId`)
 
 ## Related documentation
 
-- [[event|BookUpdatedRatingFailedIntegrationEvent]] — Event contract.
-- [[channel|bookworm.&#123;env&#125;.rating.feedback-create]] — Upstream event that can trigger this compensation.
-- [[channel|bookworm.&#123;env&#125;.rating.dead-letter-queue]] — DLQ for this listener.
-- [[flow|feedback-publication]] — End-to-end flow.
+- [[channel|bookworm.&#123;env&#125;.rating.feedback-create]]
+- [[channel|bookworm.&#123;env&#125;.rating.dead-letter-queue]]
+- [[flow|feedback-publication]]
 
 <NodeGraph />

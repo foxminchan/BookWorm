@@ -6,7 +6,7 @@ summary: |
   Notification host that consumes order commands from Kafka, renders MJML email
   templates, and submits mail over SMTP via MailKit.
 owners:
-  - contributor-team
+  - platform-team
 badges:
   - content: Internal
     backgroundColor: gray
@@ -16,9 +16,6 @@ badges:
     textColor: orange
 styles:
   icon: /icons/languages/dotnet.svg
-sends:
-  - id: SendMail
-    version: 1.0.0
 receives:
   - id: PlaceOrderCommand
     version: 1.0.0
