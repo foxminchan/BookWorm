@@ -7,19 +7,26 @@ version: 1.0.0
 Operational runbook for [[channel|bookworm.&#123;env&#125;.catalog.dead-letter-queue]] owned by [[service|catalog-api]].
 
 <Steps>
-	<Step title="Inspect dead-lettered rating events">
-		```bash kcat -C -b "$KAFKA_BOOTSTRAP" -t "bookworm.${ENV}.catalog.dead-letter-queue" -o -20 -e
-		-f '%t [%p] offset=%o key=%k headers=%h\n%s\n---\n' ```
-	</Step>
-	<Step title="Verify book existence and current rating">
-		Confirm the target `bookId` exists in [[service|catalog-api]] via [[query|GetBook]]. If the book
-		was deleted, do not replay—[[service|rating-api]] handles missing-book compensation via
-		[[event|BookUpdatedRatingFailedIntegrationEvent]].
-	</Step>
-	<Step title="Replay transient failures">
-		For transient database or concurrency failures on [[event|FeedbackCreatedIntegrationEvent]] or
-		[[event|FeedbackDeletedIntegrationEvent]], re-publish the original CloudEvents payload with the
-		`bookId` partition key to `bookworm.${ENV}.rating.feedback-create` or `bookworm.${ENV}
-		.rating.feedback-delete`.
-	</Step>
+<Step title="Inspect dead-lettered rating events">
+
+```bash
+kcat -C -b "$KAFKA_BOOTSTRAP" -t "bookworm.${ENV}.catalog.dead-letter-queue" -o -20 -e -f '%t [%p] offset=%o key=%k headers=%h\n%s\n---\n'
+```
+
+</Step>
+<Step title="Verify book existence and current rating">
+
+Confirm the target `bookId` exists in [[service|catalog-api]] via [[query|GetBook]]. If the book
+was deleted, do not replay—[[service|rating-api]] handles missing-book compensation via
+[[event|BookUpdatedRatingFailedIntegrationEvent]].
+
+</Step>
+<Step title="Replay transient failures">
+
+For transient database or concurrency failures on [[event|FeedbackCreatedIntegrationEvent]] or
+[[event|FeedbackDeletedIntegrationEvent]], re-publish the original CloudEvents payload with the
+`bookId` partition key to `bookworm.${ENV}.rating.feedback-create` or `bookworm.${ENV}
+.rating.feedback-delete`.
+
+</Step>
 </Steps>

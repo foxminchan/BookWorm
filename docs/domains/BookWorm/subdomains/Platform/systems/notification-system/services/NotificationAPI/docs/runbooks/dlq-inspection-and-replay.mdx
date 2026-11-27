@@ -11,18 +11,25 @@ Replaying [[command|PlaceOrderCommand]] to the shared [[channel|bookworm.&#123;e
 :::
 
 <Steps>
-	<Step title="Inspect dead-lettered notification commands">
-		```bash kcat -C -b "$KAFKA_BOOTSTRAP" -t "bookworm.${ENV}.notification.dead-letter-queue" -o -20
-		-e -f '%t [%p] offset=%o key=%k headers=%h\n%s\n---\n' ```
-	</Step>
-	<Step title="Verify SMTP / SendGrid health">
-		Confirm SMTP relay connectivity and credentials are healthy before replaying messages. Blank or
-		`null` `email` payloads do not require replay.
-	</Step>
-	<Step title="Replay eligible commands">
-		For transient SMTP outages on [[command|CompleteOrderCommand]] or
-		[[command|CancelOrderCommand]], re-publish to `bookworm.${ENV}.finance.complete-order` or
-		`bookworm.${ENV}.finance.cancel-order`. If replaying within `24` hours with the same message
-		`id`, clear or rotate the `id` only after confirming no email was delivered.
-	</Step>
+<Step title="Inspect dead-lettered notification commands">
+
+```bash
+kcat -C -b "$KAFKA_BOOTSTRAP" -t "bookworm.${ENV}.notification.dead-letter-queue" -o -20 -e -f '%t [%p] offset=%o key=%k headers=%h\n%s\n---\n'
+```
+
+</Step>
+<Step title="Verify SMTP / SendGrid health">
+
+Confirm SMTP relay connectivity and credentials are healthy before replaying messages. Blank or
+`null` `email` payloads do not require replay.
+
+</Step>
+<Step title="Replay eligible commands">
+
+For transient SMTP outages on [[command|CompleteOrderCommand]] or
+[[command|CancelOrderCommand]], re-publish to `bookworm.${ENV}.finance.complete-order` or
+`bookworm.${ENV}.finance.cancel-order`. If replaying within `24` hours with the same message
+`id`, clear or rotate the `id` only after confirming no email was delivered.
+
+</Step>
 </Steps>
