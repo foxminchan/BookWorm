@@ -1,13 +1,18 @@
 %%{init: {'theme': 'base', 'themeVariables': {'background': '#f5f5f5', 'primaryColor': '#ffffff', 'primaryTextColor': '#2d3142', 'primaryBorderColor': '#2d3142', 'secondaryColor': '#ececec', 'secondaryBorderColor': '#4f5d75', 'tertiaryColor': '#fdf2ee', 'tertiaryBorderColor': '#bf4520', 'lineColor': '#4f5d75', 'textColor': '#2d3142', 'clusterBkg': '#f8f9fa', 'clusterBorder': '#bfc0c0', 'fontFamily': 'Geist, system-ui, sans-serif'}}}%%
 flowchart LR
-	apps["BookWorm Container Apps\n(.NET 11, Functions, Next.js 16)"]
-	dash["Aspire Dashboard\n(Managed ACA Component)"]
-	law["Azure Log Analytics\n(30d non-Prod / 90d Prod)"]
-	ai["Application Insights\n(Linked to Foundry-project)"]
+	apps["Application Workloads\n(API Gateway, Core Services, Frontends)"]
+	dash["Aspire Dashboard\n(Live Traces, Metrics, Logs)"]
+	law["Azure Log Analytics\n(Console & Platform Logs)"]
+	ai["Application Insights\n(AI & Agent Telemetry)"]
+	alerts["Azure Monitor Alerts\n(5xx, Saturation, Throttling, DLQ)"]
+	sre["Azure SRE Agent\n(Automated Triage & Mitigation)"]
 
-	apps --> |"OTLP: Traces, Metrics, Logs"| dash
-	apps -->|"Stdout/Stderr & ACA Events"| law
-	apps -->|"AI & Agent Telemetry"| ai
+	apps -->|"OTLP Telemetry"| dash
+	apps -->|"Stdout/Stderr & Revision Events"| law
+	apps -->|"AI & Privacy Telemetry"| ai
+	law -->|"KQL Alert Rules"| alerts
+	ai -->|"Failure & Latency Alerts"| alerts
+	alerts -->|"Trigger Investigation"| sre
 
 	classDef focal fill:#fdf2ee,stroke:#bf4520,stroke-width:2px,color:#2d3142
 	classDef service fill:#ffffff,stroke:#2d3142,stroke-width:1.2px,color:#2d3142
@@ -17,5 +22,8 @@ flowchart LR
 	class apps focal
 	class dash,law service
 	class ai ext
+	class alerts,sre input
 	linkStyle 0 stroke:#bf4520,stroke-width:2px
 	linkStyle 1 stroke:#bf4520,stroke-width:2px
+	linkStyle 3 stroke:#2d3142,stroke-width:1.5px
+	linkStyle 4 stroke:#2d3142,stroke-width:1.5px

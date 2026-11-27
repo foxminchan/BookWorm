@@ -3,351 +3,122 @@ title: "Quartz scheduler schema reference"
 summary: "PostgreSQL schema, keys, retention limits, and BookWorm job configuration for all 15 Quartz.NET 4.8.1 tables in schedulerdb."
 owners:
   - contributor-team
+badges:
+  - content: Schema Reference
+    backgroundColor: blue
+    textColor: blue
 ---
 
-Scheduler persists job definitions, triggers, cluster state, locks, and execution history in 15 PostgreSQL tables inside `schedulerdb`. This reference consolidates the Quartz.NET `4.8.1` persistent store schema and BookWorm's active job configuration.
+[[service|scheduler-service]] persists durable job definitions, cron triggers, cluster locks, and execution history across 15 PostgreSQL tables in [[container|scheduler-database]] using Quartz.NET `4.8.1`. This reference documents the active job schedule, table keys, and retention defaults for platform operators.
 
-## Overview
-
-| Property                   | Value                                                                                                                                           |
-| :------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**                  | Platform bounded context / **Scheduler** (`scheduler`)                                                                                          |
-| **Source**                 | `src/Services/Scheduler/BookWorm.Scheduler/Extensions/Extensions.cs`, `src/Services/Scheduler/BookWorm.Scheduler/jobs.json`                     |
-| **Backing store**          | PostgreSQL database `schedulerdb` (`AddQuartzPersistentStore`)                                                                                  |
-| **Quartz version**         | `4.8.1` (`Quartz.*`, `Quartz.Aspire.Hosting`)                                                                                                   |
-| **Execution history**      | Enabled (`Quartz:JobStore:ExecutionHistory = true` in `appsettings.json`); `Retention = 30 days`, `MaxEntriesPerScheduler = 100,000`            |
-| **Thread pool & shutdown** | `MaxConcurrency = Environment.ProcessorCount`; `WaitForJobsToComplete = true`                                                                   |
-| **Schedule sync**          | `jobs.json` scanned every 1 minute (`OverwriteExistingData: true`, `FailOnFileNotFound: true`, `FailOnSchedulingError: true`)                   |
-| **Management UI**          | Quartz Dashboard (`/quartz`) protected by Microsoft Entra ID (`admin` role); Dashboard Agent restricts job types to `BookWorm.Scheduler.Jobs.*` |
-
-:::warning
-Do not edit `qrtz_*` rows directly in PostgreSQL. Manage schedules through `jobs.json` or the Quartz Dashboard so Quartz validates expressions, updates binary payloads safely, and preserves cluster lock invariants.
-:::
-
-## BookWorm scheduled jobs
-
-Scheduler loads two durable cron jobs from `src/Services/Scheduler/BookWorm.Scheduler/jobs.json` into `qrtz_job_details`, `qrtz_triggers`, and `qrtz_cron_triggers`:
-
-| Job name                | Trigger name                | Group       | Cron expression (UTC)               | Misfire instruction | Durable / Recover | Concurrency                                      |
-| :---------------------- | :-------------------------- | :---------- | :---------------------------------- | :------------------ | :---------------- | :----------------------------------------------- |
-| `ProcessVectorBatchJob` | `ProcessVectorBatchTrigger` | `Scheduler` | `0 0/5 * * * ?` (every 5 minutes)   | `FireOnceNow`       | `true` / `false`  | Non-concurrent (`[DisallowConcurrentExecution]`) |
-| `HeartbeatJob`          | `HeartbeatTrigger`          | `Scheduler` | `0/30 * * * * ?` (every 30 seconds) | `FireOnceNow`       | `true` / `false`  | Concurrent allowed                               |
-
-`ProcessVectorBatchJob` publishes `ProcessVectorBatchIntegrationEvent` over Kafka (topic `scheduler.process-vector-batch`) through Wolverine's PostgreSQL outbox in `schedulerdb`. Because `jobs.json` defines cron triggers only, `qrtz_simple_triggers`, `qrtz_simprop_triggers`, `qrtz_blob_triggers`, and `qrtz_calendars` remain empty unless ad-hoc triggers or calendars are created at runtime.
-
-## Schema relationships
-
-The diagram below shows how `qrtz_job_details` and `qrtz_triggers` connect to trigger subtype extensions, calendars, active firings, and history tables inside `schedulerdb`. Standalone coordination tables (`qrtz_locks`, `qrtz_scheduler_state`, `qrtz_paused_trigger_grps`, `qrtz_paused_job_grps`) are scoped by `sched_name`.
+## Scheduler Persistence Model
 
 <MermaidFileLoader file="mermaids/005-quartz-schema-diagram-1.mmd" />
 
-Quartz 4.8.1's [PostgreSQL schema](https://github.com/quartznet/quartznet/blob/v4.8.1/database/tables/tables_postgres.sql) defines a foreign key from `qrtz_triggers` to `qrtz_job_details`, plus cascading foreign keys from `qrtz_simple_triggers`, `qrtz_simprop_triggers`, `qrtz_cron_triggers`, and `qrtz_blob_triggers` to `qrtz_triggers`. The schema stores date-time values in `BIGINT` columns; Quartz's [`StdAdoDelegate`](https://github.com/quartznet/quartznet/blob/v4.8.1/src/Quartz/Impl/AdoJobStore/StdAdoDelegate.cs) writes `DateTimeOffset.UtcTicks` and reconstructs values from those ticks (100-nanosecond UTC ticks from year 0001, not Unix milliseconds). This describes the pinned Quartz schema and conversion code; the live local database was not inspected.
-
-## Core job and trigger definitions
-
-### `qrtz_job_details`
-
-Stores durable job definitions and execution policies.
-
-- **Primary key:** `(sched_name, job_name, job_group)`
-
-| Column              | Type      | Required | Description                                                   |
-| :------------------ | :-------- | :------- | :------------------------------------------------------------ |
-| `sched_name`        | `text`    | Yes      | Logical Quartz scheduler name                                 |
-| `job_name`          | `text`    | Yes      | Unique job name within `job_group`                            |
-| `job_group`         | `text`    | Yes      | Logical job group (BookWorm uses `Scheduler`)                 |
-| `description`       | `text`    | No       | Human-readable operator description                           |
-| `job_class_name`    | `text`    | Yes      | Fully qualified .NET `IJob` type name                         |
-| `is_durable`        | `boolean` | Yes      | Keeps the job definition stored when no triggers reference it |
-| `is_nonconcurrent`  | `boolean` | Yes      | Prevents overlapping runs (`[DisallowConcurrentExecution]`)   |
-| `is_update_data`    | `boolean` | Yes      | Persists modified `JobDataMap` entries after execution        |
-| `requests_recovery` | `boolean` | Yes      | Re-executes the job if a node crashes mid-run                 |
-| `job_data`          | `bytea`   | No       | Serialized binary `JobDataMap` payload                        |
-
-### `qrtz_triggers`
-
-Stores common scheduling state, timing, retry, routing, continuation, overlap, and pause metadata for every trigger.
-
-- **Primary key:** `(sched_name, trigger_name, trigger_group)`
-- **Foreign key:** `(sched_name, job_name, job_group)` references `qrtz_job_details`
-
-| Column                    | Type           | Required | Description                                                                                |
-| :------------------------ | :------------- | :------- | :----------------------------------------------------------------------------------------- |
-| `sched_name`              | `text`         | Yes      | Logical Quartz scheduler name                                                              |
-| `trigger_name`            | `text`         | Yes      | Unique trigger name within `trigger_group`                                                 |
-| `trigger_group`           | `text`         | Yes      | Logical trigger group (BookWorm uses `Scheduler`)                                          |
-| `job_name`                | `text`         | Yes      | Target job name in `qrtz_job_details`                                                      |
-| `job_group`               | `text`         | Yes      | Target job group in `qrtz_job_details`                                                     |
-| `description`             | `text`         | No       | Human-readable trigger description                                                         |
-| `next_fire_time`          | `bigint`       | No       | Next scheduled fire timestamp                                                              |
-| `prev_fire_time`          | `bigint`       | No       | Most recent fire timestamp                                                                 |
-| `priority`                | `integer`      | No       | Firing priority when multiple triggers share a fire time                                   |
-| `trigger_state`           | `text`         | Yes      | Current Quartz trigger state (such as `WAITING`, `ACQUIRED`, `PAUSED`, `BLOCKED`, `ERROR`) |
-| `trigger_type`            | `text`         | Yes      | Subtype discriminator (such as `CRON`, `SIMPLE`, `SIMPROP`, `BLOB`)                        |
-| `start_time`              | `bigint`       | Yes      | Earliest timestamp when the trigger can fire                                               |
-| `end_time`                | `bigint`       | No       | Optional expiration timestamp                                                              |
-| `calendar_name`           | `text`         | No       | Optional exclusion calendar name in `qrtz_calendars`                                       |
-| `misfire_instr`           | `smallint`     | No       | Numeric misfire instruction code                                                           |
-| `misfire_orig_fire_time`  | `bigint`       | No       | Original scheduled fire time before a misfire occurred                                     |
-| `execution_group`         | `varchar(200)` | No       | Optional execution-group label for throttling or grouping                                  |
-| `preferred_node`          | `varchar(200)` | No       | Preferred cluster instance name for trigger routing                                        |
-| `preferred_node_auto`     | `boolean`      | Yes      | Indicates whether Quartz assigned `preferred_node` automatically                           |
-| `retry_policy`            | `varchar(250)` | No       | Configured retry policy identifier or descriptor                                           |
-| `retry_attempt`           | `integer`      | No       | Current retry attempt count                                                                |
-| `continues_trigger_name`  | `text`         | No       | Optional follow-on continuation trigger name                                               |
-| `continues_trigger_group` | `text`         | No       | Optional follow-on continuation trigger group                                              |
-| `continuation_condition`  | `integer`      | No       | Condition code controlling when a continuation trigger fires                               |
-| `overlap_policy`          | `integer`      | No       | Policy code governing overlapping trigger firings                                          |
-| `pause_reason`            | `varchar(250)` | No       | Operator-supplied reason when the trigger is paused                                        |
-| `paused_by`               | `varchar(200)` | No       | Actor who paused the trigger                                                               |
-| `paused_at`               | `bigint`       | No       | Timestamp when the trigger was paused                                                      |
-| `misfire_threshold`       | `bigint`       | No       | Per-trigger misfire detection threshold override                                           |
-| `fixed_delay`             | `boolean`      | No       | Indicates fixed-delay scheduling relative to prior completion                              |
-| `job_data`                | `bytea`        | No       | Serialized trigger-scoped `JobDataMap` payload                                             |
-
-## Trigger subtypes
-
-Each trigger subtype extends `qrtz_triggers` with a 1:1 primary and foreign key on `(sched_name, trigger_name, trigger_group)`.
-
-### `qrtz_cron_triggers`
-
-Stores cron expressions and time zones for recurring calendar schedules (used by all default BookWorm jobs).
-
-- **Primary / foreign key:** `(sched_name, trigger_name, trigger_group)` -> `qrtz_triggers`
-
-| Column            | Type   | Required | Description                                                  |
-| :---------------- | :----- | :------- | :----------------------------------------------------------- |
-| `sched_name`      | `text` | Yes      | Logical Quartz scheduler name                                |
-| `trigger_name`    | `text` | Yes      | Trigger name                                                 |
-| `trigger_group`   | `text` | Yes      | Trigger group                                                |
-| `cron_expression` | `text` | Yes      | Quartz cron expression (for example, `0 0/5 * * * ?`)        |
-| `time_zone_id`    | `text` | No       | IANA or Windows time zone ID (`UTC` in BookWorm `jobs.json`) |
-
-### `qrtz_simple_triggers`
-
-Stores fixed-interval repeat schedules (unused under BookWorm's default `jobs.json`).
-
-- **Primary / foreign key:** `(sched_name, trigger_name, trigger_group)` -> `qrtz_triggers`
-
-| Column            | Type     | Required | Description                                     |
-| :---------------- | :------- | :------- | :---------------------------------------------- |
-| `sched_name`      | `text`   | Yes      | Logical Quartz scheduler name                   |
-| `trigger_name`    | `text`   | Yes      | Trigger name                                    |
-| `trigger_group`   | `text`   | Yes      | Trigger group                                   |
-| `repeat_count`    | `bigint` | Yes      | Maximum number of repeats (`-1` for indefinite) |
-| `repeat_interval` | `bigint` | Yes      | Fixed delay between runs in milliseconds        |
-| `times_triggered` | `bigint` | Yes      | Count of completed firings                      |
-
-### `qrtz_simprop_triggers`
-
-Stores typed property slots for calendar-interval and daily-time-interval triggers (unused under BookWorm's default `jobs.json`).
-
-- **Primary / foreign key:** `(sched_name, trigger_name, trigger_group)` -> `qrtz_triggers`
+## Component & Responsibility
+
+| Component                       | Role                                                        | Protocol / Interface                                                             | Persistence / State                                                        | Notes                                                       |
+| :------------------------------ | :---------------------------------------------------------- | :------------------------------------------------------------------------------- | :------------------------------------------------------------------------- | :---------------------------------------------------------- |
+| [[service\|scheduler-service]]  | Executes durable cron jobs & syncs schedule definitions     | Quartz.NET `4.8.1` + Kafka                                                       | [[container\|scheduler-database]] (PostgreSQL)                             | Processor-count concurrency; drains active jobs on shutdown |
+| **Quartz Dashboard**            | Operational UI for inspecting jobs & triggering manual runs | External HTTPS (`/quartz`)                                                       | Reads [[container\|scheduler-database]] via [[service\|scheduler-service]] | Protected by [[service\|oauth-api]] OIDC (`admin` role)     |
+| **Core Job & Trigger Tables**   | Stores job definitions, triggers, and cron expressions      | PostgreSQL (`qrtz_job_details`, `qrtz_triggers`, `qrtz_cron_triggers`)           | Relational (FK cascade)                                                    | Synced every 1 minute from schedule config                  |
+| **Cluster & Lock Tables**       | Coordinates active firings, heartbeats, and row locks       | PostgreSQL (`qrtz_fired_triggers`, `qrtz_scheduler_state`, `qrtz_locks`)         | Ephemeral / cluster state                                                  | Scoped by `sched_name`                                      |
+| **Execution & Misfire History** | Tracks job outcomes, retries, logs, and misfires            | PostgreSQL (`qrtz_execution_history`, `qrtz_misfire_history`, `qrtz_job_status`) | 30-day retention, max `100,000` entries                                    | Rolling summary in `qrtz_job_status`                        |
+
+## Configuration & Operational Defaults
+
+### Active Scheduled Jobs
+
+| Job name                | Trigger name                | Group       | Cron expression (UTC)        | Misfire policy | Durable / Recover | Concurrency        |
+| :---------------------- | :-------------------------- | :---------- | :--------------------------- | :------------- | :---------------- | :----------------- |
+| `ProcessVectorBatchJob` | `ProcessVectorBatchTrigger` | `Scheduler` | `0 0/5 * * * ?` (every 5m)   | Fire once now  | `true` / `false`  | Non-concurrent     |
+| `HeartbeatJob`          | `HeartbeatTrigger`          | `Scheduler` | `0/30 * * * * ?` (every 30s) | Fire once now  | `true` / `false`  | Concurrent allowed |
+
+`ProcessVectorBatchJob` publishes [[event|ProcessVectorBatchIntegrationEvent]] to [[channel|scheduler.process-vector-batch]] via Wolverine's PostgreSQL outbox in [[container|scheduler-database]]. Schedule configuration is scanned every 1 minute, overwriting existing definitions and failing fast on missing or invalid schedules.
+
+### Core Tables
+
+#### `qrtz_job_details`
+
+Primary key: `(sched_name, job_name, job_group)`.
+
+| Column              | Type      | Required | Description                                            |
+| :------------------ | :-------- | :------- | :----------------------------------------------------- |
+| `sched_name`        | `text`    | Yes      | Logical Quartz scheduler name                          |
+| `job_name`          | `text`    | Yes      | Unique job name within `job_group`                     |
+| `job_group`         | `text`    | Yes      | Logical job group (`Scheduler` in BookWorm)            |
+| `description`       | `text`    | No       | Human-readable operator description                    |
+| `job_class_name`    | `text`    | Yes      | Fully qualified job type name                          |
+| `is_durable`        | `boolean` | Yes      | Keeps the job stored when no triggers reference it     |
+| `is_nonconcurrent`  | `boolean` | Yes      | Prevents overlapping runs                              |
+| `is_update_data`    | `boolean` | Yes      | Persists modified `JobDataMap` entries after execution |
+| `requests_recovery` | `boolean` | Yes      | Re-executes the job if a node crashes mid-run          |
+| `job_data`          | `bytea`   | No       | Serialized binary `JobDataMap` payload                 |
+
+#### `qrtz_triggers`
+
+Primary key: `(sched_name, trigger_name, trigger_group)`. Foreign key: `(sched_name, job_name, job_group)` -> `qrtz_job_details`.
+
+| Column                                                                        | Type                       | Required | Description                                              |
+| :---------------------------------------------------------------------------- | :------------------------- | :------- | :------------------------------------------------------- |
+| `sched_name`, `trigger_name`, `trigger_group`                                 | `text`                     | Yes      | Composite primary key                                    |
+| `job_name`, `job_group`                                                       | `text`                     | Yes      | Target job in `qrtz_job_details`                         |
+| `description`                                                                 | `text`                     | No       | Human-readable trigger description                       |
+| `next_fire_time`, `prev_fire_time`                                            | `bigint`                   | No       | Next and most recent fire timestamps (UTC ticks)         |
+| `priority`                                                                    | `integer`                  | No       | Firing priority when triggers share a fire time          |
+| `trigger_state`                                                               | `text`                     | Yes      | `WAITING`, `ACQUIRED`, `PAUSED`, `BLOCKED`, or `ERROR`   |
+| `trigger_type`                                                                | `text`                     | Yes      | `CRON`, `SIMPLE`, `SIMPROP`, or `BLOB`                   |
+| `start_time`, `end_time`                                                      | `bigint`                   | Yes / No | Active window timestamps (UTC ticks)                     |
+| `calendar_name`                                                               | `text`                     | No       | Optional exclusion calendar in `qrtz_calendars`          |
+| `misfire_instr`, `misfire_orig_fire_time`, `misfire_threshold`                | `smallint` / `bigint`      | No       | Misfire handling code, original fire time, and threshold |
+| `execution_group`, `preferred_node`, `preferred_node_auto`                    | `varchar(200)` / `boolean` | No / Yes | Execution grouping and cluster node affinity             |
+| `retry_policy`, `retry_attempt`                                               | `varchar(250)` / `integer` | No       | Retry policy descriptor and current attempt count        |
+| `continues_trigger_name`, `continues_trigger_group`, `continuation_condition` | `text` / `integer`         | No       | Follow-on continuation trigger metadata                  |
+| `overlap_policy`, `fixed_delay`                                               | `integer` / `boolean`      | No       | Overlap policy and fixed-delay scheduling flag           |
+| `pause_reason`, `paused_by`, `paused_at`                                      | `varchar` / `bigint`       | No       | Pause audit metadata                                     |
+| `job_data`                                                                    | `bytea`                    | No       | Serialized trigger-scoped `JobDataMap` payload           |
+
+#### `qrtz_cron_triggers`
+
+Primary / foreign key: `(sched_name, trigger_name, trigger_group)` -> `qrtz_triggers`.
+
+| Column                                        | Type   | Required | Description                                    |
+| :-------------------------------------------- | :----- | :------- | :--------------------------------------------- |
+| `sched_name`, `trigger_name`, `trigger_group` | `text` | Yes      | Composite primary/foreign key                  |
+| `cron_expression`                             | `text` | Yes      | Quartz cron expression (e.g., `0 0/5 * * * ?`) |
+| `time_zone_id`                                | `text` | No       | Time zone ID (`UTC` in BookWorm)               |
+
+<AccordionGroup>
+	<Accordion title="Trigger Subtypes, Calendars & Pause Tables (Unused by Default)">
+		Because BookWorm defines cron triggers only, `qrtz_simple_triggers`, `qrtz_simprop_triggers`, `qrtz_blob_triggers`, and `qrtz_calendars` remain empty unless ad-hoc triggers or calendars are added at runtime.
+
+    	| Table | Primary Key | Purpose |
+    	| :---- | :---------- | :------ |
+    	| `qrtz_simple_triggers` | `(sched_name, trigger_name, trigger_group)` | Fixed-interval repeat schedules (`repeat_count`, `repeat_interval`, `times_triggered`) |
+    	| `qrtz_simprop_triggers` | `(sched_name, trigger_name, trigger_group)` | Calendar-interval and daily-time-interval property slots (`str_prop_*`, `int_prop_*`, `long_prop_*`, `dec_prop_*`, `bool_prop_*`, `time_zone_id`) |
+    	| `qrtz_blob_triggers` | `(sched_name, trigger_name, trigger_group)` | Binary-serialized custom triggers (`blob_data`) |
+    	| `qrtz_calendars` | `(sched_name, calendar_name)` | Serialized exclusion/inclusion `calendar` definitions |
+    	| `qrtz_paused_trigger_grps` | `(sched_name, trigger_group)` | Cluster-wide paused trigger groups with `pause_reason`, `paused_by`, `paused_at` |
+    	| `qrtz_paused_job_grps` | `(sched_name, job_group)` | Cluster-wide paused job groups with `pause_reason`, `paused_by`, `paused_at` |
+    </Accordion>
+    <Accordion title="Runtime Locking & Cluster State Tables">
+    	| Table | Primary Key | Key Columns |
+    	| :---- | :---------- | :---------- |
+    	| `qrtz_fired_triggers` | `(sched_name, entry_id)` | `trigger_name`, `trigger_group`, `instance_name`, `fired_time`, `sched_time`, `priority`, `state` (`ACQUIRED`, `EXECUTING`, `BLOCKED`), `job_name`, `job_group`, `is_nonconcurrent`, `requests_recovery`, `progress`, `progress_message`, `interrupt_requested_time` |
+    	| `qrtz_scheduler_state` | `(sched_name, instance_name)` | `last_checkin_time`, `checkin_interval`, `quartz_version` (`4.8.1`) |
+    	| `qrtz_locks` | `(sched_name, lock_name)` | Row-level coordination locks (`TRIGGER_ACCESS`, `STATE_ACCESS`) |
+    </Accordion>
+    <Accordion title="Execution, Misfire & Job Status History Tables">
+    	| Table | Primary Key | Key Columns |
+    	| :---- | :---------- | :---------- |
+    	| `qrtz_execution_history` | `(sched_name, entry_id)` | `instance_name`, `job_name`, `job_group`, `trigger_name`, `trigger_group`, `fired_time`, `run_time`, `succeeded`, `error_message`, `retry_attempt`, `retry_scheduled`, `execution_log`, `result`, `summary`, `metrics`, `manual`, `fire_instance_id`, `job_input`, `job_input_too_large` |
+    	| `qrtz_misfire_history` | `(sched_name, entry_id)` | `instance_name`, `trigger_name`, `trigger_group`, `job_name`, `job_group`, `misfire_time`, `sched_time`, `reason` |
+    	| `qrtz_job_status` | `(sched_name, job_group, job_name)` | `first_fired_time`, `last_fired_time`, `last_result`, `last_run_time`, `last_instance_name`, `last_entry_id`, `last_summary`, `last_success_time`, `last_failure_time`, `last_failure_message`, `consecutive_failures`, `run_count` |
+    </Accordion>
+
+</AccordionGroup>
 
-| Column                                   | Type      | Required | Description                                                  |
-| :--------------------------------------- | :-------- | :------- | :----------------------------------------------------------- |
-| `sched_name`                             | `text`    | Yes      | Logical Quartz scheduler name                                |
-| `trigger_name`                           | `text`    | Yes      | Trigger name                                                 |
-| `trigger_group`                          | `text`    | Yes      | Trigger group                                                |
-| `str_prop_1`, `str_prop_2`, `str_prop_3` | `text`    | No       | Generic string parameter slots interpreted by `trigger_type` |
-| `int_prop_1`, `int_prop_2`               | `integer` | No       | Generic 32-bit integer parameter slots                       |
-| `long_prop_1`, `long_prop_2`             | `bigint`  | No       | Generic 64-bit integer parameter slots                       |
-| `dec_prop_1`, `dec_prop_2`               | `numeric` | No       | Generic decimal parameter slots                              |
-| `bool_prop_1`, `bool_prop_2`             | `boolean` | No       | Generic boolean parameter slots                              |
-| `time_zone_id`                           | `text`    | No       | Optional time zone ID                                        |
-
-### `qrtz_blob_triggers`
-
-Stores binary-serialized custom triggers that do not fit standard subtypes (unused under BookWorm's default `jobs.json`).
-
-- **Primary / foreign key:** `(sched_name, trigger_name, trigger_group)` -> `qrtz_triggers`
-
-| Column          | Type    | Required | Description                       |
-| :-------------- | :------ | :------- | :-------------------------------- |
-| `sched_name`    | `text`  | Yes      | Logical Quartz scheduler name     |
-| `trigger_name`  | `text`  | Yes      | Trigger name                      |
-| `trigger_group` | `text`  | Yes      | Trigger group                     |
-| `blob_data`     | `bytea` | No       | Serialized custom trigger payload |
-
-## Calendar and pause state
-
-### `qrtz_calendars`
-
-Stores serialized exclusion or inclusion calendars referenced by `qrtz_triggers.calendar_name` (unused under BookWorm's default `jobs.json`).
-
-- **Primary key:** `(sched_name, calendar_name)`
-
-| Column          | Type    | Required | Description                               |
-| :-------------- | :------ | :------- | :---------------------------------------- |
-| `sched_name`    | `text`  | Yes      | Logical Quartz scheduler name             |
-| `calendar_name` | `text`  | Yes      | Unique calendar name within the scheduler |
-| `calendar`      | `bytea` | Yes      | Serialized Quartz `ICalendar` definition  |
-
-### `qrtz_paused_trigger_grps`
-
-Tracks trigger groups currently paused across the cluster along with audit metadata.
-
-- **Primary key:** `(sched_name, trigger_group)`
-
-| Column          | Type           | Required | Description                            |
-| :-------------- | :------------- | :------- | :------------------------------------- |
-| `sched_name`    | `text`         | Yes      | Logical Quartz scheduler name          |
-| `trigger_group` | `text`         | Yes      | Paused trigger group name              |
-| `pause_reason`  | `varchar(250)` | No       | Reason supplied when pausing the group |
-| `paused_by`     | `varchar(200)` | No       | Actor who paused the group             |
-| `paused_at`     | `bigint`       | No       | Timestamp when the pause took effect   |
-
-### `qrtz_paused_job_grps`
-
-Tracks job groups currently paused across the cluster along with audit metadata.
-
-- **Primary key:** `(sched_name, job_group)`
-
-| Column         | Type           | Required | Description                            |
-| :------------- | :------------- | :------- | :------------------------------------- |
-| `sched_name`   | `text`         | Yes      | Logical Quartz scheduler name          |
-| `job_group`    | `text`         | Yes      | Paused job group name                  |
-| `pause_reason` | `varchar(250)` | No       | Reason supplied when pausing the group |
-| `paused_by`    | `varchar(200)` | No       | Actor who paused the group             |
-| `paused_at`    | `bigint`       | No       | Timestamp when the pause took effect   |
-
-## Runtime locking and cluster state
-
-### `qrtz_fired_triggers`
-
-Tracks triggers actively acquired or executing on a scheduler instance. Quartz inserts a row when a node claims a trigger and deletes it when execution finishes.
-
-- **Primary key:** `(sched_name, entry_id)`
-- **Logical references:** `(sched_name, trigger_name, trigger_group)` -> `qrtz_triggers`; optional `(sched_name, job_name, job_group)` -> `qrtz_job_details`
-
-| Column                     | Type           | Required | Description                                                       |
-| :------------------------- | :------------- | :------- | :---------------------------------------------------------------- |
-| `sched_name`               | `text`         | Yes      | Logical Quartz scheduler name                                     |
-| `entry_id`                 | `text`         | Yes      | Unique firing entry identifier                                    |
-| `trigger_name`             | `text`         | Yes      | Trigger currently executing                                       |
-| `trigger_group`            | `text`         | Yes      | Trigger group                                                     |
-| `instance_name`            | `text`         | Yes      | Scheduler node instance executing the trigger                     |
-| `fired_time`               | `bigint`       | Yes      | Actual timestamp when the trigger fired                           |
-| `sched_time`               | `bigint`       | Yes      | Planned scheduled fire time                                       |
-| `priority`                 | `integer`      | Yes      | Effective trigger priority                                        |
-| `state`                    | `text`         | Yes      | Live execution state (such as `ACQUIRED`, `EXECUTING`, `BLOCKED`) |
-| `job_name`                 | `text`         | No       | Executing job name                                                |
-| `job_group`                | `text`         | No       | Executing job group                                               |
-| `is_nonconcurrent`         | `boolean`      | Yes      | Indicates whether concurrent runs of the job are blocked          |
-| `requests_recovery`        | `boolean`      | No       | Indicates whether another node recovers the run after a crash     |
-| `execution_group`          | `varchar(200)` | No       | Optional execution-group label                                    |
-| `progress`                 | `integer`      | No       | Optional numeric progress indicator                               |
-| `progress_message`         | `varchar(250)` | No       | Optional human-readable progress message                          |
-| `interrupt_requested_time` | `bigint`       | No       | Timestamp when cancellation or interruption was requested         |
-
-### `qrtz_scheduler_state`
-
-Tracks active scheduler instances and check-in heartbeats for cluster failover.
-
-- **Primary key:** `(sched_name, instance_name)`
-
-| Column              | Type          | Required | Description                                                  |
-| :------------------ | :------------ | :------- | :----------------------------------------------------------- |
-| `sched_name`        | `text`        | Yes      | Logical Quartz scheduler name                                |
-| `instance_name`     | `text`        | Yes      | Unique cluster node instance identifier                      |
-| `last_checkin_time` | `bigint`      | Yes      | Last heartbeat timestamp recorded by the node                |
-| `checkin_interval`  | `bigint`      | Yes      | Configured heartbeat interval in milliseconds                |
-| `quartz_version`    | `varchar(20)` | No       | Quartz.NET version running on the node (`4.8.1` in BookWorm) |
-
-### `qrtz_locks`
-
-Provides row-level database locks (such as `TRIGGER_ACCESS` and `STATE_ACCESS`) to serialize trigger acquisition and state mutations across clustered instances.
-
-- **Primary key:** `(sched_name, lock_name)`
-
-| Column       | Type   | Required | Description                                                     |
-| :----------- | :----- | :------- | :-------------------------------------------------------------- |
-| `sched_name` | `text` | Yes      | Logical Quartz scheduler name                                   |
-| `lock_name`  | `text` | Yes      | Named coordination lock acquired inside PostgreSQL transactions |
-
-## Execution, misfire, and status history
-
-BookWorm enables execution history in `appsettings.json` (`Quartz:JobStore:ExecutionHistory = true`) and configures `AddQuartzExecutionHistory` in `BookWorm.Scheduler/Extensions/Extensions.cs` with `Retention = TimeSpan.FromDays(30)` and `MaxEntriesPerScheduler = 100_000`.
-
-### `qrtz_execution_history`
-
-Records completed and failed job runs, retry metadata, logs, metrics, and diagnostic payloads.
-
-- **Primary key:** `(sched_name, entry_id)`
-- **Logical references:** `(sched_name, job_name, job_group)` -> `qrtz_job_details`; `(sched_name, trigger_name, trigger_group)` -> `qrtz_triggers`
-
-| Column                | Type      | Required | Description                                                              |
-| :-------------------- | :-------- | :------- | :----------------------------------------------------------------------- |
-| `sched_name`          | `text`    | Yes      | Logical Quartz scheduler name                                            |
-| `entry_id`            | `text`    | Yes      | Unique execution history entry identifier                                |
-| `instance_name`       | `text`    | Yes      | Scheduler node that executed the job                                     |
-| `job_name`            | `text`    | Yes      | Executed job name                                                        |
-| `job_group`           | `text`    | Yes      | Executed job group                                                       |
-| `trigger_name`        | `text`    | Yes      | Trigger that fired the job                                               |
-| `trigger_group`       | `text`    | Yes      | Trigger group                                                            |
-| `fired_time`          | `bigint`  | Yes      | Timestamp when execution started                                         |
-| `run_time`            | `bigint`  | Yes      | Execution duration                                                       |
-| `succeeded`           | `boolean` | Yes      | `true` when the job completed without unhandled errors                   |
-| `error_message`       | `text`    | No       | Failure message when `succeeded` is `false`                              |
-| `retry_attempt`       | `integer` | Yes      | Zero-based or sequential retry attempt number                            |
-| `retry_scheduled`     | `boolean` | Yes      | Indicates whether Quartz scheduled a follow-up retry                     |
-| `execution_log`       | `text`    | No       | Captured job execution log output                                        |
-| `result`              | `integer` | No       | Optional numeric outcome code                                            |
-| `summary`             | `text`    | No       | Optional short execution summary                                         |
-| `metrics`             | `text`    | No       | Optional serialized execution metrics                                    |
-| `manual`              | `boolean` | No       | `true` when triggered manually (for example, from Quartz Dashboard)      |
-| `fire_instance_id`    | `text`    | No       | Quartz fire instance correlation identifier                              |
-| `job_input`           | `text`    | No       | Serialized job input payload                                             |
-| `job_input_too_large` | `boolean` | No       | `true` when the input exceeded the history storage limit and was omitted |
-
-### `qrtz_misfire_history`
-
-Records triggers that missed their scheduled window beyond the misfire threshold.
-
-- **Primary key:** `(sched_name, entry_id)`
-- **Logical references:** `(sched_name, trigger_name, trigger_group)` -> `qrtz_triggers`; optional `(sched_name, job_name, job_group)` -> `qrtz_job_details`
-
-| Column          | Type      | Required | Description                              |
-| :-------------- | :-------- | :------- | :--------------------------------------- |
-| `sched_name`    | `text`    | Yes      | Logical Quartz scheduler name            |
-| `entry_id`      | `text`    | Yes      | Unique misfire entry identifier          |
-| `instance_name` | `text`    | Yes      | Scheduler node that detected the misfire |
-| `trigger_name`  | `text`    | Yes      | Trigger that misfired                    |
-| `trigger_group` | `text`    | Yes      | Trigger group                            |
-| `job_name`      | `text`    | No       | Associated job name                      |
-| `job_group`     | `text`    | No       | Associated job group                     |
-| `misfire_time`  | `bigint`  | Yes      | Timestamp when the misfire was detected  |
-| `sched_time`    | `bigint`  | No       | Original planned fire time               |
-| `reason`        | `integer` | No       | Numeric misfire reason code              |
-
-### `qrtz_job_status`
-
-Maintains one rolling health summary per job for fast dashboard status checks without scanning `qrtz_execution_history`.
-
-- **Primary key:** `(sched_name, job_group, job_name)`
-- **Logical reference:** `(sched_name, job_name, job_group)` -> `qrtz_job_details`
-
-| Column                 | Type      | Required | Description                                         |
-| :--------------------- | :-------- | :------- | :-------------------------------------------------- |
-| `sched_name`           | `text`    | Yes      | Logical Quartz scheduler name                       |
-| `job_group`            | `text`    | Yes      | Job group                                           |
-| `job_name`             | `text`    | Yes      | Job name                                            |
-| `first_fired_time`     | `bigint`  | Yes      | Timestamp of the job's first recorded execution     |
-| `last_fired_time`      | `bigint`  | Yes      | Timestamp of the most recent execution              |
-| `last_result`          | `integer` | Yes      | Outcome code of the latest run                      |
-| `last_run_time`        | `bigint`  | Yes      | Duration of the latest run                          |
-| `last_instance_name`   | `text`    | Yes      | Node that ran the latest execution                  |
-| `last_entry_id`        | `text`    | No       | Latest `entry_id` in `qrtz_execution_history`       |
-| `last_summary`         | `text`    | No       | Summary from the latest run                         |
-| `last_success_time`    | `bigint`  | No       | Timestamp of the most recent successful run         |
-| `last_failure_time`    | `bigint`  | No       | Timestamp of the most recent failed run             |
-| `last_failure_message` | `text`    | No       | Error message from the most recent failure          |
-| `consecutive_failures` | `integer` | Yes      | Count of consecutive failed runs; resets on success |
-| `run_count`            | `bigint`  | Yes      | Cumulative execution count                          |
-
-## Examples
-
-### Inspect recent job health in `schedulerdb`
+### Inspect Recent Job Health
 
 <CodeGroup>
 
@@ -364,8 +135,20 @@ ORDER BY job_group, job_name;
 
 </CodeGroup>
 
-## Related documentation
+## Guardrails & Constraints
 
-- [[doc|platform/003-data-ai-and-messaging-resources]] — Platform storage inventory including `schedulerdb`.
-- [[doc|platform/002-compute-and-container-apps]] — Hosting details for Scheduler and Quartz Dashboard.
-- Scheduled job failure runbook — Troubleshooting steps for failed or stalled jobs.
+<Admonition type="warning" title="Do Not Edit qrtz_* Tables Directly">
+	Never modify `qrtz_*` rows directly in PostgreSQL. Manage schedules through declarative
+	configuration or the Quartz Dashboard so Quartz validates cron expressions, updates binary
+	payloads safely, and preserves cluster lock invariants.
+</Admonition>
+
+<Admonition type="info" title="Timestamp Representation">
+	All `BIGINT` timestamp columns store 100-nanosecond UTC ticks from year `0001`, not Unix epoch
+	milliseconds.
+</Admonition>
+
+## Related Documentation
+
+- [[doc|platform/003-data-ai-and-messaging-resources]] — Platform storage inventory including [[container|scheduler-database]].
+- [[doc|platform/002-compute-and-container-apps]] — Hosting details for [[service|scheduler-service]] and Quartz Dashboard.

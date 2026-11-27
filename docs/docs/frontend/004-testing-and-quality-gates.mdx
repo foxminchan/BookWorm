@@ -1,197 +1,72 @@
 ---
-title: Frontend Testing & Quality Gates
-summary: How to run formatting, boundary, type, lint, unit, and Playwright BDD checks across the frontend workspace, plus E2E coverage reference.
+title: Quality Gates & Verification
+summary: Static boundary enforcement, isolated component testing, end-to-end journey validation, and production build gates across all frontend surfaces.
 owners:
   - contributor-team
 badges:
-  - content: How-to Guide
-    backgroundColor: green
-    textColor: green
+  - content: Architecture
+    backgroundColor: purple
+    textColor: purple
   - content: Reference
     backgroundColor: blue
     textColor: blue
 ---
 
-Run these checks before opening a pull request that touches `src/Clients/` to verify formatting, workspace boundaries, TypeScript types, ESLint rules, Vitest unit and component tests, Next.js production builds, and Playwright BDD end-to-end (E2E) suites. For backend, Pact contract, and architecture test commands, see [[doc|development/008-testing-matrix]].
+## Purpose & Scope
 
-## Prerequisites
+This reference defines the mandatory verification pyramid and release quality gates for **Storefront**, **Commerce**, **Backoffice**, and shared workspace layers. It ensures architectural boundaries, type safety, accessibility rules, and end-to-end user journeys are validated before code reaches production.
 
-- Bun `1.4.4` and Node.js `>= 24.0.0` installed via `mise install` (see [[doc|development/002-getting-started]]).
-- Workspace dependencies installed with `bun install` inside `src/Clients`.
-- For browser E2E runs only: Playwright Chromium binaries installed once from `src/Clients`:
+## Verification Pipeline
 
-  ```bash
-  bunx turbo run playwright:install
-  ```
-
-## Steps
+Every change to frontend surfaces or shared layers progresses through sequential automated gates before merge:
 
 <Steps>
-<Step title="Format frontend files">
+<Step title="Formatting & Static Boundary Enforcement">
 
-From the repository root, run the `mise` formatter task (Prettier across `**/*.{ts,tsx,md,feature}` in `src/Clients`):
-
-<CodeGroup>
-
-```bash
-mise run format:fe
-```
-
-</CodeGroup>
+Automated checks verify uniform code formatting, strict workspace tier boundaries (preventing upward or circular imports), strict type checking, and zero-warning linting including static accessibility rules.
 
 </Step>
-<Step title="Run static quality gates">
+<Step title="Isolated Unit & Component Verification">
 
-From `src/Clients`, verify Turborepo dependency boundaries, strict TypeScript types (`@typescript/native`), and ESLint (`--max-warnings 0`, including `eslint-plugin-jsx-a11y`):
-
-<CodeGroup>
-
-```bash
-bun run boundaries
-bun run check-types
-bun run lint
-```
-
-</CodeGroup>
+Offline component and logic suites execute against deterministic mock service handlers and synthetic data factories, validating business rules, form schemas, and accessible DOM semantics without requiring live backend containers.
 
 </Step>
-<Step title="Run Vitest unit and component tests">
+<Step title="Production Bundle & Route Compilation">
 
-From `src/Clients`, run the offline Vitest + Happy DOM + MSW v2 test suite across **Storefront**, **Commerce**, and **Backoffice** (no running backend required):
-
-<CodeGroup>
-
-```bash
-bun run test
-```
-
-</CodeGroup>
-
-To collect V8 coverage reports (`text`, `json`, `json-summary`, `html`, `lcov`) across all apps from `src/Clients`, invoke the Turborepo task directly:
-
-<CodeGroup>
-
-```bash
-bunx turbo run test:coverage
-```
-
-</CodeGroup>
-
-<Admonition type="note">
-	`src/Clients/package.json` does not define a root `test:coverage` script. Use `bunx turbo run
-	test:coverage` from `src/Clients`, or run `bun run test:coverage` inside an individual app
-	directory such as `src/Clients/apps/storefront`.
-</Admonition>
+Full production builds compile all three Next.js surfaces, validating Server/Client Component boundaries, environment schema completeness, and microfrontend routing manifests.
 
 </Step>
-<Step title="Verify production Next.js builds">
+<Step title="End-to-End Behavioral & Accessibility Journeys">
 
-Run production builds from `src/Clients` whenever you change layouts, routes, `next.config.mjs`, `microfrontends.json`, or Server/Client Component boundaries:
-
-<CodeGroup>
-
-```bash
-bun run build
-```
-
-</CodeGroup>
-
-To limit a check to one application during local iteration, pass a Turborepo filter:
-
-<CodeGroup>
-
-```bash
-bunx turbo run build --filter=@bookworm/<app-name>
-```
-
-</CodeGroup>
-
-Where:
-
-- `<app-name>`: `storefront`, `commerce`, or `backoffice`.
-
-</Step>
-<Step title="Run Playwright BDD E2E suites (when changing user journeys)">
-
-From `src/Clients`, compile Gherkin `.feature` files with `bddgen` and execute Playwright browser tests:
-
-<CodeGroup>
-
-```bash
-bun run e2e
-```
-
-</CodeGroup>
-
-E2E coverage by application:
-
-- **`@bookworm/storefront` (`defaultPort: 3000`):** 9 feature suites (`accessibility`, `account-management`, `ai-chatbot`, `authentication`, `checkout`, `content-pages`, `order-management`, `product-details`, `product-discovery`) covering Storefront and Commerce customer journeys.
-- **`@bookworm/backoffice` (`defaultPort: 3001` in Playwright config):** 6 feature suites (`authentication`, `catalog-management`, `customer-management`, `navigation`, `order-management`, `review-management`).
-- **`@bookworm/commerce`:** Unit and component tests only; no standalone E2E feature files exist yet.
-
-`packages/app-config/playwright.mjs` does not auto-start a dev server; Playwright targets `process.env.BASE_URL` (defaulting to `http://localhost:3000` for Storefront and `http://localhost:3001` for Backoffice), so ensure the target app or Aspire AppHost is running before executing `bun run e2e`.
-
-</Step>
-<Step title="Generate a combined Allure report (optional)">
-
-From `src/Clients`, merge `allure-results` from Backoffice, Storefront, and Commerce into `src/Clients/allure-report/`:
-
-<CodeGroup>
-
-```bash
-bun run allure:report
-```
-
-</CodeGroup>
+Behavior-driven browser suites exercise real customer journeys (catalog discovery, authentication, AI assistant, basket, and checkout across **Storefront** and **Commerce**) and staff workflows in **Backoffice**, alongside automated `axe-core` contrast and landmark audits.
 
 </Step>
 </Steps>
 
-## Verification
+<Admonition type="warning" title="Zero-Warning Static Gate">
+	Linting and type-checking operate with zero tolerance for warnings. Any static accessibility
+	violation, illegal tier import, or type mismatch blocks pull request integration.
+</Admonition>
 
-Confirm that all static, build, and test gates match the GitHub Actions pipeline (`.github/workflows/frontend-shared.yml`) by checking that every command exits with code `0` and Turborepo reports zero failed tasks.
+## Patterns & Boundaries
 
-From `src/Clients`, run the CI-equivalent affected check against your base branch:
+| Concern / Surface             | Architectural Approach                                                                    | Responsibility Boundary                                                                          | Key Trade-off                                                                         |
+| :---------------------------- | :---------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------ |
+| **Boundary & Type Gates**     | Workspace-wide tier validation and strict type checking with affected-task caching        | Shared config tier defines rules; CI enforces across all surfaces and libraries                  | Requires contributors to place shared abstractions in the proper tier upfront         |
+| **Isolated Component Tests**  | Deterministic mock API handlers with per-worker isolated storage                          | Feature slices own unit/component specs; shared mock layer owns contract parity                  | Fast offline feedback, but cannot catch gateway routing or real session-cookie issues |
+| **End-to-End BDD Suites**     | Gherkin-backed browser journeys covering **Storefront**, **Commerce**, and **Backoffice** | **Storefront** suite covers cross-zone customer checkout; **Backoffice** suite covers staff CRUD | Higher execution cost; requires running gateway and target surfaces                   |
+| **Unified Quality Reporting** | Aggregated test and defect categorization across all three surfaces                       | Shared reporting config normalizes failures across unit and browser runs                         | Adds post-test aggregation step in CI pipelines                                       |
 
-<CodeGroup>
+<Accordion title="Coverage Boundaries by Surface">
 
-```bash
-bunx turbo boundaries && bunx turbo run check-types lint build test --affected
-```
+- **Storefront:** Covered by unit/component tests and 9 end-to-end behavioral suites spanning discovery, AI chat, authentication, accessibility, and cross-zone checkout.
+- **Commerce:** Covered by unit/component tests; its end-to-end basket and checkout journeys are validated through the **Storefront** gateway suite.
+- **Backoffice:** Covered by unit/component tests and 6 end-to-end behavioral suites covering authentication, catalog, customers, orders, and review moderation.
 
-</CodeGroup>
+</Accordion>
 
-Expected output:
+## Quality & Operational Impact
 
-<CodeGroup>
-
-```text
- Tasks:    <count> successful, <count> total
-Cached:    <cached> cached, <count> total
-  Time:    <duration>
-```
-
-</CodeGroup>
-
-Where:
-
-- `<count>`: Number of affected workspace tasks executed for your diff.
-- `<cached>`: Number of tasks replayed from local or Turborepo Remote Cache.
-- `<duration>`: Total elapsed wall-clock time.
-
-## Troubleshooting
-
-| Symptom                                                  | Cause                                                                                                                                                                                                                                                      | Fix                                                                                                       |
-| :------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------- |
-| `Script not found "test:coverage"` in `src/Clients`      | Root `src/Clients/package.json` exposes `test`, not `test:coverage`                                                                                                                                                                                        | Run `bunx turbo run test:coverage` from `src/Clients` or `bun run test:coverage` inside `apps/<app-name>` |
-| `turbo boundaries` reports an illegal import             | A package imports from a higher dependency tier (`config` -> `foundation` -> `domain` -> `app`)                                                                                                                                                            | Move shared code to a lower tier; see [[doc\|frontend/001-monorepo-architecture]]                         |
-| `bun run lint` fails on warnings                         | ESLint runs with `--max-warnings 0` across all packages                                                                                                                                                                                                    | Run `bun run lint:fix` inside the failing app or fix the reported rule/accessibility violation            |
-| `Executable doesn't exist` during `bun run e2e`          | Playwright Chromium browser binaries are not installed                                                                                                                                                                                                     | Run `bunx turbo run playwright:install` from `src/Clients`                                                |
-| SQLite `database is locked` errors in parallel MSW tests | Custom `MSW_COOKIE_STORE_PATH` shared across parallel Vitest workers                                                                                                                                                                                       | Unset `MSW_COOKIE_STORE_PATH` so `packages/app-config/vitest.mjs` creates a per-process temp database     |
-| Unexpected coverage drop on route or helper files        | Shared exclusions in `packages/app-config/vitest.mjs` exclude `app/**/*.ts(x)`, `**/middleware.ts`, `**/env.mjs`, `**/instrumentation.ts`, and select `lib/*` helpers, but not custom `proxy.ts` or `config/` files unless added to `extraCoverageExclude` | Add unit tests for executable logic or configure `extraCoverageExclude` in the app's `vitest.config.ts`   |
-
-## Related documentation
-
-- [[doc|development/008-testing-matrix]] — Backend TUnit, Pact contract, ArchUnitNET, frontend, and documentation checks.
-- [[doc|frontend/005-accessibility]] — Targeted `jsx-a11y`, `axe-core`, keyboard, and screen-reader checks.
-- [[doc|frontend/001-monorepo-architecture]] — Workspace scripts, dependency tiers, and package inventory.
+- **Architectural Integrity:** Continuous boundary checks guarantee that the four-tier dependency model does not erode over time.
+- **Release Confidence:** Combining fast offline mock tests with real cross-zone browser journeys catches both logic regressions and gateway routing/auth integration defects.
+- **Accessibility Assurance:** Enforcing static accessibility rules alongside browser `axe-core` checks prevents common UI regressions from reaching production.

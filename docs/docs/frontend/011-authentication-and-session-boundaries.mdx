@@ -1,0 +1,58 @@
+---
+title: Authentication & Session Boundaries
+summary: Identity provider handoff, origin-scoped session cookies, edge route protection, and role-based UI gating across customer and staff surfaces.
+owners:
+  - contributor-team
+badges:
+  - content: Architecture
+    backgroundColor: purple
+    textColor: purple
+  - content: Reference
+    backgroundColor: blue
+    textColor: blue
+---
+
+## Purpose & Scope
+
+This reference defines the authentication, session management, and authorization boundaries across **Storefront**, **Commerce**, and **Backoffice**. It governs how user identities are established with **Microsoft Entra ID**, how origin-scoped session cookies flow behind the **API Gateway**, and how frontend route protection pairs with backend API enforcement.
+
+## Authentication and Session Boundary
+
+The visual below traces how an unauthenticated user transitions through the **API Gateway**, completes OAuth2/OIDC handoff with **Microsoft Entra ID**, establishes an origin-scoped session cookie, and accesses protected APIs with a Bearer token.
+
+<MermaidFileLoader file="mermaids/011-authentication-and-session-boundaries-diagram-1.mmd" />
+
+## Architectural Principles & Rules
+
+- **External identity delegation:** BookWorm does not store passwords or issue standalone user credentials; all customer and staff authentication delegates to **Microsoft Entra ID** via OAuth2/OIDC.
+- **Two distinct session owners:** **Storefront** owns the customer authentication callback and session lifecycle (shared transparently with **Commerce** over the single gateway origin). **Backoffice** owns a separate staff session handler with administrative OAuth2 scopes.
+- **Edge & layout route protection:** **Commerce** enforces session-cookie presence at the edge proxy before rendering protected basket, checkout, or account routes, redirecting unauthenticated users to **Storefront** sign-in with a preserved return URL. **Backoffice** enforces an administrative authentication guard at the layout boundary.
+- **Defense-in-depth authorization:** UI gating and route guards improve user experience only; every backend capability API independently validates JWT Bearer tokens, audiences, and Entra ID roles/scopes on every request.
+
+<Admonition type="warning" title="Never Rely Solely on Client UI Gating">
+	Hiding a button or protecting a frontend route is never a security boundary. Backend APIs must
+	enforce role and scope authorization on every operation regardless of frontend state.
+</Admonition>
+
+## Patterns & Boundaries
+
+| Concern / Surface                            | Architectural Approach                                                                | Responsibility Boundary                                                                              | Key Trade-off                                                                  |
+| :------------------------------------------- | :------------------------------------------------------------------------------------ | :--------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------- |
+| **Customer Session (Storefront + Commerce)** | Single origin-scoped session cookie owned by **Storefront** and read by **Commerce**  | **Storefront** owns OAuth2 callback; **Commerce** validates session cookie on protected routes       | **Commerce** depends on **Storefront** availability for initial login handoffs |
+| **Staff Session (Backoffice)**               | Dedicated staff session handler mounted under the **Backoffice** base path            | **Backoffice** owns staff sign-in and requests elevated catalog/ordering/review scopes               | Separate session lifecycle isolates staff credentials from customer browsing   |
+| **API Token Propagation**                    | Centralized token provider injects Bearer tokens into gateway-bound API requests      | Auth layer supplies current access token; transport layer attaches authorization headers             | Requires clean token refresh and immediate redirect on `401 Unauthorized`      |
+| **AI Assistant Identity**                    | Server-side assistant runtime forwards authenticated customer context to **Chat API** | **Storefront** server runtime bridges session to AG-UI; **Chat API** handles downstream OBO exchange | Keeps Entra Agent Identity OBO credentials strictly on the backend             |
+
+<Accordion title="Role & Scope Alignment">
+
+- **Customer Role:** Grants access to **Commerce** basket, checkout, and order history, plus authenticated **Storefront** reviews and AI assistant interactions.
+- **Business User & Admin Roles:** Grant access to **Backoffice** catalog, customer, order, and review moderation capabilities, enforced by backend API scopes (`catalog_write`, `ordering_write`, `rating_write`).
+- **Anonymous Visitors:** Can browse **Storefront** catalog, book details, and reviews; auth-gated client state suppresses basket queries until a valid session exists.
+
+</Accordion>
+
+## Quality & Operational Impact
+
+- **Seamless Customer Journey:** Origin-scoped session cookies allow shoppers to sign in on **Storefront** and immediately check out in **Commerce** without re-authenticating.
+- **Reduced Attack Surface:** Keeping OAuth2 callbacks and token exchanges server-side behind the **API Gateway** prevents exposing client secrets or OBO credentials to browser code.
+- **Zero Silent Auth Failures:** Failing `401` responses halt retries immediately and guide users cleanly through re-authentication.

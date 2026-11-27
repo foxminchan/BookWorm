@@ -1,263 +1,197 @@
 ---
-title: Deploying BookWorm to Azure
-summary: Step-by-step how-to guide for provisioning and verifying BookWorm's subscription-scoped Bicep infrastructure in Azure.
+title: Deployment & Rollback Runbook
+summary: Operator runbook for deploying BookWorm releases, shifting Container App revision traffic, and executing instant rollbacks.
 owners:
   - platform-team
 badges:
-  - content: How-to Guide
+  - content: Cloud / DevOps
     backgroundColor: green
     textColor: green
 ---
 
-Deploy BookWorm's 16 application Container Apps, operational tooling, and Azure-managed infrastructure to an Azure subscription using the Aspire 17 CLI (`aspire deploy`). Use this guide for cloud environment provisioning (`Development`, `Staging`, or `Production`); for local development with Docker containers and emulators, follow [[doc|development/000-local-quickstart]].
+## When to Use & Blast Radius
 
-:::note
-BookWorm deploys exclusively with `aspire deploy` (configured in `aspire.config.json` and `.github/workflows/apphost-cd.yml`). Do not use `azd up` or manual `az deployment sub create`—no `azure.yaml` exists in this repository. Use Azure CLI (`az`) only for authentication, verification, and cleanup.
-:::
+Use this runbook to deploy new infrastructure or application releases to `Development`, `Staging`, or `Production`, shift traffic between Container App revisions, or roll back a broken release. Provisioning and production rollouts modify live Container Apps, identity bindings, and ingress routing.
 
-## Prerequisites
+<Admonition type="warning" title="Blast Radius & Deployment Tooling">
 
-- **Toolchain installed via `mise`:** .NET SDK `11.0.100`, Aspire CLI `17.0.0`, Azure CLI (`az` 2.x), and GitHub CLI (`gh` 2.x, if triggering CI/CD). Run `mise install` from the repository root (see [[doc|development/002-getting-started]]).
-- **Azure subscription permissions:** `Owner`, or `Contributor` plus `User Access Administrator`, on the target subscription to provision the resource group and assign Managed Identity RBAC roles.
-- **Microsoft Entra ID permissions:** Microsoft Graph privileges to register applications, service principals, and Federated Identity Credentials (`entra` and `entra-agent-identities` resources).
-- **External service endpoints provisioned:**
-  - **Kafka broker:** Connection string for an external cluster (such as Confluent Cloud).
-  - **Qdrant Cloud:** Connection string for the vector database (`vectordb`).
-  - **SMTP relay:** SendGrid (or compatible SMTP) host, username, password, and verified sender email address.
+BookWorm deploys exclusively via `aspire deploy` or the CI/CD workflow (`apphost-cd.yml`). Do not
+use `azd up` or manual template deployments. In single-active-revision mode, deploying a new
+revision replaces live traffic immediately—verify candidate revisions or enable multiple-revision
+mode before shifting production traffic.
 
-## Steps
+</Admonition>
 
-### Deploy from your local workstation with `aspire deploy`
+### Release and Rollback Path
 
-1. **Authenticate to Azure and select the target subscription**
+<MermaidFileLoader file="mermaids/001-azure-deployment-guide-diagram-1.mmd" />
 
-   Sign in with Azure CLI and set the active subscription.
+## Pre-Flight Check
 
-   ```bash
-   az login
-   az account set --subscription "<subscription-id>"
-   ```
+Verify Azure authentication, target subscription, and current Container App health before deploying or shifting traffic:
 
-   Where:
-   - `<subscription-id>`: Target Azure subscription GUID (`az account list -o table`).
+```bash
+az login
+az account set --subscription "<SUBSCRIPTION_ID>"
+az containerapp list --resource-group "<RESOURCE_GROUP>" \
+  --query "[].{Name:name, Status:properties.runningStatus, LatestRevision:properties.latestRevisionName}" -o table
+```
 
-2. **Configure Azure and external service environment variables**
+## Procedure
 
-   Export the deployment environment variables expected by `BookWorm.AppHost` and `.github/workflows/apphost-cd.yml`.
+<Steps>
+<Step title="Export deployment environment variables (workstation deploys)">
 
-   On Linux or macOS (`bash`):
+Set the target Azure context and external partner connection strings before running `aspire deploy`:
 
-   ```bash
-   export Azure__SubscriptionId="<subscription-id>"
-   export Azure__TenantId="<tenant-id>"
-   export Azure__Location="<azure-region>"
-   export Azure__ResourceGroup="<resource-group>"
-   export Azure__CredentialSource="AzureCli"
+```bash
+export Azure__SubscriptionId="<SUBSCRIPTION_ID>"
+export Azure__TenantId="<TENANT_ID>"
+export Azure__Location="<REGION>"
+export Azure__ResourceGroup="<RESOURCE_GROUP>"
+export Azure__CredentialSource="AzureCli"
 
-   export ConnectionStrings__broker="<kafka-connection-string>"
-   export ConnectionStrings__vectordb="<qdrant-connection-string>"
+export ConnectionStrings__broker="<KAFKA_CONNECTION_STRING>"
+export ConnectionStrings__vectordb="<QDRANT_CONNECTION_STRING>"
 
-   export Parameters__email_smtp_endpoint="smtp://smtp.sendgrid.net:587"
-   export Parameters__email_smtp_username="apikey"
-   export Parameters__email_smtp_password="<smtp-password>"
-   export Parameters__email_sender_address="<sender-email>"
-   export Parameters__email_sender_name="BookWorm Support"
-   ```
+export Parameters__email_smtp_endpoint="smtp://smtp.sendgrid.net:587"
+export Parameters__email_smtp_username="apikey"
+export Parameters__email_smtp_password="<SMTP_PASSWORD>"
+export Parameters__email_sender_address="<SENDER_EMAIL>"
+export Parameters__email_sender_name="BookWorm Support"
+```
 
-   On Windows (`powershell`):
+</Step>
 
-   ```powershell
-   $env:Azure__SubscriptionId = "<subscription-id>"
-   $env:Azure__TenantId = "<tenant-id>"
-   $env:Azure__Location = "<azure-region>"
-   $env:Azure__ResourceGroup = "<resource-group>"
-   $env:Azure__CredentialSource = "AzureCli"
+<Step title="Deploy via Aspire CLI or dispatch GitHub Actions">
 
-   $env:ConnectionStrings__broker = "<kafka-connection-string>"
-   $env:ConnectionStrings__vectordb = "<qdrant-connection-string>"
+Run `aspire deploy` for direct operator releases, or dispatch the CI/CD workflow for audited environment promotion:
 
-   $env:Parameters__email_smtp_endpoint = "smtp://smtp.sendgrid.net:587"
-   $env:Parameters__email_smtp_username = "apikey"
-   $env:Parameters__email_smtp_password = "<smtp-password>"
-   $env:Parameters__email_sender_address = "<sender-email>"
-   $env:Parameters__email_sender_name = "BookWorm Support"
-   ```
+```bash
+# Option A: Direct CLI deploy
+aspire deploy --environment "<ENV>" --pipeline-log-level information --include-exception-details
 
-   Where:
-   - `<subscription-id>`: Target Azure subscription GUID.
-   - `<tenant-id>`: Microsoft Entra ID tenant GUID (`az account show --query tenantId -o tsv`).
-   - `<azure-region>`: Target Azure region (defaults to `southeastasia` in CI/CD).
-   - `<resource-group>`: Target Azure resource group name (for example, `rg-bookworm-prod`).
-   - `<kafka-connection-string>`: External Kafka bootstrap/auth connection string bound to `broker`.
-   - `<qdrant-connection-string>`: External Qdrant Cloud connection string bound to `vectordb`.
-   - `<smtp-password>`: SendGrid API key or SMTP credential for `Notification`.
-   - `<sender-email>`: Verified sender address for transactional emails (`Parameters__email_sender_name` is optional and falls back to Notification's default sender name).
+# Option B: Trigger CI/CD release promotion
+gh workflow run apphost-cd.yml \
+  -f environment="<ENV>" \
+  -f clear_cache=false \
+  -f pipeline_log_level=information
+```
 
-   | Environment (`--environment`) | PostgreSQL SKU / HA                | Redis SKU / HA            | Cosmos DB mode                   | Storage redundancy | Log Analytics retention |
-   | :---------------------------- | :--------------------------------- | :------------------------ | :------------------------------- | :----------------- | :---------------------- |
-   | `Development`                 | `Standard_B1ms`, no HA             | `Balanced_B0`, no HA      | Serverless, local auth enabled   | `Standard_LRS`     | 30 days                 |
-   | `Staging`                     | `Standard_D2ds_v5`, zone-redundant | `Balanced_B1`, HA enabled | Serverless, local auth disabled  | `Standard_ZRS`     | 30 days                 |
-   | `Production`                  | `Standard_D4ds_v5`, zone-redundant | `Balanced_B5`, HA enabled | Provisioned, local auth disabled | `Standard_GZRS`    | 90 days                 |
+</Step>
 
-3. **Run `aspire deploy` from the repository root**
+<Step title="Monitor CI/CD run status (if using GitHub Actions)">
 
-   Deploy infrastructure, build .NET SDK and Next.js (`oven/bun:1-alpine`) container images, push them to Azure Container Registry (ACR), and roll out all Container Apps in one step.
+Watch the active workflow run until all build, push, and Container App rollout steps complete:
 
-   ```bash
-   aspire deploy \
-     --environment "<target-environment>" \
-     --pipeline-log-level information \
-     --include-exception-details
-   ```
+```bash
+gh run list --workflow=apphost-cd.yml --limit 5
+gh run watch "<RUN_ID>"
+```
 
-   On Windows (`powershell`):
+</Step>
 
-   ```powershell
-   aspire deploy `
-     --environment "<target-environment>" `
-     --pipeline-log-level information `
-     --include-exception-details
-   ```
+<Step title="Perform staged traffic shifting (optional blue/green)">
 
-   Where:
-   - `<target-environment>`: `Development`, `Staging`, or `Production`.
+Switch a target Container App to multiple-revision mode to split traffic between the previous and candidate revisions:
 
-   Add `--clear-cache` if you want Aspire to ignore cached deployment state under `~/.aspire/deployments`, or `--non-interactive` in automated shells.
+```bash
+az containerapp revision set-mode \
+  --name "<APP_NAME>" \
+  --resource-group "<RESOURCE_GROUP>" \
+  --mode multiple
 
-### Alternative: deploy through GitHub Actions (`apphost-cd.yml`)
+az containerapp ingress traffic set \
+  --name "<APP_NAME>" \
+  --resource-group "<RESOURCE_GROUP>" \
+  --revision-weight "<PREVIOUS_REVISION>=90" "<REVISION_NAME>=10"
+```
 
-BookWorm includes a manual CI/CD workflow at `.github/workflows/apphost-cd.yml` (30-minute timeout, OpenID Connect federated Azure login).
+</Step>
 
-1. **Configure GitHub Environment variables and secrets**
+<Step title="Promote candidate revision to 100% traffic">
 
-   In the target GitHub Environment (`Development`, `Staging`, or `Production`), set:
-   - **Secrets:** `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`, `KAFKA_BROKER`, `QDRANT_CLOUD_CONNECTION`, `EMAIL_SMTP_PASSWORD`.
-   - **Variables:** `AZURE_RESOURCE_GROUP`, `AZURE_LOCATION` (defaults to `southeastasia`), `EMAIL_SMTP_ENDPOINT`, `EMAIL_SMTP_USERNAME`, `EMAIL_SENDER_ADDRESS`, and optional `EMAIL_SENDER_NAME`.
+Once smoke checks and error rates remain clean, shift full traffic to the new revision:
 
-2. **Dispatch the workflow**
+```bash
+az containerapp ingress traffic set \
+  --name "<APP_NAME>" \
+  --resource-group "<RESOURCE_GROUP>" \
+  --revision-weight "<REVISION_NAME>=100"
+```
 
-   ```bash
-   gh workflow run apphost-cd.yml \
-     -f environment="<target-environment>" \
-     -f clear_cache=false \
-     -f pipeline_log_level=information
-   ```
+</Step>
 
-   Where:
-   - `<target-environment>`: `Development`, `Staging`, or `Production`.
+</Steps>
 
 ## Verification
 
-1. **Retrieve the API Gateway external Fully Qualified Domain Name (FQDN)**
-
-   ```bash
-   az containerapp show \
-     --name gateway \
-     --resource-group "<resource-group>" \
-     --query "properties.configuration.ingress.fqdn" \
-     -o tsv
-   ```
-
-   Expected output:
-
-   ```text
-   gateway.<aca-default-domain>
-   ```
-
-2. **Verify all Container Apps are running**
-
-   Confirm all 16 application Container Apps (`gateway`, `storefront`, `commerce`, `backoffice`, `catalog`, `catalog-ingestion`, `basket`, `ordering`, `finance`, `chatting`, `rating`, `scheduler`, `notification`, `mcptools`, `presidio-analyzer`, `presidio-anonymizer`)—plus `quartz-dashboard` when deployed—report `Running`.
-
-   ```bash
-   az containerapp list \
-     --resource-group "<resource-group>" \
-     --query "[].{Name:name, Status:properties.runningStatus, External:properties.configuration.ingress.external}" \
-     -o table
-   ```
-
-   Expected output:
-
-   ```text
-   Name                 Status    External
-   -------------------  --------  ----------
-   gateway              Running   True
-   storefront           Running   False
-   commerce             Running   False
-   backoffice           Running   False
-   catalog              Running   False
-   ...
-   ```
-
-   The generated Bicep snapshot declares a separate Container App named `quartz-dashboard` using image `ghcr.io/quartznet/quartz-dashboard:4.8.1`. Its deployed/running status is runtime state and is not established by this source-only check.
-
-3. **Confirm Storefront and Backoffice respond through the gateway**
-
-   <Admonition type="note">
-   	Backend `/health` and `/alive` endpoints are mapped only in `Development`
-   	(`src/Aspire/BookWorm.ServiceDefaults/Extensions.cs`). In `Staging` and `Production`, verify
-   	availability through Container App status and gateway HTTP responses rather than curling
-   	`/health`.
-   </Admonition>
-
-   ```bash
-   curl -I "https://gateway.<aca-default-domain>/"
-   curl -I "https://gateway.<aca-default-domain>/backoffice"
-   ```
-
-   Expected output:
-
-   ```text
-   HTTP/2 200
-   x-mfe-zone: storefront
-   ```
-
-4. **Confirm Microsoft Entra ID redirect URIs and Managed Identity RBAC**
-
-   Verify in Entra ID that the BookWorm application registration includes these callback URLs:
-   - `https://gateway.<aca-default-domain>/api/auth/oauth2/callback/microsoft-entra-id` (Storefront; shared with Commerce)
-   - `https://gateway.<aca-default-domain>/backoffice/api/auth/oauth2/callback/microsoft-entra-id` (Backoffice)
-   - `https://quartz-dashboard.<aca-default-domain>/signin-oidc` (Quartz Dashboard, if exposed)
-
-   Verify Managed Identity bindings match [[doc|platform/004-identity-and-rbac-matrix]]:
-   - **PostgreSQL (`catalogdb`, `orderingdb`, `schedulerdb` only):** `catalog`, `catalog-ingestion`, `ordering`, `scheduler`.
-   - **Azure Managed Redis:** `catalog`, `basket`, `ordering`, `rating`, `notification`.
-   - **Azure Cosmos DB (`ratingdb` / `feedbacks`):** `rating` only.
-   - **Azure Storage:** `catalog` and `chatting` (`Storage Blob Data Contributor`); `catalog-ingestion` and `finance` (`Storage Blob Data Owner`).
-   - **Microsoft Foundry:** `catalog`, `catalog-ingestion`, `chatting`, `rating` (`Cognitive Services User`).
-
-## Clean up an environment
-
-:::danger
-Deleting the resource group permanently destroys all Container Apps, databases, storage accounts, and logs inside it. Delete only non-production or decommissioned resource groups.
-:::
-
-<CodeGroup>
+Confirm all 16 application Container Apps report `Running` and the **API Gateway** serves HTTP `200`:
 
 ```bash
-az group delete --name "<resource-group>" --yes --no-wait
+GATEWAY_FQDN=$(az containerapp show --name gateway --resource-group "<RESOURCE_GROUP>" --query "properties.configuration.ingress.fqdn" -o tsv)
+az containerapp list --resource-group "<RESOURCE_GROUP>" \
+  --query "[].{Name:name, Status:properties.runningStatus, External:properties.configuration.ingress.external}" -o table
+curl -I "https://${GATEWAY_FQDN}/"
+curl -I "https://${GATEWAY_FQDN}/backoffice"
 ```
 
-</CodeGroup>
+Expected output:
 
-Where:
+```text
+Name                 Status    External
+-------------------  --------  ----------
+gateway              Running   True
+storefront           Running   False
+commerce             Running   False
+backoffice           Running   False
+catalog              Running   False
+...
+HTTP/2 200
+```
 
-- `<resource-group>`: Target resource group to remove.
+## Rollback / Escape Hatch
 
-Remove unused Entra ID application registrations (`entra`, `bookworm-agent-blueprint-*`, `bookworm-chat-agent-*`, `bookworm-rating-agent-*`) in Microsoft Entra ID separately if you are retiring the environment permanently.
+If a release causes `5xx` spikes, probe failures, or broken journeys, immediately shift 100% traffic back to the previous healthy revision or re-run the last known-good CI/CD commit:
 
-## Troubleshooting
+```bash
+# 1. List recent revisions to identify <PREVIOUS_REVISION>
+az containerapp revision list --name "<APP_NAME>" --resource-group "<RESOURCE_GROUP>" \
+  --query "[].{Revision:name, Active:properties.active, Health:properties.healthState, Created:properties.createdTime}" -o table
 
-| Symptom                                                                                   | Cause                                                                                          | Fix                                                                                                                          |
-| :---------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------- |
-| `aspire deploy` fails with missing parameter error for `broker`, `vectordb`, or `email-*` | Required `ConnectionStrings__*` or `Parameters__email_*` environment variable is unset         | Export all required variables from Step 2 and re-run `aspire deploy`                                                         |
-| `AuthorizationFailed` during provisioning                                                 | Deploying identity lacks `User Access Administrator` or `Owner` role on the subscription       | Assign `Contributor` + `User Access Administrator` (or `Owner`) on `<subscription-id>`, then retry                           |
-| `Insufficient privileges` creating `entra` or `entra-agent-identities`                    | Deploying account cannot create Microsoft Graph applications or Federated Identity Credentials | Grant Application Administrator (or equivalent Microsoft Graph app creation permissions) in Entra ID                         |
-| Services log `403 Forbidden` or PostgreSQL token login errors right after first deploy    | Newly assigned Entra ID RBAC roles take 5-10 minutes to propagate                              | Wait 10 minutes and restart the failing Container App revision (see [[doc\|operational/003-incident-response-and-runbooks]]) |
-| Stale deployment state causes unexpected resource drift                                   | Cached Aspire deployment state in `~/.aspire/deployments` is out of sync                       | Re-run `aspire deploy` with `--clear-cache`                                                                                  |
+# 2. Ensure multiple-revision mode is enabled, activate previous revision, and shift 100% traffic
+az containerapp revision set-mode --name "<APP_NAME>" --resource-group "<RESOURCE_GROUP>" --mode multiple
+az containerapp revision activate --name "<APP_NAME>" --resource-group "<RESOURCE_GROUP>" --revision "<PREVIOUS_REVISION>"
+az containerapp ingress traffic set --name "<APP_NAME>" --resource-group "<RESOURCE_GROUP>" --revision-weight "<PREVIOUS_REVISION>=100"
 
-## Related documentation
+# 3. Deactivate the faulty revision
+az containerapp revision deactivate --name "<APP_NAME>" --resource-group "<RESOURCE_GROUP>" --revision "<REVISION_NAME>"
+```
 
-- [[doc|platform/001-platform-overview]] — Shared platform layer, ingress boundaries, and YARP gateway routes.
-- [[doc|platform/002-compute-and-container-apps]] — Inventory of all 16 application Container Apps and Quartz Dashboard.
-- [[doc|platform/003-data-ai-and-messaging-resources]] — Environment-tier SKUs and datastore ownership.
-- [[doc|operational/004-security-hardening-checklist]] — Required pre-production security and reliability hardening before serving customer traffic.
+To redeploy the previous release from GitHub Actions:
+
+```bash
+gh workflow run apphost-cd.yml --ref "<PREVIOUS_TAG_OR_COMMIT>" -f environment="<ENV>" -f clear_cache=true
+```
+
+<Accordion title="Non-Production Environment Cleanup & Common Deploy Failures">
+
+<Admonition type="danger" title="Destructive Action">
+
+Deleting a resource group permanently destroys all Container Apps, databases, storage accounts,
+and logs inside it. Never run this against Production.
+
+</Admonition>
+
+```bash
+az group delete --name "<RESOURCE_GROUP>" --yes --no-wait
+```
+
+| Symptom                                                         | Cause                                                             | Fix                                                                       |
+| :-------------------------------------------------------------- | :---------------------------------------------------------------- | :------------------------------------------------------------------------ |
+| Missing parameter error for `broker`, `vectordb`, or email      | Required environment variable is unset                            | Export all variables in Step 1 and re-run `aspire deploy`                 |
+| `AuthorizationFailed` during provisioning                       | Deploying identity lacks `User Access Administrator` or `Owner`   | Assign `Contributor` + `User Access Administrator` on `<SUBSCRIPTION_ID>` |
+| `403` or PostgreSQL token login errors right after first deploy | Newly assigned Entra ID RBAC roles take 5–10 minutes to propagate | Wait 10 minutes and restart the failing revision                          |
+| Unexpected resource drift                                       | Cached Aspire deployment state is stale                           | Re-run `aspire deploy` with `--clear-cache`                               |
+
+</Accordion>

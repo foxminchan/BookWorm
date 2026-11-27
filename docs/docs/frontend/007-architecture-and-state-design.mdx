@@ -1,73 +1,54 @@
 ---
-title: "Frontend monorepo and state design"
-summary: "Explain how BookWorm's four-tier monorepo, thin App Router routes, feature slices, ETag concurrency, and layered state keep frontends maintainable."
+title: Client State & Feature Slices
+summary: Separation of server cache from ephemeral UI state, thin route entrypoints, vertical feature slices, and client error boundaries.
 owners:
   - contributor-team
+badges:
+  - content: Architecture
+    backgroundColor: purple
+    textColor: purple
+  - content: Reference
+    backgroundColor: blue
+    textColor: blue
 ---
 
-BookWorm organizes its three Next.js 16 applications (**Storefront**, **Commerce**, and **Backoffice**) and 16 shared `@workspace/*` packages inside a single Bun and Turborepo workspace (`src/Clients/`). By enforcing one-way dependency tiers, keeping App Router pages thin, and separating server cache from ephemeral client state, the frontend mirrors BookWorm's backend Vertical Slice Architecture without circular dependencies or duplicated configuration.
+## Purpose & Scope
 
-## Context and motivation
+This reference governs internal application structure and client-side state management across **Storefront**, **Commerce**, and **Backoffice**. It defines how route entrypoints stay thin, how vertical feature slices mirror backend bounded contexts, and how server cache is strictly separated from ephemeral UI state.
 
-All three frontend applications share Microsoft Entra ID authentication (via Better Auth), typed API clients, Valibot validation schemas, OpenTelemetry startup instrumentation, Tailwind CSS v4 UI components, and Vitest/Playwright test harnesses. Without structural guardrails, shared frontend code typically degrades in three ways:
+## Architectural Principles & Rules
 
-- **Circular imports:** Low-level helpers import domain UI or app-specific config, making packages impossible to reuse or test in isolation.
-- **Fat route files:** Next.js `page.tsx` files mix metadata, data fetching, form validation, and layout markup, blurring Server and Client Component boundaries.
-- **Ad-hoc data fetching:** Scattered `fetch` calls duplicate cache keys, skip retries, overwrite concurrent edits in **Backoffice**, and trigger unnecessary anonymous requests for signed-out shoppers.
+- **Thin route entrypoints:** Application route files only declare page metadata, loading/error boundaries, and server-side data prefetching, delegating all presentation and interaction logic to domain-aligned feature slices.
+- **Vertical feature slices:** Inside each surface, UI components, filters, forms, and state are grouped by business capability (Catalog, Shopping, Ordering, Reviews) rather than technical file type, mirroring backend service boundaries.
+- **Strict state separation:** Remote domain data lives exclusively in the server-state query cache (hydrated from server prefetching); ephemeral client state (session-derived flags, feature toggles, derived basket badge counts) lives in lightweight atomic state.
+- **Auth-gated background queries:** Customer-specific queries such as basket state are gated on authenticated session status so anonymous visitors never trigger failing unauthorized requests.
+- **Explicit error & loading boundaries:** Every route segment defines declarative loading skeletons and error boundaries so transient failures degrade gracefully within the affected slice without crashing the entire page shell.
 
-## How it works
+<Admonition type="warning" title="No Remote Domain Data in Global Client Stores">
+	Never duplicate backend entities (books, orders, reviews, or basket items) into a manual global
+	client store. Use the centralized query cache so deduplication, SSR hydration,
+	stale-while-revalidate, and invalidation remain consistent.
+</Admonition>
 
-### Four-tier workspace boundaries
+## Patterns & Boundaries
 
-Every workspace member declares a `tags` entry in its `turbo.json` (`config`, `foundation`, `domain`, or `app`). `turbo boundaries` validates imports on every pull request so dependencies flow strictly downward.
+| Concern / Surface           | Architectural Approach                                                                        | Responsibility Boundary                                                                      | Key Trade-off                                                                     |
+| :-------------------------- | :-------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------- |
+| **Route Entrypoints**       | Thin server wrappers handling metadata, prefetch hydration, and error/loading boundaries      | Route layer owns URL mapping and SSR handoff; feature slices own UI and interactions         | Adds one layer of indirection, repaid by clean Server/Client Component boundaries |
+| **Server State Cache**      | Centralized query client (per-request on server, singleton in browser) with shared cache keys | Shared query layer owns keys, stale windows, and hydration; feature slices consume hooks     | Requires disciplined cache key invalidation on mutations                          |
+| **Ephemeral Client State**  | Minimal atomic state for auth flags, derived basket counts, and feature toggles               | Customer shell owns cross-zone session/basket atoms; apps own local feature flags            | Contributors must distinguish server state from client-only UI state              |
+| **Conversational AI State** | Streaming AG-UI client runtime with declarative generative UI cards (**Storefront** only)     | **Storefront** manages chat session UI and live announcements; **Chat API** owns agent state | Real-time token streaming requires dedicated accessibility pacing                 |
 
-This diagram shows how BookWorm's four workspace tiers enforce one-way imports from applications down to configuration presets.
+<Accordion title="Optimistic Updates & Error Recovery">
 
-<MermaidFileLoader file="mermaids/007-architecture-and-state-design-diagram-1.mmd" />
+- **Basket Mutations:** Interactive basket updates invalidate the shared basket query key and update derived badge counts immediately, rolling back cleanly if the backend rejects the change.
+- **Staff Edits (Backoffice):** Resource updates avoid blind optimistic overwrites; instead, they pair `ETag` preconditions with explicit conflict banners so operators can inspect and reload concurrent changes.
+- **Boundary Isolation:** Route-level error boundaries capture unexpected rendering errors and offer retry actions without losing top-level navigation chrome.
 
-- **Direct source resolution:** Next.js and Vitest resolve `@workspace/*` packages directly from TypeScript source (with Turborepo `transit` edges invalidating `lint` and `check-types`), avoiding slow cascading pre-build steps while preserving strict boundary checks.
-- **Scoped environment validation:** `@workspace/env` exposes composable schemas per capability (authentication, API Gateway, telemetry, AI chat) so each application validates only the variables it requires at build and startup time.
-- **Single Bun lockfile:** Standardizing on `bun@1.4.4` and one root `src/Clients/bun.lock` eliminates lockfile drift across local development and CI.
+</Accordion>
 
-### Thin routes and domain-aligned feature slices
+## Quality & Operational Impact
 
-Inside each Next.js application (`apps/storefront`, `apps/commerce`, `apps/backoffice`), route files under `app/` stay intentionally thin:
-
-- **Route entrypoints (`app/`):** Define metadata, loading/error boundaries, and server-side query prefetching via `HydrationBoundary`, then render a single view component from `features/`.
-- **Feature slices (`features/`):** Group UI components, tables, filters, and Formisch forms by business capability (Catalog, Shopping, Ordering, Reviews), mirroring backend bounded contexts.
-- **Scoped authentication:** Storefront and Commerce share one customer Better Auth session (`/api/auth/[...all]`), whereas Backoffice mounts its own staff session (`/backoffice/api/auth/[...all]`) with separate Entra ID scopes. Backend APIs still enforce authorization independently on every request.
-
-### Layered data pipeline and state boundaries
-
-Instead of calling `fetch` inside components, data flows through a typed, resilient pipeline from React components to the five gateway-routed backend services (**Catalog API**, **Basket API**, **Ordering API**, **Rating API**, and **Chat API**).
-
-This diagram illustrates how server-cached queries, conditional ETag updates, real-time streams, and minimal Jotai atoms connect frontend applications to backend services through the API Gateway.
-
-<MermaidFileLoader file="mermaids/007-architecture-and-state-design-diagram-2.mmd" />
-
-- **Shared contracts and single cache-key source:** `@workspace/types` and `@workspace/validations` define DTOs and Valibot schemas once. `@workspace/api-hooks/keys` and query factories pair keys with fetchers so server prefetching and client hooks never drift on hydration.
-- **Optimistic concurrency with ETags:** Editable **Backoffice** resources (books and order summaries) exchange `ETag`, `If-None-Match`, and `If-Match` headers. Concurrent edits fail explicitly with `412 Precondition Failed` instead of silently overwriting newer changes.
-- **Targeted real-time channels:** Backoffice overview metrics load an initial snapshot and subscribe to an authenticated SSE stream (`/ordering/api/v1/dashboard/stream`), while Storefront's AI assistant streams over CopilotKit AG-UI (`/chatting/ag-ui`) and renders declarative A2UI components.
-- **Minimal client-only state:** Jotai holds only lightweight session-derived and feature-flag state (`isAuthenticatedAtom`, `basketItemCountAtom`, `isCopilotEnabledAtom`). Gating `basketAtom` on `isAuthenticatedAtom` prevents anonymous shoppers from triggering failing `401` basket calls.
-
-## Design trade-offs
-
-| Decision                                                     | Benefits                                                                          | Costs and limits                                                                           |
-| :----------------------------------------------------------- | :-------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------- |
-| Four-tier Turborepo boundaries (`turbo boundaries`)          | Prevents circular dependencies and enforces clear ownership across 19 packages    | Contributors must place shared code in the correct tier before importing it                |
-| Direct TypeScript source imports for `@workspace/*`          | Fast local iteration and no per-package publish/compile boilerplate               | Apps must register workspace packages in Next.js/Vitest config (`@workspace/app-config`)   |
-| Thin routes + feature slices                                 | Easier unit testing with MSW and cleaner Server/Client Component boundaries       | Adds one level of indirection between `app/**/page.tsx` and `features/`                    |
-| TanStack Query for server state + Jotai for minimal UI state | Eliminates manual Redux/store synchronization and handles SSR hydration + retries | Contributors must distinguish server state (TanStack Query) from client-only state (Jotai) |
-
-## Alternatives considered
-
-- **Separate repositories per frontend app:** Would force publishing versioned npm packages for `@workspace/ui`, `@workspace/api-client`, and `@workspace/storefront-shell`, slowing cross-cutting changes across Storefront, Commerce, and Backoffice.
-- **Single global client store (Redux / Zustand) for all API data:** Duplicates caching, deduplication, SSR dehydration, and invalidation logic that TanStack Query already provides.
-- **Last-write-wins updates in Backoffice:** Simpler than ETag headers, but risks silent data loss when two administrators edit the same book or order concurrently.
-
-## Related documentation
-
-- [[doc|frontend/001-monorepo-architecture]] — Complete 19-package inventory, toolchain versions, and Turborepo configuration.
-- [[doc|frontend/002-applications-and-routing]] — Route maps, dev ports, and zone ownership across all three apps.
-- [[doc|frontend/003-data-fetching-and-state]] — Exact retry rules, `QueryClient` defaults, endpoints, SSE backoff, and Jotai atoms.
-- [[doc|frontend/006-microfrontend-architecture]] — Why Storefront and Commerce run as separate zones behind YARP.
+- **Predictability:** Single-source cache keys prevent hydration mismatches between server-rendered HTML and client-side query caches.
+- **Performance:** Per-request server query clients prevent cross-user data leaks while pre-hydrating initial views for fast first paint.
+- **Maintainability:** Vertical feature slices allow teams to evolve Catalog, Shopping, Ordering, or Reviews UI independently without cross-feature coupling.

@@ -1,0 +1,68 @@
+---
+title: Platform Reference
+summary: Technical reference for BookWorm's Azure hosting topology, compute inventory, stateful data and AI infrastructure, identity and RBAC matrix, scheduler schema, and service contracts.
+owners:
+  - platform-team
+badges:
+  - content: Platform Reference
+    backgroundColor: blue
+    textColor: blue
+---
+
+The Platform Reference documents BookWorm's shared infrastructure, runtime hosting model, stateful backing stores, identity and access boundaries, job persistence schema, and cross-service contract surface. It is designed as a fast-lookup reference for application engineers integrating with platform capabilities, platform engineers managing infrastructure, and operators diagnosing production workloads.
+
+## Platform Topology Overview
+
+<LikeC4View viewId="bookwormDeployment" project="deployment" />
+
+## Quick Navigation
+
+<Tiles columns={2}>
+	<Tile
+		icon="ServerStackIcon"
+		href="/docs/custom/platform/001-platform-overview"
+		title="Platform & Topology Overview"
+		description="Subscription deployment model, shared platform layer, ingress boundaries, and gateway route map."
+	/>
+	<Tile
+		icon="CpuChipIcon"
+		href="/docs/custom/platform/002-compute-and-container-apps"
+		title="Compute & Container Apps"
+		description="Inventory of all 16 application Container Apps, operational tooling, ports, and dependencies."
+	/>
+	<Tile
+		icon="CircleStackIcon"
+		href="/docs/custom/platform/003-data-ai-and-messaging-resources"
+		title="Data, AI & Messaging"
+		description="Environment SKUs and ownership for PostgreSQL, Redis, Cosmos DB, Storage, Foundry, Kafka, and Qdrant."
+	/>
+	<Tile
+		icon="ShieldCheckIcon"
+		href="/docs/custom/platform/004-identity-and-rbac-matrix"
+		title="Identity & RBAC Matrix"
+		description="Microsoft Entra ID roles, OAuth2 scopes, Entra Agent Identities, Managed Identity RBAC, and secrets."
+	/>
+	<Tile
+		icon="ClockIcon"
+		href="/docs/custom/platform/005-quartz-schema"
+		title="Scheduler Schema Reference"
+		description="PostgreSQL table definitions, keys, retention limits, and active scheduled jobs for Quartz.NET."
+	/>
+	<Tile
+		icon="ArrowsRightLeftIcon"
+		href="/docs/custom/platform/006-api-and-contracts"
+		title="API & Contracts Index"
+		description="Consolidated HTTP v1, gRPC, AG-UI, MCP, A2A, and Kafka/Wolverine contract directory."
+	/>
+</Tiles>
+
+## Capability Index
+
+| Platform Capability                                   | Responsibility                                                                             | Primary Components                                                                                                                                                                                                                                                                                | Key Consumers                                      |
+| :---------------------------------------------------- | :----------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :------------------------------------------------- |
+| [[doc\|platform/001-platform-overview]]               | Environment isolation, public ingress routing, and shared observability/registry backbone  | API Gateway, Container Apps Environment, Container Registry, Log Analytics, Aspire Dashboard                                                                                                                                                                                                      | Customers, staff, all workloads                    |
+| [[doc\|platform/002-compute-and-container-apps]]      | Managed container hosting, ingress tiers, revision lifecycle, and runtime identity binding | Frontends, [[service\|catalog-api]], [[service\|basket-api]], [[service\|order-api]], [[service\|order-orchestration]], [[service\|rating-api]], [[service\|chat-api]], [[service\|mcp-server]], [[service\|notification-api]], [[service\|scheduler-service]], [[service\|presidio-api]]         | Application and platform engineers                 |
+| [[doc\|platform/003-data-ai-and-messaging-resources]] | Authoritative service persistence, distributed caching, AI inference, and event transport  | [[container\|catalog-database]], [[container\|order-database]], [[container\|scheduler-database]], [[container\|rating-database]], [[container\|basket-database]], [[container\|catalog-vector]], [[container\|catalog-blob]], [[container\|chat-session-blob]], Kafka, [[service\|sendgrid-api]] | Capability APIs and background workers             |
+| [[doc\|platform/004-identity-and-rbac-matrix]]        | User/agent authentication, OBO token delegation, and passwordless Azure RBAC               | [[service\|oauth-api]], Entra Agent Identities, user-assigned Managed Identities                                                                                                                                                                                                                  | Frontends, APIs, AI agents, operators              |
+| [[doc\|platform/005-quartz-schema]]                   | Durable cron job definitions, cluster locking, and execution/misfire history               | [[service\|scheduler-service]], Quartz Dashboard, [[container\|scheduler-database]]                                                                                                                                                                                                               | Platform operators, [[service\|catalog-ingestion]] |
+| [[doc\|platform/006-api-and-contracts]]               | Versioned synchronous APIs, error semantics, and asynchronous CloudEvents contracts        | HTTP v1, gRPC, AG-UI, MCP, A2A, Wolverine/Kafka topics and DLQs                                                                                                                                                                                                                                   | Frontends, backend services, AI agents             |

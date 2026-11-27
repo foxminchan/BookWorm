@@ -1,18 +1,38 @@
-%%{init: {'theme': 'base', 'themeVariables': {'background': '#f5f5f5', 'primaryColor': '#ffffff', 'primaryTextColor': '#2d3142', 'primaryBorderColor': '#2d3142', 'secondaryColor': '#ececec', 'secondaryBorderColor': '#4f5d75', 'tertiaryColor': '#fdf2ee', 'tertiaryBorderColor': '#bf4520', 'lineColor': '#4f5d75', 'textColor': '#2d3142', 'clusterBkg': '#f8f9fa', 'clusterBorder': '#bfc0c0', 'fontFamily': 'Geist, system-ui, sans-serif'}}}%%
-flowchart LR
-	gateway["API Gateway\n(YARP)"] -->|"HTTP v1 / SSE / AG-UI"| apis["Core APIs\n(Catalog, Basket, Ordering, Rating, Chat)"]
-	apis <-->|"gRPC / MCP / A2A"| internal["Internal AI & Tools\n(MCP Tools, Presidio, Foundry)"]
-	apis <-->|"Kafka CloudEvents"| broker["Kafka Broker\n(Wolverine)"]
-	broker <-->|"Triggers & Commands"| workers["Background Workers\n(Finance, Notification, Scheduler, Catalog Ingestion)"]
+architecture-beta
+	group ingress(internet)[Public Ingress]
+	service gateway(server)[API Gateway] in ingress
 
-	classDef focal fill:#fdf2ee,stroke:#bf4520,stroke-width:2px,color:#2d3142
-	classDef service fill:#ffffff,stroke:#2d3142,stroke-width:1.2px,color:#2d3142
-	classDef store fill:#ececec,stroke:#4f5d75,stroke-width:1.2px,color:#2d3142
-	classDef input fill:#eef1f6,stroke:#5a6580,stroke-width:1.2px,color:#2d3142
-	classDef ext fill:#f5f5f5,stroke:#949eb2,stroke-width:1px,stroke-dasharray:4 3,color:#4f5d75
-	class apis focal
-	class broker,workers service
-	class gateway input
-	class internal ext
-	linkStyle 0 stroke:#bf4520,stroke-width:2px
-	linkStyle 1 stroke:#bf4520,stroke-width:2px
+	group sync_apis(logos:dotnet)[Core APIs]
+	junction j_sync in sync_apis
+	service catalog(logos:dotnet)[Catalog API] in sync_apis
+	service basket(logos:dotnet)[Basket API] in sync_apis
+	service ordering(logos:dotnet)[Ordering API] in sync_apis
+	service rating(logos:dotnet)[Rating API] in sync_apis
+	service chat(logos:dotnet)[Chat API] in sync_apis
+
+	group internal_ai(cloud)[Internal Tools and AI]
+	service mcptools(logos:dotnet)[MCP Tools] in internal_ai
+	service presidio(logos:docker-icon)[Presidio Sidecars] in internal_ai
+	service foundry(logos:microsoft-icon)[Microsoft Foundry] in internal_ai
+
+	group event_fabric(logos:kafka-icon)[Asynchronous Event Fabric]
+	service kafka(logos:kafka-icon)[Kafka Broker] in event_fabric
+	service finance(logos:azure-icon)[Finance] in event_fabric
+	service notification(logos:dotnet)[Notification] in event_fabric
+	service scheduler(logos:dotnet)[Scheduler] in event_fabric
+	service ingestion(logos:azure-icon)[Catalog Ingestion] in event_fabric
+
+	gateway:R --> L: j_sync
+	j_sync:R --> L: catalog
+	catalog:R --> L: mcptools
+	mcptools:R --> L: foundry
+	j_sync:T --> B: basket
+	basket:R --> L: ordering
+	j_sync:B --> T: rating
+	rating:R --> L: chat
+	chat:R --> L: presidio
+	rating:B --> T: kafka
+	kafka:R --> L: finance
+	finance:R --> L: notification
+	kafka:B --> T: scheduler
+	scheduler:R --> L: ingestion

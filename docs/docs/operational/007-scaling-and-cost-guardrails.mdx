@@ -1,0 +1,132 @@
+---
+title: Scaling & Cost Guardrails
+summary: Cloud/DevOps runbook for manual Container App replica overrides, concurrency and KEDA scaling limits, and pausing non-production environments to control spend.
+owners:
+  - platform-team
+badges:
+  - content: Cloud / DevOps
+    backgroundColor: green
+    textColor: green
+---
+
+## When to Use & Blast Radius
+
+Use this runbook during planned traffic events, saturation incidents requiring immediate manual scale-out, or off-hours cost optimization in `Development` and `Staging`. Lowering `minReplicas` to `0` introduces cold-start latency; stopping non-production databases makes those environments unavailable until resumed.
+
+<Admonition type="warning" title="Production Availability Guardrail">
+
+Never set `minReplicas` to `0` or stop PostgreSQL Flexible Server in `Production`. Keep
+`minReplicas >= 1` for all production services and enforce `maxReplicas` caps to prevent runaway
+autoscaling spend.
+
+</Admonition>
+
+## Pre-Flight Check
+
+Inspect current replica counts and scaling bounds across all Container Apps in `<RESOURCE_GROUP>`:
+
+```bash
+az account set --subscription "<SUBSCRIPTION_ID>"
+az containerapp list --resource-group "<RESOURCE_GROUP>" \
+  --query "[].{Name:name, MinReplicas:properties.template.scale.minReplicas, MaxReplicas:properties.template.scale.maxReplicas, Status:properties.runningStatus}" \
+  -o table
+```
+
+## Procedure
+
+<Steps>
+<Step title="Apply a manual replica override during traffic spikes">
+
+Temporarily raise `min-replicas` and cap `max-replicas` on a saturated Container App (for example, `gateway`, `ordering`, `catalog`, or `presidio-analyzer`):
+
+```bash
+az containerapp update \
+  --name "<APP_NAME>" \
+  --resource-group "<RESOURCE_GROUP>" \
+  --min-replicas 3 \
+  --max-replicas 10
+```
+
+</Step>
+
+<Step title="Configure HTTP concurrency scaling guardrails">
+
+Attach an HTTP scaling rule so replicas scale predictably under concurrent request load without exceeding `<MAX_REPLICAS>`:
+
+```bash
+az containerapp update \
+  --name "<APP_NAME>" \
+  --resource-group "<RESOURCE_GROUP>" \
+  --min-replicas 1 \
+  --max-replicas 10 \
+  --scale-rule-name http-concurrency \
+  --scale-rule-type http \
+  --scale-rule-http-concurrency 50
+```
+
+</Step>
+
+<Step title="Pause a non-production environment to stop compute spend">
+
+Stop non-production Container Apps and pause the PostgreSQL Flexible Server outside working hours:
+
+```bash
+# Stop all Container Apps in a non-prod resource group
+for app in $(az containerapp list --resource-group "<RESOURCE_GROUP>" --query "[].name" -o tsv); do
+  az containerapp stop --name "${app}" --resource-group "<RESOURCE_GROUP>" --no-wait
+done
+
+# Stop non-prod PostgreSQL Flexible Server (auto-restarts after 7 days per Azure policy)
+az postgres flexible-server stop --name "<POSTGRES_SERVER>" --resource-group "<RESOURCE_GROUP>"
+```
+
+</Step>
+
+<Step title="Resume a paused non-production environment">
+
+Start the PostgreSQL Flexible Server first, then start all Container Apps:
+
+```bash
+az postgres flexible-server start --name "<POSTGRES_SERVER>" --resource-group "<RESOURCE_GROUP>"
+
+for app in $(az containerapp list --resource-group "<RESOURCE_GROUP>" --query "[].name" -o tsv); do
+  az containerapp start --name "${app}" --resource-group "<RESOURCE_GROUP>" --no-wait
+done
+```
+
+</Step>
+
+</Steps>
+
+## Verification
+
+Confirm updated replica limits and running state across `<RESOURCE_GROUP>`:
+
+```bash
+az containerapp list --resource-group "<RESOURCE_GROUP>" \
+  --query "[].{Name:name, MinReplicas:properties.template.scale.minReplicas, MaxReplicas:properties.template.scale.maxReplicas, Status:properties.runningStatus}" \
+  -o table
+```
+
+Expected output (active environment):
+
+```text
+Name       MinReplicas    MaxReplicas    Status
+---------  -------------  -------------  --------
+gateway    1              10             Running
+ordering   1              10             Running
+catalog    1              10             Running
+...
+```
+
+## Rollback / Escape Hatch
+
+If a manual scale override or concurrency rule causes instability or unexpected cost, revert to baseline scaling bounds immediately:
+
+```bash
+az containerapp update \
+  --name "<APP_NAME>" \
+  --resource-group "<RESOURCE_GROUP>" \
+  --min-replicas 1 \
+  --max-replicas 5
+```

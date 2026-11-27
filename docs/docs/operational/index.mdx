@@ -1,0 +1,93 @@
+---
+title: Operational Guides
+summary: Operator-first runbooks, quick triage commands, deployment and rollback procedures, observability playbooks, disaster recovery, and SecOps rotation guides for BookWorm.
+owners:
+  - platform-team
+badges:
+  - content: Operations Hub
+    backgroundColor: red
+    textColor: red
+---
+
+Use this hub during live incidents, production deployments, disaster recovery drills, and security rotations. Every runbook leads with copy-pasteable CLI commands using consistent environment placeholders (`<SUBSCRIPTION_ID>`, `<RESOURCE_GROUP>`, `<APP_NAME>`, `<ENV>`).
+
+## Quick Triage Cheat Sheet
+
+Run these emergency commands first when responding to an alert or outage:
+
+```bash
+# 1. Verify Azure context and target subscription
+az account show --query "{Subscription:name, Id:id, Tenant:tenantId}" -o table
+az account set --subscription "<SUBSCRIPTION_ID>"
+
+# 2. Check health of all Container Apps
+az containerapp list --resource-group "<RESOURCE_GROUP>" \
+  --query "[].{Name:name, Status:properties.runningStatus, External:properties.configuration.ingress.external}" -o table
+
+# 3. Tail live console logs for a failing service
+az containerapp logs show --name "<APP_NAME>" --resource-group "<RESOURCE_GROUP>" --type console --follow
+
+# 4. List active and inactive revisions for a service
+az containerapp revision list --name "<APP_NAME>" --resource-group "<RESOURCE_GROUP>" \
+  --query "[].{Revision:name, Active:properties.active, Health:properties.healthState, Traffic:properties.trafficWeight}" -o table
+
+# 5. Instant rollback to a known-good revision (multiple-revision mode)
+az containerapp ingress traffic set --name "<APP_NAME>" --resource-group "<RESOURCE_GROUP>" \
+  --revision-weight "<PREVIOUS_REVISION>=100"
+
+# 6. Restart a stalled active revision
+az containerapp revision restart --name "<APP_NAME>" --resource-group "<RESOURCE_GROUP>" --revision "<REVISION_NAME>"
+```
+
+## Runbook Directory
+
+<Tiles columns={2}>
+	<Tile
+		icon="FireIcon"
+		href="/docs/custom/operational/003-incident-response-and-runbooks"
+		title="Incident Triage & Health Check"
+		description="First-5-minutes commands, container status, live log tail, dead-letter inspection, and symptom playbooks."
+	/>
+	<Tile
+		icon="ChartBarIcon"
+		href="/docs/custom/operational/002-observability-and-diagnostics"
+		title="Observability & Alert Response"
+		description="Aspire Dashboard traces, Log Analytics KQL queries, saturation checks, and common alert playbooks."
+	/>
+	<Tile
+		icon="RocketLaunchIcon"
+		href="/docs/custom/operational/001-azure-deployment-guide"
+		title="Deployment & Rollback"
+		description="Environment provisioning, CI/CD release promotion, revision traffic shifting, and instant rollback."
+	/>
+	<Tile
+		icon="CircleStackIcon"
+		href="/docs/custom/operational/005-backup-restore-and-dr"
+		title="Backup, Restore & DR"
+		description="PostgreSQL point-in-time restore, Cosmos DB failover, Blob recovery, and vector index rebuild."
+	/>
+	<Tile
+		icon="KeyIcon"
+		href="/docs/custom/operational/006-secrets-certificates-and-secops-rotation"
+		title="Secrets, Certificates & SecOps"
+		description="Managed Identity checks, TLS inspection, emergency credential revocation, and audit log lookup."
+	/>
+	<Tile
+		icon="AdjustmentsHorizontalIcon"
+		href="/docs/custom/operational/007-scaling-and-cost-guardrails"
+		title="Scaling & Cost Guardrails"
+		description="Manual replica overrides, concurrency/KEDA limits, and pausing non-production environments."
+	/>
+</Tiles>
+
+### By Operational Domain
+
+| Guide                                                             | Primary Role   | When to Use                                                                                       |
+| :---------------------------------------------------------------- | :------------- | :------------------------------------------------------------------------------------------------ |
+| [[doc\|operational/003-incident-response-and-runbooks]]           | SRE / Incident | During an active outage, `5xx` spike, stalled checkout, search lag, or AI/PII degradation         |
+| [[doc\|operational/002-observability-and-diagnostics]]            | SRE / Incident | When investigating alerts, tracing requests, checking saturation, or querying KQL logs            |
+| [[doc\|operational/005-backup-restore-and-dr]]                    | SRE / Incident | During data corruption, accidental deletion, regional outage, or scheduled DR drills              |
+| [[doc\|operational/001-azure-deployment-guide]]                   | Cloud / DevOps | When deploying releases, promoting environments, shifting revision traffic, or rolling back       |
+| [[doc\|operational/007-scaling-and-cost-guardrails]]              | Cloud / DevOps | During traffic spikes requiring manual scale overrides or when pausing non-prod spend             |
+| [[doc\|operational/004-security-hardening-checklist]]             | SecOps         | Before promoting an environment to Production or during periodic posture audits                   |
+| [[doc\|operational/006-secrets-certificates-and-secops-rotation]] | SecOps         | When rotating credentials, inspecting certificates, revoking compromised keys, or auditing access |

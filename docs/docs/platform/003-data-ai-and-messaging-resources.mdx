@@ -9,152 +9,112 @@ badges:
     textColor: blue
 ---
 
-This reference lists the stateful, AI, and messaging resources that `src/Aspire/BookWorm.AppHost/AppHost.cs` provisions or connects to. It covers environment-tier SKUs, data ownership per service, and the conventions for external dependencies.
+Each BookWorm bounded context owns its authoritative persistence, isolated behind service APIs and authenticated via Microsoft Entra ID RBAC. This reference documents the Azure-managed data and AI stores alongside external messaging, vector search, and email dependencies.
 
-## Overview
-
-| Property                    | Value                                                                                                                                                        |
-| :-------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**                   | BookWorm platform (AppHost)                                                                                                                                  |
-| **Source**                  | `src/Aspire/BookWorm.AppHost/AppHost.cs`, `src/Aspire/BookWorm.AppHost/Extensions/Infrastructure/AzureExtensions.*.cs`, `Infra/durable-task-scheduler.bicep` |
-| **Azure-managed resources** | `postgres`, `redis`, `cosmos`, `storage`, `durable-task-scheduler`, `Foundry` / `Foundry-project`                                                            |
-| **External resources**      | `broker` (Kafka), `vectordb` (Qdrant Cloud), SMTP relay (SendGrid)                                                                                           |
-| **Authentication**          | Microsoft Entra ID RBAC with user-assigned Managed Identities; see [[doc\|platform/004-identity-and-rbac-matrix]]                                            |
-
-## Data ownership per service
-
-Each bounded context owns its state. PostgreSQL hosts **only** three databases: `catalogdb`, `orderingdb`, and `schedulerdb`.
-
-| Service                                 | Primary store                                                | Cache / idempotency               | Messaging                         | Other                                            |
-| :-------------------------------------- | :----------------------------------------------------------- | :-------------------------------- | :-------------------------------- | :----------------------------------------------- |
-| Catalog API (`catalog`)                 | PostgreSQL `catalogdb`                                       | Redis                             | Kafka + PostgreSQL outbox/inbox   | Qdrant `vectordb`, Blob `catalog-blob`, Foundry  |
-| Catalog Ingestion (`catalog-ingestion`) | PostgreSQL `catalogdb` (read)                                | —                                 | Kafka trigger + PostgreSQL outbox | Qdrant `vectordb` (write), Foundry, host storage |
-| Basket API (`basket`)                   | Redis                                                        | Redis                             | Kafka                             | No SQL database                                  |
-| Ordering API (`ordering`)               | PostgreSQL `orderingdb` (EF Core + Marten event store)       | Redis                             | Kafka + PostgreSQL outbox/inbox   | —                                                |
-| Finance (`finance`)                     | Durable Task Scheduler `finance-taskhub`                     | —                                 | Kafka                             | Host storage; no PostgreSQL                      |
-| Rating API (`rating`)                   | Cosmos DB `ratingdb` / `feedbacks` (partition key `/bookId`) | Redis                             | Kafka + Cosmos DB persistence     | Foundry; no PostgreSQL                           |
-| Chat API (`chatting`)                   | Blob `chatting-blob` (prefix `ag-ui/`)                       | —                                 | —                                 | Foundry; no PostgreSQL, Redis, or Kafka          |
-| MCP Tools (`mcptools`)                  | — (stateless)                                                | —                                 | —                                 | —                                                |
-| Notification (`notification`)           | —                                                            | Redis (FusionCache + idempotency) | Kafka                             | MailKit + Mjml.Net over SMTP; no PostgreSQL      |
-| Scheduler (`scheduler`)                 | PostgreSQL `schedulerdb` (Quartz store)                      | —                                 | Kafka + PostgreSQL outbox/inbox   | —                                                |
-
-The diagram shows which services use each Azure-managed store.
+## Data, AI, and Messaging Topology
 
 <MermaidFileLoader file="mermaids/003-data-ai-and-messaging-resources-diagram-1.mmd" />
 
-## Azure-managed resources by environment
+## Component & Responsibility
 
-### PostgreSQL Flexible Server (`postgres`)
+| Component                      | Role                                            | Protocol / Interface                        | Persistence / State                                                                                                   | Notes                                                                                                                                     |
+| :----------------------------- | :---------------------------------------------- | :------------------------------------------ | :-------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------- |
+| **PostgreSQL Flexible Server** | Relational & event-store persistence            | PostgreSQL 16 (Entra ID auth)               | [[container\|catalog-database]], [[container\|order-database]], [[container\|scheduler-database]]                     | Password auth disabled; PgBouncer in Staging/Prod                                                                                         |
+| **Azure Managed Redis**        | Distributed cache, basket state & idempotency   | TLS port `10000` (Entra ID auth)            | [[container\|basket-database]], [[container\|catalog-cache]], [[container\|order-cache]], [[container\|rating-cache]] | Used by [[service\|catalog-api]], [[service\|basket-api]], [[service\|order-api]], [[service\|rating-api]], [[service\|notification-api]] |
+| **Azure Cosmos DB**            | Customer feedback document store                | EF Core Cosmos (Session consistency)        | [[container\|rating-database]] (partitioned by book ID)                                                               | Owned by [[service\|rating-api]] only                                                                                                     |
+| **Azure Storage**              | Blob assets & Azure Functions host state        | HTTPS (TLS 1.2+, Managed Identity)          | [[container\|catalog-blob]], [[container\|chat-session-blob]], Functions host                                         | Public blob access disabled                                                                                                               |
+| **Durable Task Scheduler**     | Durable orchestration state & timers            | Managed Identity auth                       | Order workflow task hub                                                                                               | Owned by [[service\|order-orchestration]] only                                                                                            |
+| **Microsoft Foundry**          | Managed LLM chat, routing & embedding inference | HTTPS (Cognitive Services User RBAC)        | Stateless inference (`S0` + App Insights)                                                                             | Used by [[service\|catalog-api]], [[service\|catalog-ingestion]], [[service\|chat-api]], [[service\|rating-api]]                          |
+| **Kafka Broker**               | Asynchronous event & command transport          | Kafka                                       | Topic logs & dead-letter queues                                                                                       | Wolverine transport with CloudEvents JSON                                                                                                 |
+| **Qdrant Cloud**               | Derived semantic vector search index            | gRPC / HTTP                                 | [[container\|catalog-vector]]                                                                                         | Read by [[service\|catalog-api]]; written by [[service\|catalog-ingestion]]                                                               |
+| **SMTP Relay**                 | External transactional email delivery           | SMTP port `587` ([[service\|sendgrid-api]]) | Stateless relay                                                                                                       | Used by [[service\|notification-api]]; Mailpit in local run mode                                                                          |
 
-Source: `AzureExtensions.Postgres.cs`.
+## Configuration & Operational Defaults
 
-| Property             | `Development`                            | `Staging`                            | `Production`                         |
-| :------------------- | :--------------------------------------- | :----------------------------------- | :----------------------------------- |
-| SKU / tier           | `Standard_B1ms` (Burstable)              | `Standard_D2ds_v5` (General Purpose) | `Standard_D4ds_v5` (General Purpose) |
-| High availability    | Disabled                                 | Zone-redundant (zones 1 and 2)       | Zone-redundant (zones 1 and 2)       |
-| Backup retention     | 7 days                                   | 14 days                              | 35 days                              |
-| Geo-redundant backup | Disabled                                 | Disabled                             | Enabled                              |
-| Storage              | 32 GB, auto-grow disabled                | 128 GB, auto-grow enabled            | 256 GB, auto-grow enabled            |
-| PgBouncer            | Disabled                                 | Enabled                              | Enabled                              |
-| Databases            | `catalogdb`, `orderingdb`, `schedulerdb` | Same                                 | Same                                 |
+### Data Ownership per Service
 
-The generated Bicep snapshot specifies PostgreSQL engine version `16`, enables Microsoft Entra authentication, and disables password authentication. This corrects the legacy PostgreSQL 18 claim.
+| Service                          | Primary store                                    | Cache / idempotency               | Messaging                         | Other                                                               |
+| :------------------------------- | :----------------------------------------------- | :-------------------------------- | :-------------------------------- | :------------------------------------------------------------------ |
+| [[service\|catalog-api]]         | [[container\|catalog-database]]                  | [[container\|catalog-cache]]      | Kafka + PostgreSQL outbox/inbox   | [[container\|catalog-vector]], [[container\|catalog-blob]], Foundry |
+| [[service\|catalog-ingestion]]   | [[container\|catalog-database]] (read)           | —                                 | Kafka trigger + PostgreSQL outbox | [[container\|catalog-vector]] (write), Foundry, host storage        |
+| [[service\|basket-api]]          | [[container\|basket-database]]                   | [[container\|basket-database]]    | Kafka                             | No SQL database                                                     |
+| [[service\|order-api]]           | [[container\|order-database]] (EF Core + Marten) | [[container\|order-cache]]        | Kafka + PostgreSQL outbox/inbox   | —                                                                   |
+| [[service\|order-orchestration]] | Durable Task Scheduler                           | —                                 | Kafka                             | Host storage; no PostgreSQL                                         |
+| [[service\|rating-api]]          | [[container\|rating-database]]                   | [[container\|rating-cache]]       | Kafka + Cosmos DB persistence     | Foundry; no PostgreSQL                                              |
+| [[service\|chat-api]]            | [[container\|chat-session-blob]]                 | —                                 | —                                 | Foundry; no PostgreSQL, Redis, or Kafka                             |
+| [[service\|mcp-server]]          | — (stateless)                                    | —                                 | —                                 | —                                                                   |
+| [[service\|notification-api]]    | —                                                | Redis (FusionCache + idempotency) | Kafka                             | MailKit + Mjml.Net over SMTP; no PostgreSQL                         |
+| [[service\|scheduler-service]]   | [[container\|scheduler-database]]                | —                                 | Kafka + PostgreSQL outbox/inbox   | —                                                                   |
 
-### Azure Managed Redis (`redis`)
+### Kafka Messaging Conventions
 
-Source: `AzureExtensions.Redis.cs`. Consumers: `catalog`, `basket`, `ordering`, `rating`, `notification`.
+- **Transport:** Wolverine with Kafka transport and CloudEvents JSON serialization (propagates W3C trace context, request ID, and user identity).
+- **Default topic naming:** `bookworm.{env}.{owner-service}.{topic-name}` (exception: `scheduler.process-vector-batch` is unprefixed).
+- **Dead-letter queues:** One native dead-letter queue per service (`bookworm.{env}.{service}.dead-letter-queue`).
+- **Retry policy:** Cooldowns of `50ms`, `250ms`, and `1s` with full jitter before routing to the native dead-letter queue.
 
-| Property          | `Development` | `Staging`    | `Production` |
-| :---------------- | :------------ | :----------- | :----------- |
-| SKU               | `BalancedB0`  | `BalancedB1` | `BalancedB5` |
-| High availability | Disabled      | Enabled      | Enabled      |
+<AccordionGroup>
+	<Accordion title="Azure-Managed Store SKUs by Environment">
+		#### PostgreSQL Flexible Server
 
-The generated Bicep snapshot configures the Redis database TLS port as `10000` and disables access-key authentication. It assigns each workload the database access policy named `default` through `accessPolicyAssignments`.
+    	| Property | `Development` | `Staging` | `Production` |
+    	| :------- | :------------ | :-------- | :----------- |
+    	| SKU / tier | `Standard_B1ms` (Burstable) | `Standard_D2ds_v5` (General Purpose) | `Standard_D4ds_v5` (General Purpose) |
+    	| High availability | Disabled | Zone-redundant (zones 1 & 2) | Zone-redundant (zones 1 & 2) |
+    	| Backup retention | 7 days | 14 days | 35 days |
+    	| Geo-redundant backup | Disabled | Disabled | Enabled |
+    	| Storage | 32 GB, auto-grow off | 128 GB, auto-grow on | 256 GB, auto-grow on |
+    	| PgBouncer | Disabled | Enabled | Enabled |
 
-### Azure Cosmos DB (`cosmos`)
+    	#### Azure Managed Redis
 
-Source: `AzureExtensions.Cosmos.cs`. Owner: `rating` only. Database `ratingdb`, container `feedbacks`, partition key `/bookId`.
+    	| Property | `Development` | `Staging` | `Production` |
+    	| :------- | :------------ | :-------- | :----------- |
+    	| SKU | `BalancedB0` | `BalancedB1` | `BalancedB5` |
+    	| High availability | Disabled | Enabled | Enabled |
 
-| Property                   | `Development` | `Staging`  | `Production`                                   |
-| :------------------------- | :------------ | :--------- | :--------------------------------------------- |
-| Capacity mode              | Serverless    | Serverless | Provisioned throughput (no `EnableServerless`) |
-| Local (key) authentication | Enabled       | Disabled   | Disabled                                       |
+    	#### Azure Cosmos DB
 
-The generated Cosmos template specifies Session consistency and includes the `EnableServerless` capability, with no explicit RU/s throughput value. However, that snapshot conflicts with `AzureExtensions.Cosmos.cs`, which adds `EnableServerless` only outside Production. Use the source's environment condition for the Production behavior; the `temp/` artifact does not establish a Production-specific Cosmos deployment.
+    	| Property | `Development` | `Staging` | `Production` |
+    	| :------- | :------------ | :-------- | :----------- |
+    	| Capacity mode | Serverless | Serverless | Provisioned throughput |
+    	| Local (key) auth | Enabled | Disabled | Disabled |
 
-### Azure Storage (`storage`)
+    	#### Azure Storage (publish mode only)
 
-Source: `AzureExtensions.Storage.cs`. Provisioned in publish mode only.
+    	| Property | `Development` | `Staging` | `Production` |
+    	| :------- | :------------ | :-------- | :----------- |
+    	| SKU | `Standard_LRS` | `Standard_ZRS` | `Standard_GZRS` |
+    	| Access tier / TLS | Hot / TLS 1.2+ | Hot / TLS 1.2+ | Hot / TLS 1.2+ |
+    </Accordion>
+    <Accordion title="Microsoft Foundry Model Deployments">
+    	Foundry provisions SKU `S0` with an `Agents` capability host and links Application Insights. All deployments use `GlobalStandard` capacity `1`.
 
-| Property           | `Development`  | `Staging`      | `Production`    |
-| :----------------- | :------------- | :------------- | :-------------- |
-| SKU                | `Standard_LRS` | `Standard_ZRS` | `Standard_GZRS` |
-| Access tier        | Hot            | Hot            | Hot             |
-| Public blob access | Disabled       | Disabled       | Disabled        |
-| Minimum TLS        | 1.2            | 1.2            | 1.2             |
+    	| Deployment | Model | Version | Purpose |
+    	| :--------- | :---- | :------ | :------ |
+    	| `chat` | `model-router` | `2025-11-18` | Chat completions and agent reasoning |
+    	| `decision` | `Microsoft-Decision-1` | `1` | Chat workflow routing decisions |
+    	| `embedding` | `embed-v-4-0` | `6` | Catalog vector embeddings |
+    </Accordion>
 
-| Usage                                            | Consumer                       | Role                          |
-| :----------------------------------------------- | :----------------------------- | :---------------------------- |
-| Blob container `catalog-blob`                    | `catalog`                      | Storage Blob Data Contributor |
-| Blob container `chatting-blob` (prefix `ag-ui/`) | `chatting`                     | Storage Blob Data Contributor |
-| Azure Functions host storage                     | `finance`, `catalog-ingestion` | Storage Blob Data Owner       |
+</AccordionGroup>
 
-Blob CORS rule: methods `GET`, `HEAD`, `OPTIONS`; allowed headers and exposed headers `*`; allowed origins `*`; `MaxAgeInSeconds = 3600`.
+## Guardrails & Constraints
 
-:::warning
-The Blob CORS rule allows every origin (`AllowedOrigins = ["*"]`). Restrict it to the gateway domain before Production, as described in [[doc|operational/004-security-hardening-checklist]].
-:::
+<Admonition type="warning" title="Restrict Network & CORS Policies Before Production">
+	Azure Storage Blob CORS currently permits all origins (`*`, 1-hour cache), and Durable Task
+	Scheduler declares an open IP allowlist (`0.0.0.0/0`). Restrict both to known gateway and workload
+	boundaries before Production; see [[doc|operational/004-security-hardening-checklist]].
+</Admonition>
 
-### Azure Durable Task Scheduler (`durable-task-scheduler`)
+<Admonition type="info" title="PostgreSQL Database Isolation">
+	PostgreSQL hosts **only** [[container|catalog-database]], [[container|order-database]], and
+	[[container|scheduler-database]]. [[service|order-orchestration]], [[service|notification-api]],
+	[[service|basket-api]], [[service|rating-api]], and [[service|chat-api]] must never provision
+	relational PostgreSQL databases.
+</Admonition>
 
-Source: `Infra/durable-task-scheduler.bicep`, `AzureExtensions.DurableTask.cs`. Owner: `finance` only.
-
-| Property                           | Value                                                       |
-| :--------------------------------- | :---------------------------------------------------------- |
-| Resource type                      | `Microsoft.DurableTask/schedulers@2025-11-01`               |
-| SKU                                | `Consumption` (allowed: `Consumption`, `Dedicated`)         |
-| Task hub                           | `finance-taskhub`                                           |
-| Connection string                  | `Endpoint=<scheduler-endpoint>;Authentication=DefaultAzure` |
-| Environment variables on `finance` | `DTS_CONNECTION_STRING`, `TASKHUB_NAME`                     |
-| Network                            | `ipAllowlist: ['0.0.0.0/0']` (restrict before Production)   |
-| Run mode                           | Durable Task Scheduler emulator container                   |
-
-### Microsoft Foundry (`Foundry`, `Foundry-project`)
-
-Source: `AppHost.cs`, `Components.cs`. Consumers: `catalog`, `catalog-ingestion`, `chatting`, `rating` (role Cognitive Services User).
-
-| Deployment name | Model                                                                | Purpose                              |
-| :-------------- | :------------------------------------------------------------------- | :----------------------------------- |
-| `chat`          | `FoundryModel.Microsoft.ModelRouter` (`model-router`)                | Chat completions and agent reasoning |
-| `decision`      | `FoundryModel.Microsoft.MicrosoftDecision1` (`Microsoft-Decision-1`) | Chat workflow routing decisions      |
-| `embedding`     | `FoundryModel.Cohere.EmbedV40` (`embed-v-4-0`)                       | Catalog vector embeddings            |
-
-The generated Bicep snapshot specifies Foundry account SKU `S0` and an `Agents` capability host with public hosting enabled. Deployments use `model-router` version `2025-11-18`, `Microsoft-Decision-1` version `1`, and `embed-v-4-0` version `6`; each has `GlobalStandard` capacity `1`. The `Foundry-project` module creates the `Foundry-project-ai` Application Insights component and links it using an `AppInsights` project connection.
-
-## External dependencies
-
-These resources sit outside the Azure resource group. `aspire deploy` receives them as connection strings or parameters.
-
-| Resource                  | Configuration key                                                                                                                                                            | Consumers                                                                                              | Run-mode equivalent                 |
-| :------------------------ | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------- | :---------------------------------- |
-| Kafka (`broker`)          | `ConnectionStrings__broker`                                                                                                                                                  | `catalog`, `catalog-ingestion`, `basket`, `ordering`, `rating`, `notification`, `scheduler`, `finance` | Kafka container + Kafka UI          |
-| Qdrant Cloud (`vectordb`) | `ConnectionStrings__vectordb`                                                                                                                                                | `catalog`, `catalog-ingestion`                                                                         | Qdrant container                    |
-| SMTP relay (SendGrid)     | `Parameters__email_smtp_endpoint`, `Parameters__email_smtp_username`, `Parameters__email_smtp_password`, `Parameters__email_sender_address`, `Parameters__email_sender_name` | `notification`                                                                                         | Mailpit container (SMTP port `587`) |
-
-### Kafka messaging conventions
-
-Source: `src/BuildingBlocks/BookWorm.Chassis/EventBus/Wolverine/`.
-
-| Convention         | Value                                                                                      |
-| :----------------- | :----------------------------------------------------------------------------------------- |
-| Library            | Wolverine with Kafka transport                                                             |
-| Default topic name | `bookworm.{env}.{owner-service}.{topic-name}`                                              |
-| Unprefixed topic   | `scheduler.process-vector-batch` (`AppendPrefix = false`)                                  |
-| Dead-letter queue  | `bookworm.{env}.{service}.dead-letter-queue` (one per service)                             |
-| Serialization      | CloudEvents JSON; propagates W3C trace context, `requestid`, and `UserId`                  |
-| Retry policy       | Cooldowns of `50ms`, `250ms`, and `1s` with full jitter, then the native dead-letter queue |
-
-## Related documentation
+## Related Documentation
 
 - [[doc|platform/002-compute-and-container-apps]] — Workloads that consume these resources.
 - [[doc|platform/004-identity-and-rbac-matrix]] — Role assignments for each resource.

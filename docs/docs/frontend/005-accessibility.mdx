@@ -1,13 +1,10 @@
 ---
-title: Frontend Accessibility Architecture & Practices
-summary: Why BookWorm targets WCAG 2.1 Level AA, how contributors verify UI changes, and where accessibility barriers are reported.
+title: Design System & UI Governance
+summary: Shared accessible UI primitives, design tokens, responsive standards, and internationalization readiness across all frontend surfaces.
 owners:
   - contributor-team
 badges:
-  - content: How-to Guide
-    backgroundColor: green
-    textColor: green
-  - content: Explanation
+  - content: Architecture
     backgroundColor: purple
     textColor: purple
   - content: Reference
@@ -15,160 +12,43 @@ badges:
     textColor: blue
 ---
 
-Use this guide to run automated and manual accessibility checks across **Storefront**, **Commerce**, and **Backoffice** before opening a pull request that modifies user-interface components, layouts, forms, or interactive controls. For BookWorm's WCAG 2.1 Level AA rationale and barrier reporting process, see [[doc|frontend/008-accessibility-principles]].
+## Purpose & Scope
 
-## Prerequisites
+This reference defines the UI governance model, shared component system, theming standards, and responsive design rules for **Storefront**, **Commerce**, and **Backoffice**. It ensures visual consistency, accessible interaction patterns, and long-term maintainability across customer and staff experiences.
 
-- Local frontend dependencies installed with `bun install` in `src/Clients` (see [[doc|development/002-getting-started]]).
-- For browser E2E accessibility checks: Playwright Chromium installed via `bunx turbo run playwright:install` from `src/Clients`, and the target application running at `BASE_URL` (defaults to `http://localhost:3000` for Storefront).
+## Architectural Principles & Rules
 
-## Steps
+- **Headless accessible primitives first:** Interactive controls (dialogs, menus, popovers, selects, tabs) must be built on shared headless primitives that provide standardized ARIA roles, keyboard navigation, focus trapping, and focus restoration out of the box.
+- **Token-driven styling:** Colors, typography, spacing, and elevation are governed by centralized design tokens rather than ad-hoc per-app values, ensuring WCAG-compliant contrast ratios across themes.
+- **Shared customer chrome:** **Storefront** and **Commerce** share a unified navigation shell (header, footer, mobile bottom bar, basket indicator, and cross-zone links) so shoppers never perceive a visual seam when crossing microfrontend boundaries.
+- **Mobile-first responsive discipline:** Customer surfaces prioritize touch-friendly targets, responsive grids, and zoom-safe layouts (remaining readable up to 200% zoom without horizontal overflow); **Backoffice** optimizes for dense data tables with responsive horizontal scrolling and clear hierarchy.
+- **Internationalization readiness:** User-facing formatting (currency, dates, numbers) routes through centralized locale-aware utilities rather than hardcoded string concatenation, and layouts avoid fixed pixel widths that break under translated text expansion.
 
-<Steps>
-<Step title="Run static accessibility linting (`eslint-plugin-jsx-a11y`)">
-
-From `src/Clients`, run ESLint across all three applications and shared `@workspace/*` packages (configured with `--max-warnings 0`):
-
-<CodeGroup>
-
-```bash
-bun run lint
-```
-
-</CodeGroup>
-
-CI (`.github/workflows/frontend-shared.yml`) enforces this check on every pull request.
-
-</Step>
-<Step title="Run Vitest component tests with accessible queries">
-
-From `src/Clients`, run unit and component tests (which assert accessible roles, labels, and keyboard interactions via Testing Library):
-
-<CodeGroup>
-
-```bash
-bun run test
-```
-
-</CodeGroup>
-
-</Step>
-<Step title="Run the Playwright BDD accessibility suite (`axe-core` and keyboard flows)">
-
-From `src/Clients/apps/storefront`, generate BDD specs and run the 10 scenarios in `e2e/features/accessibility.feature` (tagged `@accessibility` and `@a11y`, covering skip-to-main-content, keyboard-only checkout across Storefront and Commerce, dialog focus trapping, landmarks, `axe-core` color contrast, mobile navigation, and heading hierarchy):
-
-<CodeGroup>
-
-```bash
-bun run bddgen && bunx playwright test --grep @accessibility
-```
-
-</CodeGroup>
-
-To target a non-default URL (such as the Aspire API Gateway origin), set `BASE_URL`:
-
-<CodeGroup>
-
-```bash
-BASE_URL=<gateway-url> bunx playwright test --grep @accessibility
-```
-
-```powershell
-$env:BASE_URL="<gateway-url>"; bunx playwright test --grep @accessibility
-```
-
-</CodeGroup>
-
-Where:
-
-- `<gateway-url>`: Running Storefront or API Gateway base URL (for example, `https://localhost:5000`).
-
-<Admonition type="note">
-	`@bookworm/commerce` currently has unit and component tests only (no standalone E2E suite); its
-	basket and checkout accessibility journeys are verified through Storefront's
-	`accessibility.feature` via the gateway. `@bookworm/backoffice` installs `@axe-core/playwright`,
-	though it does not yet have a dedicated `accessibility.feature` file.
+<Admonition type="tip" title="Governance Rule for New UI Components">
+	Never hand-roll custom modal dialogs, dropdowns, or form controls inside an application feature
+	slice. Extend or compose the shared UI primitive library so keyboard, focus, and contrast
+	guarantees apply uniformly.
 </Admonition>
 
-There is no dedicated Backoffice `accessibility.feature` or Lighthouse CI workflow in the repository. No future plan is recorded; ask the Backoffice owners before describing either as planned.
+## Patterns & Boundaries
 
-</Step>
-<Step title="Perform a manual keyboard-only pass">
+| Concern / Surface        | Architectural Approach                                                                            | Responsibility Boundary                                                             | Key Trade-off                                                                                |
+| :----------------------- | :------------------------------------------------------------------------------------------------ | :---------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------- |
+| **Shared UI Primitives** | Centralized component library wrapping accessible headless primitives and utility tokens          | Domain UI layer owns reusable primitives; feature slices own domain composition     | Changes to core primitives affect all three surfaces and require cross-app regression checks |
+| **Customer Shell**       | Shared header, footer, mobile navigation, and basket badge across **Storefront** and **Commerce** | Domain shell layer owns chrome; **Storefront** and **Commerce** inject page content | Couples customer shell releases across both customer zones                                   |
+| **Theming & Contrast**   | Semantic design tokens for surfaces, text, borders, and status states                             | Design tokens enforce 4.5:1 normal text and 3:1 UI/large text contrast              | Restricts arbitrary one-off colors in feature components                                     |
+| **Validation & Forms**   | Schema-driven form validation paired with explicit field labels and error associations            | Shared validation layer owns schemas; feature slices own form layout                | Adds upfront schema definition before rendering forms                                        |
 
-Open each changed page in a desktop browser and navigate without a mouse:
+<Accordion title="Responsive & Localization Guardrails">
 
-- Press `Tab` once from page load to confirm the **Skip to main content** link appears and moves focus to `<main>` on `Enter`.
-- Tab through all interactive controls (links, buttons, inputs, menus) to verify visible focus indicators and logical DOM order.
-- Open every dialog, drawer, or popover (such as the remove-item dialog in Commerce) with `Enter` or `Space`, verify focus is trapped inside, press `Escape` to close it, and confirm focus returns to the trigger button.
+- **Touch & Viewport:** Interactive controls maintain minimum touch target sizing on mobile viewports, and **Storefront** provides dedicated bottom navigation for thumb-friendly browsing.
+- **Text Expansion & Zoom:** Layouts use flexible containers and relative units so content reflows cleanly at mobile widths and 200% browser zoom.
+- **Locale-Safe Formatting:** Price, date, and order-status formatting are encapsulated in shared utilities to simplify future multi-locale expansion.
 
-</Step>
-<Step title="Verify semantics, color contrast, and screen-reader announcements">
+</Accordion>
 
-- Confirm each page has a single `<h1>`, no skipped heading levels, and proper landmark regions (`main`, `navigation`, `contentinfo`).
-- Verify form controls have associated `<label>` elements, icon-only buttons have accessible names (for example, `"Shopping basket"`), and meaningful images have descriptive `alt` text.
-- Verify status indicators, required fields, and validation errors never rely on color alone.
-- For status toasts, offline/rate-limit banners, basket updates, or Storefront AI chat streams (`@generative-a11y/react` and `@generative-a11y/ag-ui`), confirm updates announce through `aria-live` regions without flooding the screen reader.
+## Quality & Operational Impact
 
-</Step>
-<Step title="Document verification in your pull request">
-
-Note which automated commands and manual keyboard or screen-reader checks you ran, along with any known limitations, in the pull request description.
-
-</Step>
-</Steps>
-
-## Verification
-
-Confirm that ESLint reports zero warnings/errors and all Playwright `@accessibility` scenarios pass:
-
-<CodeGroup>
-
-```bash
-bun run lint
-```
-
-</CodeGroup>
-
-Expected output (in `src/Clients`):
-
-<CodeGroup>
-
-```text
- Tasks:    19 successful, 19 total
-```
-
-</CodeGroup>
-
-And from `src/Clients/apps/storefront` with the target server running:
-
-<CodeGroup>
-
-```bash
-bunx playwright test --grep @accessibility
-```
-
-</CodeGroup>
-
-Expected output:
-
-<CodeGroup>
-
-```text
-  10 passed
-```
-
-</CodeGroup>
-
-## Troubleshooting
-
-| Symptom                                                                     | Cause                                                                                                          | Fix                                                                                                           |
-| :-------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------ |
-| `bun run lint` fails with `jsx-a11y/*` errors or warnings                   | Missing accessible name, invalid ARIA attribute, or clickable non-interactive element (`<div>` with `onClick`) | Replace with a native `<button>` or `<a>`, add an associated label or `aria-label`, and re-run `bun run lint` |
-| `playwright test --grep @accessibility` fails with `ERR_CONNECTION_REFUSED` | Target server is not running on `BASE_URL` (`http://localhost:3000` default)                                   | Start Storefront or the Aspire AppHost, or pass the active origin in `BASE_URL`                               |
-| `axe-core` reports a color-contrast violation                               | Text or interactive border fails WCAG 2.1 Level AA contrast (`4.5:1` normal text, `3:1` large text/UI)         | Adjust Tailwind CSS v4 design tokens in `@workspace/ui` and re-run the `@color-contrast` scenario             |
-| Focus is lost after closing a modal dialog                                  | Trigger element unmounted or dialog omitted focus restoration                                                  | Use `@workspace/ui` Base UI dialog primitives, which trap focus and restore focus to the trigger on `Escape`  |
-
-## Related documentation
-
-- [[doc|frontend/008-accessibility-principles]] — WCAG 2.1 Level AA target, four-layer defense model, and barrier reporting.
-- [[doc|frontend/004-testing-and-quality-gates]] — Full formatting, boundary, type-check, test, build, and E2E workflow.
+- **Visual Continuity:** Customers transition seamlessly between **Storefront** discovery and **Commerce** checkout with identical chrome and interaction behavior.
+- **Engineering Velocity:** Teams compose pre-verified, accessible building blocks instead of rebuilding dialogs, tables, and form controls per surface.
+- **Inclusive Compliance:** Tokenized contrast and headless primitives eliminate entire classes of keyboard and screen-reader defects at authoring time.

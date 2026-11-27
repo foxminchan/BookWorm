@@ -1,32 +1,36 @@
-%%{init: {'theme': 'base', 'themeVariables': {'background': '#f5f5f5', 'primaryColor': '#ffffff', 'primaryTextColor': '#2d3142', 'primaryBorderColor': '#2d3142', 'secondaryColor': '#ececec', 'secondaryBorderColor': '#4f5d75', 'tertiaryColor': '#fdf2ee', 'tertiaryBorderColor': '#bf4520', 'lineColor': '#4f5d75', 'textColor': '#2d3142', 'clusterBkg': '#f8f9fa', 'clusterBorder': '#bfc0c0', 'fontFamily': 'Geist, system-ui, sans-serif'}}}%%
-flowchart LR
-	catalog["Catalog API\n(.NET 11)"]
-	ordering["Ordering API\n(.NET 11)"]
-	scheduler["Scheduler\n(Quartz.NET)"]
-	rating["Rating API\n(.NET 11)"]
-	chat["Chat API\n(.NET 11)"]
-	finance["Finance\n(Azure Functions)"]
-	pg["PostgreSQL\n(catalogdb, orderingdb, schedulerdb)"]
-	cosmos["Cosmos DB\n(ratingdb / feedbacks)"]
-	blob["Azure Storage\n(catalog-blob, chatting-blob)"]
-	dts["Durable Task Scheduler\n(finance-taskhub)"]
+architecture-beta
+	group services(logos:dotnet)[Application Workloads]
+	service catalog(logos:dotnet)[Catalog and Ingestion] in services
+	service ordering(logos:dotnet)[Ordering and Basket] in services
+	service rating(logos:dotnet)[Rating API] in services
+	service chat(logos:dotnet)[Chat API] in services
+	service finance(logos:azure-icon)[Finance] in services
+	service platform_svc(logos:dotnet)[Scheduler and Notification] in services
 
-	catalog --> |"EF Core: catalogdb"| pg
-	ordering --> |"EF Core + Marten: orderingdb"| pg
-	scheduler --> |"Quartz store: schedulerdb"| pg
-	rating --> |"EF Core Cosmos: feedbacks"| cosmos
-	catalog --> |"Blob: catalog-blob"| blob
-	chat --> |"Blob: chatting-blob"| blob
-	finance --> |"DefaultAzure: orchestrations"| dts
+	group azure_stores(logos:azure-icon)[Azure Managed Stores]
+	service postgres(logos:postgresql)[PostgreSQL] in azure_stores
+	service redis(logos:redis)[Managed Redis] in azure_stores
+	service cosmos(logos:azure-icon)[Cosmos DB] in azure_stores
+	service blob(disk)[Blob Storage] in azure_stores
+	service dts(logos:azure-icon)[Durable Task Scheduler] in azure_stores
 
-	classDef focal fill:#fdf2ee,stroke:#bf4520,stroke-width:2px,color:#2d3142
-	classDef service fill:#ffffff,stroke:#2d3142,stroke-width:1.2px,color:#2d3142
-	classDef store fill:#ececec,stroke:#4f5d75,stroke-width:1.2px,color:#2d3142
-	classDef input fill:#eef1f6,stroke:#5a6580,stroke-width:1.2px,color:#2d3142
-	classDef ext fill:#f5f5f5,stroke:#949eb2,stroke-width:1px,stroke-dasharray:4 3,color:#4f5d75
-	class pg focal
-	class dts service
-	class cosmos,blob store
-	class catalog,ordering,scheduler,rating,chat,finance input
-	linkStyle 0 stroke:#bf4520,stroke-width:2px
-	linkStyle 1 stroke:#bf4520,stroke-width:2px
+	group ai_ext(cloud)[AI and External Services]
+	service qdrant(logos:qdrant-icon)[Qdrant Cloud] in ai_ext
+	service foundry(logos:microsoft-icon)[Microsoft Foundry] in ai_ext
+	service kafka(logos:kafka-icon)[Kafka Broker] in ai_ext
+	service smtp(logos:sendgrid-icon)[SMTP Relay] in ai_ext
+
+	catalog:R --> L: postgres
+	postgres:R --> L: ordering
+	catalog:B --> T: qdrant
+	qdrant:R --> L: blob
+	ordering:B --> T: redis
+	redis:R --> L: cosmos
+	rating:L --> R: cosmos
+	rating:B --> T: foundry
+	chat:R --> L: foundry
+	platform_svc:T --> B: postgres
+	platform_svc:R --> L: kafka
+	kafka:R --> L: smtp
+	finance:T --> B: kafka
+	finance:R --> L: dts

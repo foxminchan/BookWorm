@@ -3,125 +3,125 @@ title: "API and contracts index"
 summary: "Consolidated index of BookWorm HTTP v1, gRPC, AG-UI, MCP, A2A, and Kafka/Wolverine contracts grouped by service with auth, gateway routes, and error rules."
 owners:
   - contributor-team
+badges:
+  - content: Contracts Reference
+    backgroundColor: blue
+    textColor: blue
 ---
 
-This index consolidates every HTTP `v1`, gRPC, AG-UI, Model Context Protocol (MCP), Agent-to-Agent (A2A), and Kafka/Wolverine contract across BookWorm's 10 backend services and 3 external integrations. Use it as your starting point to locate gateway routes, local ports, Microsoft Entra ID scopes, RFC 9457 error semantics, and detailed per-service specifications.
+This index consolidates all synchronous HTTP `v1`, gRPC, AG-UI, Model Context Protocol (MCP), Agent-to-Agent (A2A), and asynchronous Kafka/Wolverine contracts across BookWorm's 10 backend services and 3 external integrations. Use it to locate gateway routes, local ports, Microsoft Entra ID scopes, RFC 9457 error semantics, and per-service contract links.
 
-## Global API conventions
-
-- **Single public ingress:** All external browser and API traffic enters through the YARP **API Gateway** (`gateway`). Backend services strip their `/{service}` gateway prefix (`X-Powered-By: BookWorm Gateway`) and are not exposed publicly in Azure.
-- **API versioning:** All REST services use explicit URL-segment and `api-version` header versioning via `ApiVersions.V1` (`/api/v1/...`). `V2` and `V3` constants exist in `BookWorm.Constants` but are not yet mapped.
-- **OpenAPI & Scalar (Development only):** Each HTTP API maps `/openapi/v1.json` only in Development; Aspire AppHost hosts **Scalar** (`scalar`) with Microsoft Entra ID OAuth2 Authorization Code + PKCE for interactive local testing.
-- **Health endpoints (Development only):** `MapDefaultEndpoints()` maps `/health` (readiness) and `/alive` (liveness) only when `Environment.IsDevelopment()`.
-- **Rate limiting (`AddRateLimiting`):**
-  - **Global chained limiter:** Concurrency load-shedding (`PermitLimit = 100`, `QueueLimit = 0`) + Fixed Window per IP/Host (`30` requests / `1` minute, `QueueLimit = 0`).
-  - **Named `PerUserRateLimit`:** Token Bucket per `NameIdentifier` (`TokenLimit = 30`, `TokensPerPeriod = 20`, `ReplenishmentPeriod = 10s`, `QueueLimit = 5`).
-- **Standard error format:** All HTTP services return RFC 9457 `ProblemDetails` JSON responses with `Content-Type: application/problem+json`.
-
-### Shared HTTP error contract
-
-| Status                  | Meaning                           | Typical cause                                                                                   | Client recovery                                      |
-| :---------------------- | :-------------------------------- | :---------------------------------------------------------------------------------------------- | :--------------------------------------------------- |
-| `400 Bad Request`       | Validation or domain-rule failure | `FluentValidation` error, missing `x-request-id`, or invalid Order transition                   | Fix payload or preconditions; do not retry unchanged |
-| `401 Unauthorized`      | Authentication failed             | Missing, expired, or invalid Microsoft Entra ID JWT                                             | Re-authenticate and retry                            |
-| `403 Forbidden`         | Authorization denied              | Token lacks required Entra ID role (`admin`, `business_user`, `customer`) or scope              | Request token with required role and scopes          |
-| `404 Not Found`         | Missing or out-of-scope resource  | Entity does not exist or belongs to another customer                                            | Verify resource ID and ownership                     |
-| `409 Conflict`          | Concurrency or duplicate request  | Duplicate `x-request-id` (1-hour Redis window), lock contention, or duplicate reviewer feedback | Query current state before issuing a new request     |
-| `429 Too Many Requests` | Rate limit exceeded               | Global or `PerUserRateLimit` threshold hit (`Retry-After` header included)                      | Back off for `Retry-After` seconds and retry         |
-| `500 / 502 / 503`       | Server or upstream failure        | Unhandled error or unavailable downstream dependency (e.g., fail-closed Presidio)               | Retry idempotent requests with exponential backoff   |
-
-## Service and integration directory
-
-| Service                          | Resource ID                                | Gateway path                        | Local ports (HTTP / HTTPS) | Protocols                                      | Entra ID roles & scopes                                                        | Persistence                                                |
-| :------------------------------- | :----------------------------------------- | :---------------------------------- | :------------------------- | :--------------------------------------------- | :----------------------------------------------------------------------------- | :--------------------------------------------------------- |
-| [[service\|catalog-api]]         | `catalog`                                  | `/catalog/api/v1/*`                 | `5100` / `7187`            | HTTP `v1`, gRPC server, Kafka                  | `catalog_read`; `business_user` or `admin` + `catalog_read/write`              | PostgreSQL (`catalogdb`), Qdrant, Azure Blob, Redis        |
-| [[service\|catalog-ingestion]]   | `catalog-ingestion`                        | Internal only                       | Functions `7071`           | Kafka trigger (Azure Functions)                | Managed Identity RBAC                                                          | Reads PostgreSQL (`catalogdb`), writes Qdrant (`vectordb`) |
-| [[service\|basket-api]]          | `basket`                                   | `/basket/api/v1/baskets`            | `5052` / `7155`            | HTTP `v1`, gRPC server & client, Kafka         | `customer` + `basket_read`, `basket_write`                                     | Redis only (`basket:{customerId}`)                         |
-| [[service\|order-api]]           | `ordering`                                 | `/ordering/api/v1/*`                | `5244` / `7203`            | HTTP `v1` + SSE, gRPC clients, Kafka           | `customer` or `admin` + `ordering_read/write` (`+ catalog_read` for dashboard) | PostgreSQL (`orderingdb` + Marten), Redis                  |
-| [[service\|order-orchestration]] | `finance`                                  | Internal only                       | Functions `7072`           | Kafka triggers + Durable Functions             | Managed Identity RBAC                                                          | Durable Task Scheduler (`finance-taskhub`) + Azure Storage |
-| [[service\|rating-api]]          | `rating`                                   | `/rating/api/v1/feedbacks*`         | `5278` / `7003`            | HTTP `v1`, A2A gRPC server, MCP client, Kafka  | `rating_read` (A2A); `admin` + `rating_read/write` (delete); `ratingAgentId`   | **Azure Cosmos DB** (`ratingdb`/`feedbacks`), Redis        |
-| [[service\|chat-api]]            | `chatting`                                 | `/chatting/*` (`/ag-ui`, `/agents`) | `5026` / `7132`            | AG-UI, Agent Discovery, MCP client, A2A client | `customer` or `admin` + `chatting_read/write`; `chatAgentId`                   | Azure Blob (`chatting-blob`, prefix `ag-ui/`)              |
-| [[service\|mcp-server]]          | `mcptools`                                 | Internal only (custom CORS)         | `5243` / `7193`            | MCP Streamable HTTP (`/mcp`), gRPC client      | `mcptools_read`                                                                | Stateless                                                  |
-| [[service\|notification-api]]    | `notification`                             | Internal only                       | `5259` / `7036`            | Kafka worker, MailKit SMTP                     | Internal worker + Managed Identity (Redis)                                     | Redis idempotency only (no PostgreSQL)                     |
-| [[service\|scheduler-service]]   | `scheduler`, `quartz-dashboard`            | `/quartz` (separate UI container)   | `5062` / `7062`            | Quartz.NET + Dashboard Agent, Kafka            | `quartz-dashboard`: Entra ID OIDC `admin` role                                 | PostgreSQL (`schedulerdb` + Wolverine outbox)              |
-| [[service\|oauth-api]]           | `entra`, `entra-agent-identities`          | `/entra/*`                          | External                   | OAuth 2.0 / OIDC                               | Roles: `admin`, `business_user`, `customer`                                    | External provider                                          |
-| [[service\|presidio-api]]        | `presidio-analyzer`, `presidio-anonymizer` | Internal only                       | Container `3000`           | HTTP PII `/analyze`, `/anonymize`              | Internal network boundary                                                      | Stateless containers                                       |
-| [[service\|sendgrid-api]]        | `mailpit` (Dev) / `email` (Azure)          | Internal only                       | SMTP `587`                 | MailKit SMTP (logical OpenAPI v3)              | API key secret (`EMAIL_SMTP_PASSWORD`)                                         | External provider                                          |
-
-## Protocol interaction overview
-
-External requests enter via the YARP API Gateway, synchronous internal reads run over gRPC/MCP/A2A, and asynchronous cross-domain workflows run over Kafka with CloudEvents JSON.
+## Protocol and Contract Interaction Fabric
 
 <MermaidFileLoader file="mermaids/006-api-and-contracts-diagram-1.mmd" />
 
-## Synchronous gRPC, MCP, and A2A contracts
+## Component & Responsibility
 
-### gRPC services (`edition = "2023"`)
+| Component                        | Role                             | Protocol / Interface                                                 | Persistence / State                                                                                                       | Notes                                                                      |
+| :------------------------------- | :------------------------------- | :------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------- |
+| [[service\|catalog-api]]         | Book catalog & vector search     | HTTP `v1` (`/catalog/api/v1/*`), gRPC server, Kafka                  | [[container\|catalog-database]], [[container\|catalog-vector]], [[container\|catalog-blob]], [[container\|catalog-cache]] | `catalog_read`; `business_user` or `admin` + `catalog_read/write`          |
+| [[service\|catalog-ingestion]]   | Vector index batch ingestion     | Kafka trigger (Azure Functions)                                      | Reads [[container\|catalog-database]], writes [[container\|catalog-vector]]                                               | Managed Identity RBAC; internal only                                       |
+| [[service\|basket-api]]          | Pre-checkout customer basket     | HTTP `v1` (`/basket/api/v1/baskets`), gRPC server & client, Kafka    | [[container\|basket-database]]                                                                                            | `customer` + `basket_read`, `basket_write`                                 |
+| [[service\|order-api]]           | Accepted orders & lifecycle      | HTTP `v1` (`/ordering/api/v1/*`) + SSE, gRPC clients, Kafka          | [[container\|order-database]], [[container\|order-cache]]                                                                 | `customer` or `admin` + `ordering_read/write`                              |
+| [[service\|order-orchestration]] | Post-checkout saga orchestrator  | Kafka triggers + Durable Functions                                   | Durable Task Scheduler                                                                                                    | Managed Identity RBAC; internal only                                       |
+| [[service\|rating-api]]          | Customer feedback & review agent | HTTP `v1` (`/rating/api/v1/feedbacks*`), A2A gRPC, MCP client, Kafka | [[container\|rating-database]], [[container\|rating-cache]]                                                               | `rating_read` (A2A); `admin` + `rating_read/write`; Agent Identity         |
+| [[service\|chat-api]]            | Conversational book discovery    | AG-UI (`/chatting/*`), Agent Discovery, MCP & A2A clients            | [[container\|chat-session-blob]]                                                                                          | `customer` or `admin` + `chatting_read/write`; Agent Identity              |
+| [[service\|mcp-server]]          | Shared AI tool & prompt catalog  | MCP Streamable HTTP (`/mcp`), gRPC client                            | Stateless                                                                                                                 | `mcptools_read`; internal with gateway CORS                                |
+| [[service\|notification-api]]    | Transactional order email worker | Kafka worker, MailKit SMTP                                           | Redis idempotency only                                                                                                    | Internal worker + Managed Identity (Redis)                                 |
+| [[service\|scheduler-service]]   | Cron scheduler & admin UI        | Quartz.NET (`/quartz`), Kafka                                        | [[container\|scheduler-database]]                                                                                         | Quartz Dashboard: Entra ID OIDC `admin` role                               |
+| [[service\|oauth-api]]           | Identity & OBO token provider    | OAuth 2.0 / OIDC (`/entra/*`)                                        | External provider                                                                                                         | Roles: `admin`, `business_user`, `customer`                                |
+| [[service\|presidio-api]]        | PII detection & redaction        | Internal HTTP (`3000`: `/analyze`, `/anonymize`)                     | Stateless containers                                                                                                      | Fail-closed dependency for [[service\|chat-api]] & [[service\|rating-api]] |
+| [[service\|sendgrid-api]]        | Email delivery boundary          | SMTP (`587`)                                                         | External provider                                                                                                         | Authenticated via SMTP API key                                             |
 
-| Protobuf service              | Server                   | Clients                     | Methods                                                                                                                                                                                                    |
-| :---------------------------- | :----------------------- | :-------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `book.v1.BookGrpcService`     | [[service\|catalog-api]] | Basket, Ordering, MCP Tools | [[query\|GetBookGrpc]], [[query\|GetBooksGrpc]], [[query\|GetBookDetailsGrpc]], [[query\|ListBooksGrpc]], [[query\|ListCategoriesGrpc]], [[query\|ListAuthorsGrpc]], [[query\|GetDashboardGrpc]] (`admin`) |
-| `basket.v1.BasketGrpcService` | [[service\|basket-api]]  | Ordering                    | [[query\|GetBasketGrpc]]                                                                                                                                                                                   |
-| **A2A gRPC** (`MapGrpcA2A`)   | [[service\|rating-api]]  | Chat (`rating_read`)        | Delegates conversational review insights to [[agent\|rating-agent]]                                                                                                                                        |
+## Configuration & Operational Defaults
 
-### MCP Streamable HTTP (`/mcp`)
+### Global API & Error Conventions
 
-[[service|mcp-server]] exposes four read-only Catalog tools (`search_catalog`, `get_book`, `list_categories`, `list_authors`) and four reusable prompts (`recommend_books`, `summarize_rating`, `reduce_rating_summaries`, `analyze_book_quality`).
+- **Single public ingress:** External browser and API traffic enters through the YARP API Gateway, which strips `/{service}` prefixes before forwarding.
+- **API versioning:** REST services use URL-segment and header versioning (`V1` at `/api/v1/...`).
+- **Rate limiting:** Global chained limiter (100 concurrent requests + 30 requests/minute per IP/Host) plus a per-user token bucket (30-token burst, 20 tokens replenished every 10s, queue limit 5).
+- **Standard error format:** HTTP services return RFC 9457 Problem Details JSON (`application/problem+json`).
 
-## Asynchronous Kafka / Wolverine contracts
+| Status                  | Meaning                           | Typical cause                                                                      | Client recovery                                      |
+| :---------------------- | :-------------------------------- | :--------------------------------------------------------------------------------- | :--------------------------------------------------- |
+| `400 Bad Request`       | Validation or domain-rule failure | Payload validation error, missing request ID header, or invalid Order transition   | Fix payload or preconditions; do not retry unchanged |
+| `401 Unauthorized`      | Authentication failed             | Missing, expired, or invalid Microsoft Entra ID JWT                                | Re-authenticate and retry                            |
+| `403 Forbidden`         | Authorization denied              | Token lacks required Entra ID role or scope                                        | Request token with required role and scopes          |
+| `404 Not Found`         | Missing or out-of-scope resource  | Entity does not exist or belongs to another customer                               | Verify resource ID and ownership                     |
+| `409 Conflict`          | Concurrency or duplicate request  | Duplicate request ID (1-hour Redis window), lock contention, or duplicate feedback | Query current state before issuing a new request     |
+| `429 Too Many Requests` | Rate limit exceeded               | Global or per-user rate limit hit (`Retry-After` header included)                  | Back off for `Retry-After` seconds and retry         |
+| `500 / 502 / 503`       | Server or upstream failure        | Unhandled error or unavailable downstream dependency (e.g., fail-closed Presidio)  | Retry idempotent requests with exponential backoff   |
 
-Topics follow `bookworm.{env}.{owner}.{topic}` (`AppendPrefix = true`), except `scheduler.process-vector-batch` (`AppendPrefix = false`). All messages use CloudEvents JSON envelopes (`CloudEventsOnlyKafkaMapper`), W3C trace propagation, retry cooldown (`50ms`, `250ms`, `1s` with jitter), and per-service native dead-letter queues (`bookworm.{env}.{service}.dead-letter-queue`).
+### Synchronous gRPC, MCP, and A2A Contracts
 
-| Message                                                 | Type    | Kafka topic                                                                    | Producer  | Consumer(s)          |
-| :------------------------------------------------------ | :------ | :----------------------------------------------------------------------------- | :-------- | :------------------- |
-| [[event\|UserCheckedOutIntegrationEvent]]               | Event   | [[channel\|bookworm.&#123;env&#125;.ordering.user-checked-out]]                | Ordering  | Finance              |
-| [[event\|OrderStatusChangedToCompleteIntegrationEvent]] | Event   | [[channel\|bookworm.&#123;env&#125;.ordering.order-status-change-to-complete]] | Ordering  | Finance              |
-| [[event\|OrderStatusChangedToCancelIntegrationEvent]]   | Event   | [[channel\|bookworm.&#123;env&#125;.ordering.order-status-change-to-cancel]]   | Ordering  | Finance              |
-| [[command\|PlaceOrderCommand]]                          | Command | [[channel\|bookworm.&#123;env&#125;.finance.place-order]]                      | Finance   | Basket, Notification |
-| [[command\|CompleteOrderCommand]]                       | Command | [[channel\|bookworm.&#123;env&#125;.finance.complete-order]]                   | Finance   | Notification         |
-| [[command\|CancelOrderCommand]]                         | Command | [[channel\|bookworm.&#123;env&#125;.finance.cancel-order]]                     | Finance   | Notification         |
-| [[command\|DeleteBasketCompleteCommand]]                | Command | [[channel\|bookworm.&#123;env&#125;.finance.delete-basket-complete]]           | Finance   | Ordering             |
-| [[command\|DeleteBasketFailedCommand]]                  | Command | [[channel\|bookworm.&#123;env&#125;.finance.delete-basket-failed]]             | Finance   | Ordering             |
-| [[event\|BasketDeletedCompleteIntegrationEvent]]        | Event   | [[channel\|bookworm.&#123;env&#125;.basket.delete-complete]]                   | Basket    | Finance              |
-| [[event\|BasketDeletedFailedIntegrationEvent]]          | Event   | [[channel\|bookworm.&#123;env&#125;.basket.delete-failed]]                     | Basket    | Finance              |
-| [[event\|FeedbackCreatedIntegrationEvent]]              | Event   | [[channel\|bookworm.&#123;env&#125;.rating.feedback-create]]                   | Rating    | Catalog              |
-| [[event\|FeedbackDeletedIntegrationEvent]]              | Event   | [[channel\|bookworm.&#123;env&#125;.rating.feedback-delete]]                   | Rating    | Catalog              |
-| [[event\|BookUpdatedRatingFailedIntegrationEvent]]      | Event   | [[channel\|bookworm.&#123;env&#125;.catalog.book-update-rating-failed]]        | Catalog   | Rating               |
-| [[event\|ProcessVectorBatchIntegrationEvent]]           | Event   | [[channel\|scheduler.process-vector-batch]]                                    | Scheduler | Catalog Ingestion    |
+| Contract                         | Server                   | Clients                                                                  | Operations                                                                                                                                                                                                 |
+| :------------------------------- | :----------------------- | :----------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `book.v1.BookGrpcService`        | [[service\|catalog-api]] | [[service\|basket-api]], [[service\|order-api]], [[service\|mcp-server]] | [[query\|GetBookGrpc]], [[query\|GetBooksGrpc]], [[query\|GetBookDetailsGrpc]], [[query\|ListBooksGrpc]], [[query\|ListCategoriesGrpc]], [[query\|ListAuthorsGrpc]], [[query\|GetDashboardGrpc]] (`admin`) |
+| `basket.v1.BasketGrpcService`    | [[service\|basket-api]]  | [[service\|order-api]]                                                   | [[query\|GetBasketGrpc]]                                                                                                                                                                                   |
+| **A2A gRPC**                     | [[service\|rating-api]]  | [[service\|chat-api]] (`rating_read`)                                    | Delegates conversational review insights to [[agent\|rating-agent]]                                                                                                                                        |
+| **MCP Streamable HTTP** (`/mcp`) | [[service\|mcp-server]]  | [[service\|chat-api]], [[service\|rating-api]]                           | Tools: `search_catalog`, `get_book`, `list_categories`, `list_authors`; Prompts: `recommend_books`, `summarize_rating`, `reduce_rating_summaries`, `analyze_book_quality`                                  |
 
-### Dead-letter queues
+### Asynchronous Kafka / Wolverine Contracts
 
-- [[channel|bookworm.&#123;env&#125;.basket.dead-letter-queue]] (`bookworm.{env}.basket.dead-letter-queue`)
-- [[channel|bookworm.&#123;env&#125;.catalog.dead-letter-queue]] (`bookworm.{env}.catalog.dead-letter-queue`)
-- [[channel|bookworm.&#123;env&#125;.notification.dead-letter-queue]] (`bookworm.{env}.notification.dead-letter-queue`)
-- [[channel|bookworm.&#123;env&#125;.ordering.dead-letter-queue]] (`bookworm.{env}.ordering.dead-letter-queue`)
-- [[channel|bookworm.&#123;env&#125;.rating.dead-letter-queue]] (`bookworm.{env}.rating.dead-letter-queue`)
+Topics follow `bookworm.{env}.{owner}.{topic}` (exception: `scheduler.process-vector-batch`). Messages use CloudEvents JSON envelopes, W3C trace propagation, retry cooldowns (`50ms`, `250ms`, `1s` with jitter), and per-service native dead-letter queues.
 
-## AI agents, data containers, and domain entities
+| Message                                                 | Type    | Kafka topic                                                                    | Producer                         | Consumer(s)                                            |
+| :------------------------------------------------------ | :------ | :----------------------------------------------------------------------------- | :------------------------------- | :----------------------------------------------------- |
+| [[event\|UserCheckedOutIntegrationEvent]]               | Event   | [[channel\|bookworm.&#123;env&#125;.ordering.user-checked-out]]                | [[service\|order-api]]           | [[service\|order-orchestration]]                       |
+| [[event\|OrderStatusChangedToCompleteIntegrationEvent]] | Event   | [[channel\|bookworm.&#123;env&#125;.ordering.order-status-change-to-complete]] | [[service\|order-api]]           | [[service\|order-orchestration]]                       |
+| [[event\|OrderStatusChangedToCancelIntegrationEvent]]   | Event   | [[channel\|bookworm.&#123;env&#125;.ordering.order-status-change-to-cancel]]   | [[service\|order-api]]           | [[service\|order-orchestration]]                       |
+| [[command\|PlaceOrderCommand]]                          | Command | [[channel\|bookworm.&#123;env&#125;.finance.place-order]]                      | [[service\|order-orchestration]] | [[service\|basket-api]], [[service\|notification-api]] |
+| [[command\|CompleteOrderCommand]]                       | Command | [[channel\|bookworm.&#123;env&#125;.finance.complete-order]]                   | [[service\|order-orchestration]] | [[service\|notification-api]]                          |
+| [[command\|CancelOrderCommand]]                         | Command | [[channel\|bookworm.&#123;env&#125;.finance.cancel-order]]                     | [[service\|order-orchestration]] | [[service\|notification-api]]                          |
+| [[command\|DeleteBasketCompleteCommand]]                | Command | [[channel\|bookworm.&#123;env&#125;.finance.delete-basket-complete]]           | [[service\|order-orchestration]] | [[service\|order-api]]                                 |
+| [[command\|DeleteBasketFailedCommand]]                  | Command | [[channel\|bookworm.&#123;env&#125;.finance.delete-basket-failed]]             | [[service\|order-orchestration]] | [[service\|order-api]]                                 |
+| [[event\|BasketDeletedCompleteIntegrationEvent]]        | Event   | [[channel\|bookworm.&#123;env&#125;.basket.delete-complete]]                   | [[service\|basket-api]]          | [[service\|order-orchestration]]                       |
+| [[event\|BasketDeletedFailedIntegrationEvent]]          | Event   | [[channel\|bookworm.&#123;env&#125;.basket.delete-failed]]                     | [[service\|basket-api]]          | [[service\|order-orchestration]]                       |
+| [[event\|FeedbackCreatedIntegrationEvent]]              | Event   | [[channel\|bookworm.&#123;env&#125;.rating.feedback-create]]                   | [[service\|rating-api]]          | [[service\|catalog-api]]                               |
+| [[event\|FeedbackDeletedIntegrationEvent]]              | Event   | [[channel\|bookworm.&#123;env&#125;.rating.feedback-delete]]                   | [[service\|rating-api]]          | [[service\|catalog-api]]                               |
+| [[event\|BookUpdatedRatingFailedIntegrationEvent]]      | Event   | [[channel\|bookworm.&#123;env&#125;.catalog.book-update-rating-failed]]        | [[service\|catalog-api]]         | [[service\|rating-api]]                                |
+| [[event\|ProcessVectorBatchIntegrationEvent]]           | Event   | [[channel\|scheduler.process-vector-batch]]                                    | [[service\|scheduler-service]]   | [[service\|catalog-ingestion]]                         |
 
-### AI agents (5)
+<AccordionGroup>
+	<Accordion title="Dead-Letter Queues, AI Agents, Data Containers & Domain Entities">
+		#### Dead-Letter Queues
+		- [[channel|bookworm.&#123;env&#125;.basket.dead-letter-queue]] (`bookworm.{env}.basket.dead-letter-queue`)
+		- [[channel|bookworm.&#123;env&#125;.catalog.dead-letter-queue]] (`bookworm.{env}.catalog.dead-letter-queue`)
+		- [[channel|bookworm.&#123;env&#125;.notification.dead-letter-queue]] (`bookworm.{env}.notification.dead-letter-queue`)
+		- [[channel|bookworm.&#123;env&#125;.ordering.dead-letter-queue]] (`bookworm.{env}.ordering.dead-letter-queue`)
+		- [[channel|bookworm.&#123;env&#125;.rating.dead-letter-queue]] (`bookworm.{env}.rating.dead-letter-queue`)
 
-- **Conversational (`chatting`):** [[agent|book-agent]], [[agent|book-catalog-researcher]], [[agent|book-recommendation-researcher]], [[agent|qa-agent]]
-- **Reviews (`rating`):** [[agent|rating-agent]]
+    	#### AI Agents (5)
+    	- **Conversational:** [[agent|book-agent]], [[agent|book-catalog-researcher]], [[agent|book-recommendation-researcher]], [[agent|qa-agent]]
+    	- **Reviews:** [[agent|rating-agent]]
 
-### Data containers (11)
+    	#### Data Containers (11)
+    	- **Catalog:** [[container|catalog-database]] (PostgreSQL), [[container|catalog-cache]] (Redis), [[container|catalog-vector]] (Qdrant), [[container|catalog-blob]] (Azure Blob)
+    	- **Shopping:** [[container|basket-database]] (Redis)
+    	- **Ordering:** [[container|order-database]] (PostgreSQL + Marten), [[container|order-cache]] (Redis)
+    	- **Reviews:** [[container|rating-database]] (Azure Cosmos DB), [[container|rating-cache]] (Redis)
+    	- **Conversational:** [[container|chat-session-blob]] (Azure Blob)
+    	- **Platform:** [[container|scheduler-database]] (PostgreSQL — see also [[doc|platform/005-quartz-schema]])
 
-- **Catalog:** [[container|catalog-database]] (PostgreSQL), [[container|catalog-cache]] (Redis), [[container|catalog-vector]] (Qdrant), [[container|catalog-blob]] (Azure Blob)
-- **Shopping:** [[container|basket-database]] (Redis)
-- **Ordering:** [[container|order-database]] (PostgreSQL + Marten), [[container|order-cache]] (Redis)
-- **Reviews:** [[container|rating-database]] (Azure Cosmos DB), [[container|rating-cache]] (Redis)
-- **Conversational:** [[container|chat-session-blob]] (Azure Blob)
-- **Platform:** [[container|scheduler-database]] (PostgreSQL — see also [[doc|platform/005-quartz-schema]])
+    	#### Domain Entities (10)
+    	- **Catalog:** [[entity|book]], [[entity|author]], [[entity|category]], [[entity|publisher]]
+    	- **Shopping:** [[entity|basket]], [[entity|basket-item]]
+    	- **Ordering:** [[entity|order]], [[entity|order-item]], [[entity|buyer]]
+    	- **Reviews:** [[entity|feedback]]
+    </Accordion>
 
-### Domain entities (10)
+</AccordionGroup>
 
-- **Catalog:** [[entity|book]], [[entity|author]], [[entity|category]], [[entity|publisher]]
-- **Shopping:** [[entity|basket]], [[entity|basket-item]]
-- **Ordering:** [[entity|order]], [[entity|order-item]], [[entity|buyer]]
-- **Reviews:** [[entity|feedback]]
+## Guardrails & Constraints
 
-## Related documentation
+<Admonition type="info" title="Development-Only Endpoints">
+	OpenAPI specification endpoints (`/openapi/v1.json`), interactive Scalar testing, and default
+	health/liveness endpoints (`/health`, `/alive`) are mapped only in the `Development` environment
+	and are not exposed in Staging or Production.
+</Admonition>
 
-- [[doc|arc42/00-c4-overview]] — System context and container topology across frontends and backend services.
+## Related Documentation
+
+- [[doc|arc42/00-c4-overview]] — System context and container overview across frontends and backend services.
 - [[doc|platform/004-identity-and-rbac-matrix]] — Azure Managed Identity and Microsoft Entra ID permission matrix.
-- [[doc|development/008-testing-matrix]] — Pact messaging contracts (`tests/pacts/`), TUnit unit tests, and ArchUnit verification.
+- [[doc|development/008-testing-matrix]] — Backend, frontend, contract, and documentation verification matrix.

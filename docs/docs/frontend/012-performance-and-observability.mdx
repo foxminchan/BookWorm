@@ -1,0 +1,60 @@
+---
+title: Performance & Observability
+summary: Core Web Vitals targets, bundle discipline, OpenTelemetry distributed tracing, and graceful degradation across all frontend surfaces.
+owners:
+  - contributor-team
+badges:
+  - content: Architecture
+    backgroundColor: purple
+    textColor: purple
+  - content: Reference
+    backgroundColor: blue
+    textColor: blue
+---
+
+## Purpose & Scope
+
+This reference defines performance budgets, bundle discipline, distributed telemetry, and graceful degradation standards across **Storefront**, **Commerce**, and **Backoffice**. It ensures customer discovery remains fast, checkout remains resilient under load, and frontend server operations participate in BookWorm's end-to-end observability pipeline.
+
+## End-to-End Frontend Telemetry Flow
+
+The visual below shows how frontend server runtimes export OpenTelemetry traces and metrics alongside **API Gateway** and backend service telemetry into BookWorm's centralized observability stack.
+
+<MermaidFileLoader file="mermaids/012-performance-and-observability-diagram-1.mmd" />
+
+## Architectural Principles & Rules
+
+- **Core Web Vitals discipline:** Public **Storefront** pages optimize for fast Largest Contentful Paint (LCP), minimal Cumulative Layout Shift (CLS) via explicit image dimensions and skeleton fallbacks, and low Interaction to Next Paint (INP) by keeping client hydration islands small.
+- **Bundle & dependency isolation:** Heavy client dependencies—such as the conversational AI runtime—are scoped strictly to **Storefront** so **Commerce** checkout and **Backoffice** bundles remain lean.
+- **OpenTelemetry instrumentation:** Every frontend server runtime initializes the shared OpenTelemetry Node SDK at startup, propagating W3C trace context through **API Gateway** calls to backend capability services and exporting telemetry via OTLP.
+- **Graceful degradation:** Transient network errors, upstream timeouts, and rate limits surface non-blocking user feedback (offline/rate-limit banners and retry actions) rather than unhandled white-screen crashes.
+
+<Admonition type="tip" title="Keep Client Bundles Lean with Server Components">
+	Default to Server Components for data formatting, markdown/content rendering, and initial catalog
+	views. Only mark leaf interactive components as client-side to minimize JavaScript shipped to the
+	browser.
+</Admonition>
+
+## Patterns & Boundaries
+
+| Concern / Surface             | Architectural Approach                                                                      | Responsibility Boundary                                                                           | Key Trade-off                                                                                          |
+| :---------------------------- | :------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------------ | :----------------------------------------------------------------------------------------------------- |
+| **Bundle & Dependency Scope** | App-scoped heavy features (AI chat in **Storefront** only) + tree-shakeable shared packages | Application surfaces own feature dependencies; foundation/domain layers avoid heavy runtime bloat | Requires discipline when adding shared UI or utility dependencies                                      |
+| **Server Telemetry**          | Shared OpenTelemetry startup instrumentation per Next.js server runtime                     | Foundation telemetry layer owns SDK setup; Aspire/Azure environment owns OTLP collector           | Captures server-side SSR and proxy traces; browser RUM requires dedicated client-side beacons if added |
+| **Correlation & Diagnostics** | Request correlation headers (`x-request-id`) and gateway zone headers (`X-Mfe-Zone`)        | Transport layer stamps correlation IDs; **API Gateway** stamps zone routing headers               | Simplifies cross-tier log correlation across browser, Next.js, gateway, and .NET APIs                  |
+| **Resilient Degradation**     | Route-level error boundaries, bounded transport retries, and SSE exponential backoff        | Feature slices own fallback UI; transport layer owns bounded retry and backoff logic              | Bounded retries slightly delay final error display in exchange for higher transient recovery           |
+
+<Accordion title="Core Web Vitals & Operational Budgets">
+
+- **LCP (Largest Contentful Paint):** Protected on **Storefront** by server-side rendering, component caching, and optimized responsive images.
+- **CLS (Cumulative Layout Shift):** Prevented across all surfaces by reserving image aspect ratios and matching Suspense skeleton geometry to loaded content.
+- **INP (Interaction to Next Paint):** Protected by keeping ephemeral client state minimal, avoiding unnecessary full-tree re-renders, and isolating streaming updates.
+- **Observability Sink:** Local development streams traces and logs to the **Aspire Dashboard**; Azure deployments export to **Log Analytics Workspace**.
+
+</Accordion>
+
+## Quality & Operational Impact
+
+- **Conversion & Retention:** Fast **Storefront** paint times and responsive **Commerce** interactions directly support customer engagement and checkout completion.
+- **End-to-End Traceability:** Propagating OpenTelemetry context from Next.js server runtimes through **API Gateway** to .NET services lets engineers diagnose slow page loads across the full stack.
+- **Operational Resilience:** Bounded retries, SSE backoff, and isolated error boundaries keep partial backend degradation from cascading into full-page outages.

@@ -1,0 +1,29 @@
+%%{init: {'theme': 'base', 'themeVariables': {'background': '#f5f5f5', 'primaryColor': '#ffffff', 'primaryTextColor': '#2d3142', 'primaryBorderColor': '#2d3142', 'secondaryColor': '#ececec', 'secondaryBorderColor': '#4f5d75', 'tertiaryColor': '#fdf2ee', 'tertiaryBorderColor': '#bf4520', 'lineColor': '#4f5d75', 'textColor': '#2d3142', 'clusterBkg': '#f8f9fa', 'clusterBorder': '#bfc0c0', 'fontFamily': 'Geist, system-ui, sans-serif'}}}%%
+flowchart LR
+	trigger["Operator / CI Dispatch\n(aspire deploy or gh workflow)"]
+	acr["Container Registry\n(Immutable Image Tags)"]
+	revNew["Candidate Revision\n(Container App Rollout)"]
+	verify{"Health & Smoke\nVerification"}
+	promote["Live Traffic\n(100% Active Revision)"]
+	rollback["Instant Rollback\n(Previous Revision / Traffic Shift)"]
+
+	trigger -->|"Build & Push"| acr
+	acr -->|"Deploy Revision"| revNew
+	revNew --> verify
+	verify -->|"Healthy"| promote
+	verify -->|"Degraded / 5xx Spike"| rollback
+	rollback -->|"Restore Previous Revision"| promote
+
+	classDef focal fill:#fdf2ee,stroke:#bf4520,stroke-width:2px,color:#2d3142
+	classDef service fill:#ffffff,stroke:#2d3142,stroke-width:1.2px,color:#2d3142
+	classDef store fill:#ececec,stroke:#4f5d75,stroke-width:1.2px,color:#2d3142
+	classDef input fill:#eef1f6,stroke:#5a6580,stroke-width:1.2px,color:#2d3142
+	classDef ext fill:#f5f5f5,stroke:#949eb2,stroke-width:1px,stroke-dasharray:4 3,color:#4f5d75
+	class verify focal
+	class trigger input
+	class acr store
+	class revNew,promote service
+	class rollback ext
+	linkStyle 3 stroke:#2d3142,stroke-width:2px
+	linkStyle 4 stroke:#bf4520,stroke-width:2px
+	linkStyle 5 stroke:#bf4520,stroke-width:2px

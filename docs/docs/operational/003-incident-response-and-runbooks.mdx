@@ -1,282 +1,225 @@
 ---
-title: Day-2 Operations & Incident Runbooks
-summary: Actionable troubleshooting runbooks for Container Apps, passwordless Entra RBAC, Durable Task orchestration, Kafka ingestion, and AI pipelines.
+title: Incident Triage & Health Check Runbook
+summary: First-5-minutes triage commands and symptom-first recovery playbooks for Container Apps, passwordless RBAC, order orchestration, vector ingestion, and AI pipelines.
 owners:
   - platform-team
 badges:
-  - content: Runbook
+  - content: SRE / Incident
     backgroundColor: red
     textColor: red
 ---
 
-Use these symptom-first runbooks to diagnose and restore BookWorm workloads across Azure Container Apps, Microsoft Entra ID passwordless RBAC, Azure Durable Task Scheduler, Kafka vector ingestion, and Microsoft Foundry AI pipelines.
+## When to Use & Blast Radius
 
-## Quick triage index
+Use this runbook as your primary starting point during any live service degradation, failed checkout, search staleness, or authentication outage. Triage commands are read-only; mitigation commands (restarting revisions or modifying RBAC) affect live traffic for the targeted `<APP_NAME>`.
 
-| Observed symptom                                                                 | Start here                                                                                                       |
-| :------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------- |
-| Container App stuck in `Activating` / `Failed`, `ImagePullFailed`, or crash loop | [Runbook 1: Container App startup or image pull failure](#runbook-1-container-app-startup-or-image-pull-failure) |
-| `401`/`403`, PostgreSQL token login failure, or Redis `NOAUTH`/`NOPERM`          | [Runbook 2: Passwordless auth and RBAC failure](#runbook-2-passwordless-auth-and-rbac-failure)                   |
-| Orders stay in `New` status, baskets do not clear, or checkout emails never send | [Runbook 3: Order orchestration stall](#runbook-3-order-orchestration-stall)                                     |
-| New or updated books do not appear in semantic search                            | [Runbook 4: Vector search and catalog ingestion lag](#runbook-4-vector-search-and-catalog-ingestion-lag)         |
-| Chat API or Rating API returns `502`/`503`, HTTP `429`, or slow AI responses     | [Runbook 5: AI chat and PII redaction degradation](#runbook-5-ai-chat-and-pii-redaction-degradation)             |
+<Admonition type="warning" title="Production Verification Note">
 
-## Prerequisites
+In `Staging` and `Production`, internal `/health` and `/alive` routes are not exposed externally.
+Verify service health using Container App revision status, platform system logs, and **API
+Gateway** HTTP responses.
 
-- **Azure CLI (`az` 2.x):** Signed in to the target subscription (`az login && az account set --subscription "<subscription-id>"`).
-- **Permissions:** `Contributor` on `<resource-group>` to inspect and restart Container App revisions, plus `Reader` on ACR, PostgreSQL, Redis, Cosmos DB, Storage, and Microsoft Foundry.
-- **Monitoring access:** Log Analytics and Aspire Dashboard access (see [[doc|operational/002-observability-and-diagnostics]]).
+</Admonition>
 
-## Runbook 1: Container App startup or image pull failure
-
-**Symptoms:** A Container App revision stalls in `Activating` or `Failed`, or `ContainerAppSystemLogs_CL` reports `ImagePullFailed` or `ContainerTerminated`.
-
-1. **Inspect active revision status and system logs**
-
-   ```bash
-   az containerapp revision list \
-     --name "<container-app-name>" \
-     --resource-group "<resource-group>" \
-     --query "[].{Revision:name, Active:properties.active, Health:properties.healthState, Provisioning:properties.provisioningState}" \
-     -o table
-   ```
-
-   Where:
-   - `<container-app-name>`: Target Container App (one of the 16 application Container Apps or `quartz-dashboard`).
-   - `<resource-group>`: Target Azure resource group name.
-
-2. **Verify the environment Managed Identity holds `AcrPull`**
-
-   Confirm the shared Container Apps environment identity (`mi-<token>`) holds role `AcrPull` (`7f951dda-4ed3-4680-a7ca-43fe172d538d`) on the Azure Container Registry (`<acr-name>`).
-
-   ```bash
-   az role assignment list \
-     --scope "$(az acr show --name <acr-name> --resource-group <resource-group> --query id -o tsv)" \
-     --query "[?roleDefinitionName=='AcrPull'].{Principal:principalId, Role:roleDefinitionName}" \
-     -o table
-   ```
-
-   Where:
-   - `<acr-name>`: Azure Container Registry name (`acr<token>`).
-
-3. **Confirm the target image tag exists in ACR**
-
-   ```bash
-   az acr repository show-tags \
-     --name "<acr-name>" \
-     --repository "<service-name>" \
-     --orderby time_desc \
-     -o table
-   ```
-
-   Where:
-   - `<service-name>`: Image repository name matching the failing Container App.
-
-4. **Check console logs for missing external parameters**
-
-   Stream startup console logs to catch missing external connection strings (`ConnectionStrings__broker`, `ConnectionStrings__vectordb`, or `Email__*` for `notification`):
-
-   ```bash
-   az containerapp logs show \
-     --name "<container-app-name>" \
-     --resource-group "<resource-group>" \
-     --type console \
-     --tail 100
-   ```
-
-5. **Redeploy or restart the revision**
-
-   All Container Apps run in single-active-revision mode (`activeRevisionsMode: 'Single'`), so re-running `aspire deploy` with the fixed image or configuration replaces the failing revision immediately.
-
-   The generated Bicep snapshot has 17 Container App resources: all 16 application workloads and `quartz-dashboard` use `activeRevisionsMode: 'Single'` and `minReplicas: 1`. It does not declare `maxReplicas`.
-
-## Runbook 2: Passwordless auth and RBAC failure
-
-**Symptoms:** `Login failed for token-identified principal` (PostgreSQL), `NOAUTH` or `NOPERM` (Redis), or `403 Forbidden` (Cosmos DB, Storage, or Microsoft Foundry).
-
-:::note
-Never re-enable static database passwords, Redis access keys, or Storage shared keys as a workaround. Verify which datastore the failing service actually owns before inspecting RBAC: PostgreSQL hosts **only** `catalogdb`, `orderingdb`, and `schedulerdb`. Notification (Redis + Kafka + SMTP), Finance (Durable Task Scheduler + Storage), Rating (Cosmos DB + Redis), Chat (Blob Storage), Basket (Redis), and MCP Tools (stateless) have **no PostgreSQL database**.
-:::
-
-1. **Verify the failing service's datastore RBAC assignment**
-
-   - **PostgreSQL (`catalog`, `catalog-ingestion`, `ordering`, `scheduler`):** Confirm the service's user-assigned Managed Identity is registered as an Entra ID administrator on the PostgreSQL Flexible Server:
-
-     ```bash
-     az postgres flexible-server ad-admin list \
-       --resource-group "<resource-group>" \
-       --server-name "<postgres-server-name>" \
-       -o table
-     ```
-
-   - **Azure Managed Redis (`catalog`, `basket`, `ordering`, `rating`, `notification`):** Confirm an `accessPolicyAssignments` entry (`default` policy) exists for the service's Managed Identity on the Redis cluster. Access keys are disabled by design.
-   - **Azure Cosmos DB (`rating` only):** Confirm `rating`'s Managed Identity holds the Cosmos DB SQL data role assignment on `ratingdb` (`feedbacks` container, partition key `/bookId`). Note that `DisableLocalAuth` is enforced in `Staging` and `Production` (`AzureExtensions.Cosmos.cs`).
-   - **Azure Storage (`catalog`, `chatting`, `catalog-ingestion`, `finance`):** Confirm role assignments on the storage account:
-     - `catalog` and `chatting`: **Storage Blob Data Contributor** (`ba92f5b4-2d11-453d-a403-e96b0029c9fe`).
-     - `catalog-ingestion` and `finance`: **Storage Blob Data Owner** (`b7e6dc6d-f1e8-4753-8033-0f276bb0955b`, required by Azure Functions host storage).
-   - **Microsoft Foundry (`catalog`, `catalog-ingestion`, `chatting`, `rating`):** Confirm **Cognitive Services User** (`a97b65f3-24c7-4388-baec-2e87135dc908`).
-
-   ```bash
-   az role assignment list \
-     --resource-group "<resource-group>" \
-     --assignee "<managed-identity-principal-id>" \
-     --query "[].{Role:roleDefinitionName, Scope:scope}" \
-     -o table
-   ```
-
-   Where:
-   - `<postgres-server-name>`: Azure PostgreSQL Flexible Server name.
-   - `<managed-identity-principal-id>`: Object ID of the failing service's user-assigned Managed Identity.
-
-2. **Account for RBAC propagation delay and restart the revision**
-
-   Wait 5-10 minutes after creating or repairing a role assignment, then restart the active revision:
-
-   ```bash
-   az containerapp revision restart \
-     --name "<container-app-name>" \
-     --resource-group "<resource-group>" \
-     --revision "<active-revision-name>"
-   ```
-
-   Where:
-   - `<active-revision-name>`: Active revision name from `az containerapp revision list`.
-
-## Runbook 3: Order orchestration stall
-
-**Symptoms:** Orders remain in `New` status after checkout, customer baskets are not deleted, or checkout emails never arrive.
+### Incident Triage Flow
 
 <MermaidFileLoader file="mermaids/003-incident-response-and-runbooks-diagram-1.mmd" />
 
-1. **Inspect `finance` environment variables for Durable Task Scheduler**
+## Pre-Flight Check
 
-   Confirm `DTS_CONNECTION_STRING` (`Endpoint=...;Authentication=DefaultAzure`), `TASKHUB_NAME` (`finance-taskhub`), and `BrokerList` are populated on `finance` (`src/Aspire/BookWorm.AppHost/Extensions/Infrastructure/AzureExtensions.DurableTask.cs`):
-
-   ```bash
-   az containerapp show \
-     --name finance \
-     --resource-group "<resource-group>" \
-     --query "properties.template.containers[0].env[?name=='DTS_CONNECTION_STRING' || name=='TASKHUB_NAME' || name=='BrokerList']" \
-     -o table
-   ```
-
-2. **Verify `finance` storage and network access**
-
-   - Confirm `finance`'s Managed Identity holds **Storage Blob Data Owner** (`b7e6dc6d-f1e8-4753-8033-0f276bb0955b`) on the Azure Storage account (Finance has **no PostgreSQL database**).
-   - If you restricted `ipAllowlist` on `Microsoft.DurableTask/schedulers`, verify that the Container Apps environment's outbound static IPs are included.
-
-3. **Check Kafka topics and dead-letter queues across Ordering, Finance, Basket, and Notification**
-
-   Inspect `finance`, `basket`, and `notification` console logs and check these Kafka topics and native DLQs:
-   - Flow topics: `bookworm.{env}.ordering.user-checked-out`, `bookworm.{env}.finance.place-order`, `bookworm.{env}.basket.delete-complete`, `bookworm.{env}.basket.delete-failed`, `bookworm.{env}.finance.delete-basket-complete`, `bookworm.{env}.finance.delete-basket-failed`.
-   - Native DLQs: `bookworm.{env}.ordering.dead-letter-queue`, `bookworm.{env}.basket.dead-letter-queue`, `bookworm.{env}.notification.dead-letter-queue`.
-
-4. **If checkout emails specifically are missing, inspect Notification dependencies**
-
-   Verify `notification` can reach external Kafka (`broker`), Azure Managed Redis (`redis`, used for FusionCache and 24-hour idempotency—no PostgreSQL), and the external SendGrid SMTP endpoint (`Email__Endpoint`, `Email__Username`, `Email__Password`, `Email__From`).
-
-## Runbook 4: Vector search and catalog ingestion lag
-
-**Symptoms:** Newly created or edited books do not appear in semantic search, or `catalog-ingestion` logs batch failures.
-
-1. **Verify Scheduler is publishing batch trigger events**
-
-   Sign in to **Quartz Dashboard** at `https://quartz-dashboard.<aca-default-domain>/quartz` (requires Entra ID `admin` role) and inspect `ProcessVectorBatchJob` execution history (scheduled every 5 minutes UTC: `0 0/5 * * * ?`, stored in `schedulerdb`). Confirm `ProcessVectorBatchIntegrationEvent` is publishing to the unprefixed topic `scheduler.process-vector-batch`.
-
-2. **Inspect `catalog-ingestion` console logs**
-
-   ```bash
-   az containerapp logs show \
-     --name catalog-ingestion \
-     --resource-group "<resource-group>" \
-     --type console \
-     --tail 100
-   ```
-
-3. **Remediate the specific failure mode**
-
-   - **Microsoft Foundry HTTP `429` on `embedding` (`embed-v-4-0`):** Raise deployment capacity in Microsoft Foundry and allow the next 5-minute batch cycle to reprocess changed books.
-   - **Qdrant Cloud connectivity errors:** Verify `ConnectionStrings__vectordb` and Qdrant Cloud API key validity.
-   - **PostgreSQL (`catalogdb`) or Storage `403` errors:** Verify `catalog-ingestion` holds PostgreSQL Entra ID admin registration and **Storage Blob Data Owner** (`b7e6dc6d-f1e8-4753-8033-0f276bb0955b`) on `storage` (Runbook 2).
-
-## Runbook 5: AI chat and PII redaction degradation
-
-**Symptoms:** **Chat API** (`chatting`) or **Rating API** (`rating`) returns HTTP `502`/`503`, HTTP `429`, or high response latency.
-
-1. **Check Presidio privacy sidecar health**
-
-   Verify `presidio-analyzer` and `presidio-anonymizer` Container Apps are `Running` and healthy on internal HTTP port `3000` (`/health`):
-
-   ```bash
-   az containerapp list \
-     --resource-group "<resource-group>" \
-     --query "[?name=='presidio-analyzer' || name=='presidio-anonymizer'].{Name:name, Status:properties.runningStatus}" \
-     -o table
-   ```
-
-2. **Check Microsoft Foundry model quota and throttling**
-
-   Inspect Application Insights **Failures** (linked to `Foundry-project`) for HTTP `429` responses on deployments `chat` (`model-router`), `decision` (`Microsoft-Decision-1`), or `embedding` (`embed-v-4-0`). Increase model capacity in Microsoft Foundry if requests are throttled under load.
-
-3. **Verify Entra Agent Identities for On-Behalf-Of (OBO) failures**
-
-   If `chatting` fails with `401`/`403` when calling **MCP Tools** (`mcptools`) or **Rating API** (`rating`) over Agent-to-Agent (A2A) gRPC:
-   - Confirm `chatting` has `AgentIdentities__DefaultAgentId` (`chatAgentId`) and `AgentIdentities__Agents__rating` (`ratingAgentId`), and `rating` has `AgentIdentities__DefaultAgentId` (`ratingAgentId`).
-   - Confirm the three Federated Identity Credentials provisioned by `src/Aspire/BookWorm.AppHost/Infra/entra-agent-identities.bicep` trust the parent Entra ID service principal with audience `api://AzureADTokenExchange`:
-     - `bookworm-parent-blueprint-fic` (on `bookworm-agent-blueprint-<unique-suffix>`)
-     - `bookworm-chat-agent-fic` (on `bookworm-chat-agent-<unique-suffix>`)
-     - `bookworm-rating-agent-fic` (on `bookworm-rating-agent-<unique-suffix>`)
-
-4. **Check Chat session storage and Rating Cosmos DB**
-
-   - **Chat API** persists AG-UI sessions only in Azure Blob Storage (`chatting-blob`, prefix `ag-ui/`) and has no PostgreSQL, Redis, or Kafka dependency.
-   - **Rating API** persists feedback records in Azure Cosmos DB (`ratingdb` / `feedbacks`, partition key `/bookId`) and caches in Redis—not PostgreSQL.
-
-## Verification
-
-After executing any runbook, confirm recovery:
-
-<CodeGroup>
+Set the active Azure subscription and list all Container Apps in `<RESOURCE_GROUP>` to identify unhealthy workloads:
 
 ```bash
-az containerapp revision list \
-  --name "<container-app-name>" \
-  --resource-group "<resource-group>" \
-  --query "[?properties.active==\`true\`].{Revision:name, Health:properties.healthState, Replicas:properties.replicas}" \
+az account set --subscription "<SUBSCRIPTION_ID>"
+az containerapp list --resource-group "<RESOURCE_GROUP>" \
+  --query "[].{Name:name, Status:properties.runningStatus, LatestRevision:properties.latestRevisionName}" -o table
+```
+
+## Procedure (First 5 Minutes)
+
+<Steps>
+<Step title="Inspect revision health and replica counts">
+
+Check whether the active revision of `<APP_NAME>` is `Healthy` or stuck in `Activating` / `Failed`:
+
+```bash
+az containerapp revision list --name "<APP_NAME>" --resource-group "<RESOURCE_GROUP>" \
+  --query "[].{Revision:name, Active:properties.active, Health:properties.healthState, Provisioning:properties.provisioningState, Replicas:properties.replicas}" \
   -o table
 ```
 
-</CodeGroup>
+</Step>
+
+<Step title="Tail live console and system logs">
+
+Capture real-time application errors and Container App lifecycle events:
+
+```bash
+az containerapp logs show --name "<APP_NAME>" --resource-group "<RESOURCE_GROUP>" --type console --tail 100
+az containerapp logs show --name "<APP_NAME>" --resource-group "<RESOURCE_GROUP>" --type system --tail 50
+```
+
+</Step>
+
+<Step title="Inspect Message Broker dead-letter queue activity">
+
+Check whether **Ordering Service**, **Basket Service**, **Notification Service**, or **Finance Orchestrator** are routing poison messages to native dead-letter queues (`bookworm.<ENV>.<SERVICE>.dead-letter-queue`):
+
+```bash
+WORKSPACE_ID=$(az monitor log-analytics workspace list --resource-group "<RESOURCE_GROUP>" --query "[0].customerId" -o tsv)
+az monitor log-analytics query --workspace "${WORKSPACE_ID}" \
+  --analytics-query "ContainerAppConsoleLogs_CL | where TimeGenerated > ago(1h) | where Log_s has_any ('dead-letter','ConsumeException','Failed') | project TimeGenerated, ContainerAppName_s, Log_s | order by TimeGenerated desc | take 30" \
+  -o table
+```
+
+</Step>
+
+<Step title="Restart a stalled revision or roll back">
+
+Restart the active revision if the container is deadlocked or recovering from a transient dependency/RBAC propagation delay. If a recent release caused the regression, roll back immediately via [[doc|operational/001-azure-deployment-guide]].
+
+```bash
+az containerapp revision restart \
+  --name "<APP_NAME>" \
+  --resource-group "<RESOURCE_GROUP>" \
+  --revision "<REVISION_NAME>"
+```
+
+</Step>
+
+<Step title="Consult Azure SRE Agent for automated root-cause correlation">
+
+If an **Azure SRE Agent** is attached to `<RESOURCE_GROUP>`, inspect its active investigation threads to correlate Container Apps revision failures, Application Insights exceptions, and recent deployments before applying manual fixes:
+
+```bash
+# Retrieve the Azure SRE Agent endpoint and list recent investigation threads
+SRE_ENDPOINT=$(az rest -m GET \
+  --url "https://management.azure.com/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/<RESOURCE_GROUP>/providers/Microsoft.App/agents/<SRE_AGENT_NAME>?api-version=2025-05-01-preview" \
+  --query properties.agentEndpoint -o tsv)
+SRE_TOKEN=$(az account get-access-token --resource https://azuresre.dev --query accessToken -o tsv)
+curl -s -H "Authorization: Bearer ${SRE_TOKEN}" "${SRE_ENDPOINT}/api/v1/threads"
+```
+
+Review any proposed mitigation (such as scaling overrides or revision restarts) in the Azure Portal under your **SRE Agent** resource before approving execution in **Review** mode, or use the `az sre` CLI extension (`az sre --help`).
+
+</Step>
+
+</Steps>
+
+## Domain-Specific Recovery Playbooks
+
+<Accordion title="Playbook 1: Container App Startup or Image Pull Failure">
+
+**Symptoms:** Revision stuck in `Activating`/`Failed`, `ImagePullFailed`, or crash loop.
+
+1. Verify the Container Apps environment Managed Identity holds `AcrPull` on `<ACR_NAME>`:
+
+```bash
+ACR_ID=$(az acr show --name "<ACR_NAME>" --resource-group "<RESOURCE_GROUP>" --query id -o tsv)
+az role assignment list --scope "${ACR_ID}" \
+ --query "[?roleDefinitionName=='AcrPull'].{Principal:principalId, Role:roleDefinitionName}" -o table
+```
+
+2. Confirm the target image tag exists in `<ACR_NAME>`:
+
+```bash
+az acr repository show-tags --name "<ACR_NAME>" --repository "<APP_NAME>" --orderby time_desc -o table
+```
+
+3. Check console logs for missing external parameters (Message Broker, Vector Database, or SMTP relay), then redeploy via `aspire deploy --environment "<ENV>"`.
+
+</Accordion>
+
+<Accordion title="Playbook 2: Passwordless Auth & Entra RBAC Failure (401/403, Token Login Errors)">
+
+**Symptoms:** PostgreSQL token login failure, Redis `NOAUTH`/`NOPERM`, or `403 Forbidden` on Cosmos DB, Blob Storage, or Microsoft Foundry. Never re-enable static passwords or shared keys as a workaround.
+
+1. Confirm PostgreSQL Entra ID admin registration (**Catalog Service**, **Catalog Ingestion**, **Ordering Service**, **Scheduler Service** only):
+
+```bash
+az postgres flexible-server ad-admin list --resource-group "<RESOURCE_GROUP>" --server-name "<POSTGRES_SERVER>" -o table
+```
+
+2. Inspect Managed Identity role assignments for `<PRINCIPAL_ID>`:
+
+```bash
+az role assignment list --resource-group "<RESOURCE_GROUP>" --assignee "<PRINCIPAL_ID>" \
+ --query "[].{Role:roleDefinitionName, Scope:scope}" -o table
+```
+
+Expected datastore bindings:
+
+- **Azure Storage:** `Storage Blob Data Contributor` for **Catalog Service** and **Chat Service**; `Storage Blob Data Owner` for **Catalog Ingestion** and **Finance Orchestrator**.
+- **Microsoft Foundry:** `Cognitive Services User` for **Catalog Service**, **Catalog Ingestion**, **Chat Service**, and **Rating Service**.
+
+3. Wait 5–10 minutes for Entra ID RBAC propagation, then restart the failing revision.
+
+</Accordion>
+
+<Accordion title="Playbook 3: Order Orchestration Stall">
+
+**Symptoms:** Orders stay in `New` status, customer baskets do not clear, or checkout emails never send.
+
+1. Verify **Finance Orchestrator** (`finance`) has **Durable Task Scheduler** and broker settings populated:
+
+```bash
+az containerapp show --name finance --resource-group "<RESOURCE_GROUP>" \
+ --query "properties.template.containers[0].env[?name=='DTS_CONNECTION_STRING' || name=='TASKHUB_NAME' || name=='BrokerList']" -o table
+```
+
+2. Confirm **Finance Orchestrator** holds `Storage Blob Data Owner` on `<STORAGE_ACCOUNT>` and that the Container Apps outbound static IP is in the Durable Task Scheduler allowlist.
+3. Inspect logs and dead-letter queues for **Ordering Service**, **Finance Orchestrator**, **Basket Service**, and **Notification Service**. For missing checkout emails, verify **Notification Service** connectivity to the Message Broker, Redis, and SMTP relay.
+
+</Accordion>
+
+<Accordion title="Playbook 4: Vector Search & Catalog Ingestion Lag">
+
+**Symptoms:** Newly created or updated books do not appear in semantic search.
+
+1. Sign in to **Quartz Dashboard** (`https://quartz-dashboard.<DOMAIN>/quartz`) and verify the 5-minute vector batch job is executing without misfires.
+2. Tail **Catalog Ingestion** logs:
+
+```bash
+az containerapp logs show --name catalog-ingestion --resource-group "<RESOURCE_GROUP>" --type console --tail 100
+```
+
+3. If Microsoft Foundry returns HTTP `429` on `embedding`, increase model capacity. If **Qdrant Cloud** fails, verify the vector database connection secret.
+
+</Accordion>
+
+<Accordion title="Playbook 5: AI Chat & PII Redaction Degradation">
+
+**Symptoms:** **Chat Service** (`chatting`) or **Rating Service** (`rating`) returns HTTP `502`/`503`, `429`, or high latency.
+
+1. Check **Privacy Analyzer** and **Privacy Anonymizer** status:
+
+```bash
+az containerapp list --resource-group "<RESOURCE_GROUP>" \
+ --query "[?name=='presidio-analyzer' || name=='presidio-anonymizer'].{Name:name, Status:properties.runningStatus}" -o table
+```
+
+2. Inspect Application Insights **Failures** for HTTP `429` throttling on `chat`, `decision`, or `embedding` deployments.
+3. If Agent-to-Agent calls return `401`/`403`, verify Entra Agent Identity Federated Identity Credentials using [[doc|operational/006-secrets-certificates-and-secops-rotation]].
+
+</Accordion>
+
+## Verification
+
+Confirm the affected Container App revision is `Healthy` with active replicas and zero new errors in Log Analytics:
+
+```bash
+az containerapp revision list --name "<APP_NAME>" --resource-group "<RESOURCE_GROUP>" \
+  --query "[?properties.active==\`true\`].{Revision:name, Health:properties.healthState, Replicas:properties.replicas}" -o table
+```
 
 Expected output:
 
-<CodeGroup>
-
 ```text
-Revision                          Health    Replicas
---------------------------------  --------  ----------
-ordering--<revision-suffix>       Healthy   1
+Revision                    Health    Replicas
+--------------------------  --------  ----------
+<APP_NAME>--<REVISION_ID>   Healthy   1
 ```
 
-</CodeGroup>
+## Rollback / Escape Hatch
 
-Confirm error counts drop to zero in Log Analytics using the error query in [[doc|operational/002-observability-and-diagnostics]].
-
-## Troubleshooting
-
-| Symptom                                                         | Cause                                                                                                                                 | Fix                                                                                                               |
-| :-------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------ | :---------------------------------------------------------------------------------------------------------------- |
-| `az containerapp revision restart` succeeds, but errors persist | Underlying RBAC assignment or external secret is still invalid                                                                        | Re-verify role assignments (Runbook 2) or update secrets via `aspire deploy`                                      |
-| `scheduler` shows stopped in local run mode                     | `AppHost.cs` registers `scheduler` with `.WithExplicitStart()`                                                                        | Start `scheduler` manually from the Aspire Dashboard in local runs; in Azure publish mode, verify revision status |
-| Rate limiter returns `429 Too Many Requests` on API routes      | Global concurrency (`100`) / IP fixed window (`30 req/min`) or `PerUserRateLimit` token bucket (`30` burst, `20` per `10s`) triggered | Check `Retry-After` header and confirm whether traffic is legitimate burst load or abuse                          |
-
-## Related documentation
-
-- [[doc|operational/002-observability-and-diagnostics]] — Live Aspire Dashboard, CLI log streaming, and KQL queries.
-- [[doc|platform/004-identity-and-rbac-matrix]] — Complete Managed Identity, OAuth2 scope, and Agent Identity matrix.
-- [[doc|platform/003-data-ai-and-messaging-resources]] — Exact datastore ownership and Kafka topic conventions.
-- [[doc|operational/004-security-hardening-checklist]] — Preventive controls for IP allowlists, quotas, and autoscaling.
-
-<NodeGraph id="order-orchestration" version="1.0.0" type="service" maxHeight="26" />
-
-<NodeGraph id="catalog-ingestion" version="1.0.0" type="service" maxHeight="26" />
+If a revision restart or RBAC adjustment does not restore service within 10 minutes, roll back to the previous known-good revision using [[doc|operational/001-azure-deployment-guide]].

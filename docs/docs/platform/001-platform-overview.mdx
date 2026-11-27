@@ -1,6 +1,6 @@
 ---
 title: Azure Platform & Topology Overview
-summary: Reference architecture for BookWorm's subscription-scoped Azure Bicep deployment, shared platform services, and network ingress boundaries.
+summary: Reference architecture for BookWorm's subscription-scoped Azure deployment, shared platform services, and network ingress boundaries.
 owners:
   - platform-team
 badges:
@@ -9,116 +9,89 @@ badges:
     textColor: blue
 ---
 
-This reference describes the Azure topology that Aspire 17 generates from `src/Aspire/BookWorm.AppHost/AppHost.cs` when you run `aspire deploy`. It covers the shared Azure Container Apps backbone, the network ingress boundary, and the YARP API Gateway route map.
+BookWorm runs on an Azure Container Apps environment provisioned per resource group across `Development`, `Staging`, and `Production` environments. The platform boundary encompasses public ingress routing via a YARP API Gateway, shared container registry and telemetry infrastructure, and identity-based integration with managed data, AI, and external messaging services.
 
-## Overview
-
-| Property                | Value                                                                                                  |
-| :---------------------- | :----------------------------------------------------------------------------------------------------- |
-| **Owner**               | BookWorm platform (AppHost)                                                                            |
-| **Source**              | `src/Aspire/BookWorm.AppHost/AppHost.cs`, `src/Aspire/BookWorm.AppHost/Extensions/`                    |
-| **Provisioning tool**   | Aspire 17 CLI (`aspire deploy`); see [[doc\|operational/001-azure-deployment-guide]]                   |
-| **Compute platform**    | Azure Container Apps environment `aca` (`Consumption` workload profile)                                |
-| **Compute workloads**   | 16 application Container Apps, plus `quartz-dashboard` operational tooling                             |
-| **Public entry points** | `gateway` (YARP API Gateway) and `quartz-dashboard` (Entra ID OpenID Connect, `admin` role)            |
-| **Environments**        | `Development`, `Staging`, `Production` (`aspire deploy --environment`)                                 |
-| **Identity**            | Microsoft Entra ID for users and agents; user-assigned Managed Identities for service-to-resource RBAC |
-
-## Topology diagram
-
-The diagram shows the edge, compute, shared platform, and backing-store boundaries in the Azure resource group.
+## Platform Topology and Ingress Boundaries
 
 <MermaidFileLoader file="mermaids/001-platform-overview-diagram-1.mmd" />
 
-## Shared platform layer
+## Component & Responsibility
 
-Aspire configures the Container Apps environment in `src/Aspire/BookWorm.AppHost/Extensions/Infrastructure/AzureExtensions.ContainerApp.cs` with `.WithDashboard()`, `.WithAzdResourceNaming()`, and a `Consumption` workload profile.
+| Component                        | Role                                                                                       | Protocol / Interface             | Persistence / State                                                        | Notes                                                         |
+| :------------------------------- | :----------------------------------------------------------------------------------------- | :------------------------------- | :------------------------------------------------------------------------- | :------------------------------------------------------------ |
+| **Container Apps Environment**   | Managed `Consumption` runtime hosting all 16 application workloads and operational tooling | Internal & external HTTP/gRPC    | Stateless orchestration                                                    | Resource group-isolated                                       |
+| **API Gateway**                  | Sole public entry point for customer/staff frontends and capability APIs                   | External HTTPS (port `5000`)     | Stateless                                                                  | YARP reverse proxy; proxies identity routes and enforces CORS |
+| **Quartz Dashboard**             | Administrative UI for scheduled job inspection and manual triggering                       | External HTTPS (port `8080`)     | Reads [[container\|scheduler-database]] via [[service\|scheduler-service]] | Protected by [[service\|oauth-api]] OIDC (`admin` role)       |
+| **Azure Container Registry**     | Stores .NET and Next.js container images                                                   | HTTPS (registry pull)            | Container image artifacts                                                  | `Basic` SKU; pulled via shared environment identity           |
+| **Environment Managed Identity** | Shared user-assigned identity for registry image pulls                                     | Azure RBAC (`AcrPull`)           | Stateless identity                                                         | Bound to Container Apps Environment                           |
+| **Log Analytics Workspace**      | Centralized platform and application telemetry sink                                        | OTLP / Azure Monitor             | 30 days (Dev/Staging); 90 days (Prod)                                      | Shared across all hosted workloads                            |
+| **Aspire Dashboard**             | Live OpenTelemetry logs, distributed traces, and metrics console                           | Managed Container Apps component | Ephemeral live stream                                                      | Provisioned per environment                                   |
 
-| Resource                                          | Azure resource type                                | Configuration                                                                                   | Source                                                |
-| :------------------------------------------------ | :------------------------------------------------- | :---------------------------------------------------------------------------------------------- | :---------------------------------------------------- |
-| Container Apps environment (`aca`, `cae-<token>`) | `Microsoft.App/managedEnvironments`                | `Consumption` workload profile; hosts every compute resource through `AssignComputeResources()` | `AppHost.cs`, `AzureExtensions.ContainerApp.cs`       |
-| Azure Container Registry (`acr<token>`)           | `Microsoft.ContainerRegistry/registries`           | Stores .NET SDK container images and Next.js (`oven/bun:1-alpine`) images                       | Generated by Aspire                                   |
-| Environment Managed Identity (`mi-<token>`)       | `Microsoft.ManagedIdentity/userAssignedIdentities` | Holds `AcrPull` (`7f951dda-4ed3-4680-a7ca-43fe172d538d`) on ACR                                 | Generated by Aspire                                   |
-| Log Analytics workspace (`law-<token>`)           | `Microsoft.OperationalInsights/workspaces`         | Retention 90 days in `Production`; 30 days in `Development` and `Staging`                       | `AzureExtensions.ContainerApp.cs`                     |
-| Aspire Dashboard (`aspire-dashboard`)             | Managed Container Apps `dotNetComponents`          | Live OpenTelemetry logs, traces, and metrics                                                    | `AzureExtensions.ContainerApp.cs` (`WithDashboard()`) |
+## Configuration & Operational Defaults
 
-The generated Bicep snapshot uses ACR SKU `Basic`. With `resourceToken = uniqueString(resourceGroup().id)`, it names the registry `acr<token>` (hyphens removed), the shared registry-pull identity `mi-<token>`, the Log Analytics workspace `law-<token>`, and the Container Apps environment `cae-<token>`.
+### Network & Ingress Boundary
 
-## Network and ingress boundary
+- **Public gateway entry:** External HTTPS traffic enters through the API Gateway.
+- **Internal service addressing:** All internal apps communicate over environment-internal HTTPS without public exposure.
+- **CORS policy:** Every routed backend API permits `GET`, `POST`, `PUT`, `PATCH`, and `DELETE` with credentials from the gateway browser origin.
+- **Internal-only workloads:** Frontends (Storefront, Commerce, Backoffice), capability APIs (Catalog, Basket, Ordering, Rating, Chat), MCP Tools (accepts gateway origin CORS), background workers (Catalog Ingestion, Finance, Notification, Scheduler), and privacy sidecars (Presidio Analyzer and Anonymizer on HTTP port `3000`) have no public ingress.
 
-| Workload                                                    | Ingress  | Reason                                                                                                                            |
-| :---------------------------------------------------------- | :------- | :-------------------------------------------------------------------------------------------------------------------------------- |
-| `gateway`                                                   | External | Sole public ingress for frontends and backend APIs (`.WithExternalHttpEndpoints()` in `ApiGatewayProxyBuilder.cs`)                |
-| `quartz-dashboard`                                          | External | Quartz job dashboard (`.WithExternalHttpEndpoints()` in `AppHost.cs`); protected by Entra ID OpenID Connect with the `admin` role |
-| `storefront`, `commerce`, `backoffice`                      | Internal | Reached only through `gateway` frontend routes                                                                                    |
-| `catalog`, `basket`, `ordering`, `rating`, `chatting`       | Internal | Reached through `gateway` backend routes                                                                                          |
-| `mcptools`                                                  | Internal | Not routed through YARP; accepts CORS from the gateway browser origin (`WithMcpCors`)                                             |
-| `catalog-ingestion`, `finance`, `notification`, `scheduler` | Internal | Event-driven workers with no gateway route                                                                                        |
-| `presidio-analyzer`, `presidio-anonymizer`                  | Internal | Privacy sidecars called by `chatting` and `rating` on HTTP port `3000`                                                            |
+### API Gateway Route Map
 
-- **Public gateway URL:** `https://gateway.<aca-default-domain>`
-- **Internal service URL pattern:** `https://<app>.internal.<aca-default-domain>`
-- **CORS:** Every routed backend API receives `Cors__Origins__0` set to the gateway browser origin, with methods `GET`, `POST`, `PUT`, `PATCH`, and `DELETE` and credentials allowed (`CorsExtensions.cs`).
+Backend routes match in registration order; the Storefront catch-all route carries the lowest routing priority.
 
-The generated Bicep confirms gateway ingress is external on target port `5000`. It also declares external ingress for `quartz-dashboard` on port `8080`; this is the second publicly reachable workload in the generated snapshot.
+| Route pattern                                                | Destination              | Routing behavior                                                |
+| :----------------------------------------------------------- | :----------------------- | :-------------------------------------------------------------- |
+| `/chatting/{**remainder}`                                    | [[service\|chat-api]]    | Strips `/chatting` prefix; preserves host and forwarded headers |
+| `/rating/{**remainder}`                                      | [[service\|rating-api]]  | Strips `/rating` prefix; preserves host and forwarded headers   |
+| `/ordering/{**remainder}`                                    | [[service\|order-api]]   | Strips `/ordering` prefix; preserves host and forwarded headers |
+| `/basket/{**remainder}`                                      | [[service\|basket-api]]  | Strips `/basket` prefix; preserves host and forwarded headers   |
+| `/catalog/{**remainder}`                                     | [[service\|catalog-api]] | Strips `/catalog` prefix; preserves host and forwarded headers  |
+| `/entra/{**remainder}`                                       | [[service\|oauth-api]]   | Strips `/entra` prefix; forwards to external identity provider  |
+| `/backoffice/{**remainder}`                                  | Backoffice               | Routes staff administration microfrontend                       |
+| `/basket`, `/checkout/*`, `/account/*`, `/commerce-assets/*` | Commerce                 | Routes customer checkout and account microfrontend              |
+| `/{**remainder}`                                             | Storefront               | Catch-all storefront microfrontend (lowest priority)            |
 
-:::warning
-`quartz-dashboard` is the second externally reachable workload. Restrict its ingress before Production traffic, as described in [[doc|operational/004-security-hardening-checklist]].
-:::
+<AccordionGroup>
+	<Accordion title="Deployment Targeting & External Parameters">
+		Resource names use deterministic per-resource-group tokens. Deploy each environment (`Development`, `Staging`, `Production`) to a dedicated resource group to keep resource names isolated.
 
-## YARP gateway route map
+    	| Parameter | Purpose | Default / notes |
+    	| :-------- | :------ | :-------------- |
+    	| **Subscription & Tenant** | Target Azure subscription and Microsoft Entra ID tenant | Required |
+    	| **Region & Resource Group** | Target Azure region and environment resource group | Defaults to `southeastasia` in CI/CD |
+    	| **Kafka Broker Connection** | External Kafka cluster connection | Required in Azure deployments |
+    	| **Vector Database Connection** | External Qdrant Cloud connection | Required in Azure deployments |
+    	| **SMTP Endpoint & Port** | External email relay endpoint | Defaults to SendGrid on port `587` |
+    	| **SMTP Credentials & Sender** | Relay username, password, sender address, and display name | Password and sender address required |
+    </Accordion>
+    <Accordion title="Local Run Mode vs. Azure Publish Mode">
+    	| Concern | Local Run Mode | Azure Publish Mode |
+    	| :------ | :------------- | :----------------- |
+    	| **Data stores** | Local containers and emulators (PostgreSQL, Redis, Cosmos DB, Azurite, Durable Task Scheduler) | Azure-managed services |
+    	| **Kafka and Qdrant** | Local containers with Kafka UI | External managed providers |
+    	| **Email** | Mailpit container (SMTP port `587`) | SendGrid SMTP relay |
+    	| **Developer tooling** | Scalar API explorer and MCP inspector | Not provisioned |
+    	| **Entra Agent Identities** | Not provisioned | Provisioned via Microsoft Graph |
+    </Accordion>
 
-The gateway is built in `src/Aspire/BookWorm.AppHost/Extensions/Proxy/ProxyExtensions.cs`. Backend routes use their registration order, and the Storefront catch-all route has the lowest priority (`int.MaxValue`).
+</AccordionGroup>
 
-| Route pattern                                                                                        | Destination                          | Transforms and headers                                                                      | Source                                            |
-| :--------------------------------------------------------------------------------------------------- | :----------------------------------- | :------------------------------------------------------------------------------------------ | :------------------------------------------------ |
-| `/chatting/{**remainder}`                                                                            | `chatting`                           | Remove `/chatting` prefix; preserve host; `X-Forwarded-*`; `X-Powered-By: BookWorm Gateway` | `AppHost.cs`, `ProxyExtensions.cs`                |
-| `/rating/{**remainder}`                                                                              | `rating`                             | Same as above, prefix `/rating`                                                             | `AppHost.cs`, `ProxyExtensions.cs`                |
-| `/ordering/{**remainder}`                                                                            | `ordering`                           | Same as above, prefix `/ordering`                                                           | `AppHost.cs`, `ProxyExtensions.cs`                |
-| `/basket/{**remainder}`                                                                              | `basket`                             | Same as above, prefix `/basket`                                                             | `AppHost.cs`, `ProxyExtensions.cs`                |
-| `/catalog/{**remainder}`                                                                             | `catalog`                            | Same as above, prefix `/catalog`                                                            | `AppHost.cs`, `ProxyExtensions.cs`                |
-| `/entra/{**remainder}`                                                                               | External Microsoft Entra ID instance | Remove `/entra` prefix; do not preserve original host                                       | `ApiGatewayProxyBuilder.cs`, `ProxyExtensions.cs` |
-| `/backoffice/{**remainder}`                                                                          | `backoffice`                         | `X-Mfe-Zone: backoffice`                                                                    | `AppHost.cs`                                      |
-| `/basket`, `/checkout`, `/checkout/:path*`, `/account`, `/account/:path*`, `/commerce-assets/:path*` | `commerce`                           | `X-Mfe-Zone: commerce`                                                                      | `src/Clients/apps/storefront/microfrontends.json` |
-| `/{**remainder}`                                                                                     | `storefront`                         | `X-Mfe-Zone: storefront`; lowest priority                                                   | `FrontendExtensions.cs`                           |
+## Guardrails & Constraints
 
-:::note
-The exact Commerce path `/basket` collides with the backend `/basket/{**remainder}` service prefix. `ResolveFrontendOrder` in `ProxyExtensions.cs` gives colliding exact microfrontend routes order `-1`, so the Commerce page wins for the bare `/basket` path while `/basket/...` API calls still reach Basket API.
-:::
+<Admonition type="warning" title="Restrict Quartz Dashboard Ingress Before Production">
+	Quartz Dashboard is the second externally reachable workload alongside the API Gateway. Restrict
+	its public network ingress before serving Production traffic; see
+	[[doc|operational/004-security-hardening-checklist]].
+</Admonition>
 
-## Deployment parameters and naming
+<Admonition type="info" title="Commerce /basket Route Precedence">
+	The exact Commerce path `/basket` overlaps with the backend `/basket/{**remainder}` API prefix. Exact microfrontend routes take precedence so the Commerce page serves bare `/basket` requests while `/basket/...` API calls still route to [[service|basket-api]].
+</Admonition>
 
-`aspire deploy` reads Azure targeting and external dependencies from configuration. The GitHub Actions workflow `.github/workflows/apphost-cd.yml` supplies them as environment variables.
+## Related Documentation
 
-| Configuration key                  | Purpose                                              | Default / notes                     |
-| :--------------------------------- | :--------------------------------------------------- | :---------------------------------- |
-| `Azure__SubscriptionId`            | Target subscription                                  | Required                            |
-| `Azure__TenantId`                  | Microsoft Entra ID tenant                            | Required                            |
-| `Azure__Location`                  | Azure region for regional resources                  | `southeastasia` in `apphost-cd.yml` |
-| `Azure__ResourceGroup`             | Target resource group                                | Required                            |
-| `ConnectionStrings__broker`        | External Kafka connection string (`broker`)          | Required in publish mode            |
-| `ConnectionStrings__vectordb`      | External Qdrant Cloud connection string (`vectordb`) | Required in publish mode            |
-| `Parameters__email_smtp_endpoint`  | SMTP endpoint for Notification                       | `smtp://smtp.sendgrid.net:587`      |
-| `Parameters__email_smtp_username`  | SMTP username                                        | `apikey`                            |
-| `Parameters__email_smtp_password`  | SMTP password (secret)                               | Required                            |
-| `Parameters__email_sender_address` | Sender email address                                 | Required                            |
-| `Parameters__email_sender_name`    | Sender display name                                  | Optional                            |
-
-Resource names use Azure Developer CLI-compatible naming (`WithAzdResourceNaming()`), which derives a deterministic token per resource group. Deploy each environment to its own resource group to keep names isolated.
-
-## Run mode versus publish mode
-
-| Concern                | Run mode (`aspire start` / `mise run run`)                                                                       | Publish mode (`aspire deploy`)             |
-| :--------------------- | :--------------------------------------------------------------------------------------------------------------- | :----------------------------------------- |
-| Data stores            | Local containers and emulators (PostgreSQL, Redis, Cosmos DB emulator, Azurite, Durable Task Scheduler emulator) | Azure-managed services                     |
-| Kafka and Qdrant       | Local containers with Kafka UI                                                                                   | External connection strings                |
-| Email                  | Mailpit container (SMTP port `587`)                                                                              | SendGrid SMTP parameters                   |
-| Developer tooling      | `scalar` and `inspector`                                                                                         | Not provisioned                            |
-| Entra Agent Identities | Not provisioned (`AddEntraAgentIdentities` returns `null`)                                                       | Bicep `Infra/entra-agent-identities.bicep` |
-
-## Related documentation
-
-- [[doc|platform/002-compute-and-container-apps]] — All 16 application Container Apps and Quartz Dashboard.
+- [[doc|platform/002-compute-and-container-apps]] — Inventory of all 16 application Container Apps and Quartz Dashboard.
 - [[doc|platform/003-data-ai-and-messaging-resources]] — Environment-tier SKUs and datastore ownership.
 - [[doc|platform/004-identity-and-rbac-matrix]] — Entra ID applications, scopes, Agent Identities, and Managed Identity roles.
 - [[doc|operational/001-azure-deployment-guide]] — Provisioning procedure.

@@ -1,0 +1,29 @@
+%%{init: {'theme': 'base', 'themeVariables': {'background': '#f5f5f5', 'primaryColor': '#ffffff', 'primaryTextColor': '#2d3142', 'primaryBorderColor': '#2d3142', 'secondaryColor': '#ececec', 'secondaryBorderColor': '#4f5d75', 'tertiaryColor': '#fdf2ee', 'tertiaryBorderColor': '#bf4520', 'lineColor': '#4f5d75', 'textColor': '#2d3142', 'clusterBkg': '#f8f9fa', 'clusterBorder': '#bfc0c0', 'fontFamily': 'Geist, system-ui, sans-serif'}}}%%
+flowchart LR
+	req["Browser Request\n(Storefront / Commerce / Backoffice)"]
+	rsc["Server Render Boundary\n(Metadata + Per-Request Prefetch)"]
+	cache{"Surface Cache Profile"}
+	cached["Component Cache\n(Storefront Public Discovery)"]
+	dynamic["Uncached Dynamic SSR\n(Commerce & Backoffice)"]
+	hydrate["Hydrated Client Islands\n(Interactive UI & Mutations)"]
+	gateway["API Gateway\n(Reverse Proxy)"]
+	apis["Backend Capability APIs"]
+
+	req -->|"Enters Next.js runtime"| rsc
+	rsc --> cache
+	cache -->|"Public pages"| cached
+	cache -->|"Private & staff flows"| dynamic
+	cached -->|"Streams HTML + dehydrated state"| hydrate
+	dynamic -->|"Streams HTML + dehydrated state"| hydrate
+	rsc -->|"Server prefetch"| gateway
+	hydrate -->|"Mutations, SSE & AG-UI"| gateway
+	gateway -->|"Internal routing"| apis
+
+	classDef focal fill:#fdf2ee,stroke:#bf4520,stroke-width:2px,color:#2d3142
+	classDef service fill:#ffffff,stroke:#2d3142,stroke-width:1.2px,color:#2d3142
+	classDef input fill:#eef1f6,stroke:#5a6580,stroke-width:1.2px,color:#2d3142
+	class rsc focal
+	class cache,cached,dynamic,hydrate,gateway,apis service
+	class req input
+	linkStyle 0 stroke:#bf4520,stroke-width:2px
+	linkStyle 4 stroke:#bf4520,stroke-width:2px

@@ -1,0 +1,110 @@
+---
+title: Frontend Reference
+summary: Architectural reference for BookWorm's multi-zone web platform, rendering and caching boundaries, authentication, client state, design governance, and observability.
+owners:
+  - contributor-team
+badges:
+  - content: Frontend Reference
+    backgroundColor: blue
+    textColor: blue
+---
+
+BookWorm's frontend is a multi-zone web platform composed of three independent web applications—**Storefront**, **Commerce**, and **Backoffice**—served behind a single reverse-proxy **API Gateway** origin. Each surface is organized into domain-aligned vertical feature slices backed by layered shared foundations that enforce one-way dependencies, strict server-versus-client rendering boundaries, centralized authentication handoffs, and measurable accessibility and performance standards.
+
+## Frontend Application Topology
+
+The view below illustrates how customers and staff reach each web surface through the API Gateway, where identity boundaries sit, and how frontend surfaces connect to backend capability APIs.
+
+<LikeC4View viewId="bookwormFrontendTopology" project="deployment" />
+
+## Reference Directory
+
+<Tiles columns={2}>
+	<Tile
+		icon="Squares2X2Icon"
+		href="/docs/custom/frontend/001-monorepo-architecture"
+		title="Workspace & Dependency Tiers"
+		description="Four-tier dependency model separating application surfaces, domain capabilities, shared foundations, and tooling presets."
+	/>
+	<Tile
+		icon="GlobeAltIcon"
+		href="/docs/custom/frontend/002-applications-and-routing"
+		title="Applications & Zone Routing"
+		description="Surface boundaries across Storefront, Commerce, and Backoffice, gateway precedence, and indexing scope."
+	/>
+	<Tile
+		icon="ArrowsRightLeftIcon"
+		href="/docs/custom/frontend/003-data-fetching-and-state"
+		title="Data Flow & Gateway Integration"
+		description="Typed transport contracts, retry semantics, optimistic concurrency, and real-time streaming channels."
+	/>
+	<Tile
+		icon="ShieldCheckIcon"
+		href="/docs/custom/frontend/004-testing-and-quality-gates"
+		title="Quality Gates & Verification"
+		description="Static boundary enforcement, isolated component testing, end-to-end journey validation, and build gates."
+	/>
+	<Tile
+		icon="SparklesIcon"
+		href="/docs/custom/frontend/005-accessibility"
+		title="Design System & UI Governance"
+		description="Shared accessible primitives, design tokens, responsive standards, and localization readiness."
+	/>
+	<Tile
+		icon="RectangleGroupIcon"
+		href="/docs/custom/frontend/006-microfrontend-architecture"
+		title="Multi-Zone Composition"
+		description="Why customer discovery and authenticated checkout are split behind one origin and how cross-zone links work."
+	/>
+	<Tile
+		icon="CpuChipIcon"
+		href="/docs/custom/frontend/007-architecture-and-state-design"
+		title="Client State & Feature Slices"
+		description="Separation of server cache from ephemeral UI state, thin route entrypoints, and error boundaries."
+	/>
+	<Tile
+		icon="EyeIcon"
+		href="/docs/custom/frontend/008-accessibility-principles"
+		title="Accessibility & Inclusive UX"
+		description="WCAG 2.1 Level AA target, four-layer defense model, and paced screen-reader announcements."
+	/>
+	<Tile
+		icon="DocumentPlusIcon"
+		href="/docs/custom/frontend/009-add-customer-page"
+		title="Customer Surface Onboarding"
+		description="Architectural decision flow for placing, protecting, and verifying new customer-facing routes."
+	/>
+	<Tile
+		icon="BoltIcon"
+		href="/docs/custom/frontend/010-rendering-and-caching-strategy"
+		title="Rendering & Caching Strategy"
+		description="Server versus client rendering boundaries, streaming SSR, static optimization, and cache invalidation."
+	/>
+	<Tile
+		icon="LockClosedIcon"
+		href="/docs/custom/frontend/011-authentication-and-session-boundaries"
+		title="Authentication & Session Boundaries"
+		description="Identity provider handoff, origin-scoped session cookies, route protection, and role-based UI gating."
+	/>
+	<Tile
+		icon="ChartBarIcon"
+		href="/docs/custom/frontend/012-performance-and-observability"
+		title="Performance & Observability"
+		description="Core Web Vitals budgets, bundle discipline, OpenTelemetry tracing, and graceful degradation."
+	/>
+</Tiles>
+
+| Topic                                                       | Scope                                    | Primary Audience                         | Key Architectural Goal                                                             |
+| :---------------------------------------------------------- | :--------------------------------------- | :--------------------------------------- | :--------------------------------------------------------------------------------- |
+| [[doc\|frontend/001-monorepo-architecture]]                 | All web surfaces and shared layers       | Frontend architects, tech leads          | Enforce one-way dependencies and zero circular coupling                            |
+| [[doc\|frontend/002-applications-and-routing]]              | Storefront, Commerce, Backoffice         | Architects, frontend engineers           | Maintain clear surface ownership and deterministic gateway routing                 |
+| [[doc\|frontend/003-data-fetching-and-state]]               | Gateway transport and real-time channels | Frontend and API engineers               | Standardize resilient requests, optimistic concurrency, and streaming              |
+| [[doc\|frontend/004-testing-and-quality-gates]]             | Pre-merge and CI verification            | Frontend engineers, QA leads             | Catch boundary, accessibility, and journey regressions before release              |
+| [[doc\|frontend/005-accessibility]]                         | Shared UI system and theming             | Frontend engineers, designers            | Govern reusable accessible primitives, tokens, and responsive rules                |
+| [[doc\|frontend/006-microfrontend-architecture]]            | Customer zone split                      | Solutions and frontend architects        | Isolate public catalog caching from private checkout workflows                     |
+| [[doc\|frontend/007-architecture-and-state-design]]         | Client state and feature slices          | Frontend tech leads, engineers           | Keep server state and ephemeral UI state strictly separated                        |
+| [[doc\|frontend/008-accessibility-principles]]              | WCAG 2.1 Level AA defense                | Frontend engineers, UX leads             | Combine static, automated, keyboard, and live-region safeguards                    |
+| [[doc\|frontend/009-add-customer-page]]                     | New customer capabilities                | Frontend engineers                       | Route, protect, and validate new customer pages without prefix collisions          |
+| [[doc\|frontend/010-rendering-and-caching-strategy]]        | Server/client rendering and caching      | Frontend architects, engineers           | Maximize edge/server cacheability for public pages and freshness for private flows |
+| [[doc\|frontend/011-authentication-and-session-boundaries]] | Identity, sessions, and UI gating        | Security, solutions, frontend architects | Enforce consistent session ownership and defense-in-depth authorization            |
+| [[doc\|frontend/012-performance-and-observability]]         | Web Vitals, telemetry, resilience        | Frontend architects, SREs                | Sustain fast perceived load times, end-to-end traces, and graceful degradation     |

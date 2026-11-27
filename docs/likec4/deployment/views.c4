@@ -58,6 +58,40 @@ views {
     autoLayout TopBottom
   }
 
+  view bookwormFrontendTopology of bookworm {
+    title 'Frontend Application Topology'
+    include customer, staff, identity
+    group "Edge" {
+      include bookworm.gateway
+    }
+    group "Customer Surfaces" {
+      include bookworm.storefront, bookworm.commerce
+    }
+    group "Staff Surface" {
+      include bookworm.backoffice
+    }
+    group "Capability APIs" {
+      include bookworm.catalog, bookworm.shopping, bookworm.ordering, bookworm.rating, bookworm.chat
+    }
+    exclude * -> *
+    include customer -> bookworm.gateway
+    include staff -> bookworm.gateway
+    include bookworm.gateway -> bookworm.storefront
+    include bookworm.gateway -> bookworm.commerce
+    include bookworm.gateway -> bookworm.backoffice
+    include bookworm.storefront -> bookworm.gateway
+    include bookworm.commerce -> bookworm.gateway
+    include bookworm.backoffice -> bookworm.gateway
+    include bookworm.storefront -> identity
+    include bookworm.backoffice -> identity
+    include bookworm.gateway -> bookworm.catalog
+    include bookworm.gateway -> bookworm.shopping
+    include bookworm.gateway -> bookworm.ordering
+    include bookworm.gateway -> bookworm.rating
+    include bookworm.gateway -> bookworm.chat
+    autoLayout LeftRight
+  }
+
   view bookwormCommerceContainers of bookworm {
     title 'Commerce and Data Ownership'
     include customer, staff
