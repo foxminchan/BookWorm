@@ -18,61 +18,43 @@ decisionMakers:
 x-scope: "Whole system (backend services)"
 ---
 
-## Context and problem statement
+| Field                  | Value                                                                                              |
+| :--------------------- | :------------------------------------------------------------------------------------------------- |
+| **Status**             | Proposed                                                                                           |
+| **Date**               | 2026-11-07                                                                                         |
+| **Owners**             | [[team\|contributor-team]]                                                                         |
+| **Affected Resources** | [[domain\|bookworm]]                                                                               |
+| **Related ADRs**       | [[adr\|adr-bw-003-aspire-shared-service-defaults]], [[adr\|adr-bw-009-local-cqrs-building-blocks]] |
 
-BookWorm's main parts already share common tools for running, checking, protecting, connecting, and testing the system. They also use one approach for keeping supporting software consistent.
+## Context & Problem Statement
 
-If each part chose a different foundation or different versions of supporting software, teams would need to maintain more tools, repeat connection work, and spend more time upgrading the system. BookWorm needs one clear foundation for its main parts while allowing websites, helper programs, and external providers to use the technology that suits them.
+[[domain|bookworm]]'s backend services share common tooling for hosting, resilience, observability, testing, and centralized package management. Allowing each service to adopt a different runtime or independently pin package versions would fragment operational tooling, duplicate integration effort, and complicate security patching.
 
-## Decision drivers
+## Decision Drivers
 
-- **Reuse:** Let the main parts share proven tools for everyday needs.
-- **Easy to maintain:** Prevent different foundations and inconsistent software versions from spreading across the system.
-- **Easy for newcomers:** Give new contributors one consistent way to build and check the software.
-- **Reliable upgrades:** Make improvements and security updates easier to apply across the main parts.
+- **Tooling reuse:** Share proven runtime defaults across backend services.
+- **Dependency hygiene:** Prevent version drift and conflicting transitive packages.
+- **Contributor onboarding:** Provide one predictable build, lint, and test workflow.
+- **Patch velocity:** Apply security and runtime upgrades consistently across services.
 
-## Considered options
+## Options Considered
 
-1. Use one established foundation and manage supporting software centrally
-2. Let each main part choose its own foundation
-3. Move all main parts to a different foundation
-4. Choose supporting software versions independently for each main part
+| Option                                                        | Pros                                                                | Cons                                                                    |
+| :------------------------------------------------------------ | :------------------------------------------------------------------ | :---------------------------------------------------------------------- |
+| **Standardize on .NET baseline + central package management** | Consistent setup, quality gates, and single-point security patching | Services cannot adopt a different runtime without an explicit exception |
+| **Per-service runtime choice**                                | Optimal fit for niche workloads                                     | Multiplies monitoring, CI, and security maintenance overhead            |
+| **Migrate all services to a different runtime**               | Aligns with an alternative ecosystem                                | High rewrite cost with no direct customer or operational gain           |
+| **Independent per-project package versioning**                | Individual services can upgrade dependencies early                  | Causes version skew and subtle cross-service incompatibilities          |
 
-## Decision outcome
+## Decision & Consequences
 
-Chosen option: **Use one established foundation and manage supporting software centrally**.
+**Chosen Option:** Retain the established .NET and C# baseline with centralized package version management for all core backend services. Storefront microfrontends, external providers (such as [[service|presidio-api]]), and specialized datastores remain free to use their native ecosystems.
 
-All main parts will use the foundation already selected for the project. They will follow the same setup, quality, and security rules, and supporting software will have approved versions managed from one place.
+- **Positive:** Consistent quality gates, predictable onboarding, and coordinated security updates across services.
+- **Negative:** Major framework or shared-package upgrades require validation across all backend services.
 
-This decision does not limit future upgrades. Future foundation improvements will follow the project's approved approach. Websites, helper programs, and stored information systems can continue using the approaches that work best for them.
+### Compliance Criteria
 
-### Consequences
-
-- **Positive:** Main parts share reliable tools without repeating the same work.
-- **Positive:** Security fixes and updates can reach every main part consistently.
-- **Positive:** Contributors work with familiar rules and expectations.
-- **Negative:** Foundation or shared-tool upgrades require checks across every main part.
-- **Follow-up:** Record formal approval and continue checking that supporting software remains centrally managed.
-
-## Pros and cons of the options
-
-### Use one established foundation and manage supporting software centrally
-
-- **Good**, because every main part shares the same setup tools and quality rules.
-- **Good**, because approved improvements and security fixes can be introduced in one controlled place.
-- **Bad**, because a main part cannot choose a different foundation without a formal exception.
-
-### Let each main part choose its own foundation
-
-- **Good**, because teams can select a foundation that suits a particular need.
-- **Bad**, because each new foundation requires separate monitoring, security, communication, and release work.
-
-### Move all main parts to a different foundation
-
-- **Good**, because it could align the system with a different approach if strong needs emerged.
-- **Bad**, because moving to it would require substantial rewriting without a clear benefit for customers or day-to-day operation.
-
-### Choose supporting software versions independently for each main part
-
-- **Good**, because one main part could upgrade supporting software before the others.
-- **Bad**, because different versions can stop the main parts from working together and create extra maintenance.
+- Backend application services must target the repository's established .NET SDK baseline.
+- Package versions must be managed centrally rather than pinned in individual service project files.
+- Non-.NET runtimes are permitted only for specialized external containers or frontend applications.

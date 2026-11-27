@@ -19,58 +19,42 @@ decisionMakers:
 x-scope: "Whole system"
 ---
 
-## Context and problem statement
+| Field                  | Value                                                                                                                                                      |
+| :--------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Status**             | Proposed                                                                                                                                                   |
+| **Date**               | 2026-11-07                                                                                                                                                 |
+| **Owners**             | [[team\|platform-team]]                                                                                                                                    |
+| **Affected Resources** | [[domain\|bookworm]]                                                                                                                                       |
+| **Related ADRs**       | [[adr\|adr-bw-003-aspire-shared-service-defaults]], [[adr\|adr-bw-010-cross-boundary-correlation]], [[adr\|adr-bw-015-explicit-environment-configuration]] |
 
-Customer journeys cross websites, web gateways, core areas, background jobs, and outside providers. Separate text logs cannot show how a failure moved across these parts or how quickly work completed.
+## Context & Problem Statement
 
-BookWorm needs one monitoring approach that connects activity across the system while protecting private information and controlling cost.
+BookWorm journeys cross microfrontends, gateways, APIs, background workers, and AI providers. Isolated text logs cannot diagnose cross-service latency or failures, while unredacted full-capture telemetry in production risks exposing customer PII and inflating observability costs.
 
-## Decision drivers
+## Decision Drivers
 
-- **Cross-area diagnosis:** Connect records across customer requests, internal requests, background work, and failures.
-- **Open reporting:** Use a standard format that does not depend on one vendor.
-- **Privacy and cost:** Hide personal data and collect only the activity needed for diagnosis.
+- **Cross-service visibility:** Correlate logs, traces, and metrics across sync and async boundaries.
+- **Vendor neutrality:** Standardize on OpenTelemetry rather than proprietary SDKs.
+- **Privacy and cost control:** Redact PII and apply environment-appropriate sampling.
 
-## Considered options
+## Options Considered
 
-1. Use standard activity records with privacy protection and environment-sensitive sampling
-2. Use separate text logs for every area
-3. Record every trace and log everywhere
-4. Build one vendor's monitoring tool into every area
+| Option                                                               | Pros                                                                        | Cons                                                                |
+| :------------------------------------------------------------------- | :-------------------------------------------------------------------------- | :------------------------------------------------------------------ |
+| **OpenTelemetry + structured logging with PII redaction & sampling** | Unified local (Aspire) and Azure telemetry; vendor-neutral; cost-controlled | Deployments must verify exporter and redaction configuration        |
+| **Unstructured per-service text logs**                               | Minimal setup                                                               | Impossible to trace distributed latency or async failures           |
+| **100% unsampled production tracing**                                | Captures every request                                                      | Prohibitive ingestion/storage cost at scale                         |
+| **Proprietary vendor APM SDKs**                                      | Rich vendor-specific UI                                                     | Locks services to one vendor and diverges from local Aspire tooling |
 
-## Decision outcome
+## Decision & Consequences
 
-Chosen option: **Use standard activity records with privacy protection and environment-sensitive sampling**.
+**Chosen Option:** Standardize on OpenTelemetry traces, metrics, and structured logs across all services and frontends, exporting to the Aspire Dashboard locally and Azure Monitor / Log Analytics in cloud environments with PII redaction and environment-tuned sampling. Health probes report process/dependency readiness only, never business-workflow completion.
 
-BookWorm will use consistent activity records across customer-facing and core areas. Local work will record more detail, while live environments will sample activity to control cost.
+- **Positive:** Operators trace requests seamlessly from Storefront through Kafka and Durable Functions.
+- **Negative:** Production sampling can omit low-frequency traces unless error-based or tail sampling is configured.
 
-Areas that handle personal data will remove or hide it before recording. Health checks and monitoring retention will be configured separately for each environment.
+### Compliance Criteria
 
-### Consequences
-
-- **Positive:** Teams can follow activity from a website through the connected services.
-- **Negative:** Sampling may omit details for some live executions.
-- **Follow-up:** Verify health checks, alerts, privacy protection, and monitoring costs before each release.
-
-## Pros and cons of the options
-
-### Use standard activity records with privacy protection and environment-sensitive sampling
-
-- **Good**, because websites and core areas share consistent trace references.
-- **Good**, because privacy and cost controls apply across environments.
-- **Bad**, because each deployment must confirm that recording and redaction remain active.
-
-### Use separate text logs for every area
-
-- **Good**, because setup is simple.
-- **Bad**, because teams cannot connect failures across areas or measure journeys reliably.
-
-### Record every trace and log everywhere
-
-- **Good**, because nearly every execution can be inspected.
-- **Bad**, because high traffic creates excessive storage and cost.
-
-### Build one vendor's monitoring tool into every area
-
-- **Good**, because one vendor provides all features.
-- **Bad**, because switching vendors or local monitoring tools becomes difficult.
+- All services must export OpenTelemetry traces, metrics, and structured logs via shared defaults.
+- Telemetry must never record raw customer prompts, emails, addresses, or auth tokens.
+- Health endpoints (`/health`, `/alive`) must report liveness/readiness only, not business state.

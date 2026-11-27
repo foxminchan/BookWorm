@@ -22,11 +22,9 @@ badges:
     textColor: purple
 ---
 
-<Admonition type="note">
-	This architectural decision record has status **superseded**. It complements
-	[[adr|adr-002-scheduler-invocation-boundary]] and documents the hourly bounded-batch maintenance
-	behavior without adding a terminal-failure policy or lifetime attempt cap.
-</Admonition>
+:::warning
+This ADR is **Superseded**. Hourly Notification resend and cleanup maintenance jobs have been retired in favor of native Kafka retries and dead-letter queues; see [[adr|adr-002-scheduler-invocation-boundary]] and [[adr|adr-001-notification-kafka-command-intake]].
+:::
 
 ## 1. Context & Problem
 

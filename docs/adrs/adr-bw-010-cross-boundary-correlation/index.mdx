@@ -19,58 +19,42 @@ decisionMakers:
 x-scope: "Whole system"
 ---
 
-## Context and problem statement
+| Field                  | Value                                                                                                                                             |
+| :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Status**             | Proposed                                                                                                                                          |
+| **Date**               | 2026-11-07                                                                                                                                        |
+| **Owners**             | [[team\|platform-team]]                                                                                                                           |
+| **Affected Resources** | [[domain\|bookworm]]                                                                                                                              |
+| **Related ADRs**       | [[adr\|adr-bw-005-kafka-integration-backbone]], [[adr\|adr-bw-013-opentelemetry-observability]], [[adr\|adr-003-finance-kafka-order-correlation]] |
 
-One customer action, such as placing an order or submitting a review, can pass through several parts of the system. Without stable references, teams cannot trace failures across those parts.
+## Context & Problem Statement
 
-BookWorm needs consistent tracing without allowing tracing information to replace login or permission checks.
+Customer journeys such as checkout and review projection span microfrontends, HTTP/gRPC boundaries, Kafka topics, and background workers. Without stable correlation and message identifiers, operators cannot trace failures end to end, yet correlation headers must never be trusted as authentication or authorization proof.
 
-## Decision drivers
+## Decision Drivers
 
-- **Interoperability:** Preserve stable names and routing information as updates move between areas.
-- **Easy diagnosis:** Connect activity records without exposing private customer information.
-- **Security:** Keep tracing separate from login and authorization.
+- **End-to-end traceability:** Connect spans and logs across HTTP, gRPC, and Kafka hops.
+- **PII-safe diagnostics:** Correlate journeys via opaque IDs without logging personal data.
+- **Security isolation:** Keep correlation metadata strictly separate from Entra ID auth claims.
 
-## Considered options
+## Options Considered
 
-1. Carry one trace reference across the whole journey and check permissions independently
-2. Create a separate reference at each area
-3. Guess relationships from timestamps or customer information
-4. Use a trace reference as login or permission proof
+| Option                                                       | Pros                                                                   | Cons                                                   |
+| :----------------------------------------------------------- | :--------------------------------------------------------------------- | :----------------------------------------------------- |
+| **Propagate trace/message IDs + enforce auth independently** | Unified tracing across sync and async paths; zero privilege escalation | Every hop must preserve correlation headers/envelopes  |
+| **Generate isolated IDs per service**                        | Zero upstream propagation required                                     | Breaks end-to-end failure correlation                  |
+| **Correlate by timestamp or customer email**                 | No extra headers needed                                                | Unreliable under load and leaks PII into logs          |
+| **Trust correlation/user IDs as auth credentials**           | Fewer token checks downstream                                          | Vulnerable to header spoofing and privilege escalation |
 
-## Decision outcome
+## Decision & Consequences
 
-Chosen option: **Carry one trace reference across the whole journey and check permissions independently**.
+**Chosen Option:** Propagate W3C trace context, request IDs, and stable CloudEvents message identities across all synchronous and asynchronous hops while verifying authentication and authorization independently at each boundary.
 
-Every request and background update will carry identifying context for routing and diagnosis. That context helps teams follow the journey without giving reading or writing permission.
+- **Positive:** Operators can trace a single request across [[service|order-api]], [[service|order-orchestration]], [[service|basket-api]], and [[service|notification-api]] without exposing PII.
+- **Negative:** Changing event names or omitting envelope propagation breaks trace continuity.
 
-Permissions must still be verified through the normal secure login process.
+### Compliance Criteria
 
-### Consequences
-
-- **Positive:** Operators can follow a journey from start to finish without exposing private data.
-- **Negative:** Renaming or rerouting an update may require coordinated changes.
-- **Follow-up:** Test tracing across major journeys and whenever update names or routes change.
-
-## Pros and cons of the options
-
-### Carry one trace reference across the whole journey and check permissions independently
-
-- **Good**, because one trace works across web, internal, and background activity.
-- **Good**, because tracing cannot be used to grant privileges.
-- **Bad**, because every connected path must preserve the reference.
-
-### Create a separate reference at each area
-
-- **Good**, because each area needs no incoming tracing setup.
-- **Bad**, because operators cannot connect later failures back to the original request.
-
-### Guess relationships from timestamps or customer information
-
-- **Good**, because areas do not need consistent tracing context.
-- **Bad**, because this is unreliable and can expose private information.
-
-### Use a trace reference as login or permission proof
-
-- **Good**, because downstream areas avoid extra login checks.
-- **Bad**, because tracing values can be forged and must not grant access.
+- Integration events must carry stable message IDs and domain correlation keys (e.g., `OrderId`, `FeedbackId`).
+- Handlers and endpoints must derive caller identity exclusively from validated Entra ID tokens—never from correlation headers or payload fields.
+- Incident logs and traces must correlate via opaque IDs rather than customer emails or names.

@@ -10,65 +10,85 @@ badges:
     textColor: teal
 ---
 
-**Ordering API** (`ordering`) converts a customer's mutable shopping basket into a durable, price-locked purchase record in PostgreSQL (`orderingdb`) and governs its commercial lifecycle (`New`, `Completed`, or `Cancelled`). Separating order acceptance from downstream basket cleanup and email notifications keeps checkout fast while preserving an authoritative audit trail.
+**Audience & Outcome:** This guide is for frontend developers, API integrators, and backend engineers working with [[service|order-api]]. You will learn how checkout locks purchase snapshots, enforces idempotency, and governs one-way order status transitions.
+
+[[service|order-api]] converts a customer's mutable shopping basket into a durable, price-locked purchase record in [[container|order-database]] and governs its commercial lifecycle (`New`, `Completed`, or `Cancelled`). Separating order acceptance from downstream basket cleanup and email notifications keeps checkout fast while preserving an authoritative audit trail.
 
 ## Context and motivation
 
-Checkout crosses four bounded contexts: **Shopping** holds mutable pre-order items, **Catalog** owns live book metadata and pricing, **Ordering** records accepted commercial commitments, and **Finance** coordinates asynchronous post-checkout cleanup and notification requests.
+Checkout crosses four bounded contexts: Shopping holds mutable pre-order items, Catalog owns live book metadata and pricing, Ordering records accepted commercial commitments, and Finance coordinates asynchronous post-checkout cleanup and notification requests.
 
 Without strict boundaries at checkout, three failure modes occur:
 
-- **Price drift:** Subsequent catalog discounts or price updates alter the total of an already accepted order.
+- **Price drift:** Subsequent catalog discounts or price updates alter the total of an already accepted [[entity|order]].
 - **Duplicate orders:** Retried HTTP requests after network timeouts or double-clicks create multiple purchases for the same checkout attempt.
-- **Conflated status:** Callers assume a `201 Created` response confirms basket deletion, payment settlement, or email delivery—none of which occur synchronously inside Ordering API.
+- **Conflated status:** Callers assume a `201 Created` response confirms basket deletion, payment settlement, or email delivery—none of which occur synchronously inside [[service|order-api]].
 
 ## How it works
 
-Customers interact with checkout through the **Commerce** (`@bookworm/commerce`) microfrontend (MFE), which routes authenticated requests through **API Gateway** (`/ordering/api/v1/orders`) to **Ordering API**. Every order endpoint requires a valid Microsoft Entra ID JWT (`customer` or `admin` role with `ordering_read`/`ordering_write` scopes) and applies the `PerUserRateLimit` token-bucket policy (`30` token limit, `20` tokens per `10s`, returning `429 Too Many Requests` with `Retry-After` when exceeded).
+Customers interact with checkout through the Commerce microfrontend, which routes authenticated requests through the API Gateway to [[service|order-api]]. Every order endpoint requires a valid Microsoft Entra ID JWT (`customer` or `admin` role with `ordering_read`/`ordering_write` scopes) and applies per-user token-bucket rate limiting (`30` token limit, `20` tokens per `10s`, returning `429 Too Many Requests`).
 
-The diagram below shows synchronous checkout validation, order persistence, and asynchronous handoff to Finance.
+The visual below shows synchronous checkout validation, order persistence, and asynchronous handoff to [[service|order-orchestration]].
 
 <MermaidFileLoader file="mermaids/01-create-and-manage-orders-diagram-1.mmd" />
 
 ### Order creation and snapshot locking
 
-When a customer submits `POST /api/v1/orders` with a unique `x-request-id` header:
+<Steps>
+<Step title="Caller identity and idempotency check">
 
-- **Caller identity binding:** Ordering API derives the buyer strictly from the authenticated Entra ID token; a caller cannot create an order on behalf of another buyer.
-- **Duplicate protection:** `IdempotencyEndpointFilter` atomically stores a 1-hour Redis marker (`POST:/api/v1/orders:<request-id>`) before running the handler. Reusing the same `x-request-id` returns `409 Conflict`. If the handler throws an unhandled exception or returns `>= 500`, the filter deletes the marker so the caller can safely investigate and retry.
-- **Price snapshot:** Ordering API reads the basket via gRPC, resolves every book via Catalog API gRPC, locks in each item's unit price (`PriceSale ?? Price`), and calculates the order total from those recorded line totals.
-- **Buyer write lock:** A 1-minute Redis distributed lock (`order-create:<user-id>`) serializes concurrent writes for the same buyer before persisting the `Order` in `orderingdb` with status `New` and publishing `UserCheckedOutIntegrationEvent` through the Wolverine PostgreSQL outbox.
-- **Deferred downstream work:** Returning `201 Created` confirms only that Ordering API accepted and persisted the order snapshot. Basket deletion and email notifications run asynchronously under Finance's orchestration.
+When a customer submits `POST /api/v1/orders` with a unique `x-request-id` header, [[service|order-api]] derives the [[entity|buyer]] strictly from the authenticated Entra ID token and stores a 1-hour idempotency marker in [[container|order-cache]]. Reusing the same `x-request-id` returns `409 Conflict` (unless an unhandled error clears the marker for safe retry).
+
+</Step>
+<Step title="Basket read and price snapshot">
+
+[[service|order-api]] reads the [[entity|basket]] from [[service|basket-api]] over gRPC, resolves every [[entity|book]] via [[service|catalog-api]] gRPC, locks in each item's unit price, and calculates the order total from those recorded line totals.
+
+</Step>
+<Step title="Serialized persistence and outbox handoff">
+
+A 1-minute distributed lock in [[container|order-cache]] serializes concurrent writes for the same buyer before persisting the [[entity|order]] in [[container|order-database]] with status `New` and publishing [[event|UserCheckedOutIntegrationEvent]] through the transactional outbox.
+
+:::note
+Returning `201 Created` confirms only that [[service|order-api]] accepted and persisted the order snapshot. Basket deletion and email notifications run asynchronously under [[service|order-orchestration]].
+:::
+
+</Step>
+</Steps>
 
 ### Order status lifecycle and event history
 
-Ordering enforces a strict one-way state machine for business status:
+[[service|order-api]] enforces a strict one-way state machine for business status:
 
 <MermaidFileLoader file="mermaids/01-create-and-manage-orders-diagram-2.mmd" />
 
 - **Terminal states:** Only a `New` order can transition to `Completed` or `Cancelled`, and both `PATCH` endpoints require a unique `x-request-id`. Neither terminal state can reopen or move to the other terminal state.
-- **Downstream status events:** Successful transitions publish `OrderStatusChangedToCompleteIntegrationEvent` or `OrderStatusChangedToCancelIntegrationEvent` to Kafka so Finance updates its orchestration and requests the corresponding customer email.
-- **Read and audit views:** Customers query `GET /api/v1/orders` and `GET /api/v1/orders/{id}` scoped to their own buyer ID, while administrators can filter across buyers. Marten event streams back chronological audit history (`GET /api/v1/orders/{id}/history`) and an administrator-only point-in-time summary replay (`GET /api/v1/orders/{id}/summary` with ETag support).
-- **Administrative soft delete:** `DELETE /api/v1/orders/{id}` (administrator-only) and Finance's `DeleteBasketFailedCommand` handler mark an order as soft-deleted (`IsDeleted`), hiding it from standard queries without changing its business `Status` to `Cancelled`.
+- **Downstream status events:** Successful transitions publish [[event|OrderStatusChangedToCompleteIntegrationEvent]] or [[event|OrderStatusChangedToCancelIntegrationEvent]] to Kafka so [[service|order-orchestration]] updates its workflow and requests the corresponding customer email.
+- **Read and audit views:** Customers query orders scoped to their own buyer ID, while administrators can filter across buyers and inspect chronological audit history or point-in-time summaries.
+- **Administrative soft delete:** Administrator deletion and [[command|DeleteBasketFailedCommand]] mark an order as soft-deleted, hiding it from standard queries without changing its business `Status` to `Cancelled`.
 
-## Design trade-offs
+<AccordionGroup>
+<Accordion title="Design trade-offs and alternatives considered">
 
-| Decision                                                    | Benefits                                                                               | Costs and limits                                                                                  |
-| :---------------------------------------------------------- | :------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------ |
-| **Price snapshot at checkout**                              | Protects customers and financial records from retroactive catalog price edits          | Catalog corrections require explicit customer reconciliation rather than automatic order mutation |
-| **Asynchronous post-checkout handoff**                      | Keeps `POST /api/v1/orders` latency low and isolates checkout from Basket/SMTP outages | `201 Created` does not confirm basket deletion, payment settlement, or email delivery             |
-| **Irreversible terminal states (`Completed`, `Cancelled`)** | Produces a clean, auditable financial and event-sourced history                        | Correcting an accidental completion or cancellation requires creating a new order                 |
-| **Pre-execution Redis idempotency marker**                  | Blocks duplicate submissions atomically without storing full HTTP response payloads    | Client timeouts after persistence leave a 1-hour marker without a cached response to replay       |
+| Decision                                                    | Benefits                                                                        | Costs and limits                                                                |
+| :---------------------------------------------------------- | :------------------------------------------------------------------------------ | :------------------------------------------------------------------------------ |
+| **Price snapshot at checkout**                              | Protects customers and financial records from retroactive catalog price edits   | Catalog corrections require explicit customer reconciliation                    |
+| **Asynchronous post-checkout handoff**                      | Keeps order creation latency low and isolates checkout from Basket/SMTP outages | `201 Created` does not confirm basket deletion or email delivery                |
+| **Irreversible terminal states (`Completed`, `Cancelled`)** | Produces a clean, auditable financial and event-sourced history                 | Correcting an accidental transition requires creating a new order               |
+| **Pre-execution idempotency marker**                        | Blocks duplicate submissions atomically without storing full HTTP payloads      | Client timeouts after persistence leave a 1-hour marker without a cached replay |
 
-## Alternatives considered
+**Rejected alternatives:**
 
-- **Synchronous distributed transaction across Ordering, Basket, and Notification:** Rejected because locking across PostgreSQL, Redis, and external SMTP increases checkout latency and couples order acceptance to non-critical email availability.
-- **Referencing live Catalog prices on read:** Rejected because historical order totals would drift whenever book prices or promotions change.
-- **Treating soft deletion as `Cancelled`:** Rejected because administrative hiding or basket-cleanup failure is operationally distinct from an explicit commercial cancellation.
+- **Synchronous distributed transaction across Ordering, Basket, and Notification:** Couples order acceptance to non-critical email availability.
+- **Referencing live Catalog prices on read:** Causes historical order totals to drift whenever book prices change.
+- **Treating soft deletion as `Cancelled`:** Conflates operational cleanup failure with explicit commercial cancellation.
+
+</Accordion>
+</AccordionGroup>
 
 ## Related documentation
 
-- Order and Finance status boundaries — How Finance orchestration states diverge from Ordering status.
-- Ordering consistency and data ownership reference — Authoritative stores, snapshots, and Redis coordination details.
-- Ordering change checklist reference — Contract and invariant checks for contributors.
-- How to troubleshoot order creation conflicts and failures — Safe recovery for `409 Conflict` and lock failures.
+- [[flow|user-checkout]] — End-to-end checkout flow across Shopping, Ordering, and Finance.
+- [[flow|order-lifecycle]] — Order status transitions and downstream event propagation.
+- [[adr|adr-002-preserve-checkout-purchase-snapshot]] — Why checkout locks unit prices and item details.
+- [[adr|adr-003-separate-order-status-from-finance-saga]] — Separation between commercial status and Finance workflow state.

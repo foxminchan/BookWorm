@@ -12,7 +12,7 @@ badges:
     textColor: teal
 ---
 
-BookWorm's **Chat API** (`src/Services/Chat/BookWorm.Chat`) uses Microsoft Foundry's `Microsoft-Decision-1` ("System 1") model to evaluate safety, language, scope, specialist routing, and per-turn tool relevance in single-pass classification calls before invoking a generative chat model (`ModelRouter`). Replacing generative LLM router prompts with calibrated classification decisions cuts latency, lowers token spend, and enforces deterministic confidence thresholds (`0.5` for guardrails and tool selection; `0.6` for direct specialist routing before human-in-the-loop disambiguation).
+BookWorm's [[service|chat-api]] uses Microsoft Foundry's `Microsoft-Decision-1` ("System 1") model to evaluate safety, language, scope, specialist routing, and per-turn tool relevance in single-pass classification calls before invoking a generative chat model (`ModelRouter`). Replacing generative LLM router prompts with calibrated classification decisions cuts latency, lowers token spend, and enforces deterministic confidence thresholds (`0.5` for guardrails and tool selection; `0.6` for direct specialist routing before human-in-the-loop disambiguation).
 
 ## Context and motivation
 
@@ -59,7 +59,7 @@ Per-turn tool filtering and fail-open recovery inside `DecisionToolSelectionMidd
 ### Key engineering lessons
 
 - **Isolate vendor wire formats behind an internal contract:** Keeping `IDecisionClient` (`DecisionRequest`, `DecisionResponse`, `DecisionDefinition<T>`) decoupled from `SystemOneProtocolMapper` lets Chat API workflows remain independent of Microsoft Foundry protocol changes.
-- **Handle partial answers explicitly:** When `Microsoft-Decision-1` leaves `route` unanswered (`DecisionUnansweredException`), `HandlePartialResponse` still enforces any answered `is_safe`, `is_english`, or `is_in_scope` rejections and defaults the route to **Book Agent**—preventing both safety bypasses and avoidable chat crashes.
+- **Handle partial answers explicitly:** When `Microsoft-Decision-1` leaves `route` unanswered (`DecisionUnansweredException`), `HandlePartialResponse` still enforces any answered `is_safe`, `is_english`, or `is_in_scope` rejections and defaults the route to [[agent|book-agent]]—preventing both safety bypasses and avoidable chat crashes.
 - **Protect mandatory tools before filtering:** Partitioning always-included and explicitly required tools before invoking the decision model ensures required workflow tools are never pruned.
 - **Use AOT-safe source-generated JSON serialization:** `DecisionSerializationContext`, `ChatRoutingSerializationContext`, and `SystemOneSerializationContext` use compile-time `System.Text.Json` source generation (`UseStringEnumConverter = true`) to eliminate reflection overhead and preserve strict analyzer compliance.
 - **Layer probabilistic screening with deterministic controls:** `Microsoft-Decision-1` complements—never replaces—`InputValidationExecutor`, Presidio `PIIMiddleware`, and Agent Governance `GuardrailMiddleware`.

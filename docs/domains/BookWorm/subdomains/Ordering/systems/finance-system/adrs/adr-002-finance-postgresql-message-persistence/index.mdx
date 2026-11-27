@@ -18,6 +18,10 @@ appliesTo:
     id: order-orchestration
 ---
 
+:::warning
+This ADR is **Superseded**. Finance orchestration now uses Azure Durable Task Scheduler as documented in [[adr|adr-001-finance-persisted-order-saga]]. It is preserved for historical context only.
+:::
+
 ## 1. Context & Problem
 
 When Finance handles a checkout update, it often needs to save workflow progress and schedule follow-up instructions for other capabilities at the same time. If those two saves happened separately, a crash in between could leave workflow state updated without sending the next instruction, or vice versa.

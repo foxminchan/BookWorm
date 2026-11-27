@@ -1,6 +1,6 @@
 ---
 title: Change checklist
-summary: Checklist for engineers changing the Catalog API, schema, or integration contracts.
+summary: Pre-merge engineering checklist for Catalog API, schema, caching, search, and integration contract changes.
 version: 1.0.0
 type: engineering
 order: 2
@@ -10,71 +10,57 @@ badges:
     textColor: green
 ---
 
-This reference lists the mandatory pre-merge checks, domain invariants, and verification commands for changes to **Catalog API** (`BookWorm.Catalog`) and **Catalog Ingestion** (`BookWorm.Catalog.Ingestion`). Review every affected area before merging schema, API, gRPC, caching, or messaging changes.
+## Purpose & Scope
 
-## Overview
+This checklist defines the mandatory verification steps for engineers modifying [[service|catalog-api]] or [[service|catalog-ingestion]] within the [[domain|catalog]] subdomain. Use it before merging changes to HTTP v1 endpoints, gRPC contracts, [[container|catalog-database]] schemas, [[container|catalog-cache]] keys, [[container|catalog-vector]] indexing, or Kafka integration events.
 
-| Property              | Value                                                                                                                     |
-| :-------------------- | :------------------------------------------------------------------------------------------------------------------------ |
-| **Owner**             | Catalog bounded context (`BookWorm.Catalog`, `BookWorm.Catalog.Ingestion`)                                                |
-| **Source**            | `src/Services/Catalog/BookWorm.Catalog`, `src/Services/Catalog/BookWorm.Catalog.Ingestion`                                |
-| **Protocol / format** | REST (`/api/v1/{books,authors,categories,publishers}`), gRPC (`book.v1.BookGrpcService`), Kafka (CloudEvents JSON)        |
-| **Authentication**    | Microsoft Entra ID JWT (`catalog_read`, `business_user`, `admin` policies); Managed Identity RBAC for `catalog-ingestion` |
+## Core Invariants & Design Rules
 
-## Pre-merge review checklist
+- **Backward-compatible contract evolution:** Keep REST (`/api/v1/{books,authors,categories,publishers}`), gRPC (`book.v1.BookGrpcService`), and CloudEvents schemas additive; version breaking changes explicitly under `ApiVersions` or a new protobuf package version.
+- **Authorization & rate-limit boundaries:** Preserve Microsoft Entra ID policies (`catalog_read` default, `business_user` for catalog mutations, `admin` for dashboard and privileged routes) and endpoint rate-limiting middleware.
+- **End-to-end traceability:** Keep book-identity, pricing, and availability mutations traceable by `BookId` in OpenTelemetry traces and structured logs.
+- **No direct cross-domain writes:** Never allow external services to write to [[container|catalog-database]], and never bypass [[service|catalog-api]] when mutating catalog state.
 
-| Area                            | Required check                                                                                                                                                                                                                                                                          | Source / target to verify                                                                              |
-| :------------------------------ | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------- |
-| **HTTP & gRPC contracts**       | Prefer additive, backward-compatible changes; version breaking changes explicitly under `ApiVersions` and `book/v1/book.proto`.                                                                                                                                                         | `src/Services/Catalog/BookWorm.Catalog/Grpc/Protos/book/v1/book.proto`, Development `/openapi/v1.json` |
-| **Pact & event contracts**      | Keep `FeedbackCreatedIntegrationEvent`, `FeedbackDeletedIntegrationEvent`, `BookUpdatedRatingFailedIntegrationEvent`, and `ProcessVectorBatchIntegrationEvent` backward-compatible and update Pact tests.                                                                               | `src/Services/Catalog/BookWorm.Catalog.ContractTests`, `tests/pacts/`                                  |
-| **PostgreSQL schema**           | Add an EF Core migration for `catalogdb` keeping all identifiers in `snake_case` (`EFCore.NamingConventions`).                                                                                                                                                                          | `src/Services/Catalog/BookWorm.Catalog/Infrastructure/Migrations/`                                     |
-| **Vector search & triggers**    | If indexed fields change, update `VectorBatchProcessor.ReadBatchAsync` searchable text and PostgreSQL triggers feeding `pending_vector_updates`, and plan a rebuild.                                                                                                                    | `src/Services/Catalog/BookWorm.Catalog.Ingestion/VectorBatchProcessor.cs`                              |
-| **Redis / FusionCache keys**    | Ensure book mutations invalidate `book:{id}` and affected list/search tags; bump versioned keys (`catalog:dashboard:v1`, `catalog:categories:v1`, `catalog:authors:v1`, `catalog:publishers:v1`, `catalog:books:list:v1:*`, `catalog:books:search:v1:*`) when cached DTO shapes change. | `src/Services/Catalog/BookWorm.Catalog/CatalogCacheKeys.cs`                                            |
-| **Authorization & rate limits** | Preserve Microsoft Entra ID policies (`catalog_read` default, `business_user` for catalog writes, `admin` for dashboard/privileged operations) and rate-limiting middleware on endpoints such as `GetDashboard`.                                                                        | `src/Services/Catalog/BookWorm.Catalog/`                                                               |
-| **Downstream consumers**        | Verify compatibility with **Basket API** (gRPC), **Ordering API** (gRPC), **MCP Tools** (gRPC `ListBooks`, `GetBookDetails`, `ListCategories`, `ListAuthors`), and **Rating API** (Kafka feedback events).                                                                              | `src/Services/Basket/`, `src/Services/Ordering/`, `src/Services/McpTools/`, `src/Services/Rating/`     |
-| **Observability**               | Keep price, availability, and book-identity mutations traceable by `BookId` in OpenTelemetry traces and structured logs.                                                                                                                                                                | `src/Aspire/BookWorm.ServiceDefaults/Extensions.cs`                                                    |
+:::note
+Checked-in OpenAPI and SQL schema documentation assets in the catalog are not auto-regenerated by CI. Update them in the same pull request whenever HTTP contracts or [[container|catalog-database]] tables change.
+:::
 
-The EventCatalog docs contain checked-in Catalog `schema.sql` and `openapi-v1.yml` assets. No repository workflow that regenerates these files was found, so treat them as documentation artifacts that must be kept synchronized with schema/API changes.
+## Boundaries & Guarantees
 
-## Domain invariants to verify
+| Concern         | Strategy & Guarantee                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | Failure / Edge-Case Behavior                                                                                                                                                                                           | Related Resources                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| :-------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Persistence** | EF Core migrations for <ResourceLink id="catalog-database" type="container">catalog-database</ResourceLink> must use `snake_case` identifiers and preserve database triggers feeding the pending vector-update queue.                                                                                                                                                                                                                                                                                                                | Missing triggers or mismatched column names silently drop book edits from <ResourceLink id="catalog-vector" type="container">catalog-vector</ResourceLink> indexing.                                                   | <ResourceLink id="catalog-database" type="container">catalog-database</ResourceLink>, <ResourceLink id="book" type="entity">book</ResourceLink>, <ResourceLink id="author" type="entity">author</ResourceLink>, <ResourceLink id="category" type="entity">category</ResourceLink>, <ResourceLink id="publisher" type="entity">publisher</ResourceLink>                                                                                                                                                                               |
+| **Caching**     | Book mutations must invalidate `book:{id}`, `book:summary:{id}`, `books:list`, and `books:search` in <ResourceLink id="catalog-cache" type="container">catalog-cache</ResourceLink>; DTO shape changes require bumping the `v1` key version.                                                                                                                                                                                                                                                                                         | Failing to bump versioned keys causes deserialization errors or stale shapes across rolling deployments.                                                                                                               | <ResourceLink id="catalog-cache" type="container">catalog-cache</ResourceLink>, <ResourceLink id="adr-004-fusioncache-redis-for-catalog-reads" type="adr">adr-004-fusioncache-redis-for-catalog-reads</ResourceLink>                                                                                                                                                                                                                                                                                                                 |
+| **Messaging**   | Integration events (<ResourceLink id="FeedbackCreatedIntegrationEvent" type="event">FeedbackCreatedIntegrationEvent</ResourceLink>, <ResourceLink id="FeedbackDeletedIntegrationEvent" type="event">FeedbackDeletedIntegrationEvent</ResourceLink>, <ResourceLink id="BookUpdatedRatingFailedIntegrationEvent" type="event">BookUpdatedRatingFailedIntegrationEvent</ResourceLink>, <ResourceLink id="ProcessVectorBatchIntegrationEvent" type="event">ProcessVectorBatchIntegrationEvent</ResourceLink>) must remain Pact-verified. | Breaking schema changes fail consumer-driven contract tests or route payloads to <ResourceLink id="bookworm.{env}.catalog.dead-letter-queue" type="channel">`bookworm.{env}.catalog.dead-letter-queue`</ResourceLink>. | <ResourceLink id="bookworm.{env}.rating.feedback-create" type="channel">`bookworm.{env}.rating.feedback-create`</ResourceLink>, <ResourceLink id="bookworm.{env}.rating.feedback-delete" type="channel">`bookworm.{env}.rating.feedback-delete`</ResourceLink>, <ResourceLink id="bookworm.{env}.catalog.book-update-rating-failed" type="channel">`bookworm.{env}.catalog.book-update-rating-failed`</ResourceLink>, <ResourceLink id="scheduler.process-vector-batch" type="channel">scheduler.process-vector-batch</ResourceLink> |
+| **Concurrency** | Preserve discount price bounds (`0 <= DiscountPrice <= OriginalPrice`), `DeleteBehavior.Restrict` on authors with books, and `24h` Redis idempotency on rating event handlers.                                                                                                                                                                                                                                                                                                                                                       | Removing idempotency guards allows duplicate Kafka deliveries to double-count `average_rating` and `total_reviews`.                                                                                                    | <ResourceLink id="catalog-api" type="service">catalog-api</ResourceLink>, <ResourceLink id="catalog-ingestion" type="service">catalog-ingestion</ResourceLink>, <ResourceLink id="adr-006-reviews-rating-projection-on-book" type="adr">adr-006-reviews-rating-projection-on-book</ResourceLink>                                                                                                                                                                                                                                     |
 
-Every Catalog change must preserve these verified invariants (covered by `BookWorm.Catalog.UnitTests`, `BookWorm.Catalog.ContractTests`, and `BookWorm.ArchTests`):
+## Safe Change & Verification Checklist
 
-| Invariant                              | Enforced behavior                                                                                                                                                  | Verified source                                                                                                   |
-| :------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------- |
-| **Discount price bounds**              | `Price.DiscountPrice` must be `>= 0` and `<= OriginalPrice`.                                                                                                       | `src/Services/Catalog/BookWorm.Catalog/Domain/AggregatesModel/BookAggregate/Price.cs`                             |
-| **Soft-deleted books leave search**    | Deleting a book sets `is_deleted = true`, triggers `pending_vector_updates`, and causes `Catalog Ingestion` to delete its UUID from Qdrant (`vectordb`).           | `src/Services/Catalog/BookWorm.Catalog.Ingestion/VectorBatchProcessor.cs`                                         |
-| **Taxonomy deletion rules**            | Deleting a category or publisher preserves associated books (clearing the reference); deleting an author with active books is blocked (`DeleteBehavior.Restrict`). | `src/Services/Catalog/BookWorm.Catalog/Infrastructure/EntityConfigurations/BookAuthorConfiguration.cs`            |
-| **Missing-book rating compensation**   | Receiving `FeedbackCreatedIntegrationEvent` for a missing book emits `BookUpdatedRatingFailedIntegrationEvent` via Wolverine cascading return.                     | `src/Services/Catalog/BookWorm.Catalog/IntegrationEvents/EventHandlers/FeedbackCreatedIntegrationEventHandler.cs` |
-| **Missing-book rating deletion no-op** | Receiving `FeedbackDeletedIntegrationEvent` for a missing book completes with no write and no compensation event.                                                  | `src/Services/Catalog/BookWorm.Catalog/IntegrationEvents/EventHandlers/FeedbackDeletedIntegrationEventHandler.cs` |
+<Steps title="Pre-merge verification workflow">
+	<Step title="Verify HTTP, gRPC, and Kafka contract compatibility">
+		Confirm additive compatibility across REST endpoints, `book.v1.BookGrpcService` (consumed by
+		[[service|basket-api]], [[service|order-api]], and [[service|mcp-server]]), and all Pact
+		contract suites with [[service|rating-api]] and [[service|scheduler-service]].
+	</Step>
+	<Step title="Validate PostgreSQL migrations and vector triggers">
+		Ensure any [[container|catalog-database]] migration preserves `snake_case` naming, updates
+		pending-update triggers if searchable attributes changed, and plans a
+		[[container|catalog-vector]] rebuild when indexed text changes.
+	</Step>
+	<Step title="Audit cache keys, tags, and authorization policies">
+		Confirm write paths invalidate affected [[container|catalog-cache]] keys/tags, DTO changes bump
+		key versions, and Entra ID policies (`catalog_read`, `business_user`, `admin`) remain enforced.
+	</Step>
+	<Step title="Run formatting, build, and test suites">
+		Execute `mise run format`, `mise run build`, and `mise run test` to verify Catalog unit tests,
+		architecture tests, and Pact contract tests pass with zero warnings.
+	</Step>
+</Steps>
 
-## Verification commands
+## Related Resources
 
-Run the standard repository checks from the repository root before opening a pull request:
-
-<CodeGroup>
-
-```bash
-mise run format
-mise run build
-mise run test
-```
-
-</CodeGroup>
-
-For a targeted Catalog test run during local iteration:
-
-<CodeGroup>
-
-```bash
-dotnet test src/Services/Catalog/BookWorm.Catalog.UnitTests
-dotnet test src/Services/Catalog/BookWorm.Catalog.ContractTests
-```
-
-</CodeGroup>
-
-## Related documentation
-
-- Catalog consistency and data ownership reference — Authoritative vs. derived Catalog stores and propagation guarantees.
-- [[flow|product-ingestion]] — How PostgreSQL triggers and Kafka feed Qdrant vector updates.
-- How to resolve Catalog vector index lag — Procedure for rebuilding the Qdrant index after indexed-field changes.
+- [[service|catalog-api]] — Authoritative catalog REST/gRPC API
+- [[service|catalog-ingestion]] — Scheduled vector indexing worker
+- [[flow|product-ingestion]] — Vector indexing and advisory-lock pipeline
+- [[query|GetBook]], [[query|GetBooksGrpc]], [[query|GetBookDetailsGrpc]], [[query|ListBooks]] — Key read and gRPC contracts
+- [[doc|platform/006-api-and-contracts]] — Consolidated HTTP, gRPC, and Kafka contracts

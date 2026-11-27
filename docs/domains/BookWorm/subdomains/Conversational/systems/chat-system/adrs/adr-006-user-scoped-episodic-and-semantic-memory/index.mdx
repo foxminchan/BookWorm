@@ -149,7 +149,7 @@ Catalog remains the source of truth for book facts. A remembered conversation is
 
 > **Status note:** The implementation details below are design candidates from code review; framework hooks, identity propagation, and configuration must be verified against the pinned codebase before delivery.
 
-### Architecture diagram
+### System topology
 
 <MermaidFileLoader file="mermaids/user-memory-architecture.mmd" />
 
@@ -179,7 +179,7 @@ Proposed code belongs in `Chat/Memory/`, following existing BookWorm patterns:
 | `AddUserMemory()`                                        | Register stores, provider and worker.                                                                                                          |
 | User-memory endpoints                                    | Let an authenticated customer inspect and delete their own saved memory.                                                                       |
 
-- **Infrastructure & embeddings:** Add `Components.Database.Chat` and wire the Chat PostgreSQL database and Qdrant reference in `AppHost.cs`. The proposed episode embedding uses the existing Cohere Embed v4 pattern (`1536` dimensions with cosine similarity); verify compatibility before creating the collection.
+- **Infrastructure & embeddings:** Wire the Chat PostgreSQL database and Qdrant collection in the service host configuration. The proposed episode embedding uses the existing Cohere Embed v4 pattern (`1536` dimensions with cosine similarity); verify compatibility before creating the collection.
 - **Agent & framework verification:** Update `book-agent.yaml` to enforce trust rules without widening the agent's tool permissions (note also `FileMemoryProvider` remains separate session-only work). Confirm `AIContextProvider` lifecycle hooks against the pinned Agent Framework version rather than treating this outline as an API contract.
 
 ### Delivery sequence and acceptance verification

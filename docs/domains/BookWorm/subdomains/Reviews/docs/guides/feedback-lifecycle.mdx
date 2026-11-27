@@ -10,46 +10,75 @@ badges:
     textColor: teal
 ---
 
-BookWorm separates customer review storage from product catalog browsing across two independent bounded contexts: **Reviews** (**Rating API**, `rating`) owns individual `Feedback` documents in **Azure Cosmos DB** (`ratingdb` / `feedbacks`, partition key `/bookId`), while **Catalog** (**Catalog API**, `catalog`) owns `Book` records in **PostgreSQL** (`catalogdb`) and maintains only a derived rating summary (`average_rating` and `total_reviews`). Decoupling these stores lets customers submit reviews without synchronous cross-database transactions while keeping catalog reads fast.
+**Audience & Outcome:** This guide is for backend engineers, moderators, and integrators working with [[service|rating-api]] and [[service|catalog-api]]. You will learn how customer reviews are persisted, summarized by AI, projected asynchronously to Catalog, and compensated when a target book is missing.
+
+BookWorm separates customer review storage from product catalog browsing across two independent bounded contexts: [[service|rating-api]] owns individual [[entity|feedback]] documents in [[container|rating-database]] (partitioned by `/bookId`), while [[service|catalog-api]] owns [[entity|book]] records in [[container|catalog-database]] and maintains only a derived rating summary (`average_rating` and `total_reviews`).
 
 ## Context and motivation
 
 Individual customer reviews and catalog product listings have different access patterns, scaling profiles, and consistency requirements:
 
-- **Reviews** stores append-heavy, book-partitioned documents (`Feedback`) and supports both paginated browsing and AI-generated review summaries.
+- **Reviews** stores append-heavy, book-partitioned documents and supports paginated browsing and AI-generated review summaries.
 - **Catalog** serves high-volume browsing and search queries that only need an aggregate average score and review count per book.
 
 Sharing a single database between Reviews and Catalog—or blocking review writes on synchronous Catalog updates—would couple deployment lifecycles and turn temporary Catalog slowdowns into customer review outages.
 
 ## How it works
 
-The diagram below traces the normal creation/deletion projection path from Rating API (Cosmos DB) to Catalog API (PostgreSQL) alongside the compensating delete path when a book no longer exists.
+The visual below traces the normal creation and deletion projection path from [[service|rating-api]] to [[service|catalog-api]] alongside the compensating delete path when a book no longer exists.
 
 <MermaidFileLoader file="mermaids/feedback-lifecycle-diagram-1.mmd" />
 
 ### Four lifecycle stages
 
-- **Create feedback:** A caller submits `bookId`, `firstName`, `lastName`, an integer `rating` (`0`-`5`), and an optional `comment` (up to `1000` characters) to `POST /api/v1/feedbacks`. Rating API persists the `Feedback` document in Cosmos DB `ratingdb`/`feedbacks` (partitioned by `/bookId`), returns the new `FeedbackId` (`200 OK`), and publishes `FeedbackCreatedIntegrationEvent` to `bookworm.{env}.rating.feedback-create` after commit. Returning `200 OK` confirms review persistence—not that Catalog has finished updating its summary.
-- **Read feedback and generate AI summaries:** `GET /api/v1/feedbacks` returns paginated reviews for a `bookId`, cached for `10` minutes in Redis via FusionCache (tagged by `BookId`). For an overview, authenticated callers invoke `GET /api/v1/feedbacks/{id}/summarize`, which runs `rating-agent` (Microsoft Agent Framework + Microsoft Foundry + Presidio PII protection). The agent reads live book context through **MCP Tools** (`get_book`) and raw reviews, returning a read-only derived summary that never mutates Cosmos DB or Catalog.
-- **Delete feedback (moderation):** Authorized administrators (`admin` policy) remove a review via `DELETE /api/v1/feedbacks/{id}`. Missing IDs return `404 Not Found` rather than succeeding silently. Deleting an existing record invokes `Feedback.Remove()`, deletes the document from Cosmos DB, and publishes `FeedbackDeletedIntegrationEvent` to `bookworm.{env}.rating.feedback-delete` so Catalog decrements its projection asynchronously.
-- **Asynchronous projection and compensation:** Catalog API consumes create and delete events with a 24-hour Redis `IIntegrationEventIdempotencyGuard` so at-least-once retries cannot double-count ratings. If a `FeedbackCreatedIntegrationEvent` arrives for a `bookId` that does not exist in `catalogdb`, Catalog publishes `BookUpdatedRatingFailedIntegrationEvent` (carrying `FeedbackId`) to `bookworm.{env}.catalog.book-update-rating-failed`. Rating API's compensation handler calls `feedback.Revert()` (which invalidates the Redis cache tag without emitting `FeedbackDeletedIntegrationEvent`) and deletes the orphaned document—treating an already-absent record as a no-op.
+<Steps>
+<Step title="Create feedback">
 
-## Design trade-offs
+A caller submits a `bookId`, reviewer name, integer rating (`0`–`5`), and optional comment to `POST /api/v1/feedbacks`. [[service|rating-api]] persists the [[entity|feedback]] document in [[container|rating-database]], returns `200 OK`, and publishes [[event|FeedbackCreatedIntegrationEvent]] to <ResourceLink id="bookworm.{env}.rating.feedback-create" type="channel">`bookworm.{env}.rating.feedback-create`</ResourceLink>.
 
-| Decision                                                       | Benefits                                                                                                             | Costs and limits                                                                                                                      |
-| :------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------ |
-| **Cosmos DB for Reviews vs. PostgreSQL for Catalog**           | Partitioning `feedbacks` by `/bookId` gives fast per-book review queries and isolates write scaling from `catalogdb` | Two database technologies to operate; cross-domain consistency is eventual rather than transactional                                  |
-| **Post-commit Kafka projection with compensation**             | Keeps review submissions fast and resilient even if Catalog is temporarily unavailable                               | Catalog's `average_rating` and `total_reviews` briefly lag behind Reviews; invalid `bookId` submissions are cleaned up asynchronously |
-| **Idempotent consumers (`IIntegrationEventIdempotencyGuard`)** | Tolerates at-least-once Kafka redelivery without skewing Catalog totals or failing compensation                      | Requires healthy Redis (`redis`) alongside Kafka consumers                                                                            |
-| **Read-only AI summarization (`rating-agent`)**                | Provides governed, PII-filtered insights without risking corruption of customer ratings                              | Summary generation incurs live LLM and MCP lookup latency                                                                             |
+:::note
+Returning `200 OK` confirms review persistence in [[container|rating-database]]—not that [[service|catalog-api]] has finished updating its summary.
+:::
 
-## Alternatives considered
+</Step>
+<Step title="Read feedback and generate AI summaries">
 
-- **Synchronous gRPC check against Catalog before saving feedback:** Rejected because a book can still be deleted between the check and projection, and synchronous validation would couple Reviews write availability directly to Catalog uptime.
-- **Storing feedback in PostgreSQL inside `catalogdb`:** Rejected because sharing a database breaks bounded-context isolation between Reviews and Catalog.
+Paginated reviews for a book are cached for 10 minutes in [[container|rating-cache]]. Authenticated callers can request an AI summary, which runs [[agent|rating-agent]] with [[service|presidio-api]] PII protection. The agent reads live book context through [[service|mcp-server]] and raw reviews, returning a read-only derived summary that never mutates [[container|rating-database]] or Catalog.
+
+</Step>
+<Step title="Delete feedback (moderation)">
+
+Authorized administrators remove a review via `DELETE /api/v1/feedbacks/{id}` (missing IDs return `404 Not Found`). Deleting an existing record removes the document from [[container|rating-database]] and publishes [[event|FeedbackDeletedIntegrationEvent]] to <ResourceLink id="bookworm.{env}.rating.feedback-delete" type="channel">`bookworm.{env}.rating.feedback-delete`</ResourceLink> so Catalog decrements its projection asynchronously.
+
+</Step>
+<Step title="Asynchronous projection and compensation">
+
+[[service|catalog-api]] consumes create and delete events with a 24-hour idempotency guard so at-least-once retries cannot double-count ratings. If a [[event|FeedbackCreatedIntegrationEvent]] arrives for a `bookId` that does not exist in [[container|catalog-database]], Catalog publishes [[event|BookUpdatedRatingFailedIntegrationEvent]] to <ResourceLink id="bookworm.{env}.catalog.book-update-rating-failed" type="channel">`bookworm.{env}.catalog.book-update-rating-failed`</ResourceLink>. [[service|rating-api]]'s compensation handler invalidates [[container|rating-cache]] and deletes the orphaned document without emitting a delete event.
+
+</Step>
+</Steps>
+
+<AccordionGroup>
+<Accordion title="Design trade-offs and alternatives considered">
+
+| Decision                                                 | Benefits                                                                                | Costs and limits                                                                         |
+| :------------------------------------------------------- | :-------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------- |
+| **Cosmos DB for Reviews vs. PostgreSQL for Catalog**     | Partitioning by `/bookId` gives fast per-book queries and isolates write scaling        | Two database technologies to operate; cross-domain consistency is eventual               |
+| **Post-commit Kafka projection with compensation**       | Keeps review submissions fast and resilient even if Catalog is temporarily unavailable  | Rating summaries briefly lag behind Reviews; invalid submissions clean up asynchronously |
+| **Idempotent consumers**                                 | Tolerates at-least-once Kafka redelivery without skewing Catalog totals                 | Requires healthy Redis alongside Kafka consumers                                         |
+| **Read-only AI summarization ([[agent\|rating-agent]])** | Provides governed, PII-filtered insights without risking corruption of customer ratings | Summary generation incurs live LLM and MCP lookup latency                                |
+
+**Rejected alternatives:**
+
+- **Synchronous gRPC check against Catalog before saving feedback:** A book can still be deleted between check and projection, and synchronous validation couples Reviews write availability to Catalog uptime.
+- **Storing feedback in PostgreSQL inside [[container|catalog-database]]:** Breaks bounded-context isolation between Reviews and Catalog.
+
+</Accordion>
+</AccordionGroup>
 
 ## Related documentation
 
-- Reviews feedback contracts and integration reference — Exact HTTP routes, validation rules, Cosmos DB mapping, and Kafka schemas.
-- How to recover a failed Catalog rating projection — Operational triage when `BookUpdatedRatingFailedIntegrationEvent` fires.
-- [[doc|arc42/00-c4-overview]] — System-wide bounded contexts and data stores.
+- [[flow|feedback-publication]] — End-to-end feedback publication, projection, and compensation flow.
+- [[adr|adr-002-publish-feedback-events-for-catalog-projection]] — Decision record for asynchronous feedback projection.
+- [[adr|adr-003-compensate-invalid-feedback-after-catalog-rejection]] — Compensation when Catalog rejects a missing book ID.
+- [[doc|arc42]] — System-wide bounded contexts and data stores.

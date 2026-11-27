@@ -18,58 +18,42 @@ decisionMakers:
 x-scope: "Whole system (backend API services)"
 ---
 
-## Context and problem statement
+| Field                  | Value                                                                                                            |
+| :--------------------- | :--------------------------------------------------------------------------------------------------------------- |
+| **Status**             | Proposed                                                                                                         |
+| **Date**               | 2026-11-07                                                                                                       |
+| **Owners**             | [[team\|contributor-team]]                                                                                       |
+| **Affected Resources** | [[domain\|bookworm]]                                                                                             |
+| **Related ADRs**       | [[adr\|adr-bw-011-shared-validation-and-error-contracts]], [[adr\|adr-bw-016-layered-architecture-verification]] |
 
-Web and internal requests need consistent checking, activity recording, validation, and coordinated changes. Putting business work directly into connection points repeats support work and makes it harder to test.
+## Context & Problem Statement
 
-BookWorm needs one consistent way to organize work inside each area. That internal organization must not become an agreement shared between areas.
+HTTP and gRPC endpoints require consistent validation, logging, tracing, and transaction boundaries. Placing business logic directly inside endpoint definitions duplicates cross-cutting plumbing and complicates unit testing, while sharing internal command classes across services leaks private implementation details.
 
-## Decision drivers
+## Decision Drivers
 
-- **Easy testing:** Test actions and questions independently from connection methods.
-- **Reliable performance:** Prepare routine work before the system runs rather than discovering it repeatedly.
-- **Consistent handling:** Apply the same logging, checking, and change rules everywhere.
+- **Testability:** Unit-test commands and queries independently of HTTP/gRPC transport.
+- **Zero reflection overhead:** Use compile-time source generation (`Mediator.SourceGenerator`) over runtime reflection.
+- **Consistent pipelines:** Apply uniform validation, logging, and transaction behaviors.
 
-## Considered options
+## Options Considered
 
-1. Use small, area-owned action and read units
-2. Use another coordination library
-3. Put business work directly into connection points
-4. Share internal action units across areas
+| Option                                                          | Pros                                                             | Cons                                                             |
+| :-------------------------------------------------------------- | :--------------------------------------------------------------- | :--------------------------------------------------------------- |
+| **Vertical-slice CQRS handlers via `Mediator.SourceGenerator`** | Compile-time dispatch, clean testing, uniform pipeline behaviors | Contributors must follow the vertical-slice handler convention   |
+| **Alternative runtime-reflection mediator (`MediatR`)**         | Familiar to some developers                                      | Runtime reflection overhead and licensing/ecosystem divergence   |
+| **Inline logic in minimal API endpoints**                       | Fewer files per endpoint                                         | Bloated endpoints, duplicated validation, harder unit testing    |
+| **Share internal CQRS commands across services**                | Avoids contract mapping                                          | Couples service deployments and breaks bounded-context isolation |
 
-## Decision outcome
+## Decision & Consequences
 
-Chosen option: **Use small, area-owned action and read units**.
+**Chosen Option:** Organize in-process commands and queries as small, service-local vertical-slice handlers dispatched through `Mediator.SourceGenerator`. Internal commands and queries remain private to their owning service and are never exposed as cross-service integration contracts.
 
-Each area will separate customer actions from information reads and keep those units close to the relevant business feature. Shared support will provide consistent logging, tracing, validation, and change handling.
+- **Positive:** Clean separation between transport endpoints and business logic; fast compile-time dispatch.
+- **Negative:** Contributors must learn and adhere to the repository's vertical-slice conventions.
 
-This is an internal organization pattern. It does not require every area to use separate storage or recreate event history.
+### Compliance Criteria
 
-### Consequences
-
-- **Positive:** Work units remain small and easy to test independently.
-- **Negative:** Contributors must follow one internal organization and shared setup pattern.
-- **Follow-up:** Check that units stay within the correct area and do not become shared agreements.
-
-## Pros and cons of the options
-
-### Use small, area-owned action and read units
-
-- **Good**, because setup and support rules remain consistent.
-- **Good**, because each unit is easy to test and understand.
-- **Bad**, because contributors must learn the agreed organization pattern.
-
-### Use another coordination library
-
-- **Good**, because it may be familiar to some teams.
-- **Bad**, because it can introduce incompatible internal patterns and extra complexity.
-
-### Put business work directly into connection points
-
-- **Good**, because requests do not pass through another internal step.
-- **Bad**, because connection points become crowded and harder to test.
-
-### Share internal action units across areas
-
-- **Good**, because areas avoid creating separate agreements.
-- **Bad**, because it couples deployments and exposes internal work.
+- New backend endpoints must delegate to service-local CQRS handlers via `Mediator.SourceGenerator` (do not add `MediatR`).
+- Internal command/query types must not be referenced by other services.
+- Cross-cutting validation and logging must live in shared pipeline behaviors rather than repeated per handler.

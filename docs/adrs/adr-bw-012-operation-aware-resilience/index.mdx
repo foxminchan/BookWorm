@@ -20,58 +20,42 @@ decisionMakers:
 x-scope: "Whole system"
 ---
 
-## Context and problem statement
+| Field                  | Value                                                                                                                                                                                                 |
+| :--------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Status**             | Proposed                                                                                                                                                                                              |
+| **Date**               | 2026-11-07                                                                                                                                                                                            |
+| **Owners**             | [[team\|platform-team]]                                                                                                                                                                               |
+| **Affected Resources** | [[domain\|bookworm]]                                                                                                                                                                                  |
+| **Related ADRs**       | [[adr\|adr-bw-008-durable-message-handoffs]], [[adr\|adr-004-finance-bounded-scheduled-retries]], [[adr\|adr-003-idempotent-misfire-aware-jobs]], [[adr\|adr-002-durable-outbox-and-bounded-retries]] |
 
-Network calls and outside services can fail temporarily. Retrying a harmless search has different consequences from retrying an order, a refund, or an email.
+## Context & Problem Statement
 
-BookWorm needs protection matched to the work being performed. It must avoid repeated attempts that duplicate customer actions or overload another system.
+Transient network or provider faults affect read queries, checkout writes, scheduled batches, and SMTP email delivery differently. Applying identical aggressive retries everywhere can duplicate orders or emails, while disabling retries altogether turns brief blips into customer-visible outages.
 
-## Decision drivers
+## Decision Drivers
 
-- **Transient recoverability:** Recover from short interruptions without failing unnecessarily.
-- **Side-effect safety:** Prevent duplicate orders, emails, or refunds.
-- **Controlled failure:** Set clear limits and record failures so teams can respond.
+- **Transient recovery:** Absorb brief network or dependency hiccups automatically.
+- **Side-effect safety:** Prevent blind retries from duplicating orders, charges, or emails.
+- **Bounded failure:** Enforce timeouts, circuit breakers, and dead-letter queues so outages stay visible.
 
-## Considered options
+## Options Considered
 
-1. Use shared limits plus protection matched to each operation
-2. Retry every operation in the same way
-3. Disable retries everywhere
-4. Assume duplicate protection guarantees an all-or-nothing outcome everywhere
+| Option                                                       | Pros                                                                 | Cons                                                                         |
+| :----------------------------------------------------------- | :------------------------------------------------------------------- | :--------------------------------------------------------------------------- |
+| **Shared outbound defaults + operation-specific resilience** | Safe retries for reads; idempotency/circuit-breakers/DLQs for writes | Each integration must review its timeout and retry semantics                 |
+| **Uniform aggressive retries everywhere**                    | Simple global policy                                                 | Duplicates non-idempotent side effects and amplifies outages                 |
+| **Zero retries anywhere**                                    | Never repeats an external call                                       | Brief transient blips cause immediate user-facing failures                   |
+| **Assume idempotency guards guarantee exactly-once**         | Simpler mental model                                                 | Time-bounded guards and external SMTP timeouts cannot guarantee exactly-once |
 
-## Decision outcome
+## Decision & Consequences
 
-Chosen option: **Use shared limits plus protection matched to each operation**.
+**Chosen Option:** Apply shared outbound resilience defaults (timeouts, jittered retries, circuit breakers) tailored to operation semantics—combining idempotency keys, bounded saga retries ([[service|order-orchestration]]), misfire policies ([[service|scheduler-service]]), and DLQs ([[service|notification-api]]) without claiming exactly-once external side effects.
 
-BookWorm will limit retries and waiting time for quick requests. It will pause temporarily failing systems when repeated attempts would be harmful. It will recognize repeated updates and undo work when an automated correction is possible.
+- **Positive:** Read paths recover transparently while stateful and external integrations remain protected against amplification and silent loss.
+- **Negative:** Every new outbound client or consumer must explicitly configure and document its retry/timeout bounds.
 
-No retry or duplicate-guard system should be described as guaranteeing that every outside action happens exactly once.
+### Compliance Criteria
 
-### Consequences
-
-- **Positive:** Temporary failures recover without removing important protections.
-- **Negative:** Every new connection must define suitable timeouts and duplicate handling.
-- **Follow-up:** Set live limits only after service-level performance needs are known.
-
-## Pros and cons of the options
-
-### Use shared limits plus protection matched to each operation
-
-- **Good**, because quick reads and sensitive actions receive appropriate handling.
-- **Good**, because sustained failures remain visible.
-- **Bad**, because settings must be reviewed for every workflow.
-
-### Retry every operation in the same way
-
-- **Good**, because configuration is simple.
-- **Bad**, because blind retries can duplicate sensitive actions and overload other systems.
-
-### Disable retries everywhere
-
-- **Good**, because the system never repeats an outside action.
-- **Bad**, because a short interruption immediately fails customer work.
-
-### Assume duplicate protection guarantees an all-or-nothing outcome everywhere
-
-- **Good**, because teams write less recovery code.
-- **Bad**, because outside providers and temporary guards cannot guarantee one exact outcome.
+- Non-idempotent write endpoints (such as order creation) must require client idempotency keys (`x-request-id`).
+- Outbound HTTP/gRPC/SMTP clients must configure explicit timeouts and circuit breakers.
+- Architecture and operational docs must describe at-least-once delivery with idempotent handling rather than claiming exactly-once.

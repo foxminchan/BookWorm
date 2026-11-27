@@ -18,64 +18,43 @@ decisionMakers:
 x-scope: "Whole system"
 ---
 
-## Context and problem statement
+| Field                  | Value                                                                                               |
+| :--------------------- | :-------------------------------------------------------------------------------------------------- |
+| **Status**             | Proposed                                                                                            |
+| **Date**               | 2026-11-07                                                                                          |
+| **Owners**             | [[team\|contributor-team]]                                                                          |
+| **Affected Resources** | [[domain\|bookworm]]                                                                                |
+| **Related ADRs**       | [[adr\|adr-bw-006-service-owned-business-state]], [[adr\|adr-bw-017-compatible-contract-evolution]] |
 
-Book discovery, shopping, ordering, reviews, conversations, and platform operations have different goals and change at different times. When they share the same business rules and information, a change in one area can affect several teams or require coordinated updates elsewhere.
+## Context & Problem Statement
 
-BookWorm needs a consistent way to organize work so that every area manages its own rules and outcomes while still sharing reliable common tools.
+Book discovery, shopping, ordering, reviews, conversations, and platform operations evolve at different cadences and serve distinct business goals. Sharing a single business layer or mutable data model across these areas creates hidden coupling and forces coordinated releases. [[domain|bookworm]] needs a consistent structural boundary so each business capability owns its rules and outcomes independently.
 
-## Decision drivers
+## Decision Drivers
 
-- **Easy to change:** A change should stay within the area responsible for it.
-- **Easy to release:** Compatible improvements should reach customers without requiring every area to update at the same time.
-- **Clear responsibility:** Each area should clearly own the outcomes it provides.
-- **Consistent quality:** Shared tools should remain available everywhere without making one area responsible for another area's decisions.
+- **Change isolation:** Keep domain rule changes localized to the owning capability.
+- **Independent deployability:** Ship compatible improvements without synchronized cross-team releases.
+- **Clear accountability:** Assign each business outcome to one owning service and team.
+- **Shared technical leverage:** Reuse infrastructure defaults without leaking domain rules into shared libraries.
 
-## Considered options
+## Options Considered
 
-1. Keep areas organized around the responsibilities they serve
-2. Combine everything into one application
-3. Divide one application into separate parts
-4. Divide work by specialty
+| Option                                                  | Pros                                                                 | Cons                                                                |
+| :------------------------------------------------------ | :------------------------------------------------------------------- | :------------------------------------------------------------------ |
+| **Decompose by business capability (bounded contexts)** | Rules and data stay with the owning team; areas evolve independently | Cross-area journeys require explicit contracts and async recovery   |
+| **Single unified application**                          | Fast in-process calls; simpler local debugging                       | Changes couple all domains; failures blast across the entire system |
+| **Modular monolith (logical modules, single deploy)**   | Clear logical boundaries without network overhead                    | All capabilities deploy together and share runtime availability     |
+| **Split by technical layer (frontend, API, DB teams)**  | Deep functional specialization                                       | Every customer feature spans multiple teams, blurring ownership     |
 
-## Decision outcome
+## Decision & Consequences
 
-Chosen option: **Keep areas organized around the responsibilities they serve**.
+**Chosen Option:** Decompose [[domain|bookworm]] by business capability. Each subdomain (Catalog, Shopping, Ordering, Reviews, Conversational, and Platform) owns its rules, persistence, and public contracts, communicating exclusively through explicit APIs and events. Shared building blocks provide technical plumbing only and never encode domain-specific logic.
 
-Each of BookWorm's six business areas will manage its own rules, information, and customer behavior. The areas will communicate through clearly agreed exchanges rather than sharing hidden decisions.
+- **Positive:** Teams release independently, isolate failures, and trace incorrect behavior to a single owning service.
+- **Negative:** Cross-boundary workflows (such as checkout and rating projection) require explicit contracts, correlation, and compensation.
 
-Common tools may help all areas with everyday work, but they will not contain rules that belong to a particular business area. This decision applies to how the whole system is organized, not to how an individual area is built.
+### Compliance Criteria
 
-### Consequences
-
-- **Positive:** Teams can understand, change, and release their area more independently.
-- **Positive:** Customers receive improvements faster because one area does not need to wait for every area to change.
-- **Positive:** Responsibility is easier to identify when a result or rule is incorrect.
-- **Negative:** Work that crosses several areas needs clear agreements and careful recovery when part of it fails.
-- **Negative:** Finding the cause of a problem may require checking more than one area.
-- **Follow-up:** Confirm that work remains in the correct business area and review the arrangement when the platform team evaluates the system.
-
-## Pros and cons of the options
-
-### Keep areas organized around the responsibilities they serve
-
-- **Good**, because rules and information stay with the team responsible for them.
-- **Good**, because areas can grow and improve independently when their agreements remain compatible.
-- **Bad**, because work spanning several areas can take longer to coordinate and diagnose.
-
-### Combine everything into one application
-
-- **Good**, because all parts communicate quickly and some actions are easier to complete.
-- **Bad**, because one change can affect every area and slow down release cycles.
-- **Bad**, because a failure can spread across the whole application.
-
-### Divide one application into separate parts
-
-- **Good**, because areas remain clearly separated without the cost of separate applications.
-- **Bad**, because all parts are released together and depend on the same application being available.
-- **Bad**, because this would move away from the way BookWorm is already organized.
-
-### Divide work by specialty
-
-- **Good**, because teams can specialize in particular kinds of work.
-- **Bad**, because one customer feature would cross several teams and ownership would become unclear.
+- New features must map to an existing bounded context or justify a new capability boundary.
+- Shared libraries must not reference domain entities, business rules, or capability-specific state.
+- Cross-capability communication must use documented HTTP, gRPC, or Kafka contracts—never direct database or internal handler calls.

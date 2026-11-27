@@ -18,63 +18,42 @@ decisionMakers:
 x-scope: "Whole system"
 ---
 
-## Context and problem statement
+| Field                  | Value                                                                                                       |
+| :--------------------- | :---------------------------------------------------------------------------------------------------------- |
+| **Status**             | Proposed                                                                                                    |
+| **Date**               | 2026-11-07                                                                                                  |
+| **Owners**             | [[team\|contributor-team]]                                                                                  |
+| **Affected Resources** | [[domain\|bookworm]]                                                                                        |
+| **Related ADRs**       | [[adr\|adr-bw-017-compatible-contract-evolution]], [[adr\|adr-bw-018-single-source-decision-documentation]] |
 
-No single test catches every problem in a system with many connected areas. Small checks verify business rules quickly but may miss communication changes. Full browser journeys confirm customer behavior but cannot cover every internal rule.
+## Context & Problem Statement
 
-BookWorm needs several kinds of checks, each aimed at a different risk.
+No single test layer catches every failure mode in a distributed microservices platform. Unit tests verify domain invariants quickly but miss contract drift; end-to-end browser tests validate user journeys but are too slow and coarse to cover all boundary rules and architecture constraints.
 
-## Decision drivers
+## Decision Drivers
 
-- **Business correctness:** Catch rule mistakes quickly.
-- **Area compatibility:** Verify that connected areas understand each other's information.
-- **Structure:** Prevent areas from bypassing ownership or violating agreed boundaries.
+- **Fast feedback:** Catch domain and architecture violations in seconds.
+- **Contract safety:** Verify HTTP, gRPC, and Kafka compatibility without running all live services together.
+- **Boundary enforcement:** Automatically prevent cross-domain coupling and catalog/doc drift.
 
-## Considered options
+## Options Considered
 
-1. Use separate automated checks for business rules, structure, agreements, information formats, and customer journeys
-2. Rely on small unit checks alone
-3. Rely on full browser journeys alone
-4. Rely on manual review alone
+| Option                                                                     | Pros                                     | Cons                                                          |
+| :------------------------------------------------------------------------- | :--------------------------------------- | :------------------------------------------------------------ |
+| **Layered verification (unit, architecture, contract, E2E, catalog lint)** | Targeted feedback per risk area; fast CI | Multiple test suites to maintain                              |
+| **Unit tests only**                                                        | Very fast execution                      | Misses contract drift, serialization, and UI integration bugs |
+| **End-to-end UI tests only**                                               | Exercises full real journeys             | Slow, flaky, and poor coverage of internal edge cases         |
+| **Manual QA review only**                                                  | Flexible human judgment                  | Misses subtle regressions and contract breaks                 |
 
-## Decision outcome
+## Decision & Consequences
 
-Chosen option: **Use separate automated checks for business rules, structure, agreements, information formats, and customer journeys**.
+**Chosen Option:** Enforce a layered verification strategy combining unit tests, architecture boundary tests, consumer/provider contract tests, schema/catalog linting, and high-value end-to-end journeys.
 
-BookWorm will combine:
+- **Positive:** Regressions in domain logic, contracts, or documentation are caught at the cheapest appropriate layer.
+- **Negative:** Contributors must keep contract and catalog checks aligned with code changes.
 
-- Fast business-rule checks
-- Architecture checks that enforce boundaries
-- Producer and consumer agreement checks
-- Information-format compatibility checks
-- Customer browser journeys
-- Documentation quality checks
+### Compliance Criteria
 
-### Consequences
-
-- **Positive:** Teams receive fast, targeted feedback across all major risk areas.
-- **Negative:** Multiple test types require maintenance and discipline.
-- **Follow-up:** Add stronger checks where database and emulator behavior are not yet covered.
-
-## Pros and cons of the options
-
-### Use separate automated checks for business rules, structure, agreements, information formats, and customer journeys
-
-- **Good**, because each risk has a suitable automated check.
-- **Good**, because connected-area agreements can be tested without starting every live service.
-- **Bad**, because contributors must maintain several kinds of checks.
-
-### Rely on small unit checks alone
-
-- **Good**, because checks run quickly.
-- **Bad**, because they cannot detect broken agreements or website behavior.
-
-### Rely on full browser journeys alone
-
-- **Good**, because tests exercise real customer interactions.
-- **Bad**, because they are slower and do not cover every internal rule.
-
-### Rely on manual review alone
-
-- **Good**, because humans apply judgment.
-- **Bad**, because manual inspection misses many subtle communication and repeated-change mistakes.
+- Domain logic changes must include unit tests; cross-service contract changes must pass consumer/provider contract verification.
+- Architecture tests must enforce vertical-slice and bounded-context dependency rules.
+- Documentation and EventCatalog changes must pass `eventcatalog-linter` and link validation.

@@ -10,121 +10,90 @@ badges:
     textColor: orange
 ---
 
-Use this guide when a book's `average_rating` or `total_reviews` in **Catalog API** disagrees with **Rating API**, or when `BookUpdatedRatingFailedIntegrationEvent` appears on Kafka. **Rating API** is the authoritative owner of individual `Feedback` documents in **Azure Cosmos DB** (`ratingdb` / container `feedbacks`, partition key `/bookId`—not PostgreSQL), while **Catalog API** maintains a derived summary in PostgreSQL (`catalogdb`).
+## Trigger / Symptom & Blast Radius
 
-## Prerequisites
-
-- Read access to **Catalog API** PostgreSQL (`catalogdb`) and **Rating API** Azure Cosmos DB (`ratingdb` / `feedbacks` via Azure Portal Data Explorer or local Cosmos DB Data Explorer).
-- Access to Kafka topic inspection (Kafka UI locally or Confluent Cloud in Azure) and OpenTelemetry / application logs for **Catalog API** and **Rating API**.
-
-## Steps
-
-<Steps>
-<Step title="Compare Catalog's derived summary against Rating's authoritative Cosmos DB records">
-
-Query the book's stored summary in PostgreSQL (`catalogdb`):
-
-<CodeGroup>
-
-```sql
-SELECT id, name, average_rating, total_reviews, is_deleted
-FROM books
-WHERE id = '<book-id>';
-```
-
-</CodeGroup>
-
-Where:
-
-- `<book-id>`: Target book UUID.
-
-Next, run a read-only SQL query in **Azure Cosmos DB** (`ratingdb`, container `feedbacks`, partition key `<book-id>`):
-
-<CodeGroup>
-
-```sql
-SELECT COUNT(1) AS total_reviews, AVG(c.rating) AS average_rating
-FROM c
-WHERE c.bookId = '<book-id>'
-```
-
-</CodeGroup>
-
-If `catalogdb` already matches `ratingdb`, check whether a stale Redis entry (`book:<book-id>`) is serving old values—see How to resolve a Catalog stale cache or Redis outage.
-
-</Step>
-<Step title="Check for missing-book compensation events">
-
-Inspect Kafka topic `bookworm.<env>.catalog.book-update-rating-failed` for `BookUpdatedRatingFailedIntegrationEvent` matching the book's feedback IDs. If present, **Catalog API** did not find `<book-id>` in `catalogdb` (either never created or deleted) and emitted the compensation event so **Rating API** deletes the orphaned feedback document.
-
-Where:
-
-- `<env>`: Environment slug in kebab-case (for example, `development`, `staging`, or `production`).
-
-</Step>
-<Step title="Inspect Kafka delivery, consumer lag, and Catalog's dead-letter queue">
-
-Check consumer lag and recent messages on:
-
-- `bookworm.<env>.rating.feedback-create` (`FeedbackCreatedIntegrationEvent`)
-- `bookworm.<env>.rating.feedback-delete` (`FeedbackDeletedIntegrationEvent`)
-- `bookworm.<env>.catalog.dead-letter-queue` (Wolverine native DLQ for **Catalog API**)
-
-Inspect **Catalog API** logs for handler failures in `FeedbackCreatedIntegrationEventHandler` or `FeedbackDeletedIntegrationEventHandler`.
-
-</Step>
-<Step title="Recover safely without double-counting">
-
-Fix the underlying broker, database, or handler failure first. Then choose the recovery path:
-
-- **Unprocessed DLQ messages:** Replay failed messages from `bookworm.<env>.catalog.dead-letter-queue` after fixing the root cause.
-- **Delta drift after partial failure or expired idempotency window:** `Book.AddRating` and `Book.RemoveRating` apply incremental delta math, and `IIntegrationEventIdempotencyGuard` deduplicates by `message.Id` for 24 hours in Redis. Replaying an already-applied event after 24 hours double-counts the rating. For confirmed multi-event drift, execute an approved data reconciliation setting `average_rating` and `total_reviews` directly from the authoritative Cosmos DB aggregate from Step 1, then invalidate `book:<book-id>` in Redis.
+A book's `average_rating` or `total_reviews` in [[service|catalog-api]] disagrees with [[service|rating-api]], or [[event|BookUpdatedRatingFailedIntegrationEvent]] appears on <ResourceLink id="bookworm.{env}.catalog.book-update-rating-failed" type="channel">`bookworm.{env}.catalog.book-update-rating-failed`</ResourceLink>. [[service|rating-api]] owns authoritative [[entity|feedback]] documents in [[container|rating-database]], while [[service|catalog-api]] maintains only a derived summary in [[container|catalog-database]].
 
 <Admonition type="danger">
-	Never invent or hand-edit `average_rating` or `total_reviews` without deriving the exact numbers
-	from **Rating API**'s Cosmos DB `ratingdb`/`feedbacks` container.
+	Never invent or hand-edit `average_rating` or `total_reviews` in [[container|catalog-database]]
+	without deriving the exact aggregate from [[container|rating-database]]. Replaying already-applied
+	rating events after the 24-hour idempotency window expires will double-count ratings.
 </Admonition>
+
+## Pre-Flight Check
+
+Compare Catalog's derived summary in [[container|catalog-database]] against the authoritative aggregate in [[container|rating-database]] (`ratingdb` / `feedbacks`):
+
+```sql
+SELECT id, name, average_rating, total_reviews, is_deleted FROM books WHERE id = '<BOOK_ID>';
+```
+
+```sql
+SELECT COUNT(1) AS total_reviews, AVG(c.rating) AS average_rating FROM c WHERE c.bookId = '<BOOK_ID>';
+```
+
+## Quick Recovery Procedure
+
+<Steps>
+<Step title="Check for missing-book compensation events">
+
+Inspect <ResourceLink id="bookworm.{env}.catalog.book-update-rating-failed" type="channel">`bookworm.{env}.catalog.book-update-rating-failed`</ResourceLink> for [[event|BookUpdatedRatingFailedIntegrationEvent]]. If present, [[service|catalog-api]] could not find `<BOOK_ID>` and emitted the compensation event so [[service|rating-api]] deletes the orphaned feedback document.
+
+</Step>
+<Step title="Inspect Kafka consumer lag and dead-letter queues">
+
+Check consumer lag and [[service|catalog-api]] logs across <ResourceLink id="bookworm.{env}.rating.feedback-create" type="channel">`bookworm.{env}.rating.feedback-create`</ResourceLink>, <ResourceLink id="bookworm.{env}.rating.feedback-delete" type="channel">`bookworm.{env}.rating.feedback-delete`</ResourceLink>, and <ResourceLink id="bookworm.{env}.catalog.dead-letter-queue" type="channel">`bookworm.{env}.catalog.dead-letter-queue`</ResourceLink>:
+
+```bash
+az containerapp logs show --name <SERVICE_NAME> --resource-group <RESOURCE_GROUP> --tail 150
+```
+
+</Step>
+<Step title="Recover without double-counting">
+
+**Unprocessed DLQ messages:** Fix the underlying database or handler fault first, then replay only unapplied messages from <ResourceLink id="bookworm.{env}.catalog.dead-letter-queue" type="channel">`bookworm.{env}.catalog.dead-letter-queue`</ResourceLink>.
+
+**Confirmed multi-event delta drift:** Execute an approved reconciliation setting `average_rating` and `total_reviews` directly from the authoritative [[container|rating-database]] aggregate, then evict `book:<BOOK_ID>` from [[container|catalog-cache]].
 
 </Step>
 </Steps>
 
 ## Verification
 
-Query **Catalog API** and confirm the returned `averageRating` and `totalReviews` match the Cosmos DB aggregate:
-
-<CodeGroup>
+Query [[service|catalog-api]] and confirm `averageRating` and `totalReviews` match [[container|rating-database]]:
 
 ```bash
-curl -sS "<gateway-url>/catalog/api/v1/books/<book-id>" | jq '{id, averageRating, totalReviews}'
+curl -sS "https://<GATEWAY_HOST>/catalog/api/v1/books/<BOOK_ID>" | jq '{id, averageRating, totalReviews}'
 ```
-
-</CodeGroup>
 
 Expected output:
 
-<CodeGroup>
-
 ```json
 {
-	"id": "<book-id>",
+	"id": "<BOOK_ID>",
 	"averageRating": 4.5,
 	"totalReviews": 12
 }
 ```
 
-</CodeGroup>
+## Rollback / Escalation
 
-## Troubleshooting
+- **Rollback:** Re-run the authoritative reconciliation query from [[container|rating-database]] and evict `book:<BOOK_ID>` in [[container|catalog-cache]] if a manual correction used wrong values.
+- **Escalation:** Escalate persistent projection or compensation failures to [[team|contributor-team]] with `<BOOK_ID>` and event IDs.
 
-| Symptom                                                                                         | Cause                                                                                                   | Fix                                                                                                                                    |
-| :---------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------------------------- |
-| `BookUpdatedRatingFailedIntegrationEvent` on `bookworm.<env>.catalog.book-update-rating-failed` | Feedback targeted a book ID that does not exist in `catalogdb`                                          | Verify the book ID; confirm **Rating API** consumed the event and deleted the orphaned Cosmos DB feedback                              |
-| `catalogdb` matches Cosmos DB, but `GET /catalog/api/v1/books/<book-id>` returns old numbers    | Stale Redis cache entry (`book:<book-id>`)                                                              | Follow How to resolve a Catalog stale cache or Redis outage to evict `book:<book-id>`                                                  |
-| Messages accumulating in `bookworm.<env>.catalog.dead-letter-queue`                             | **Catalog API** database error or handler exception exhausted Wolverine retries (`50ms / 250ms / 1s`)   | Fix the failing dependency in **Catalog API** logs, then replay only unapplied DLQ messages                                            |
-| `total_reviews` is higher than Cosmos DB `COUNT(1)`                                             | Duplicate event was replayed after the 24-hour Redis `IIntegrationEventIdempotencyGuard` window expired | Reconcile `average_rating` and `total_reviews` from Cosmos DB `ratingdb`/`feedbacks` via an approved update and evict `book:<book-id>` |
+<AccordionGroup>
+<Accordion title="Troubleshooting edge cases">
+
+| Symptom                                                                    | Cause                                                     | Fix                                                                                 |
+| :------------------------------------------------------------------------- | :-------------------------------------------------------- | :---------------------------------------------------------------------------------- |
+| [[container\|catalog-database]] matches Cosmos DB, API returns old numbers | Stale entry in [[container\|catalog-cache]]               | Evict `book:<BOOK_ID>` using the stale cache runbook                                |
+| `total_reviews` higher than Cosmos DB count                                | Duplicate event replayed after 24-hour idempotency expiry | Reconcile directly from [[container\|rating-database]] and evict cache              |
+| Messages accumulating in Catalog DLQ                                       | Transient DB or handler error exhausted retries           | Fix dependency in [[service\|catalog-api]] logs, then replay unapplied DLQ messages |
+
+</Accordion>
+</AccordionGroup>
 
 ## Related documentation
 
-- [[flow|feedback-publication]] — End-to-end Cosmos DB, Kafka, and PostgreSQL projection and compensation design.
-- Catalog feedback-created contract reference — Payload schema and handler mechanics for `FeedbackCreatedIntegrationEvent`.
-- Catalog feedback-deleted contract reference — Payload schema and no-op mechanics for `FeedbackDeletedIntegrationEvent`.
+- [[flow|feedback-publication]] — End-to-end review projection and compensation flow.
+- [[adr|adr-006-reviews-rating-projection-on-book]] — Derived rating summary boundary.

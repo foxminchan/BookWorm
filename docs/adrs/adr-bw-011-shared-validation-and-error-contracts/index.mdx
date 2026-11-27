@@ -18,58 +18,42 @@ decisionMakers:
 x-scope: "Whole system (HTTP API services)"
 ---
 
-## Context and problem statement
+| Field                  | Value                                                                                           |
+| :--------------------- | :---------------------------------------------------------------------------------------------- |
+| **Status**             | Proposed                                                                                        |
+| **Date**               | 2026-11-07                                                                                      |
+| **Owners**             | [[team\|contributor-team]]                                                                      |
+| **Affected Resources** | [[domain\|bookworm]]                                                                            |
+| **Related ADRs**       | [[adr\|adr-bw-009-local-cqrs-building-blocks]], [[adr\|adr-bw-013-opentelemetry-observability]] |
 
-Invalid entries, missing items, changed records, and unexpected failures can occur in every customer-facing area. If each area returns errors differently, websites must understand many formats and may expose technical details.
+## Context & Problem Statement
 
-BookWorm needs consistent input checks and understandable error responses.
+Every HTTP API in [[domain|bookworm]] handles invalid payloads, missing resources, rate limits, and unexpected faults. If each service invents its own error schema or leaks raw stack traces, microfrontends become brittle and internal implementation details are exposed to callers.
 
-## Decision drivers
+## Decision Drivers
 
-- **Input correctness:** Reject malformed requests before they change or read business information.
-- **Predictable answers:** Use one consistent error format across areas.
-- **Security:** Hide technical details while giving support teams enough information to diagnose a problem.
+- **Early rejection:** Validate inputs before executing business logic or database writes.
+- **Contract consistency:** Return RFC-compliant `ProblemDetails` across all HTTP services.
+- **Information security:** Keep stack traces and internal exception details out of client responses.
 
-## Considered options
+## Options Considered
 
-1. Check requests in a shared pipeline and return one standard error format
-2. Build validation and errors separately in every connection point
-3. Show technical failure details to customers
-4. Hide failures behind successful responses
+| Option                                                            | Pros                                                             | Cons                                                            |
+| :---------------------------------------------------------------- | :--------------------------------------------------------------- | :-------------------------------------------------------------- |
+| **Shared validation pipeline + standard `ProblemDetails` errors** | Consistent client error handling; invalid requests blocked early | Services must register validators and domain exception mappings |
+| **Ad-hoc per-endpoint validation and errors**                     | Zero shared-pipeline setup                                       | Error formats and status codes diverge across services          |
+| **Return raw exception details to clients**                       | Faster ad-hoc debugging                                          | Leaks internal schemas, paths, and stack traces                 |
+| **Mask failures behind `200 OK` responses**                       | Uniform HTTP status                                              | Breaks HTTP semantics and misleads retry logic                  |
 
-## Decision outcome
+## Decision & Consequences
 
-Chosen option: **Check requests in a shared pipeline and return one standard error format**.
+**Chosen Option:** Validate requests in a shared pre-handler pipeline and map failures to standardized `ProblemDetails` HTTP responses carrying a correlation trace ID. Detailed exception diagnostics remain strictly in protected OpenTelemetry logs.
 
-Each area checks inputs before business work begins. Missing items and too many requests receive clear and consistent messages.
+- **Positive:** Storefront and Backoffice handle validation, `404`, `409`, `429`, and `500` responses uniformly.
+- **Negative:** Every new command or query must include an explicit validator and exception mapping where applicable.
 
-Unexpected errors receive a safe generic message plus a trace reference for support. Technical details remain in protected system logs.
+### Compliance Criteria
 
-### Consequences
-
-- **Positive:** Customer applications receive predictable answers across all areas.
-- **Negative:** Every area must register and maintain its own rules and conflict responses.
-- **Follow-up:** Test error responses whenever an area or customer request changes.
-
-## Pros and cons of the options
-
-### Check requests in a shared pipeline and return one standard error format
-
-- **Good**, because invalid work never reaches business or outside systems.
-- **Good**, because customer applications understand one consistent format.
-- **Bad**, because each area must confirm that it uses the shared checks correctly.
-
-### Build validation and errors separately in every connection point
-
-- **Good**, because each connection point works independently.
-- **Bad**, because formats and rules quickly diverge.
-
-### Show technical failure details to customers
-
-- **Good**, because developers can see detailed information immediately.
-- **Bad**, because customers or attackers may learn private system details.
-
-### Hide failures behind successful responses
-
-- **Good**, because a website may receive a consistent status.
-- **Bad**, because it makes success, failure, and retry decisions misleading.
+- HTTP APIs must return `ProblemDetails` for validation (`400`), missing (`404`), conflict (`409`), rate-limit (`429`), and server (`500`) errors.
+- Production error responses must never expose stack traces, SQL errors, or internal file paths.
+- Request validation must run in the shared pipeline before handler execution.

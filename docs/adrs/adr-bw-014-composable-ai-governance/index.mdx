@@ -25,61 +25,42 @@ decisionMakers:
 x-scope: "Whole system (Chat API, Rating API, MCP Tools)"
 ---
 
-## Context and problem statement
+| Field                  | Value                                                                                                                                                                                                                                                    |
+| :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Status**             | Proposed                                                                                                                                                                                                                                                 |
+| **Date**               | 2026-11-07                                                                                                                                                                                                                                               |
+| **Owners**             | [[team\|contributor-team]]                                                                                                                                                                                                                               |
+| **Affected Resources** | [[domain\|bookworm]], [[system\|chat-system]], [[system\|rating-system]], [[service\|chat-api]], [[service\|rating-api]], [[service\|mcp-server]], [[service\|presidio-api]]                                                                             |
+| **Related ADRs**       | [[adr\|adr-002-fail-closed-pii-middleware]], [[adr\|adr-005-govern-agent-tools-per-agent]], [[adr\|adr-004-read-only-governed-feedback-summarization]], [[adr\|adr-001-use-presidio-analyze-for-pii-detection]], [[adr\|adr-002-anonymize-detected-pii]] |
 
-Chat assistance, review summaries, and connected AI tools handle customer words and review text. They may use models and external tools, so one bad input or one overly broad permission could cause harm.
+## Context & Problem Statement
 
-BookWorm needs shared safety controls while also requiring each AI capability to declare its own permissions and limits.
+[[service|chat-api]], [[service|rating-api]], and [[service|mcp-server]] process customer prompts and review text using foundation models and external tools. Relying solely on system prompts is not a security boundary, while re-implementing PII detection and tool authorization per agent invites drift and privilege leaks.
 
-## Decision drivers
+## Decision Drivers
 
-- **Defensive layers:** Check personal data, instructions, results, and permissions before and after AI activity.
-- **Minimum access:** Give each AI capability only the data and actions it needs.
-- **Explicit verification:** Require every new AI route to declare and test its safety controls.
+- **Defense in depth:** Enforce PII redaction, prompt-injection guardrails, and tool policies before and after model calls.
+- **Least privilege:** Grant each agent identity only the exact tools and scopes it requires.
+- **Explicit opt-in verification:** Require every AI path to declare and test its governance registration.
 
-## Considered options
+## Options Considered
 
-1. Use shared safety controls plus specific rules for each AI capability
-2. Rely only on instructions given to the model
-3. Build separate safety controls for every AI area
-4. Assume one shared package protects every AI route
+| Option                                                           | Pros                                                                 | Cons                                                                |
+| :--------------------------------------------------------------- | :------------------------------------------------------------------- | :------------------------------------------------------------------ |
+| **Composable shared governance + per-agent policy declarations** | Consistent PII/guardrail reuse with strict per-agent least privilege | Adds middleware latency; requires per-path policy maintenance       |
+| **Prompt-only safety instructions**                              | Zero middleware overhead                                             | Easily bypassed by prompt injection; not an enforceable boundary    |
+| **Custom per-agent safety code**                                 | Full local control                                                   | Duplicates Presidio/guardrail logic and drifts over time            |
+| **Implicit global package protection**                           | Fast initial wiring                                                  | Direct model calls or missed registrations silently bypass controls |
 
-## Decision outcome
+## Decision & Consequences
 
-Chosen option: **Use shared safety controls plus specific rules for each AI capability**.
+**Chosen Option:** Compose shared AI governance—[[service|presidio-api]] PII anonymization, input/output guardrails, and default-deny tool policies—explicitly on every enabled AI path across [[system|chat-system]], [[system|rating-system]], and [[system|mcp-tools]].
 
-BookWorm will combine:
+- **Positive:** Consistent privacy and safety enforcement without granting one agent another's tool permissions.
+- **Negative:** Additional middleware hops add measurable latency to AI turns.
 
-- Shared rules that apply across AI features
-- Personal-data protection that removes or masks sensitive values
-- Input and output checks that reject unsafe requests or results
-- Separate identities and permissions for each AI capability
+### Compliance Criteria
 
-### Consequences
-
-- **Positive:** AI areas share consistent privacy and safety controls while keeping permissions separate.
-- **Negative:** Safety tools add work and may slow a response.
-- **Follow-up:** Review rules and permissions whenever a new AI capability or tool is added.
-
-## Pros and cons of the options
-
-### Use shared safety controls plus specific rules for each AI capability
-
-- **Good**, because proven controls are reused while permissions remain narrow.
-- **Good**, because one AI capability cannot automatically inherit another's permissions.
-- **Bad**, because no safety control can guarantee protection from every new attack.
-
-### Rely only on instructions given to the model
-
-- **Good**, because setup is simple.
-- **Bad**, because instructions are not an enforceable security boundary.
-
-### Build separate safety controls for every AI area
-
-- **Good**, because each capability controls its own safeguards.
-- **Bad**, because fixes must be repeated and rules may drift apart.
-
-### Assume one shared package protects every AI route
-
-- **Good**, because adding a route appears faster initially.
-- **Bad**, because direct AI calls or missed registration can bypass safeguards.
+- Every agent and AI workflow must register PII middleware, guardrail evaluation, and a default-deny tool policy.
+- Agent tool allowlists must follow least privilege (e.g., [[agent|qa-agent]] cannot access catalog tools; [[agent|rating-agent]] is read-only).
+- AI paths must fail closed when [[service|presidio-api]] or guardrail evaluation is unavailable.

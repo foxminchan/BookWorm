@@ -18,58 +18,42 @@ decisionMakers:
 x-scope: "Whole system (documentation and governance)"
 ---
 
-## Context and problem statement
+| Field                  | Value                                                                                                    |
+| :--------------------- | :------------------------------------------------------------------------------------------------------- |
+| **Status**             | Proposed                                                                                                 |
+| **Date**               | 2026-11-07                                                                                               |
+| **Owners**             | [[team\|contributor-team]]                                                                               |
+| **Affected Resources** | [[domain\|bookworm]]                                                                                     |
+| **Related ADRs**       | [[adr\|adr-bw-016-layered-architecture-verification]], [[adr\|adr-bw-017-compatible-contract-evolution]] |
 
-BookWorm describes its structure in one place and records decisions in another. Copying the full explanation into both places can leave them out of date when a choice changes.
+## Context & Problem Statement
 
-BookWorm needs one authoritative record for each decision, with an index that only helps readers find it.
+BookWorm documents its architecture in arc42 chapters alongside EventCatalog ADRs. Duplicating full decision rationale across both places causes status drift and conflicting guidance whenever a decision is updated or superseded.
 
-## Decision drivers
+## Decision Drivers
 
-- **Traceability:** Give readers one place to review the reason for a decision and any later replacement.
-- **No duplication:** Prevent conflicting descriptions and statuses.
-- **Clear scope:** Separate whole-system choices from choices that belong to one specific area.
+- **Single source of truth:** Maintain one authoritative record per decision with clear status and history.
+- **Zero duplication:** Keep arc42 Section 9 as an index linking to ADRs rather than copying prose.
+- **Clear scoping:** Separate platform-wide decisions from system-specific decisions.
 
-## Considered options
+## Options Considered
 
-1. Keep one authoritative record per decision and index those records centrally
-2. Copy full explanations into the overall design chapters
-3. Put every decision in one ungrouped folder
-4. Keep decisions only inside individual area folders
+| Option                                                    | Pros                                                             | Cons                                                 |
+| :-------------------------------------------------------- | :--------------------------------------------------------------- | :--------------------------------------------------- |
+| **Root platform ADRs + system-scoped ADRs + arc42 index** | Clear scope, single source of truth, native EventCatalog linking | New ADRs require updating both the ADR and the index |
+| **Duplicate full ADR text inside arc42**                  | Everything on one page                                           | Quickly drifts out of sync with ADR status           |
+| **Flat ungrouped ADR folder**                             | Simple folder path                                               | Mixes platform-wide and local system decisions       |
+| **System folders only (no root ADRs)**                    | Local team autonomy                                              | Fragments cross-cutting platform decisions           |
 
-## Decision outcome
+## Decision & Consequences
 
-Chosen option: **Keep one authoritative record per decision and index those records centrally**.
+**Chosen Option:** Store whole-system ADRs at the catalog root (`ADR-BW-*`), keep system-specific ADRs nested under their owning system, and maintain [[doc|arc42/09-architecture-decisions]] as a reference register. Superseded decisions remain immutable in history and link to their replacement via `supersededBy`.
 
-Whole-system decisions remain separate from system-specific decisions. The index shows which decisions are active and which have been replaced.
+- **Positive:** Readers always see one authoritative status, scope, and supersession chain.
+- **Negative:** Authors must link new ADRs into `appliesTo` and the central register.
 
-When an area replaces a previous choice, maintainers add a new record and link it to the old one instead of rewriting history.
+### Compliance Criteria
 
-### Consequences
-
-- **Positive:** Readers find one clear record with its current status and history.
-- **Negative:** Adding or replacing a decision requires updating both the record and the index.
-- **Follow-up:** Keep the index and active decisions current and mark reconstructed decisions as proposed until approved.
-
-## Pros and cons of the options
-
-### Keep one authoritative record per decision and index those records centrally
-
-- **Good**, because every decision has one clear location and replacement history.
-- **Good**, because whole-system choices are not buried inside one area's records.
-- **Bad**, because contributors must maintain both the record and index.
-
-### Copy full explanations into the overall design chapters
-
-- **Good**, because readers can see every decision on one page.
-- **Bad**, because duplicate explanations quickly become inconsistent.
-
-### Put every decision in one ungrouped folder
-
-- **Good**, because every decision is easy to locate by folder.
-- **Bad**, because whole-system and area-specific decisions lose their clear scope.
-
-### Keep decisions only inside individual area folders
-
-- **Good**, because local teams manage their own decisions.
-- **Bad**, because whole-system decisions become fragmented and replacements may be missed.
+- Platform-wide decisions must live at the catalog root; system-scoped decisions must live under their owning system.
+- Arc42 documentation must link to ADRs via `[[adr|...]]` rather than duplicating decision rationale.
+- Superseded ADRs must set `status: superseded`, populate `supersededBy`, and display a top warning callout.

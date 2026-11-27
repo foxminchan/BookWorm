@@ -24,58 +24,42 @@ decisionMakers:
 x-scope: "Whole system (especially Catalog and Reviews)"
 ---
 
-## Context and problem statement
+| Field                  | Value                                                                                                                                                                                                               |
+| :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Status**             | Proposed                                                                                                                                                                                                            |
+| **Date**               | 2026-11-07                                                                                                                                                                                                          |
+| **Owners**             | [[team\|contributor-team]]                                                                                                                                                                                          |
+| **Affected Resources** | [[domain\|bookworm]], [[system\|product-catalog-system]], [[system\|rating-system]]                                                                                                                                 |
+| **Related ADRs**       | [[adr\|adr-bw-006-service-owned-business-state]], [[adr\|adr-002-hybrid-vector-search-qdrant]], [[adr\|adr-006-reviews-rating-projection-on-book]], [[adr\|adr-002-publish-feedback-events-for-catalog-projection]] |
 
-Book discovery needs fast search results and current rating summaries. The original book information and individual reviews remain stored in their respective owning areas. Search indexes and summaries are helpful copies, not the original source.
+## Context & Problem Statement
 
-BookWorm needs a clear rule that distinguishes original information from copies prepared for faster access.
+Book discovery relies on fast semantic search in [[container|catalog-vector]] and pre-aggregated rating summaries on [[entity|book]] records, while authoritative product and review records live in [[container|catalog-database]] and [[container|rating-database]]. Treating derived caches or search projections as authoritative truth risks exposing stale prices or orphaned data.
 
-## Decision drivers
+## Decision Drivers
 
-- **Fast reading:** Optimize search and summaries without moving ownership of the original information.
-- **Reliable decisions:** Checkout and changes must use the authoritative source, not an outdated copy.
-- **Clear updates:** Make delayed updates and recovery steps understandable.
+- **Read performance:** Support rich search and fast browsing without overloading primary stores.
+- **Commercial accuracy:** Ensure checkout and mutations always read authoritative state.
+- **Rebuildability:** Allow derived views to be reconstructed from source data after drift or loss.
 
-## Considered options
+## Options Considered
 
-1. Keep fast-access copies separate and allow short update delays
-2. Treat search indexes and summaries as the original source
-3. Update every copy immediately during every original change
-4. Check every original record for every search
+| Option                                                        | Pros                                                        | Cons                                                           |
+| :------------------------------------------------------------ | :---------------------------------------------------------- | :------------------------------------------------------------- |
+| **Separate derived views with explicit eventual consistency** | High read throughput; derived stores can be rebuilt anytime | Users may see brief staleness windows during async propagation |
+| **Treat search index / projections as authoritative**         | Single read/write path                                      | Risks silent drift, lost history, and stale checkout pricing   |
+| **Synchronous two-phase updates to all views**                | Zero propagation lag                                        | Outages in search or projections block core writes             |
+| **Query primary stores for every search**                     | Always up to date                                           | Slow cross-service reads and poor semantic search capabilities |
 
-## Decision outcome
+## Decision & Consequences
 
-Chosen option: **Keep fast-access copies separate and allow short update delays**.
+**Chosen Option:** Treat search indexes, read caches, and cross-domain projections as non-authoritative derived views updated asynchronously. Purchase validation and mutations must always resolve against the authoritative system of record.
 
-BookWorm will prepare search indexes and rating summaries in the background. These copies may be briefly stale, but they can be rebuilt without changing the original information.
+- **Positive:** Derived stores scale independently and can be rebuilt from primary records without data loss.
+- **Negative:** UIs and operators must account for bounded eventual consistency windows.
 
-The responsible area remains the source for purchase checks and important actions. Search displays and summaries remain supplementary until their updates catch up.
+### Compliance Criteria
 
-### Consequences
-
-- **Positive:** Search and summaries can be rebuilt independently without changing original records.
-- **Negative:** Customers may briefly see outdated rankings or totals.
-- **Follow-up:** Monitor update delays and the success of rebuilding tasks.
-
-## Pros and cons of the options
-
-### Keep fast-access copies separate and allow short update delays
-
-- **Good**, because search tools can handle heavy reading without slowing original updates.
-- **Good**, because copies can be recreated when they become incorrect.
-- **Bad**, because customer views must tolerate temporary delays.
-
-### Treat search indexes and summaries as the original source
-
-- **Good**, because one location serves both reading and writing.
-- **Bad**, because a copy may lose history or cannot resolve changes safely.
-
-### Update every copy immediately during every original change
-
-- **Good**, because copies stay current immediately.
-- **Bad**, because an outage in one copy can block essential updates.
-
-### Check every original record for every search
-
-- **Good**, because results are always current.
-- **Bad**, because checking several areas makes browsing slower and limits advanced search.
+- Checkout price and availability checks must read from [[container|catalog-database]] (via [[service|catalog-api]]), never from [[container|catalog-vector]] or cache payloads.
+- Every derived view must document its authoritative source, expected lag, and rebuild/reconciliation procedure.
+- Derived projections must be read-only to external callers.

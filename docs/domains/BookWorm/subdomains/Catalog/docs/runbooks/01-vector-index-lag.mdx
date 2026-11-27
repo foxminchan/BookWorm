@@ -10,148 +10,113 @@ badges:
     textColor: orange
 ---
 
-Use this guide when newly created, edited, or deleted books appear in direct lookups (`GET /catalog/api/v1/books/{id}`) and filtered listings, but are missing or outdated in free-text search. **Catalog Ingestion** (`BookWorm.Catalog.Ingestion`) is an internal Azure Functions worker with **no HTTP API**—it is triggered every five minutes by **Scheduler** (`ProcessVectorBatchJob`) over Kafka topic `scheduler.process-vector-batch` (consumer group `catalog-ingestion`) to sync up to 200 queued rows per batch from PostgreSQL (`catalogdb`) into Qdrant (`vectordb`). Impact is limited to free-text search discovery; checkout and authoritative catalog browsing remain unaffected.
+## Trigger / Symptom & Blast Radius
 
-## Prerequisites
-
-- Read access to PostgreSQL (`catalogdb`) and **Catalog Ingestion** / **Scheduler** logs.
-- Access to **Quartz Dashboard** (`/quartz`, requires Microsoft Entra ID `admin` role) and Kafka topic inspection (Kafka UI locally or Confluent Cloud in Azure).
-- Operational approval before terminating a stuck PostgreSQL backend session or running a full-index rebuild.
-
-## Steps
-
-<Steps>
-<Step title="Measure the pending queue in `catalogdb`">
-
-Run this read-only query against PostgreSQL (`catalogdb`) to check queue depth and oldest waiting timestamp:
-
-<CodeGroup>
-
-```sql
-SELECT
-    count(*) AS pending_books,
-    min(updated_at) AS oldest_pending_update,
-    clock_timestamp() - min(updated_at) AS oldest_pending_age
-FROM pending_vector_updates;
-```
-
-</CodeGroup>
-
-If `pending_books` is `0`, the queue is drained—verify whether the search result is cached (`catalog:books:search:v1:*`) or whether Qdrant collection `data-bookworm-snippets` was recreated.
-
-</Step>
-<Step title="Verify Scheduler and Kafka delivery">
-
-Open **Quartz Dashboard** at `/quartz` and confirm `ProcessVectorBatchJob` (cron `0 0/5 * * * ?` UTC, `FireOnceNow` misfire policy) is firing without errors. Then inspect Kafka topic `scheduler.process-vector-batch` and consumer group `catalog-ingestion`:
-
-- **No recent messages on `scheduler.process-vector-batch`:** Inspect **Scheduler** (`BookWorm.Scheduler`) logs and `schedulerdb` connectivity (note that **Scheduler** uses `.WithExplicitStart()` in local Aspire runs and must be started manually in the Aspire Dashboard).
-- **Messages present, high lag on consumer group `catalog-ingestion`:** Inspect **Catalog Ingestion** (`BookWorm.Catalog.Ingestion`) container health and `ProcessVectorBatchFunction` logs.
-
-</Step>
-<Step title="Check for a stuck PostgreSQL advisory lock (`740031001`)">
-
-`VectorBatchProcessor.ProcessAsync` acquires advisory lock `740031001` via `pg_try_advisory_lock(740031001)` and exits with `0` processed items if another session holds the lock. Check whether an orphaned session is holding it in `catalogdb`:
-
-<CodeGroup>
-
-```sql
-SELECT l.pid, a.usename, a.application_name, a.state, a.query_start, a.query
-FROM pg_locks l
-JOIN pg_stat_activity a ON a.pid = l.pid
-WHERE l.locktype = 'advisory'
-  AND l.objid = 740031001;
-```
-
-</CodeGroup>
-
-If a dead or hung session owns lock `740031001`, terminate only that verified PID:
-
-<CodeGroup>
-
-```sql
-SELECT pg_terminate_backend(<stuck-pid>);
-```
-
-</CodeGroup>
-
-Where:
-
-- `<stuck-pid>`: PostgreSQL backend PID returned by the `pg_locks` query above.
-
-</Step>
-<Step title="Check Microsoft Foundry embeddings and Qdrant health">
-
-Inspect **Catalog Ingestion** logs for exceptions from:
-
-- **Microsoft Foundry (`Cohere.EmbedV40`):** `InvalidOperationException("The embedding service returned an incomplete batch.")` or HTTP/auth errors abort the batch before any Qdrant writes or queue acknowledgements.
-- **Qdrant (`vectordb`, collection `data-bookworm-snippets`):** Connection timeouts or upsert/delete errors preserve unacknowledged rows in `pending_vector_updates` for safe retry on the next run.
-
-</Step>
-<Step title="Drain the backlog or run a full index rebuild">
-
-Once the underlying dependency is healthy, unacknowledged rows retry automatically on the next 5-minute `ProcessVectorBatchJob` firing (up to `200` books per batch). Trigger `ProcessVectorBatchJob` repeatedly in **Quartz Dashboard** (`/quartz`) to drain a large backlog faster.
+Newly created, edited, or deleted books appear in direct lookups and structured browse, but are missing or outdated in free-text search. [[service|catalog-ingestion]] is an internal background worker triggered every 5 minutes by [[service|scheduler-service]] over [[channel|scheduler.process-vector-batch]] to sync up to 200 queued rows per batch from [[container|catalog-database]] into [[container|catalog-vector]]. Blast radius is limited to free-text search discovery; checkout and authoritative catalog browsing remain unaffected.
 
 <Admonition type="danger">
-	Run a full index rebuild only as an approved operational action after Qdrant data loss or an
-	indexed-field schema change. Never manually delete rows from `pending_vector_updates` to hide a
+	Run a full index rebuild only after confirmed vector store data loss or an indexed-field schema
+	change. Never manually delete pending queue rows from [[container|catalog-database]] to hide a
 	backlog.
 </Admonition>
 
-To re-enqueue every book in `catalogdb` for a full rebuild:
+## Pre-Flight Check
 
-<CodeGroup>
+Verify [[service|catalog-ingestion]] container health and check pending queue depth in [[container|catalog-database]]:
+
+```bash
+az containerapp show --name <SERVICE_NAME> --resource-group <RESOURCE_GROUP> --query "properties.runningStatus" -o tsv
+```
+
+```sql
+SELECT count(*) AS pending_books, min(updated_at) AS oldest_pending_update, clock_timestamp() - min(updated_at) AS oldest_pending_age
+FROM pending_vector_updates;
+```
+
+## Quick Recovery Procedure
+
+<Steps>
+<Step title="Verify Scheduler and Kafka delivery">
+
+Open Quartz Dashboard at `/quartz` (requires `admin` role) and confirm the 5-minute vector batch job is firing without errors, then inspect consumer lag on [[channel|scheduler.process-vector-batch]]:
+
+```bash
+az containerapp logs show --name <SERVICE_NAME> --resource-group <RESOURCE_GROUP> --tail 100
+```
+
+If running locally in Aspire, ensure the [[service|scheduler-service]] resource is started manually in the Aspire Dashboard.
+
+</Step>
+<Step title="Check for a stuck PostgreSQL advisory lock">
+
+If [[service|catalog-ingestion]] logs show skipped runs (`0` processed items), check whether an orphaned session holds the ingestion advisory lock (`740031001`) in [[container|catalog-database]]:
+
+```sql
+SELECT l.pid, a.usename, a.application_name, a.state, a.query_start
+FROM pg_locks l
+JOIN pg_stat_activity a ON a.pid = l.pid
+WHERE l.locktype = 'advisory' AND l.objid = 740031001;
+```
+
+Terminate only a verified dead or hung session:
+
+```sql
+SELECT pg_terminate_backend(<STUCK_PID>);
+```
+
+</Step>
+<Step title="Verify embedding provider and vector store health">
+
+Check [[service|catalog-ingestion]] logs for Microsoft Foundry embedding errors or [[container|catalog-vector]] connection timeouts. Unacknowledged rows remain safely queued in [[container|catalog-database]] and retry automatically on the next 5-minute cycle.
+
+</Step>
+<Step title="Drain backlog or trigger approved full rebuild">
+
+Once dependencies are healthy, trigger the vector batch job in Quartz Dashboard to drain a large backlog faster. Only if [[container|catalog-vector]] suffered data loss, re-enqueue all books:
 
 ```sql
 INSERT INTO pending_vector_updates (book_id)
 SELECT id FROM books
-ON CONFLICT (book_id) DO UPDATE
-SET revision = gen_random_uuid(), updated_at = clock_timestamp();
+ON CONFLICT (book_id) DO UPDATE SET revision = gen_random_uuid(), updated_at = clock_timestamp();
 ```
-
-</CodeGroup>
 
 </Step>
 </Steps>
 
 ## Verification
 
-Re-run the pending queue query in `catalogdb` and confirm `pending_books` trends to `0`:
-
-<CodeGroup>
+Re-run the pending queue query in [[container|catalog-database]] and confirm `pending_books` trends to `0`:
 
 ```sql
-SELECT count(*) AS pending_books, min(updated_at) AS oldest_pending_update
-FROM pending_vector_updates;
+SELECT count(*) AS pending_books FROM pending_vector_updates;
 ```
-
-</CodeGroup>
 
 Expected output:
 
-<CodeGroup>
-
 ```text
- pending_books | oldest_pending_update
----------------+-----------------------
-             0 |
+ pending_books
+---------------
+             0
 ```
 
-</CodeGroup>
+## Rollback / Escalation
 
-Search for a recently edited book through **API Gateway** (`GET /catalog/api/v1/books?search=<search-term>`) and confirm it appears in the results.
+- **Rollback:** If a full rebuild saturates embedding quotas, pause the trigger in Quartz Dashboard (`/quartz`) until quota recovers, then resume.
+- **Escalation:** Escalate persistent embedding, vector store, or ingestion failures to [[team|platform-team]] or [[team|contributor-team]] with queue age and sanitized logs.
 
-## Troubleshooting
+<AccordionGroup>
+<Accordion title="Troubleshooting edge cases">
 
-| Symptom                                                                            | Cause                                                                                                            | Fix                                                                                                               |
-| :--------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------- |
-| `pending_books` grows locally and no events reach Kafka                            | **Scheduler** is configured with `.WithExplicitStart()` in `AppHost.cs` and is not running                       | Start `scheduler` in the Aspire Dashboard and trigger `ProcessVectorBatchJob`                                     |
-| `ProcessVectorBatchFunction` executes cleanly but `pending_books` never shrinks    | Another session holds PostgreSQL advisory lock `740031001`                                                       | Query `pg_locks` for `objid = 740031001` and terminate the stuck session with `pg_terminate_backend(<stuck-pid>)` |
-| Consumer lag increases on `scheduler.process-vector-batch` (`catalog-ingestion`)   | **Catalog Ingestion** Azure Function is down, crashing on CloudEvents deserialization, or unreachable from Kafka | Inspect `BookWorm.Catalog.Ingestion` logs and Kafka broker connection string (`ConnectionStrings__broker`)        |
-| Logs report `The embedding service returned an incomplete batch` or Foundry errors | Microsoft Foundry `embedding` deployment (`Cohere.EmbedV40`) throttled or unreachable                            | Check Microsoft Foundry quota, health, and `CognitiveServicesUser` RBAC; rows remain queued for automatic retry   |
-| Logs report Qdrant write errors                                                    | `vectordb` unreachable or `ConnectionStrings__vectordb` invalid                                                  | Restore Qdrant health and verify `data-bookworm-snippets` collection; re-trigger `ProcessVectorBatchJob`          |
+| Symptom                                    | Cause                                                            | Fix                                                          |
+| :----------------------------------------- | :--------------------------------------------------------------- | :----------------------------------------------------------- |
+| `pending_books` is `0` but search is stale | Search result is cached in [[container\|catalog-cache]]          | Wait for cache expiry or follow the stale cache runbook      |
+| Jobs never fire locally                    | [[service\|scheduler-service]] requires explicit start in Aspire | Start [[service\|scheduler-service]] in the Aspire Dashboard |
+| Batch aborts with incomplete embeddings    | Microsoft Foundry rate limit or auth failure                     | Verify Managed Identity RBAC and Foundry quota               |
+
+</Accordion>
+</AccordionGroup>
 
 ## Related documentation
 
-- [[flow|product-ingestion]] — End-to-end architecture of `pending_vector_updates`, Kafka triggering, advisory locking, and revision-checked acknowledgement.
-- Catalog search and discovery — How customer free-text search queries Qdrant and hydrates from PostgreSQL.
-- How to resolve a Catalog stale cache or Redis outage — Evict stale `catalog:books:search:v1:*` cache entries if the queue is already empty.
+- [[flow|product-ingestion]] — End-to-end vector indexing pipeline.
+- [[adr|adr-003-database-queue-for-vector-indexing]] — Why Catalog uses a transactional database queue.

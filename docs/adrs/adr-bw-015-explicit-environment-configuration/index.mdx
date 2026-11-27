@@ -19,60 +19,42 @@ decisionMakers:
 x-scope: "Whole system"
 ---
 
-## Context and problem statement
+| Field                  | Value                                                                                                                                               |
+| :--------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Status**             | Proposed                                                                                                                                            |
+| **Date**               | 2026-11-07                                                                                                                                          |
+| **Owners**             | [[team\|platform-team]]                                                                                                                             |
+| **Affected Resources** | [[domain\|bookworm]]                                                                                                                                |
+| **Related ADRs**       | [[adr\|adr-bw-003-aspire-shared-service-defaults]], [[adr\|adr-bw-005-kafka-integration-backbone]], [[adr\|adr-bw-013-opentelemetry-observability]] |
 
-BookWorm can run locally for development and be released to live environments. Some features change based on the environment, including background messaging, monitoring, stored information, and safe testing routes.
+## Context & Problem Statement
 
-BookWorm needs to keep the overall design separate from details that change in each environment.
+BookWorm runs locally under Aspire orchestration using emulators (Mailpit, Azurite, local Kafka/Cosmos/Redis) and deploys to Azure Container Apps using managed services (Confluent Cloud, SendGrid, Azure Managed Redis, Cosmos DB, Entra ID). Hardcoding environment assumptions into logical architecture docs or treating local emulators as production-equivalent creates operational blind spots.
 
-## Decision drivers
+## Decision Drivers
 
-- **Operational accuracy:** Do not assume local test tools match live reliability or security settings.
-- **Clear differences:** Make environment-specific behavior visible and testable.
-- **Single release workflow:** Use one established process to prepare and release environments.
+- **Operational accuracy:** Distinguish local emulator behavior from managed production SLAs and security.
+- **Portability:** Keep business contracts identical across environments.
+- **Release safety:** Make environment-specific parameters explicit and verifiable before promotion.
 
-## Considered options
+## Options Considered
 
-1. Separate the overall design from explicit environment settings
-2. Treat local test setup as the live setup
-3. Assume every environment uses identical settings
-4. Record a fixed live setup inside the overall design decisions
+| Option                                                             | Pros                                                                 | Cons                                                            |
+| :----------------------------------------------------------------- | :------------------------------------------------------------------- | :-------------------------------------------------------------- |
+| **Separate logical architecture from explicit environment config** | Simple local dev; production-grade managed services; stable diagrams | Environment overrides must be maintained and verified           |
+| **Treat local Aspire setup as production**                         | Single config to document                                            | Local emulators lack production durability, RBAC, and scaling   |
+| **Identical settings in all environments**                         | Fewer config knobs                                                   | Hides critical security, sampling, and scaling differences      |
+| **Embed live hosting details into logical ADRs**                   | Concrete hosting specs                                               | Routine infra changes invalidate logical architecture decisions |
 
-## Decision outcome
+## Decision & Consequences
 
-Chosen option: **Separate the overall design from explicit environment settings**.
+**Chosen Option:** Keep logical service and contract architecture separate from explicit environment configuration. Local environments use lightweight emulators, while staging and production environments use managed Azure services, Entra ID RBAC, and environment-tuned observability.
 
-Local and live environments will use the same business agreements but may use different supporting equipment.
+- **Positive:** Logical architecture stays stable while environment-specific differences remain transparent and auditable.
+- **Negative:** Promotion pipelines must validate environment parameters, RBAC, and health endpoints per target.
 
-Local environments may use lightweight tools and test versions. Live environments use managed services, stronger security, and availability settings appropriate to the deployment.
+### Compliance Criteria
 
-Every release must verify that connections, monitoring, login permissions, and health checks work in the target environment.
-
-### Consequences
-
-- **Positive:** Overall diagrams remain stable while environment choices remain visible.
-- **Negative:** Teams must maintain environment settings and protected connection details separately.
-- **Follow-up:** Update environment guidance whenever live setup or release processes change.
-
-## Pros and cons of the options
-
-### Separate the overall design from explicit environment settings
-
-- **Good**, because local development remains simple while live environments receive stronger protection and availability.
-- **Good**, because business agreements stay portable.
-- **Bad**, because environment switches must be checked before promotion.
-
-### Treat local test setup as the live setup
-
-- **Good**, because documentation covers only one configuration.
-- **Bad**, because local tools do not provide live durability, availability, or security guarantees.
-
-### Assume every environment uses identical settings
-
-- **Good**, because fewer settings exist.
-- **Bad**, because it hides important differences in size, monitoring, security, and availability.
-
-### Record a fixed live setup inside the overall design decisions
-
-- **Good**, because every decision carries concrete hosting details.
-- **Bad**, because routine infrastructure updates invalidate logical architecture decisions.
+- Service contracts and business logic must not branch on hardcoded environment names where configuration parameters suffice.
+- Development-only endpoints (such as unauthenticated health/scalar helpers) must be gated out of production.
+- Secrets and connection strings must be injected via user secrets locally and Key Vault / Managed Identity in Azure—never committed.

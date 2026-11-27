@@ -1,6 +1,6 @@
 ---
 title: Order change checklist
-summary: Review the contracts, persistence, lifecycle invariants, and consumers affected by Ordering changes.
+summary: Pre-merge engineering checklist for Ordering API, Finance orchestration, persistence, and contract changes.
 version: 1.0.0
 type: engineering
 order: 2
@@ -10,78 +10,67 @@ badges:
     textColor: green
 ---
 
-This reference defines the mandatory contract, persistence, lifecycle, security, and test checks for pull requests modifying **Ordering API** (`ordering`) or its integration with **Finance** (`finance`), **Basket API** (`basket`), and **Catalog API** (`catalog`).
+## Purpose & Scope
 
-## Overview
+This checklist defines the mandatory contract, lifecycle, persistence, concurrency, and verification checks for engineers modifying [[service|order-api]] or [[service|order-orchestration]] in the [[domain|ordering]] subdomain. Review it before merging changes to HTTP v1 routes, Kafka messages, [[container|order-database]] schemas, or Redis coordination.
 
-| Property              | Value                                                                                                                                                                             |
-| :-------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**             | Ordering bounded context (`Ordering API`, `Finance`)                                                                                                                              |
-| **Source**            | `src/Services/Ordering/BookWorm.Ordering/`, `src/Services/Finance/BookWorm.Finance/`                                                                                              |
-| **Protocol / format** | HTTP v1 (`/api/v1/orders`, `/api/v1/buyers`, `/api/v1/dashboard`), gRPC clients (`basket.v1`, `book.v1`), Kafka CloudEvents JSON (Wolverine)                                      |
-| **Authentication**    | Microsoft Entra ID JWT (`customer` or `admin` roles; `ordering_read`, `ordering_write` scopes); admin-only for `DELETE /api/v1/orders/{id}` and `GET /api/v1/orders/{id}/summary` |
+## Visual Reference
 
-## Integration boundary overview
-
-Ordering API reads Basket API and Catalog API over gRPC during checkout, persists accepted orders in PostgreSQL, coordinates idempotency and locks in Redis, and exchanges checkout and lifecycle messages with Finance over Kafka.
+The visual below contrasts authoritative [[service|order-api]] status transitions with independent [[service|order-orchestration]] saga states.
 
 <MermaidFileLoader file="mermaids/02-order-change-checklist-diagram-1.mmd" />
 
-## Pre-merge verification checklist
+_Order Status and Finance Orchestration State Transitions_
 
-Verify every affected area before merging a change to `BookWorm.Ordering`:
+## Core Invariants & Design Rules
 
-- [ ] **HTTP API v1 contracts:** Update OpenAPI v1 metadata and endpoint documentation for any change to `POST /api/v1/orders`, `GET /api/v1/orders`, `GET /api/v1/orders/{id}`, `GET /api/v1/orders/{id}/history`, `GET /api/v1/orders/{id}/summary`, `PATCH /api/v1/orders/{orderId}/complete`, `PATCH /api/v1/orders/{orderId}/cancel`, `DELETE /api/v1/orders/{id}`, buyer routes, or dashboard routes.
-- [ ] **Kafka integration events:** Keep CloudEvents schemas and Pact contracts aligned for `UserCheckedOutIntegrationEvent` (`bookworm.{env}.ordering.user-checked-out`), `OrderStatusChangedToCompleteIntegrationEvent` (`bookworm.{env}.ordering.order-status-change-to-complete`), and `OrderStatusChangedToCancelIntegrationEvent` (`bookworm.{env}.ordering.order-status-change-to-cancel`), all partitioned by `OrderId`.
-- [ ] **Basket cleanup handoff:** Verify Finance's `DeleteBasketCompleteCommand` (`bookworm.{env}.finance.delete-basket-complete`) and `DeleteBasketFailedCommand` (`bookworm.{env}.finance.delete-basket-failed`) handlers. Keep Basket API, Ordering API, and Finance ownership boundaries distinct.
-- [ ] **Immutable purchase snapshot:** Preserve the rule that each `OrderItem` stores `BookId`, positive quantity, and checkout unit price (`PriceSale ?? Price`), and that order total equals the sum of recorded line totals. Later Catalog API price updates never rewrite an accepted order.
-- [ ] **Strict order lifecycle:** Restrict business status transitions to `New` → `Completed` and `New` → `Cancelled`. Keep soft deletion (`IsDeleted`) and Finance orchestration state separate from order `Status`.
-- [ ] **Persistence and projections:** Add EF Core migrations and update schema notes when modifying `Buyer`, `Order`, or `OrderItem` tables in `orderingdb` (PostgreSQL `snake_case`), Wolverine `wolverine` outbox/inbox tables, or Marten event streams (`OrderSummary`, `OrderSummaryView`).
-- [ ] **Authorization and idempotency:** Preserve `customer` and `admin` policy boundaries, `PerUserRateLimit`, and `WithIdempotency()` (`x-request-id` required on `POST` and `PATCH`; Redis key `{METHOD}:{PATH}:{x-request-id}` with 3600-second TTL, deleted automatically on unhandled exceptions or `>= 500` responses).
-- [ ] **Buyer-scoped write lock:** Keep the Redis distributed lock (`order-create:{userId}`, 1-minute timeout) around `Order` persistence so concurrent checkout requests for the same buyer cannot race.
-- [ ] **Privacy and correlation:** Keep buyer street addresses and personal data out of routine logs and error payloads. Correlate checkout and saga traces by `OrderId` and W3C trace context without treating logs or emails as authoritative order status.
+- **Terminal status immutability:** Only a `New` [[entity|order]] can transition to `Completed` or `Cancelled`; terminal states can never reopen or switch.
+- **Locked purchase snapshot:** Each [[entity|order-item]] stores `BookId`, a positive quantity, and checkout unit price (`PriceSale ?? Price`), with the order total equal to the sum of recorded line totals.
+- **Authorization & rate-limit boundaries:** Preserve Microsoft Entra ID `customer` and `admin` policies (`ordering_read`, `ordering_write` scopes, admin-only delete and summary endpoints) and `PerUserRateLimit`.
+- **Privacy & correlation:** Keep buyer street addresses and personal data out of routine logs and error payloads; correlate checkout and saga traces by `OrderId` and W3C trace context.
 
-## Core invariants to test
+:::warning
+**Do not conflate soft deletion or saga timeout with `Order.Status = Cancelled`.** [[command|DeleteBasketFailedCommand]] soft-deletes the order while leaving `Status` as `New`, and Finance timeout exhaustion cancels only the `finance-taskhub` orchestration.
+:::
 
-| Invariant                         | Verification requirement                                                                                                                       | Owning code path                                                                              |
-| :-------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------- |
-| **Valid checkout inputs**         | Order creation fails when the basket is missing/empty or any `BookId` fails to resolve in Catalog API                                          | `src/Services/Ordering/BookWorm.Ordering/Features/Orders/Create/`                             |
-| **Locked purchase total**         | Persisted order total equals the sum of recorded item unit prices (`PriceSale ?? Price`) multiplied by quantities                              | `src/Services/Ordering/BookWorm.Ordering/Domain/AggregatesModel/OrderAggregate/`              |
-| **Terminal status immutability**  | Only a `New` order can transition to `Completed` or `Cancelled`; neither terminal state can reopen or switch                                   | `src/Services/Ordering/BookWorm.Ordering/Domain/AggregatesModel/OrderAggregate/`              |
-| **Cleanup vs. status separation** | `DeleteBasketCompleteCommand` leaves status `New`; `DeleteBasketFailedCommand` soft-deletes the order without changing status to `Cancelled`   | `src/Services/Ordering/BookWorm.Ordering/IntegrationEvents/EventHandlers/`                    |
-| **Finance timeout isolation**     | Finance timeout exhaustion (`MaxAttempts: 3`, 30-minute timer) cancels Finance's orchestration in `finance-taskhub`, never Ordering's `Status` | `src/Services/Finance/BookWorm.Finance/Features/Orders/Orchestration/`                        |
-| **Idempotency and lock safety**   | Duplicate `x-request-id` requests return `409 Conflict`, and concurrent creations for the same buyer cannot bypass `order-create:{userId}`     | `src/Services/Ordering/BookWorm.Ordering/Infrastructure/Filters/IdempotencyEndpointFilter.cs` |
+## Boundaries & Guarantees
 
-## Verification commands
+| Concern             | Strategy & Guarantee                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Failure / Edge-Case Behavior                                                                                                                                                                                                                        | Related Resources                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| :------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Persistence**     | EF Core migrations in <ResourceLink id="order-database" type="container">order-database</ResourceLink> use `snake_case` identifiers; Marten event streams and Wolverine outbox/inbox tables commit atomically with `Order` writes.                                                                                                                                                                                                                                                                 | Missing migrations or unaligned Marten event types break audit history (`GET /api/v1/orders/{id}/history`) and projections (`OrderSummary`, `OrderSummaryView`).                                                                                    | <ResourceLink id="order-database" type="container">order-database</ResourceLink>, <ResourceLink id="order" type="entity">order</ResourceLink>, <ResourceLink id="buyer" type="entity">buyer</ResourceLink>                                                                                                                                                                                                                                                                                                                                                                                                       |
+| **Caching & Locks** | `order-create:{userId}` (`60s` TTL) guards PostgreSQL `Order` writes; `{METHOD}:{PATH}:{x-request-id}` (`3600s` TTL) deduplicates `POST`/`PATCH` calls.                                                                                                                                                                                                                                                                                                                                            | Duplicate `x-request-id` returns `409 Conflict`; unhandled exceptions or `>= 500` responses clear the idempotency marker so clients can safely retry.                                                                                               | <ResourceLink id="order-cache" type="container">order-cache</ResourceLink>, <ResourceLink id="CreateOrder" type="command">CreateOrder</ResourceLink>                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| **Messaging**       | Outbound events (<ResourceLink id="UserCheckedOutIntegrationEvent" type="event">UserCheckedOutIntegrationEvent</ResourceLink>, <ResourceLink id="OrderStatusChangedToCompleteIntegrationEvent" type="event">OrderStatusChangedToCompleteIntegrationEvent</ResourceLink>, <ResourceLink id="OrderStatusChangedToCancelIntegrationEvent" type="event">OrderStatusChangedToCancelIntegrationEvent</ResourceLink>) and inbound basket-cleanup commands are partitioned by `OrderId` and Pact-verified. | Breaking CloudEvents schemas fail `Ordering-Finance` or `Finance-Ordering` Pact suites or route messages to <ResourceLink id="bookworm.{env}.ordering.dead-letter-queue" type="channel">`bookworm.{env}.ordering.dead-letter-queue`</ResourceLink>. | <ResourceLink id="bookworm.{env}.ordering.user-checked-out" type="channel">`bookworm.{env}.ordering.user-checked-out`</ResourceLink>, <ResourceLink id="bookworm.{env}.ordering.order-status-change-to-complete" type="channel">`bookworm.{env}.ordering.order-status-change-to-complete`</ResourceLink>, <ResourceLink id="bookworm.{env}.ordering.order-status-change-to-cancel" type="channel">`bookworm.{env}.ordering.order-status-change-to-cancel`</ResourceLink>, <ResourceLink id="bookworm.{env}.ordering.dead-letter-queue" type="channel">`bookworm.{env}.ordering.dead-letter-queue`</ResourceLink> |
+| **Concurrency**     | Buyer-scoped distributed lock prevents concurrent checkout races; `24h` Redis idempotency guard deduplicates inbound Kafka commands.                                                                                                                                                                                                                                                                                                                                                               | Lock contention aborts the competing checkout attempt cleanly without creating duplicate orders.                                                                                                                                                    | <ResourceLink id="order-api" type="service">order-api</ResourceLink>, <ResourceLink id="order-orchestration" type="service">order-orchestration</ResourceLink>, <ResourceLink id="adr-003-separate-order-status-from-finance-saga" type="adr">adr-003-separate-order-status-from-finance-saga</ResourceLink>                                                                                                                                                                                                                                                                                                     |
 
-Run formatting, unit tests, architecture tests, and Pact contract tests from the repository root before opening a pull request:
+## Safe Change & Verification Checklist
 
-<CodeGroup>
+<Steps title="Pre-merge verification workflow">
+	<Step title="Verify HTTP v1 and gRPC consumer compatibility">
+		Update OpenAPI v1 metadata for any changes to `/api/v1/orders`, `/api/v1/buyers`, or
+		`/api/v1/dashboard`, and confirm compatibility with [[query|GetBasketGrpc]]
+		([[service|basket-api]]) and [[query|GetBooksGrpc]] ([[service|catalog-api]]).
+	</Step>
+	<Step title="Validate Kafka contracts and Pact suites">
+		Keep CloudEvents schemas partitioned by `OrderId` and verify both `Ordering-Finance` and
+		`Finance-Ordering` Pact contracts for checkout, completion, cancellation, and basket-cleanup
+		messages.
+	</Step>
+	<Step title="Check lifecycle, snapshot, and persistence invariants">
+		Confirm `New` → `Completed` | `Cancelled` immutability, checkout price snapshotting,
+		`snake_case` migrations in [[container|order-database]], Marten projection compatibility, and
+		`x-request-id` / `order-create:{userId}` guards.
+	</Step>
+	<Step title="Run formatting, build, and test suites">
+		Execute `mise run format`, `mise run build`, and `mise run test` to verify Ordering unit tests,
+		architecture tests, and Pact contract tests pass.
+	</Step>
+</Steps>
 
-```bash
-mise run format
-mise run build
-mise run test
-```
+## Related Resources
 
-</CodeGroup>
-
-To run targeted Ordering unit tests during local iteration:
-
-<CodeGroup>
-
-```bash
-dotnet test src/Services/Ordering/BookWorm.Ordering.UnitTests/BookWorm.Ordering.UnitTests.csproj
-```
-
-</CodeGroup>
-
-Verify that both Ordering-Finance Pact suites pass when modifying integration events or commands (`tests/pacts/Ordering-Finance.json` and `tests/pacts/Finance-Ordering.json`).
-
-## Related documentation
-
-- Ordering consistency and data ownership reference — Authoritative stores, snapshots, and derived projections.
-- Create and manage orders — Lifecycle mental model and checkout behavior.
-- Order and Finance status boundaries — How Ordering status stays separate from Finance orchestration.
-- How to troubleshoot order creation conflicts and failures — Operational procedure for `409 Conflict` and lock errors.
-- [[doc|platform/006-api-and-contracts]] — Consolidated HTTP, gRPC, and Kafka contracts.
+- [[service|order-api]] — Authoritative Ordering REST API
+- [[service|order-orchestration]] — Finance post-checkout saga
+- [[command|CreateOrder]], [[command|CompleteOrder]], [[command|CancelOrder]], [[command|DeleteOrder]] — Order lifecycle commands
+- [[query|GetOrder]], [[query|ListOrders]], [[query|GetBuyer]], [[query|ListBuyers]] — Order and buyer queries
+- [[flow|order-lifecycle]], [[diagram|order-lifecycle]] — Order lifecycle flow and visual model
+- [[doc|platform/006-api-and-contracts]] — Consolidated HTTP, gRPC, and Kafka contracts

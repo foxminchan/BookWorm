@@ -19,58 +19,42 @@ decisionMakers:
 x-scope: "Whole system (Kafka-enabled services)"
 ---
 
-## Context and problem statement
+| Field                  | Value                                                                                                                                                   |
+| :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Status**             | Proposed                                                                                                                                                |
+| **Date**               | 2026-11-07                                                                                                                                              |
+| **Owners**             | [[team\|platform-team]]                                                                                                                                 |
+| **Affected Resources** | [[domain\|bookworm]]                                                                                                                                    |
+| **Related ADRs**       | [[adr\|adr-bw-005-kafka-integration-backbone]], [[adr\|adr-bw-012-operation-aware-resilience]], [[adr\|adr-002-finance-postgresql-message-persistence]] |
 
-An area can stop or restart after saving a change but before notifying another area. Without durable handoffs, pending updates can be lost.
+## Context & Problem Statement
 
-BookWorm needs background updates to survive restarts and to avoid applying the same update twice. It must use each area's existing storage instead of forcing every area to adopt the same storage.
+A service can crash or restart after committing local state but before publishing an integration event to Kafka. Without durable handoffs, downstream workflows stall silently. At the same time, forcing stateless or Redis-backed workers to adopt a relational database just for an outbox adds unnecessary operational weight.
 
-## Decision drivers
+## Decision Drivers
 
-- **Recoverability:** Preserve pending updates across restarts.
-- **Architectural honesty:** Match protection to what each area already uses.
-- **Clear delivery:** Treat background updates as potentially repeated and protect against duplicate effects.
+- **Crash recovery:** Preserve pending outgoing messages across process restarts.
+- **Storage proportionality:** Match durability mechanisms to each service's existing persistence model.
+- **At-least-once honesty:** Require idempotent consumers rather than claiming exactly-once delivery.
 
-## Considered options
+## Options Considered
 
-1. Match durable handoffs to each area's existing storage
-2. Require the same relational storage for every background-messaging area
-3. Send updates directly from memory without protection
-4. Create one transaction across every database and outside provider
+| Option                                                      | Pros                                                                   | Cons                                                             |
+| :---------------------------------------------------------- | :--------------------------------------------------------------------- | :--------------------------------------------------------------- |
+| **Match durable handoffs to each service's native storage** | Atomic outbox where relational DBs exist; lightweight guards elsewhere | Recovery tooling varies slightly by service storage type         |
+| **Mandate PostgreSQL outbox for every service**             | Uniform SQL outbox pattern everywhere                                  | Forces unnecessary databases onto stateless/Redis services       |
+| **In-memory fire-and-forget publishing**                    | Minimal setup                                                          | Process crashes permanently lose pending integration events      |
+| **Distributed two-phase commit (2PC)**                      | Attempts atomic cross-system commits                                   | Fragile, unsupported by external APIs, and degrades availability |
 
-## Decision outcome
+## Decision & Consequences
 
-Chosen option: **Match durable handoffs to each area's existing storage**.
+**Chosen Option:** Persist broker handoffs using each service's native durability mechanism (transactional PostgreSQL outboxes in [[service|catalog-api]], [[service|order-api]], [[service|order-orchestration]], and [[service|scheduler-service]]; idempotency guards and DLQs in Redis/stateless workers). All consumers must treat delivery as at-least-once and handle duplicates idempotently.
 
-Stateful areas preserve their outgoing updates with their own records. Areas using Redis, task orchestration, or temporary workers use those mechanisms without adding storage they do not need.
+- **Positive:** Prevents lost events on crash without burdening stateless services with extra databases.
+- **Negative:** Operators must understand both SQL outbox inspection and Redis/DLQ recovery paths.
 
-Every background update may be delivered more than once. Receiving areas must recognize repeats and avoid applying them twice.
+### Compliance Criteria
 
-### Consequences
-
-- **Positive:** Areas preserve updates without adding unnecessary storage.
-- **Negative:** Operators must understand the different protection methods used by each area.
-- **Follow-up:** Review duplicate handling and recovery whenever a background update changes.
-
-## Pros and cons of the options
-
-### Match durable handoffs to each area's existing storage
-
-- **Good**, because durable work stays close to the area's authoritative information.
-- **Good**, because lightweight areas avoid expensive extra storage.
-- **Bad**, because recovery differs depending on the area.
-
-### Require the same relational storage for every background-messaging area
-
-- **Good**, because every messaging area uses the same storage pattern.
-- **Bad**, because some areas need unnecessary databases and maintenance.
-
-### Send updates directly from memory without protection
-
-- **Good**, because setup is minimal.
-- **Bad**, because a restart can permanently lose pending updates.
-
-### Create one transaction across every database and outside provider
-
-- **Good**, because it attempts to make every part succeed together.
-- **Bad**, because outside providers cannot join one database transaction and distributed coordination reduces availability.
+- Relational-backed services publishing Kafka messages must use a transactional outbox.
+- All Kafka consumers must implement idempotent handling (e.g., 24-hour idempotency guards or natural idempotency).
+- Documentation must never claim "exactly-once" side effects across external brokers or SMTP providers.

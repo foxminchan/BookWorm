@@ -20,12 +20,9 @@ badges:
     textColor: blue
 ---
 
-<Admonition type="note">
-	This architectural decision record has status **superseded** and documents the Notification
-	persistence model as implemented at the time of recording. See
-	[[adr|adr-002-durable-outbox-and-bounded-retries]] for the relationship to earlier stronger outbox
-	guarantees.
-</Admonition>
+:::warning
+This ADR is **Superseded**. [[service|notification-api]] now operates as a stateless Kafka consumer with Redis idempotency and dead-letter queues rather than a PostgreSQL email outbox. See [[adr|adr-001-notification-kafka-command-intake]] and [[adr|adr-002-durable-outbox-and-bounded-retries]].
+:::
 
 ## 1. Context & Problem
 

@@ -10,55 +10,64 @@ badges:
     textColor: teal
 ---
 
-BookWorm separates every checkout into two independent state machines: **Ordering API** (`ordering`) owns the authoritative commercial status of an order in PostgreSQL (`orderingdb`), while **Finance** (`finance`) coordinates post-checkout basket cleanup and notification commands using **Azure Functions** and **Azure Durable Task Scheduler** (`finance-taskhub`, with no PostgreSQL database). Never infer an order's business status from basket contents, Finance orchestration state, or delivered emails.
+**Audience & Outcome:** This guide is for support engineers, operators, and backend developers debugging post-checkout state. You will learn how [[service|order-api]] commercial status differs from [[service|order-orchestration]] workflow state and how to interpret cross-service outcomes.
+
+BookWorm separates every checkout into two independent state machines: [[service|order-api]] owns the authoritative commercial status of an [[entity|order]] in [[container|order-database]], while [[service|order-orchestration]] coordinates post-checkout basket cleanup and notification commands using Azure Functions and Azure Durable Task Scheduler.
+
+:::warning
+Never infer an order's business status from basket contents, [[service|order-orchestration]] state, or delivered emails.
+:::
 
 ## Context and motivation
 
-After a customer submits checkout, three asynchronous activities occur outside the original HTTP request: clearing the customer's shopping basket, tracking retry timers if cleanup stalls, and sending lifecycle emails. When a cleanup command fails, a retry timer expires, or a customer receives a cancellation email, support engineers and stakeholders can mistake those operational signals for changes to the commercial order record.
+After a customer submits checkout, three asynchronous activities occur outside the original HTTP request: clearing the customer's shopping basket, tracking retry timers if cleanup stalls, and sending lifecycle emails. When a cleanup command fails, a retry timer expires, or a customer receives a cancellation email, support engineers can mistake those operational signals for changes to the commercial order record.
 
 Keeping Ordering's domain model strictly isolated from Finance's workflow engine prevents transient infrastructure failures or retry exhaustion from corrupting commercial order records.
 
 ## How it works
 
-**Ordering API** publishes `UserCheckedOutIntegrationEvent` when an order is created, triggering Finance's `OrderOrchestrator` Durable Function. From that point onward, the two services maintain independent state stores and communicate exclusively over Kafka.
+[[service|order-api]] publishes [[event|UserCheckedOutIntegrationEvent]] when an order is created, triggering [[service|order-orchestration]]. From that point onward, the two services maintain independent state stores and communicate exclusively over Kafka.
 
-The diagram below shows how Ordering API, Finance, Basket API, and Notification exchange events and commands across separate state boundaries.
+The visual below shows how [[service|order-api]], [[service|order-orchestration]], [[service|basket-api]], and [[service|notification-api]] exchange events and commands across separate state boundaries.
 
 <MermaidFileLoader file="mermaids/02-understand-order-and-finance-status-diagram-1.mmd" />
 
 ### Two independent state models
 
-| Dimension           | Ordering API (`orderingdb`, PostgreSQL)                                      | Finance (`finance-taskhub`, Durable Task Scheduler)                                                                   |
-| :------------------ | :--------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------- |
-| **Authority**       | Authoritative commercial order status and purchase snapshot                  | Post-checkout workflow coordination and compensation only                                                             |
-| **Status values**   | `New`, `Completed`, `Cancelled` (plus separate `IsDeleted` soft-delete flag) | `Placed`, `Completed`, `Cancelled`, `BasketDeletionFailed`, `Failed`                                                  |
-| **Persisted store** | PostgreSQL (`orderingdb`) via EF Core + Marten event store                   | Azure Durable Task Scheduler (`finance-taskhub`) + Azure Storage host storage (no PostgreSQL)                         |
-| **How to inspect**  | `GET /api/v1/orders/{id}` or `GET /api/v1/orders`                            | Durable Task orchestration custom status (`OrderId`, `Status`, `BasketDeleted`, `TimeoutRetryCount`, `FailureReason`) |
+| Dimension           | [[service\|order-api]] ([[container\|order-database]])           | [[service\|order-orchestration]] (Durable Task Scheduler)            |
+| :------------------ | :--------------------------------------------------------------- | :------------------------------------------------------------------- |
+| **Authority**       | Authoritative commercial order status and purchase snapshot      | Post-checkout workflow coordination and compensation only            |
+| **Status values**   | `New`, `Completed`, `Cancelled` (plus separate soft-delete flag) | `Placed`, `Completed`, `Cancelled`, `BasketDeletionFailed`, `Failed` |
+| **Persisted store** | PostgreSQL via EF Core + Marten event store                      | Azure Durable Task Scheduler (`finance-taskhub`)                     |
+| **How to inspect**  | Orders REST endpoints (`GET /api/v1/orders/{id}`)                | Durable Task orchestration custom status                             |
 
 ### Interpreting cross-service outcomes
 
-- **Basket deletion succeeds:** Basket API publishes `BasketDeletedCompleteIntegrationEvent`. Finance sets `BasketDeleted = true` in its orchestration state and publishes `DeleteBasketCompleteCommand` to Ordering API. Ordering API logs the event and leaves the order status `New` until an explicit completion or cancellation request arrives.
-- **Basket deletion fails:** Basket API publishes `BasketDeletedFailedIntegrationEvent`. Finance marks its orchestration `BasketDeletionFailed` and sends `DeleteBasketFailedCommand` to Ordering API. Ordering API soft-deletes the matching order (`order.Delete()`) if it exists, hiding it from standard reads without changing `Status` to `Cancelled`.
-- **Finance retry timers expire:** `OrderOrchestrator` waits in a loop with a configured timer (`MaxRetryTimeout: 00:30:00`, `MaxAttempts: 3`). If an open orchestration exhausts its retries, Finance marks its own orchestration `Cancelled` and publishes `CancelOrderCommand` to Notification (when recipient details exist). Finance never calls Ordering API to cancel the commercial order, so Ordering can still report `New`.
-- **Explicit order completion or cancellation:** When Ordering API accepts `PATCH /api/v1/orders/{orderId}/complete` or `PATCH /api/v1/orders/{orderId}/cancel`, it publishes `OrderStatusChangedToCompleteIntegrationEvent` or `OrderStatusChangedToCancelIntegrationEvent`. Finance transitions its orchestration to `Completed` or `Cancelled` and publishes `CompleteOrderCommand` or `CancelOrderCommand` to Notification.
-- **Customer email sent or missing:** Notification is a stateless Kafka + MailKit + Redis idempotency worker. Sending or skipping an email never proves or alters an order's business status.
+- **Basket deletion succeeds:** [[service|basket-api]] publishes [[event|BasketDeletedCompleteIntegrationEvent]]. [[service|order-orchestration]] records completion and sends [[command|DeleteBasketCompleteCommand]] to [[service|order-api]], which logs the event and leaves the order status `New`.
+- **Basket deletion fails:** [[service|basket-api]] publishes [[event|BasketDeletedFailedIntegrationEvent]]. [[service|order-orchestration]] marks its orchestration `BasketDeletionFailed` and sends [[command|DeleteBasketFailedCommand]] to [[service|order-api]], which soft-deletes the matching order without changing `Status` to `Cancelled`.
+- **Finance retry timers expire:** If an open orchestration exhausts its configured retry window (`30m` timeout, `3` attempts), [[service|order-orchestration]] marks its own state `Cancelled` and publishes [[command|CancelOrderCommand]] to [[service|notification-api]]. It never cancels the commercial order in [[service|order-api]], so Ordering can still report `New`.
+- **Explicit order completion or cancellation:** When [[service|order-api]] accepts a completion or cancellation request, it publishes [[event|OrderStatusChangedToCompleteIntegrationEvent]] or [[event|OrderStatusChangedToCancelIntegrationEvent]]. [[service|order-orchestration]] transitions accordingly and publishes [[command|CompleteOrderCommand]] or [[command|CancelOrderCommand]].
+- **Customer email sent or missing:** [[service|notification-api]] is a stateless delivery worker. Sending or skipping an email never proves or alters an order's business status.
 
-## Design trade-offs
+<AccordionGroup>
+<Accordion title="Design trade-offs and alternatives considered">
 
-| Decision                                                 | Benefits                                                                                            | Costs and limits                                                                                         |
-| :------------------------------------------------------- | :-------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------- |
-| **Independent Finance Durable Functions orchestration**  | Isolates long-running timers, retries, and compensations from Ordering API's transactional database | Finance orchestration status can diverge from Ordering `Status` after retry exhaustion                   |
-| **Soft deletion on explicit basket-cleanup failure**     | Removes broken checkouts from active listings without recording a false customer cancellation       | Operators must inspect both Ordering visibility and Finance orchestration status to see the full picture |
-| **Bounded retry window (`MaxAttempts: 3`, 30m timeout)** | Prevents orphaned orchestrations from running indefinitely                                          | Transient outages longer than the retry window require operational investigation                         |
+| Decision                                               | Benefits                                                                                    | Costs and limits                                                                        |
+| :----------------------------------------------------- | :------------------------------------------------------------------------------------------ | :-------------------------------------------------------------------------------------- |
+| **Independent Durable Functions orchestration**        | Isolates long-running timers, retries, and compensations from [[container\|order-database]] | Finance orchestration status can diverge from Ordering `Status` after retry exhaustion  |
+| **Soft deletion on explicit basket-cleanup failure**   | Removes broken checkouts from active listings without recording a false cancellation        | Operators must inspect both Ordering visibility and Finance status for the full picture |
+| **Bounded retry window (`3` attempts, `30m` timeout)** | Prevents orphaned orchestrations from running indefinitely                                  | Transient outages longer than the retry window require operational investigation        |
 
-## Alternatives considered
+**Rejected alternatives:**
 
-- **Letting Finance mutate Ordering `Status` directly on timeout:** Rejected because infrastructure timeout exhaustion is not an explicit commercial cancellation by a customer or administrator, and coupling the two writes breaks bounded-context ownership.
-- **Persisting Finance saga state in PostgreSQL:** Rejected in favor of Azure Durable Task Scheduler (`finance-taskhub`), which natively manages durable timers, replay-safe orchestration history, and external event correlation for Azure Functions without maintaining a separate SQL schema.
+- **Letting Finance mutate Ordering `Status` on timeout:** Infrastructure timeout exhaustion is not an explicit commercial cancellation.
+- **Persisting Finance saga state in PostgreSQL:** Durable Task Scheduler natively manages durable timers and replay-safe orchestration history for Azure Functions.
+
+</Accordion>
+</AccordionGroup>
 
 ## Related documentation
 
-- Create and manage orders — Order creation, snapshot locking, and valid status transitions.
-- Ordering consistency and data ownership reference — Authoritative store matrix and Redis coordination rules.
-- How to troubleshoot stalled or failed checkout basket cleanup — Step-by-step incident triage for Finance retry and timeout behavior.
-- [[doc|arc42/00-c4-overview]] — System-wide container and messaging topology.
+- [[flow|order-lifecycle]] — Order status transitions and downstream event propagation.
+- [[adr|adr-005-finance-separate-workflow-and-order-status]] — Why Finance workflow outcomes stay separate from Order status.
+- [[doc|arc42]] — System-wide architecture overview.

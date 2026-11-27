@@ -19,58 +19,42 @@ decisionMakers:
 x-scope: "Whole system"
 ---
 
-## Context and problem statement
+| Field                  | Value                                                                                                                                                   |
+| :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Status**             | Proposed                                                                                                                                                |
+| **Date**               | 2026-11-07                                                                                                                                              |
+| **Owners**             | [[team\|platform-team]]                                                                                                                                 |
+| **Affected Resources** | [[domain\|bookworm]]                                                                                                                                    |
+| **Related ADRs**       | [[adr\|adr-bw-002-dotnet-platform-foundation]], [[adr\|adr-bw-013-opentelemetry-observability]], [[adr\|adr-bw-015-explicit-environment-configuration]] |
 
-BookWorm has several core applications and customer-facing websites. They need reliable and consistent setup for finding other parts of the system, handling temporary failures, limiting requests, and reporting health and activity.
+## Context & Problem Statement
 
-BookWorm needs common setup tools that reduce repeated work. Each business area must still keep control of its own rules and decide which shared tools it uses.
+BookWorm's services and microfrontends require consistent service discovery, health probes, rate limiting, resilience defaults, and telemetry wiring. Re-implementing this plumbing per service invites configuration drift, while centralizing domain logic in shared host defaults violates service ownership.
 
-## Decision drivers
+## Decision Drivers
 
-- **Consistency:** Apply the same health, activity, and failure-handling expectations across the system.
-- **Easy maintenance:** Avoid repeating the same technical setup in every area.
-- **Clear ownership:** Keep common tools separate from each area's business rules.
+- **Operational consistency:** Enforce uniform health, telemetry, and resilience baselines.
+- **Reduced boilerplate:** Eliminate repeated technical host configuration across services.
+- **Boundary preservation:** Keep shared defaults strictly technical and domain-agnostic.
 
-## Considered options
+## Options Considered
 
-1. Use shared setup and local system coordination
-2. Configure every area separately
-3. Put shared business work in one central area
-4. Treat the local setup as the live system setup
+| Option                                                     | Pros                                                                               | Cons                                                                       |
+| :--------------------------------------------------------- | :--------------------------------------------------------------------------------- | :------------------------------------------------------------------------- |
+| **Shared technical defaults + Aspire local orchestration** | Uniform discovery, telemetry, and resilience; services opt in to optional features | Shared-default defects can impact multiple services simultaneously         |
+| **Per-service custom host setup**                          | Zero shared-package coupling                                                       | Telemetry, health probes, and rate limits drift over time                  |
+| **Centralized business-logic host**                        | Shared rules visible in one place                                                  | Couples unrelated domains and breaks bounded-context ownership             |
+| **Treat local Aspire setup as production**                 | Single topology to maintain                                                        | Local emulators lack production durability, scaling, and security controls |
 
-## Decision outcome
+## Decision & Consequences
 
-Chosen option: **Use shared setup and local system coordination**.
+**Chosen Option:** Reuse Aspire orchestration and shared technical service defaults for discovery, OpenTelemetry, health checks, resilience, and rate limiting. Each service retains ownership of its domain behavior and may override technical defaults where justified.
 
-BookWorm will use one common technical foundation for local coordination and routine setup. It will include activity reporting, controlled retries, request limits, and shared connection rules.
+- **Positive:** New services inherit production-grade observability and resilience defaults immediately.
+- **Negative:** Changes to shared defaults require cross-service regression testing.
 
-The live system setup can differ from the local setup. Each business area will still choose and override the options it needs and remain responsible for its own behavior.
+### Compliance Criteria
 
-### Consequences
-
-- **Positive:** New areas receive dependable defaults and consistent reporting with less repeated setup.
-- **Negative:** A change to shared setup can affect several areas at once.
-- **Follow-up:** Document local and live differences separately and test shared changes across the system.
-
-## Pros and cons of the options
-
-### Use shared setup and local system coordination
-
-- **Good**, because connection, reporting, and failure handling follow one proven approach.
-- **Good**, because each area controls the optional tools it enables.
-- **Bad**, because a defect in shared setup can affect several areas.
-
-### Configure every area separately
-
-- **Good**, because every area avoids dependence on shared setup.
-- **Bad**, because reporting, limits, and security rules may drift apart over time.
-
-### Put shared business work in one central area
-
-- **Good**, because common business work is visible in one place.
-- **Bad**, because it gives one central area responsibility for decisions that belong to separate businesses.
-
-### Treat the local setup as the live system setup
-
-- **Good**, because teams maintain only one setup description.
-- **Bad**, because local test tools do not provide the same reliability or availability as live services.
+- Every backend service must register the shared service defaults for health checks and telemetry.
+- Shared defaults must remain free of domain entities, business rules, and capability-specific endpoints.
+- Local Aspire emulator settings must not be assumed identical to live Azure environment configuration.

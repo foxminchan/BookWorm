@@ -10,68 +10,84 @@ badges:
     textColor: teal
 ---
 
-BookWorm Chat API (`chatting`) routes every interactive `/ag-ui` message through a deterministic three-layer Microsoft Agent Framework workflow (`chat-workflow`) instead of an open-ended LLM router. The pipeline validates and truncates input first, evaluates safety, language, scope, and specialist intent with `Microsoft-Decision-1`, pauses for human-in-the-loop (HITL) disambiguation when confidence is low, and coordinates bounded handoffs across Book Agent, QA Agent, and Rating Agent.
+**Audience & Outcome:** This guide is for AI engineers and backend developers working on [[service|chat-api]]. You will learn how incoming conversational messages are validated, classified, disambiguated, and routed across BookWorm's specialist agents.
+
+[[service|chat-api]] routes every interactive message through a deterministic three-layer workflow rather than an open-ended LLM router. The pipeline validates and truncates input first, evaluates safety, language, scope, and specialist intent with `Microsoft-Decision-1`, pauses for human-in-the-loop (HITL) disambiguation when confidence is low, and coordinates bounded handoffs across [[agent|book-agent]], [[agent|qa-agent]], and [[agent|rating-agent]].
 
 ## Context and motivation
 
 Customer chat messages span distinct domains—book discovery, store policies, and review analysis—alongside empty, non-English, off-topic, or prompt-injection inputs. Sending unscreened messages straight to a general LLM router wastes inference budget, increases latency, and makes routing behavior nondeterministic.
 
-By separating deterministic input hygiene (`InputValidationExecutor`), calibrated classification (`Microsoft-Decision-1` via `DecisionRouterExecutor`), explicit low-confidence confirmation (`RouteDisambiguationPort`), and scoped specialist sub-workflows, BookWorm rejects invalid traffic early and keeps routing observable and testable.
+By separating deterministic input hygiene, calibrated classification, explicit low-confidence confirmation, and scoped specialist sub-workflows, BookWorm rejects invalid traffic early and keeps routing observable and testable.
 
 ## How it works
 
-The flowchart below traces a customer message from `/ag-ui` through input validation, `Microsoft-Decision-1` routing, HITL disambiguation, specialist handoffs, and final response formatting.
+The visual below traces a customer message through input validation, `Microsoft-Decision-1` routing, HITL disambiguation, specialist handoffs, and final response formatting.
 
 <MermaidFileLoader file="mermaids/01-route-customer-requests-diagram-1.mmd" />
 
-### Layer 1: Input validation and resume normalization
+### Three-layer routing pipeline
 
-1. **Disambiguation resume normalization:** `AGUIWorkflowAgent.NormalizeDisambiguationResume` inspects trailing user messages. If an unanswered `disambiguateRoute` tool call exists and the user replies in plain text (`1`/`book`, `2`/`qa`/`support`/`policy`/`policies`, `3`/`rating`/`review`), `AGUIWorkflowAgent` converts the reply into a `FunctionResultContent` so the paused workflow resumes cleanly across both structured UI clients and plain-text clients.
-2. **Validation and truncation:** `InputValidationExecutor` bypasses pure tool-result resume turns (`IsPureToolResultResumeTurn`) and empty turns (`ignoreEmptyTurns = true`). For user text turns, `PromptValidationService` trims whitespace, enforces `UserPrompt.MinLength = 1`, checks `SuspiciousPatternRegex()` (prompt-injection and XSS markers), and invokes `GovernancePromptSafetyEvaluator` (`Policies/chat-agents.yaml`). Accepted prompts longer than `UserPrompt.MaxLength` (`2000` characters) are truncated to `1900` characters with suffix `"... [Message truncated due to length]"`. Rejected messages short-circuit directly to `RejectedOutputExtractor`.
+<Steps>
+<Step title="Layer 1: Input validation and resume normalization">
 
-### Layer 2: `Microsoft-Decision-1` classification and HITL disambiguation
+**Disambiguation resume normalization:** If an unanswered disambiguation prompt exists and the user replies in plain text (`1`/`book`, `2`/`qa`/`support`/`policy`, `3`/`rating`/`review`), the workflow normalizes the reply into a structured tool result so both rich UI clients and plain-text clients resume cleanly.
 
-`DecisionRouterExecutor` calls `ChatRoutingDecisionService` (`IDecisionClient` backed by Microsoft Foundry deployment `decision` = `Microsoft-Decision-1`) with four structured questions evaluated in order:
+**Deterministic hygiene & safety:** Tool-result resume turns bypass text validation. For user text turns, the pipeline trims whitespace, rejects empty prompts, screens for prompt-injection and XSS markers, and applies governance prompt-safety policies. Accepted prompts longer than `2,000` characters are truncated to `1,900` characters.
 
-| Decision check                       | Threshold / rule                                | Outcome when triggered                                                                                  |
-| :----------------------------------- | :---------------------------------------------- | :------------------------------------------------------------------------------------------------------ |
-| **`is_safe`**                        | `P(is_safe) < 0.5`                              | Short-circuits via `DecisionRejectedOutputExtractor` (`RouteTarget.UnsafeInput`)                        |
-| **`is_english`**                     | `P(is_english) < 0.5`                           | Short-circuits via `DecisionRejectedOutputExtractor` (`RouteTarget.NonEnglish`)                         |
-| **`is_in_scope`**                    | `P(is_in_scope) < 0.5`                          | Short-circuits via `DecisionRejectedOutputExtractor` (`RouteTarget.OutOfScope`)                         |
-| **`route` (`Book`, `QA`, `Rating`)** | Confidence `< 0.6` (`RouteConfidenceThreshold`) | Pauses at `RouteDisambiguationPort` (`disambiguateRoute`) presenting `book`, `qa`, and `rating` options |
-| **`route` (`Book`, `QA`, `Rating`)** | Confidence `>= 0.6`                             | Forwards directly to `BookWorkflowExecutor`, `QAWorkflowExecutor`, or `RatingWorkflowExecutor`          |
+</Step>
+<Step title="Layer 2: Classification and HITL disambiguation">
 
-If `Microsoft-Decision-1` throws `DecisionUnansweredException` with a partial response, `ChatRoutingGuardrailEvaluator.HandlePartialResponse` defaults omitted binary probabilities to `1.0` and defaults an unanswered route choice to `RouteTarget.Book` so transient partial responses degrade predictably rather than crashing the turn.
+The decision router evaluates four structured questions in order via `Microsoft-Decision-1`:
+
+| Decision check                       | Threshold / rule       | Outcome when triggered                                      |
+| :----------------------------------- | :--------------------- | :---------------------------------------------------------- |
+| **`is_safe`**                        | `P(is_safe) < 0.5`     | Short-circuits with an unsafe-input rejection               |
+| **`is_english`**                     | `P(is_english) < 0.5`  | Short-circuits with an English-only notice                  |
+| **`is_in_scope`**                    | `P(is_in_scope) < 0.5` | Short-circuits with an out-of-scope bookstore notice        |
+| **`route` (`Book`, `QA`, `Rating`)** | Confidence `< 0.6`     | Pauses for user disambiguation between Book, QA, and Rating |
+| **`route` (`Book`, `QA`, `Rating`)** | Confidence `>= 0.6`    | Forwards directly to the selected specialist                |
+
+:::note
+If `Microsoft-Decision-1` returns a partial response, omitted binary guardrails default to `1.0` and an unanswered route choice defaults to [[agent|book-agent]] so transient partial responses degrade predictably.
+:::
+
+</Step>
+<Step title="Layer 3: Response formatting">
+
+If the assistant turn carries a pending client-side UI tool call with empty text, the formatter preserves the tool call without overwriting it. Otherwise, it strips any leaked system markers, collapses excessive blank lines, ensures terminal punctuation, and falls back to a safe rephrase message if no usable text remains.
+
+</Step>
+</Steps>
 
 ### Specialist selection and handoffs
 
-| Customer intent                                                                                               | Initial specialist          | Follow-up handoff behavior                                                                                                                                                                    |
-| :------------------------------------------------------------------------------------------------------------ | :-------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Book search, recommendations, catalog details, emotional book feedback, or review questions without a book ID | **Book Agent (`book`)**     | Hands off to `Rating Agent` (`handoff_to_rating`) once a single book UUID/GUID is resolved, or to `QA Agent` (`handoff_to_qa`) for store-policy follow-ups                                    |
-| Store policies, shipping, returns, refunds, accounts, orders, or billing                                      | **QA Agent (`qa`)**         | Hands off book-specific portions of mixed requests to `Book Agent` (`handoff_to_book`), which can continue to `Rating Agent` or back to `QA Agent`; never claims live account or order lookup |
-| Review summaries or rating/quality analysis when a book catalog ID (UUID/GUID) is already present             | **Rating Agent (`rating`)** | Calls Rating API over A2A gRPC; terminal specialist (cannot search the catalog or hand back)                                                                                                  |
+| Customer intent                                                                      | Initial specialist      | Follow-up handoff behavior                                                                                                    |
+| :----------------------------------------------------------------------------------- | :---------------------- | :---------------------------------------------------------------------------------------------------------------------------- |
+| Book search, recommendations, catalog details, or review questions without a book ID | [[agent\|book-agent]]   | Hands off to [[agent\|rating-agent]] once a single book ID is resolved, or to [[agent\|qa-agent]] for store-policy follow-ups |
+| Store policies, shipping, returns, refunds, accounts, orders, or billing             | [[agent\|qa-agent]]     | Hands off book-specific portions of mixed requests to [[agent\|book-agent]]; never claims live account or order lookup        |
+| Review summaries or rating analysis when a book catalog ID is already present        | [[agent\|rating-agent]] | Calls [[service\|rating-api]] over A2A gRPC; terminal specialist (cannot search the catalog or hand back)                     |
 
-### Layer 3: Response formatting
+<AccordionGroup>
+<Accordion title="Design trade-offs and alternatives considered">
 
-`ResponseFormatterExecutor` selects the last `ChatRole.Assistant` message. If the message carries empty text plus a `FunctionCallContent` (such as a pending Storefront AG-UI UI tool call), it returns `string.Empty` without overwriting the tool call. Otherwise `ResponseFormattingService` strips leaked system prompt markers (`SystemPromptLeakRegex`), collapses excessive blank lines, ensures terminal punctuation, and returns `AssistantResponse.DefaultFallbackMessage` if no usable text remains.
+| Decision                                                      | Benefits                                                                                 | Costs and limits                                                            |
+| :------------------------------------------------------------ | :--------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------- |
+| **Use `Microsoft-Decision-1` instead of an LLM router agent** | Produces calibrated probabilities at lower latency and cost than full chat completions   | Requires maintaining explicit binary/choice questions and thresholds        |
+| **Separate Layer 1 validation from Layer 2 semantic routing** | Blocks empty messages, injections, and oversized payloads before any model call          | Truncating prompts over `2,000` characters can clip a trailing book UUID    |
+| **Pause for disambiguation when route confidence `< 0.6`**    | Prevents misrouting ambiguous requests to the wrong specialist                           | Adds one interactive turn before answering ambiguous prompts                |
+| **Keep [[agent\|rating-agent]] terminal and ID-gated**        | Avoids duplicating [[service\|mcp-server]] catalog search inside [[service\|rating-api]] | Title-only review requests always route through [[agent\|book-agent]] first |
 
-## Design trade-offs
+**Rejected alternatives:**
 
-| Decision                                                                    | Benefits                                                                                                                        | Costs and limits                                                                                                                       |
-| :-------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------------------------- |
-| **Use `Microsoft-Decision-1` instead of an LLM router agent**               | Produces calibrated probabilities (`0.5` guardrails, `0.6` disambiguation) at lower latency and cost than full chat completions | Requires maintaining explicit binary/choice questions and probability thresholds as scope evolves                                      |
-| **Separate Layer 1 deterministic validation from Layer 2 semantic routing** | Blocks empty messages, regex/governance injections, and oversized payloads before any model call occurs                         | Truncating prompts over `2000` characters to `1900` characters can clip a trailing book UUID or intent in unusually long user messages |
-| **Pause at `RouteDisambiguationPort` when route confidence `< 0.6`**        | Prevents misrouting ambiguous requests to the wrong specialist                                                                  | Adds one interactive turn before answering ambiguous prompts                                                                           |
-| **Keep `Rating Agent` terminal and ID-gated**                               | Avoids duplicating MCP catalog search inside Rating API                                                                         | Title-only review requests always route through `Book Agent` first before handing off to `Rating Agent`                                |
+- **Single LLM supervisor agent:** Lacks calibrated probability distributions for a deterministic `< 0.6` HITL threshold and increases per-turn latency.
+- **Per-specialist rejection:** Duplicating safety, language, and scope prompts across three specialists increases drift and wastes tool invocations.
 
-## Alternatives considered
-
-- **Single LLM supervisor/router agent:** Rejected because free-form LLM routing lacks calibrated probability distributions for a deterministic `< 0.6` HITL threshold and increases per-turn latency and token usage.
-- **Letting each specialist self-reject out-of-scope or non-English turns:** Rejected because duplicating safety, language, and scope prompts across three specialists increases drift and wastes specialist/tool invocations on rejected inputs.
+</Accordion>
+</AccordionGroup>
 
 ## Related documentation
 
-- Conversational architecture and domain boundaries reference — Executor inventory, session persistence, and security controls.
-- How BookWorm handles book discovery and recommendations — Book Agent direct lookups, parallel research, and planning modes.
-- How BookWorm answers store and customer-support questions — QA Agent policy grounding and isolation.
-- How to diagnose unexpected chat routing or rejection — Step-by-step runbook for tracing validation and routing outcomes.
+- [[flow|agent-orchestration]] — End-to-end orchestration flow for [[service|chat-api]].
+- [[adr|adr-007-system-one-decision-model-routing-and-tool-selection]] — Decision record for `Microsoft-Decision-1` routing.
+- [[adr|adr-001-chat-agent-orchestration-boundary]] — Orchestration boundary within [[system|chat-system]].

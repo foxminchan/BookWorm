@@ -56,7 +56,7 @@ Whenever a client or storefront requests book details, Catalog API checks that t
 
 - **Non-atomic updates and orphan risk:** The product database and object storage do not share a single all-or-nothing transaction. If an image upload succeeds before a book update fails, an unreferenced file can remain in object storage; operational reconciliation must account for cleaning up orphaned files or repairing broken links.
 - **On-demand link resolution:** Reading a book requires generating a fresh access link, and client applications must handle time-limited links by fetching a current book representation rather than caching image links indefinitely.
-- **Operational recovery rules:** An expired image link does not mean the cover image is missing—fetching the book again resolves a fresh link. When moving or restoring records, teams must preserve the asset reference and restore the image under the exact same name in the configured storage location. If an image cannot be recovered, replace or remove it through [[service|catalog-api]] rather than hand-editing database records (see [[doc|runbooks/broken-book-images]]).
+- **Operational recovery rules:** An expired image link does not mean the cover image is missing—fetching the book again resolves a fresh link. When moving or restoring records, teams must preserve the asset reference and restore the image under the exact same name in the configured storage location. If an image cannot be recovered, replace or remove it through [[service|catalog-api]] rather than hand-editing database records.
 - **Storage-target coupling:** Because the asset reference encodes the storage account and container, moving images between storage targets requires coordinated updates across both object storage and catalog references.
 
 ## 5. Technical Reference
@@ -71,4 +71,4 @@ Whenever a client or storefront requests book details, Catalog API checks that t
   - URL lifetime is controlled by `SasExpiryHours`.
   - Generated SAS URLs are never persisted in PostgreSQL.
 - **Deletion behavior:** Explicit image removal and book deletion remove the referenced blob and its snapshots from Azure Blob Storage.
-- **Recovery reference:** [[doc|runbooks/broken-book-images]] — preserve the URN when restoring records, restore the object under the same `blobName` in the configured account and container, or replace/remove the asset via `catalog-api` rather than manually editing PostgreSQL.
+- **Recovery rules:** Preserve the URN when restoring records, restore the object under the same `blobName` in the configured account and container, or replace/remove the asset via [[service|catalog-api]] rather than manually editing PostgreSQL.

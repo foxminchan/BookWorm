@@ -10,170 +10,92 @@ badges:
     textColor: orange
 ---
 
-Use this runbook when a customer sends a chat message through Storefront and gets an HTTP error, a stalled stream, an empty reply, or the fallback prompt asking them to rephrase. It walks through each layer of BookWorm Chat API (`chatting`) in order: ingress, input validation, routing, specialist execution, response formatting, and Azure Blob Storage session persistence.
+## Trigger / Symptom & Blast Radius
 
-If the customer got a boundary reply (English-only, out-of-scope, or "choose a specialist"), use How to diagnose unexpected chat routing or rejection instead.
+A customer sends a chat message through Storefront and receives an HTTP error (`401`, `403`, `429`, `5xx`), a stalled stream, an empty reply, or the generic rephrase fallback. Blast radius is isolated to interactive [[service|chat-api]] conversations; catalog browsing, basket, and checkout remain unaffected.
 
-## Prerequisites
+<Admonition type="danger">
+	Never include raw customer prompts, names, email addresses, or personal data in incident tickets
+	or logs. Record only the request category, stage outcomes, and correlation IDs.
+</Admonition>
 
-- Access to OpenTelemetry traces and structured logs for `chatting`:
-  - **Local:** the Aspire dashboard (`https://localhost:17290` with the HTTPS profile, or `http://localhost:15061` with the HTTP profile).
-  - **Azure:** the Log Analytics workspace attached to the `aca` Azure Container Apps environment.
-- The approximate time of the failing request and the HTTP status the Storefront received, if any.
-- Background on the workflow stages in Conversational architecture and domain boundaries reference.
+## Pre-Flight Check
 
-## Steps
+Verify [[service|chat-api]] container status and stream recent logs in `<ENV>`:
+
+```bash
+az containerapp show --name <SERVICE_NAME> --resource-group <RESOURCE_GROUP> --query "properties.runningStatus" -o tsv
+az containerapp logs show --name <SERVICE_NAME> --resource-group <RESOURCE_GROUP> --tail 200
+```
+
+## Quick Recovery Procedure
 
 <Steps>
-<Step title="Confirm the entry point">
+<Step title="Check ingress status and endpoint">
 
-Confirm the request used the interactive workflow endpoint. Through the API Gateway, the path is `/chatting/ag-ui`. YARP strips the `/chatting` prefix and forwards to `/ag-ui` on Chat API (local ports: HTTP `5026`, HTTPS `7132`).
+Confirm the request targeted `/chatting/ag-ui` (forwarded to `/ag-ui` on [[service|chat-api]]). Interpret HTTP status codes:
 
-Requests sent to `/agents` (agent discovery) or directly to Rating API A2A gRPC bypass validation, routing, and formatting, so they are out of scope for this runbook.
+**`401` / `403`:** Missing/invalid Entra ID token or missing `customer` role / `chatting_read` + `chatting_write` scopes.
 
-</Step>
-<Step title="Check the HTTP status">
+**`429`:** Per-user rate limit exceeded; honor `Retry-After`.
 
-Check the status code the Storefront or API Gateway recorded for the request:
-
-| Status                  | Meaning on `/ag-ui`                                                                                            |
-| :---------------------- | :------------------------------------------------------------------------------------------------------------- |
-| `401 Unauthorized`      | Missing or invalid Microsoft Entra ID token                                                                    |
-| `403 Forbidden`         | Token lacks the `customer` role or the `chatting_read` and `chatting_write` scopes                             |
-| `429 Too Many Requests` | The global limiter or the `PerUserRateLimit` token bucket rejected the request. Check the `Retry-After` header |
-| `5xx`                   | Unhandled exception in Chat API or a failed dependency. Continue to step 6                                     |
-| `200` with a stream     | The workflow ran. Continue to step 3                                                                           |
+**`5xx` or `200` with fallback text:** Continue to dependency and trace checks.
 
 </Step>
-<Step title="Separate validation rejections from accepted requests">
+<Step title="Trace workflow stages in OpenTelemetry">
 
-Find the `InputValidationExecutor` result in the `chat-workflow` trace. A rejected message returns one of these replies and never reaches routing:
+Inspect the trace in Aspire Dashboard (local) or Azure Log Analytics (`<ENV>`):
 
-- `Could you please provide more details? Your message appears to be empty.`
-- `I'm sorry, but I can't process that request. Please rephrase your question about books or our bookstore services.`
+**Input validation:** Confirm whether the turn was accepted or rejected as empty/unsafe.
 
-Acceptance only means the message can enter routing. It does not mean the turn succeeded.
+**Decision router:** Confirm `Microsoft-Decision-1` selected [[agent|book-agent]], [[agent|qa-agent]], or [[agent|rating-agent]].
 
-</Step>
-<Step title="Trace routing and specialist execution">
-
-For accepted messages, find the `DecisionRouterExecutor` log entry (for example, `Decision router selected Book (confidence=0.912)`). Then confirm that the selected sub-workflow (`BookWorkflowExecutor`, `QAWorkflowExecutor`, or `RatingWorkflowExecutor`) produced an assistant message, and that any handoff (`handoff_to_book`, `handoff_to_qa`, or `handoff_to_rating`) completed.
-
-</Step>
-<Step title="Check the response formatter result">
-
-`ResponseFormatterExecutor` takes the last assistant message and applies these rules:
-
-- **Assistant message with only a tool call:** returns an empty string so the Storefront can render the tool call (such as `showBookCard`). This is expected.
-- **Empty text, or text that was only leaked system-prompt markers:** returns the fallback message `I apologize, but I couldn't generate a proper response. Could you please try rephrasing your question?`
-- **Normal text:** returns trimmed, punctuated text.
-
-A fallback message means the specialist produced no usable text. Continue to step 6 to find out why.
+**Specialist & formatter:** Confirm the selected specialist produced text or a client UI tool call (an empty text string with a tool call is expected for Storefront cards).
 
 </Step>
 <Step title="Check downstream dependencies">
 
-Look for failed spans or errors from each dependency in the trace:
+Look for failed spans or timeouts across:
 
-| Dependency                                                         | What to check                                                                                      |
-| :----------------------------------------------------------------- | :------------------------------------------------------------------------------------------------- |
-| Microsoft Foundry (`chat` and `decision` deployments)              | Model call errors, throttling, or `CognitiveServicesUser` RBAC failures                            |
-| Presidio (`presidio-analyzer`, `presidio-anonymizer`, port `3000`) | PII middleware call failures                                                                       |
-| MCP Tools (`mcptools`, `/mcp`)                                     | Book Agent catalog tool errors                                                                     |
-| Rating API (`rating`, A2A gRPC)                                    | Timeouts (the client timeout is 2 minutes) or token exchange failures for the Entra Agent Identity |
+**Microsoft Foundry:** Model errors, throttling, or `CognitiveServicesUser` RBAC failures.
 
-In Azure, stream recent Chat API logs:
+**[[service|presidio-api]]:** PII analyzer/anonymizer failures.
 
-<CodeGroup>
+**[[service|mcp-server]]:** Catalog tool errors during [[agent|book-agent]] execution.
 
-```bash
-az containerapp logs show --name <chatting-app-name> --resource-group <resource-group> --tail 200
-```
-
-</CodeGroup>
-
-Where:
-
-- `<chatting-app-name>`: The Azure Container Apps name for the `chatting` resource in your environment.
-- `<resource-group>`: The resource group that `aspire deploy` deployed BookWorm into (`AZURE_RESOURCE_GROUP`).
-
-The generated Bicep snapshot names this Container App `chatting`.
+**[[service|rating-api]]:** A2A gRPC timeouts (2-minute client timeout) or Entra Agent Identity token exchange errors.
 
 </Step>
-<Step title="Check session persistence after a restart">
+<Step title="Verify session storage if history was lost">
 
-Chat API stores AG-UI conversation sessions in Azure Blob Storage, in the `chatting-blob` container under the `ag-ui/` prefix. Sessions survive Chat API container restarts.
-
-If a conversation lost its history after a restart, check Blob Storage:
-
-- **Local:** confirm the Azurite emulator (`storage`) is running in the Aspire dashboard.
-- **Azure:** confirm the Storage Account is reachable and that the `chatting` managed identity still has blob data access.
-
-The `chatting` managed identity receives the `Storage Blob Data Contributor` role on the Storage Account for `chatting-blob`.
-
-<Admonition type="note">
-	Book Agent file memory (`file_memory_*` tools) is separate from AG-UI sessions. It lives on the
-	container's local file system and does not survive a container restart. Losing in-progress
-	research notes after a restart is expected. Losing the conversation transcript is not.
-</Admonition>
-
-</Step>
-<Step title="Recover or escalate">
-
-- **Validation rejection:** explain the input limit and ask the customer to send a non-empty request about books or store services.
-- **`401`, `403`, or `429`:** ask the customer to sign in again, or to wait for the `Retry-After` interval.
-- **Accepted request with a failed dependency:** retry after the dependency is healthy. Do not treat acceptance as proof of completion.
-- **Repeated fallback or empty replies:** escalate to the contributor team with the details in [Verification](#verification).
+[[service|chat-api]] persists conversation transcripts in [[container|chat-session-blob]]. Confirm the Storage Account (or local Azurite) is reachable and the [[service|chat-api]] Managed Identity holds `Storage Blob Data Contributor`.
 
 </Step>
 </Steps>
 
 ## Verification
 
-Replay an equivalent sanitized request and confirm the trace shows each stage completing:
+Replay an equivalent sanitized request against `/chatting/ag-ui` and confirm HTTP `200` with a non-fallback assistant response or expected UI tool call in the trace:
 
-<CodeGroup>
+```bash
+az containerapp logs show --name <SERVICE_NAME> --resource-group <RESOURCE_GROUP> --tail 50
+```
+
+Expected trace progression:
 
 ```text
 1. /ag-ui returns 200 with an event stream
-2. InputValidationExecutor -> AcceptedInput
-3. DecisionRouterExecutor -> "Decision router selected <Book|QA|Rating>"
-4. Specialist sub-workflow -> assistant message with text or a tool call
-5. ResponseFormatterExecutor -> non-fallback text, or an empty string for a tool call
+2. Input validation -> accepted
+3. Decision router -> selected specialist (<Book|QA|Rating>)
+4. Specialist -> assistant text or client UI tool call
 ```
 
-</CodeGroup>
+## Rollback / Escalation
 
-Before escalating, capture these sanitized details:
-
-- Environment and approximate time.
-- Request path and HTTP status.
-- Validation outcome and selected specialist.
-- Failed dependency, if any.
-- Observed final result (fallback text, empty string, or error).
-
-:::danger
-Do not include raw customer prompts or personal data in diagnostics. Record the request category and stage outcomes only.
-:::
-
-## Troubleshooting
-
-| Symptom                                                             | Cause                                                                                                                                           | Fix                                                                                  |
-| :------------------------------------------------------------------ | :---------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------- |
-| `401 Unauthorized` on `/chatting/ag-ui`                             | Missing or expired Microsoft Entra ID token                                                                                                     | Ask the customer to sign in again in Storefront                                      |
-| `403 Forbidden` on `/chatting/ag-ui`                                | Token lacks the `customer` role or the `chatting_read`/`chatting_write` scopes                                                                  | Check the Entra ID app role assignment and requested scopes for the customer         |
-| `429 Too Many Requests`                                             | `PerUserRateLimit` (30 tokens, 20 refilled every 10 seconds) or the global limiter (100 concurrent, 30 requests per minute per IP) was exceeded | Wait for the `Retry-After` interval. Investigate if one client sends repeated bursts |
-| Reply says the message appears to be empty                          | The prompt was empty or whitespace after trimming                                                                                               | Ask the customer to type a question                                                  |
-| Reply asks to rephrase a question about books or bookstore services | The validation regex, the governance safety check, or `is_safe` routing rejected the prompt                                                     | Follow How to diagnose unexpected chat routing or rejection                          |
-| Fallback prompt to rephrase appears after an accepted request       | The specialist returned no text, or the text contained only leaked system-prompt markers                                                        | Check specialist spans and dependencies (steps 4 and 6)                              |
-| Empty assistant text, but a book card or list renders               | Expected: the formatter passes tool calls through with an empty string                                                                          | No action needed                                                                     |
-| Empty assistant text and nothing renders                            | The Storefront did not handle the tool call, or the tool is missing from the client                                                             | Check the Storefront AG-UI tool registration for the tool name in the trace          |
-| Rating question hangs, then fails                                   | Rating API A2A gRPC call exceeded the 2-minute timeout or token exchange failed                                                                 | Check Rating API health and Entra Agent Identity configuration (`ratingAgentId`)     |
-| Conversation history is missing after a restart                     | Azure Blob Storage (`chatting-blob`) or Azurite is unreachable, or access was removed                                                           | Restore storage access (step 7). Sessions are durable when storage is healthy        |
-| `/health` returns `404` in Azure                                    | Health endpoints are mapped only in the `Development` environment                                                                               | Use Azure Container Apps revision health and logs instead                            |
+- **Rollback:** If a recent [[service|chat-api]] deployment introduced regressions in prompts, routing, or middleware, roll back to the previous Container App revision in `<RESOURCE_GROUP>`.
+- **Escalation:** Escalate repeated fallbacks or dependency faults to [[team|contributor-team]] (code/prompts) or [[team|platform-team]] (Foundry/RBAC/Storage).
 
 ## Related documentation
 
-- Conversational architecture and domain boundaries reference — Stages, persistence tiers, and security controls.
-- How BookWorm routes customer chat requests — How validation, routing, and formatting fit together.
-- How to triage incomplete or inconsistent book research — Triage for partial Book Agent answers.
+- [[flow|agent-orchestration]] — End-to-end conversational workflow.
+- [[adr|adr-002-fail-closed-pii-middleware]] — Fail-closed PII filtering behavior.

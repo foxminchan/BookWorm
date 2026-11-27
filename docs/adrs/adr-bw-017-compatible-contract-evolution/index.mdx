@@ -19,61 +19,42 @@ decisionMakers:
 x-scope: "Whole system"
 ---
 
-## Context and problem statement
+| Field                  | Value                                                                                                                                                       |
+| :--------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Status**             | Proposed                                                                                                                                                    |
+| **Date**               | 2026-11-07                                                                                                                                                  |
+| **Owners**             | [[team\|contributor-team]]                                                                                                                                  |
+| **Affected Resources** | [[domain\|bookworm]]                                                                                                                                        |
+| **Related ADRs**       | [[adr\|adr-bw-004-explicit-http-and-grpc-contracts]], [[adr\|adr-bw-010-cross-boundary-correlation]], [[adr\|adr-bw-016-layered-architecture-verification]] |
 
-Independent releases fail when one area changes a web request, internal agreement, background update, or route name without warning the areas that use it.
+## Context & Problem Statement
 
-BookWorm needs rules that keep routine releases compatible and coordinate unavoidable breaking changes.
+Independent service deployments break when a publisher removes fields, renames topics, or alters semantic meaning in HTTP, gRPC, or Kafka contracts without coordinating with consumers. BookWorm needs clear evolution rules so routine additive changes ship independently while breaking changes follow a controlled migration.
 
-## Decision drivers
+## Decision Drivers
 
-- **Interoperability:** Keep publishers and consumers compatible during rolling releases.
-- **Independent releases:** Let safe additions ship without updating every area.
-- **Meaningful changes:** Protect names, routing, and business meaning as well as technical formats.
+- **Rolling-upgrade safety:** Keep producers and consumers compatible during staggered deployments.
+- **Independent velocity:** Ship additive contract improvements without lockstep releases.
+- **Semantic integrity:** Protect business meaning and topic routing, not just wire syntax.
 
-## Considered options
+## Options Considered
 
-1. Review impact and compatibility before publishing a change
-2. Let publishers change agreements freely
-3. Update recorded agreements before checking compatibility
-4. Release every area together for every change
+| Option                                                                 | Pros                                            | Cons                                                    |
+| :--------------------------------------------------------------------- | :---------------------------------------------- | :------------------------------------------------------ |
+| **Backward-compatible evolution + impact review for breaking changes** | Safe independent deploys; clear versioning path | Automated checks cannot catch every semantic shift      |
+| **Unrestricted publisher changes**                                     | Fast for single-team iteration                  | Breaks downstream consumers and customer journeys       |
+| **Overwrite contract baselines before testing**                        | Checks pass immediately                         | Defeats the safety net of contract testing              |
+| **Lockstep releases across all services**                              | Versions always match                           | Eliminates independent deployability; high rollout risk |
 
-## Decision outcome
+## Decision & Consequences
 
-Chosen option: **Review impact and compatibility before publishing a change**.
+**Chosen Option:** Require backward-compatible (additive, optional) evolution for existing HTTP, gRPC, and Kafka contracts, gated by consumer-impact review and automated contract/schema checks. Unavoidable breaking changes must introduce a new API version or topic and coordinate consumer migration.
 
-Before changing a web request, internal agreement, or background update:
+- **Positive:** Services deploy independently without breaking active consumers.
+- **Negative:** Breaking migrations require dual-support periods and explicit deprecation.
 
-1. Identify the owner and every known user.
-2. Prefer additions that older users can accept.
-3. Run compatibility checks before approved agreements change.
-4. Coordinate a migration when a breaking or meaning-changing adjustment is unavoidable.
+### Compliance Criteria
 
-### Consequences
-
-- **Positive:** Compatible improvements can ship independently.
-- **Negative:** Breaking changes require planning, approval, and documentation.
-- **Follow-up:** Keep the list of users current and require compatibility checks for every agreement change.
-
-## Pros and cons of the options
-
-### Review impact and compatibility before publishing a change
-
-- **Good**, because automated checks catch incompatible removals and format changes.
-- **Good**, because versioning provides a clear migration path.
-- **Bad**, because automated tools cannot detect every change in meaning.
-
-### Let publishers change agreements freely
-
-- **Good**, because publishers iterate without coordination.
-- **Bad**, because unannounced changes break customer journeys and connected areas.
-
-### Update recorded agreements before checking compatibility
-
-- **Good**, because checks pass immediately.
-- **Bad**, because rewriting the baseline removes the safety net.
-
-### Release every area together for every change
-
-- **Good**, because all areas use matching versions.
-- **Bad**, because it removes independent release ability and creates large rollout risk.
+- Existing required fields, enum values, or topic names must not be removed or renamed in place.
+- Contract changes must be reflected in OpenAPI/Protobuf/JSON schemas and verified against consumer contract tests.
+- Breaking HTTP changes must increment the explicit API version (e.g., `v1` to `v2`).

@@ -19,56 +19,42 @@ decisionMakers:
 x-scope: "Whole system"
 ---
 
-## Context and problem statement
+| Field                  | Value                                                                                                                                               |
+| :--------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Status**             | Proposed                                                                                                                                            |
+| **Date**               | 2026-11-07                                                                                                                                          |
+| **Owners**             | [[team\|contributor-team]]                                                                                                                          |
+| **Affected Resources** | [[domain\|bookworm]]                                                                                                                                |
+| **Related ADRs**       | [[adr\|adr-bw-005-kafka-integration-backbone]], [[adr\|adr-bw-017-compatible-contract-evolution]], [[adr\|adr-004-use-domain-apis-as-mcp-backends]] |
 
-Checkout checks, shopping-cart updates, and customer-assistant tools sometimes need an immediate answer from another area. If an area reads another area's private records or calls its internal work directly, it becomes dependent on details that should remain private.
+## Context & Problem Statement
 
-BookWorm needs clear rules for immediate requests between areas.
+Synchronous interactions—such as checkout price validation between [[service|order-api]] and [[service|catalog-api]], basket reads, and [[service|mcp-server]] tool calls—require immediate responses. Reading another service's database or invoking internal handlers directly couples callers to private implementation details and bypasses authorization.
 
-## Decision drivers
+## Decision Drivers
 
-- **Ownership:** Separate public information from private records and internal work.
-- **Interoperability:** Give both customers and connected areas clear, reviewable ways to request answers.
-- **Boundary clarity:** Use immediate requests only when an answer is genuinely needed now.
+- **Encapsulation:** Separate public contracts from private persistence and internal handlers.
+- **Protocol fit:** Serve external clients via RESTful HTTP and internal service-to-service queries via typed gRPC.
+- **Synchronous restraint:** Reserve request-response calls for operations that genuinely require an immediate answer.
 
-## Considered options
+## Options Considered
 
-1. Use clearly owned and versioned request agreements
-2. Read another area's records directly
-3. Use one web-request format for every immediate interaction
-4. Use one fast internal-request format for every immediate interaction
+| Option                                              | Pros                                                                        | Cons                                                                      |
+| :-------------------------------------------------- | :-------------------------------------------------------------------------- | :------------------------------------------------------------------------ |
+| **Owned HTTP APIs + typed internal gRPC contracts** | Strong encapsulation, authorization at boundaries, and typed internal calls | Requires maintaining both OpenAPI and Protocol Buffer definitions         |
+| **Direct cross-service database reads**             | Zero network hop                                                            | Exposes private schemas and bypasses domain validation and auth           |
+| **HTTP/JSON only for all calls**                    | Uniform tooling everywhere                                                  | Higher serialization overhead and weaker schema typing for internal calls |
+| **gRPC only for all calls**                         | Single typed contract format                                                | Browsers and external clients still require an HTTP/REST gateway          |
 
-## Decision outcome
+## Decision & Consequences
 
-Chosen option: **Use clearly owned and versioned request agreements**.
+**Chosen Option:** Integrate synchronous operations exclusively through service-owned HTTP APIs (for frontend and external consumers) and typed gRPC contracts (for internal service-to-service reads such as [[service|catalog-api]] and [[service|basket-api]]). Work that does not require an immediate response must use asynchronous messaging instead.
 
-Outside clients use documented web requests. Areas use typed internal requests when they need immediate answers from a trusted source. Long-running work does not have to block while waiting and can continue through background updates.
+- **Positive:** Callers depend only on versioned public contracts; owning services enforce all validation and authorization.
+- **Negative:** Synchronous calls remain sensitive to downstream availability and require explicit timeouts and fallbacks.
 
-### Consequences
+### Compliance Criteria
 
-- **Positive:** Requesting areas depend only on public agreements, not private records or internal methods.
-- **Negative:** Immediate calls can slow down or fail if the other area is unavailable.
-- **Follow-up:** Review web and internal request agreements together before release.
-
-## Pros and cons of the options
-
-### Use clearly owned and versioned request agreements
-
-- **Good**, because customer-facing and internal callers receive an appropriate request format.
-- **Good**, because the owning area checks access and information before answering.
-- **Bad**, because two request formats require more documentation and review.
-
-### Read another area's records directly
-
-- **Good**, because it avoids a separate network request.
-- **Bad**, because it exposes private details and bypasses the area's own checks.
-
-### Use one web-request format for every immediate interaction
-
-- **Good**, because every caller uses familiar web tools.
-- **Bad**, because it does not suit every internal call and can add more data to each request.
-
-### Use one fast internal-request format for every immediate interaction
-
-- **Good**, because internal agreements use one consistent structure.
-- **Bad**, because websites and outside callers still need a web-based bridge.
+- Services must never query another service's database, cache, or internal mediator handlers.
+- External and frontend endpoints must expose documented HTTP/OpenAPI contracts; internal synchronous reads should prefer typed gRPC contracts.
+- Long-running or post-commit side effects must be offloaded to asynchronous events rather than blocking HTTP/gRPC calls.

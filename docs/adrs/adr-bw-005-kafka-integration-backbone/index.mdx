@@ -20,58 +20,42 @@ decisionMakers:
 x-scope: "Whole system"
 ---
 
-## Context and problem statement
+| Field                  | Value                                                                                                                                                                                              |
+| :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Status**             | Proposed                                                                                                                                                                                           |
+| **Date**               | 2026-11-07                                                                                                                                                                                         |
+| **Owners**             | [[team\|platform-team]]                                                                                                                                                                            |
+| **Affected Resources** | [[domain\|bookworm]]                                                                                                                                                                               |
+| **Related ADRs**       | [[adr\|adr-bw-008-durable-message-handoffs]], [[adr\|adr-bw-010-cross-boundary-correlation]], [[adr\|adr-003-finance-kafka-order-correlation]], [[adr\|adr-001-notification-kafka-command-intake]] |
 
-BookWorm coordinates checkout, shopping-cart cleanup, emails, review updates, and scheduled search maintenance across independent areas. Running all follow-up work while the customer is still waiting makes a response slow and creates unnecessary dependence on other areas.
+## Context & Problem Statement
 
-BookWorm needs one standard background-update system for work that does not require an immediate response. Areas that do not need it may continue to operate without it.
+BookWorm coordinates checkout, basket cleanup, email delivery, rating projection, and scheduled vector indexing across independent services. Executing these follow-up steps synchronously would inflate user-facing latency and couple service availability. BookWorm needs one standard asynchronous integration backbone for decoupled workflows while allowing purely interactive services (like [[service|chat-api]]) to opt out.
 
-## Decision drivers
+## Decision Drivers
 
-- **Decoupling:** Keep the original response independent from later work.
-- **Standardization:** Use consistent update formats and naming rules.
-- **Explicit ownership:** Let the area that publishes an update define its meaning and name.
+- **Temporal decoupling:** Keep user-facing writes fast and resilient to downstream downtime.
+- **Standardized operations:** Use uniform topic naming, retry policies, and dead-letter queues.
+- **Explicit contract ownership:** Let each publisher define its integration event or command schema.
 
-## Considered options
+## Options Considered
 
-1. Use one shared background messaging system
-2. Handle follow-up work through immediate web requests
-3. Let each area choose a different messaging system
-4. Coordinate work by repeatedly checking shared records
+| Option                                                     | Pros                                                                   | Cons                                                                |
+| :--------------------------------------------------------- | :--------------------------------------------------------------------- | :------------------------------------------------------------------ |
+| **Shared Kafka backbone (WolverineFx) for async services** | Independent scaling, durable logs, replayability, and per-service DLQs | Requires broker monitoring, lag alerting, and DLQ replay procedures |
+| **Synchronous HTTP chains for follow-up work**             | Immediate success/failure feedback                                     | Downstream outages block checkout and review submissions            |
+| **Per-service broker choice**                              | Tailored to individual workloads                                       | Fragments operational tooling, monitoring, and retry semantics      |
+| **Shared-database polling**                                | No separate broker required                                            | Violates service data ownership and adds polling load               |
 
-## Decision outcome
+## Decision & Consequences
 
-**Chosen option:** Use one shared background messaging system across the platform.
+**Chosen Option:** Use Kafka (via WolverineFx) as the standard asynchronous integration backbone across event-driven services, with bounded retries and per-service dead-letter queues. Purely synchronous or interactive services (such as [[service|chat-api]] and [[service|mcp-server]]) intentionally omit broker integration.
 
-This approach lets different parts of BookWorm work independently while keeping updates organized, consistent, and easy to track.
+- **Positive:** Publishers and consumers evolve and scale independently; failed deliveries route cleanly to service-owned DLQs.
+- **Negative:** Operators must monitor consumer lag and maintain DLQ replay procedures.
 
-Eight core parts of BookWorm connect to this shared system. Features that rely on instant, real-time responses—such as the chat assistant—intentionally skip it. All background updates follow one standard format and clear naming rules. If a background task fails, the system automatically retries it a few times after brief pauses. If it still cannot finish, the task moves to a dedicated holding area for that specific feature so the team can review and fix it without losing data. The team uses a local version with a visual dashboard for testing, and a managed cloud service for the live platform.
+### Compliance Criteria
 
-### Consequences
-
-- **Positive:** Areas publish outcomes without waiting for later steps to finish.
-- **Negative:** The messaging system needs monitoring and recovery procedures.
-- **Follow-up:** Define how each area protects work from loss or duplication and how updates remain traceable.
-
-## Pros and cons of the options
-
-### Use one shared background messaging system
-
-- **Good**, because publishing and receiving areas can grow independently.
-- **Good**, because updates can be replayed and processed in a reliable order.
-- **Bad**, because the system requires storage, monitoring, and failed-update recovery.
-
-### Handle follow-up work through immediate web requests
-
-- **Good**, because callers receive immediate success or failure.
-- **Bad**, because one unavailable area can block checkout or other dependent work.
-
-### Let each area choose a different messaging system
-
-- **Good**, because each area can choose a system suited to its needs.
-- **Bad**, because exchanging updates becomes more complex and requires more operational guidance.
-
-### Coordinate work by repeatedly checking shared records
-
-- **Good**, because work stays in familiar storage.
-- **Bad**, because repeated checking conflicts with clear area ownership and gives slower, less consistent updates.
+- Asynchronous cross-service events and commands must use configured Kafka channels following BookWorm's environment-prefixed naming convention.
+- Every Kafka consumer must configure bounded retries and a dedicated dead-letter queue.
+- Services without asynchronous integration needs must not register unnecessary broker dependencies.

@@ -10,124 +10,78 @@ badges:
     textColor: orange
 ---
 
-Use this runbook when a Quartz.NET job in **Scheduler** (`scheduler`) misses its UTC schedule, appears paused or failed in **Quartz Dashboard** (`quartz-dashboard`), or reports success while **Catalog Ingestion** (`catalog-ingestion`) makes no vector indexing progress. **Scheduler** runs only two jobs (`ProcessVectorBatchJob` and `HeartbeatJob`); email notification delivery is event-driven and not scheduled here.
+## Trigger / Symptom & Blast Radius
 
-## Prerequisites
+A Quartz.NET job in [[service|scheduler-service]] misses its UTC schedule, appears paused or failed in Quartz Dashboard (`/quartz`), or reports success while [[service|catalog-ingestion]] makes no vector indexing progress. Blast radius is limited to scheduled background jobs (5-minute vector batching and 30-second heartbeat); transactional APIs and email notifications are unaffected.
 
-- Microsoft Entra ID account with the `admin` role to sign in to **Quartz Dashboard** (`/quartz`).
-- Read access to **Aspire Dashboard** (locally) or **Azure Log Analytics** (Azure Container Apps) for `scheduler` and `catalog-ingestion` logs.
-- Read access to **Kafka UI** (locally) or **Confluent Cloud** for the unprefixed `scheduler.process-vector-batch` topic.
-- Read-only SQL access to `catalogdb` (PostgreSQL) to inspect `pending_vector_updates` and `schedulerdb` health metrics.
-
-## Steps
-
-<Steps>
-<Step title="Verify the Scheduler service is running">
-
-Check `scheduler` state in Aspire Dashboard or Azure Container Apps.
-
-<Admonition type="note">
-	In local Aspire runs, `scheduler` is configured with `.WithExplicitStart()` in `AppHost.cs`. Start
-	the `scheduler` resource manually from Aspire Dashboard before expecting jobs to fire locally.
+<Admonition type="danger">
+	Never edit [[container|catalog-database]] rows through [[container|scheduler-database]], and never
+	copy connection strings or credentials into incident notes.
 </Admonition>
 
-In local Development, check the liveness and readiness endpoints (Development only):
+## Pre-Flight Check
 
-<CodeGroup>
+Verify [[service|scheduler-service]] container status, stream logs, and check pending vector queue depth in [[container|catalog-database]]:
 
 ```bash
-curl -sS "https://localhost:7062/health"
+az containerapp show --name <SERVICE_NAME> --resource-group <RESOURCE_GROUP> --query "properties.runningStatus" -o tsv
 ```
 
-</CodeGroup>
-
-Expected output:
-
-<CodeGroup>
-
-```text
-Healthy
+```sql
+SELECT COUNT(*) AS pending_count, MIN(updated_at) AS oldest_updated_at FROM pending_vector_updates;
 ```
 
-</CodeGroup>
+## Quick Recovery Procedure
+
+<Steps>
+<Step title="Verify Scheduler is running and inspect Quartz Dashboard">
+
+In local Aspire runs, [[service|scheduler-service]] requires an explicit manual start in the Aspire Dashboard. In all environments, open `/quartz` (requires Entra ID `admin` role) and confirm triggers for `ProcessVectorBatchJob` (every 5 minutes UTC) and `HeartbeatJob` (every 30 seconds UTC) are in `NORMAL` state rather than `PAUSED`, `ERROR`, or `BLOCKED`.
 
 </Step>
-<Step title="Inspect job state, triggers, and execution history in Quartz Dashboard">
+<Step title="Check Scheduler database and Kafka outbox">
 
-Open **Quartz Dashboard** at `https://<quartz-dashboard-host>/quartz` (authenticate with Entra ID `admin` role) and inspect both jobs defined in `src/Services/Scheduler/BookWorm.Scheduler/jobs.json`:
+If jobs fail with execution exceptions, inspect [[service|scheduler-service]] logs for [[container|scheduler-database]] or Kafka connectivity errors publishing [[event|ProcessVectorBatchIntegrationEvent]] to [[channel|scheduler.process-vector-batch]]:
 
-- **`ProcessVectorBatchJob`** (`ProcessVectorBatchTrigger`): cron `0 0/5 * * * ?` UTC (every 5 minutes), `[DisallowConcurrentExecution]`, misfire instruction `FireOnceNow`.
-- **`HeartbeatJob`** (`HeartbeatTrigger`): cron `0/30 * * * * ?` UTC (every 30 seconds), misfire instruction `FireOnceNow`.
-
-Verify:
-
-- Scheduler instance check-ins are current in `schedulerdb`.
-- Triggers are in `NORMAL` (not `PAUSED`, `ERROR`, or `BLOCKED`) state and display a valid next fire time in UTC.
-- Execution history (retained for `30` days / up to `100,000` entries in `schedulerdb`) shows recent run durations and any sanitized `JobExecutionException` details.
+```bash
+az containerapp logs show --name <SERVICE_NAME> --resource-group <RESOURCE_GROUP> --tail 100
+```
 
 </Step>
-<Step title="Check `schedulerdb` and Wolverine outbox publication">
+<Step title="Verify downstream Catalog Ingestion if Scheduler succeeds">
 
-If `ProcessVectorBatchJob` failed with `JobExecutionException`, inspect `scheduler` logs for PostgreSQL (`schedulerdb`) or Kafka broker connectivity errors. `ProcessVectorBatchJob` publishes `ProcessVectorBatchIntegrationEvent` through Wolverine's PostgreSQL outbox (`wolverine` schema in `schedulerdb`) to the unprefixed Kafka topic `scheduler.process-vector-batch`.
-
-Never edit `catalogdb` rows through `schedulerdb`, and never copy connection strings or credentials into incident notes.
+A successful job run confirms only that the Kafka trigger was published. Check consumer lag on [[channel|scheduler.process-vector-batch]] and inspect [[service|catalog-ingestion]] logs for advisory lock contention, Microsoft Foundry embedding errors, or [[container|catalog-vector]] errors.
 
 </Step>
-<Step title="Verify downstream Catalog Ingestion progress when Scheduler succeeds">
+<Step title="Restore dependencies and resume triggers">
 
-A successful `ProcessVectorBatchJob` run confirms only that `ProcessVectorBatchIntegrationEvent` was published to Kafka—not that vectors updated in Qdrant (`vectordb`). Inspect the downstream pipeline:
-
-- **Kafka topic:** Confirm messages arrive on `scheduler.process-vector-batch` and check lag for consumer group `catalog-ingestion`.
-- **Pending queue in `catalogdb`:** Run a read-only count of pending vector updates:
-
-  ```sql
-  SELECT COUNT(*) AS pending_count, MIN(updated_at) AS oldest_updated_at
-  FROM pending_vector_updates;
-  ```
-
-- **Catalog Ingestion logs (`catalog-ingestion`):** Check `ProcessVectorBatchFunction` and `VectorBatchProcessor` logs for:
-  - PostgreSQL advisory lock `740031001` contention (`pg_try_advisory_lock` returns `false` when another batch is still running, causing a clean `0`-item skip).
-  - Microsoft Foundry `embedding` deployment errors (`Cohere.EmbedV40` quota, auth, or incomplete batch errors).
-  - Qdrant (`vectordb`) upsert/delete errors.
-  - Note that each batch processes at most `200` rows (`BatchSize = 200`), so a large backlog drains across multiple 5-minute cycles.
-
-</Step>
-<Step title="Recover safely">
-
-- Restore the failing dependency (`schedulerdb`, Kafka broker, `catalog-ingestion`, Microsoft Foundry access, or Qdrant `vectordb`) through standard operational or deployment workflows.
-- Resume a paused trigger in **Quartz Dashboard** only under your team's approved change procedure.
-- After restoring downstream dependencies, prefer waiting for the next 5-minute scheduled firing (or `FireOnceNow` catch-up) rather than triggering multiple manual runs concurrently.
-- Escalate Scheduler, `schedulerdb`, Quartz Dashboard Entra ID OIDC, or Kafka broker issues to platform infrastructure owners, and `BookWorm.Catalog.Ingestion` / embedding / Qdrant issues to Catalog maintainers.
+Restore [[container|scheduler-database]], Kafka, or downstream [[service|catalog-ingestion]] dependencies. Resume any paused trigger in `/quartz` under approved change procedures and allow the next 5-minute cycle (or `FireOnceNow` catch-up) to drain the queue.
 
 </Step>
 </Steps>
 
 ## Verification
 
-Confirm both Scheduler and downstream Catalog Ingestion are healthy:
+Confirm `HeartbeatTrigger` and `ProcessVectorBatchTrigger` show `Succeeded` runs in `/quartz` and `pending_count` in [[container|catalog-database]] trends toward `0`:
 
-1. In **Quartz Dashboard**, confirm `HeartbeatTrigger` fires every 30 seconds UTC and `ProcessVectorBatchTrigger` shows a valid next 5-minute UTC fire time with `Succeeded` execution history.
-2. In `catalogdb`, re-run the read-only pending count query across two 5-minute cycles and confirm `pending_count` trends downward toward `0`:
+```sql
+SELECT COUNT(*) AS pending_count FROM pending_vector_updates;
+```
 
-   ```sql
-   SELECT COUNT(*) AS pending_count, MIN(updated_at) AS oldest_updated_at
-   FROM pending_vector_updates;
-   ```
+Expected output:
 
-3. Confirm `catalog-ingestion` logs record `"Processed <count> pending vector updates"` with no new errors.
+```text
+ pending_count
+---------------
+             0
+```
 
-## Troubleshooting
+## Rollback / Escalation
 
-| Symptom                                                                                        | Cause                                                                                                                                                    | Fix                                                                                                                           |
-| :--------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------- |
-| No jobs fire locally in Aspire                                                                 | `scheduler` is registered with `.WithExplicitStart()` in `AppHost.cs`                                                                                    | Start the `scheduler` resource explicitly in Aspire Dashboard                                                                 |
-| `ProcessVectorBatchJob` fails with `JobExecutionException`                                     | `schedulerdb` PostgreSQL unavailable or Kafka broker unreachable during Wolverine publish                                                                | Restore `schedulerdb` or Kafka connectivity; allow next scheduled firing or `FireOnceNow` catch-up                            |
-| Trigger stays in `PAUSED` or `ERROR` state in Quartz Dashboard                                 | Operator paused the trigger or persistent store error occurred                                                                                           | Resolve underlying `schedulerdb` fault and resume the trigger in Quartz Dashboard with `admin` role                           |
-| `ProcessVectorBatchJob` succeeds every 5 minutes, but `pending_vector_updates` does not shrink | `catalog-ingestion` consumer stopped, advisory lock `740031001` held by a stuck session, Microsoft Foundry embedding error, or Qdrant (`vectordb`) error | Inspect `catalog-ingestion` logs and Kafka lag on `scheduler.process-vector-batch`; restore the failing downstream dependency |
-| `401` / `403` signing in to `/quartz`                                                          | User lacks Microsoft Entra ID `admin` app role for `quartz-dashboard`                                                                                    | Assign the `admin` role in Entra ID and sign in again                                                                         |
+- **Rollback:** Pause the affected trigger in `/quartz` if a downstream dependency is overwhelmed, then resume once healthy.
+- **Escalation:** Escalate Scheduler, [[container|scheduler-database]], or Kafka issues to [[team|platform-team]]; escalate ingestion/embedding issues to [[team|contributor-team]].
 
 ## Related documentation
 
-- Platform integration boundaries reference — Scheduler and Notification contracts and storage ownership.
-- Scheduled work and email notifications — How Quartz.NET jobs and stateless notifications work.
-- How to troubleshoot a Notification delivery backlog — Separate runbook for email delivery lag and DLQ triage.
+- [[flow|product-ingestion]] — End-to-end scheduled vector ingestion flow.
+- [[adr|adr-001-postgresql-quartz-persistence]] — Quartz persistence in [[container|scheduler-database]].
