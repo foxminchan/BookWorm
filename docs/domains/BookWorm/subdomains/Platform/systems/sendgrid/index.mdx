@@ -1,4 +1,4 @@
----
+﻿---
 id: sendgrid
 name: SendGrid
 version: 1.0.0
@@ -7,7 +7,7 @@ summary: |
   transactional emails over authenticated SMTP.
 scope: external
 owners:
-  - platform-team
+  - platform-engineering-team
 services:
   - id: sendgrid-api
     version: 1.0.0
@@ -26,7 +26,7 @@ badges:
 SendGrid provides BookWorm's external SMTP email relay boundary within the [[domain|platform]] domain, offloading internet mail routing, sender reputation, and downstream ISP delivery. Only [[system|notification-system]] integrates with SendGrid at runtime to submit rendered order lifecycle emails. Owning BookWorm's notification state, managing retry queues, and dictating order or payment status are explicitly out of scope.
 
 :::note
-SendGrid acceptance confirms only that the provider accepted the SMTP submission—it does not guarantee recipient inbox delivery or confirm that the underlying business order succeeded.
+SendGrid acceptance confirms only that the provider accepted the SMTP submissionâ€”it does not guarantee recipient inbox delivery or confirm that the underlying business order succeeded.
 :::
 
 ## Contained Capabilities
@@ -57,7 +57,7 @@ SendGrid acceptance confirms only that the provider accepted the SMTP submission
 
 ## Related Documentation
 
-- [[flow|user-checkout]] — Checkout flow triggering transactional order emails.
-- [[system|notification-system]] — Internal email rendering and retry boundary.
-- [[service|sendgrid-api]] — External SMTP integration details and credential practices.
-- [[doc|domains/bookworm/subdomains/platform/engineering/platform-integration-boundaries]] — Platform external integration boundaries.
+- [[flow|user-checkout]] â€” Checkout flow triggering transactional order emails.
+- [[system|notification-system]] â€” Internal email rendering and retry boundary.
+- [[service|sendgrid-api]] â€” External SMTP integration details and credential practices.
+- [[doc|domains/bookworm/subdomains/platform/engineering/platform-integration-boundaries]] â€” Platform external integration boundaries.

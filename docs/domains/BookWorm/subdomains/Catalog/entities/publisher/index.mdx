@@ -1,4 +1,4 @@
----
+﻿---
 id: publisher
 name: Publisher
 version: 1.0.0
@@ -16,7 +16,7 @@ properties:
     required: true
     description: A name of the publisher
 owners:
-  - contributor-team
+  - catalog-experience-team
 ---
 
 `Publisher` is the Catalog aggregate root for the publishing house or imprint of a book. Catalog API owns it and persists it in PostgreSQL (`catalogdb`).
@@ -39,7 +39,7 @@ owners:
 | Name   | Type                   | Required | Default               | Constraints                                 | Description                 |
 | :----- | :--------------------- | :------- | :-------------------- | :------------------------------------------ | :-------------------------- |
 | `id`   | `PublisherId` (`Guid`) | Yes      | `uuidv7()` (database) | Primary key                                 | Unique publisher identifier |
-| `name` | `string`               | Yes      | —                     | Non-whitespace; max 100 chars; unique index | Publisher display name      |
+| `name` | `string`               | Yes      | â€”                   | Non-whitespace; max 100 chars; unique index | Publisher display name      |
 
 ## Invariants and behavior
 
@@ -71,5 +71,5 @@ owners:
 
 ## Related documentation
 
-- [[entity|book]] — Aggregate that references a publisher.
-- [[entity|category]] — Sibling Catalog classification entity.
+- [[entity|book]] â€” Aggregate that references a publisher.
+- [[entity|category]] â€” Sibling Catalog classification entity.

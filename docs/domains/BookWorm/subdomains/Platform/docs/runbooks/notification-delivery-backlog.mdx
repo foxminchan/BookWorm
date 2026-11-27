@@ -1,4 +1,4 @@
----
+﻿---
 title: Notification delivery backlog
 summary: Diagnose and safely recover when unsent email records accumulate or stop progressing.
 version: 1.0.0
@@ -67,9 +67,9 @@ az containerapp logs show --name <SERVICE_NAME> --resource-group <RESOURCE_GROUP
 ## Rollback / Escalation
 
 - **Rollback:** If a recent [[service|notification-api]] deployment introduced template rendering or SMTP config regressions, roll back to the previous Container App revision in `<RESOURCE_GROUP>`.
-- **Escalation:** Escalate SMTP provider/credential issues to [[team|platform-team]]; escalate template or handler defects to [[team|contributor-team]].
+- **Escalation:** Escalate SMTP provider/credential issues to [[team|platform-engineering-team]]; escalate template or handler defects to [[team|platform-engineering-team]].
 
 ## Related documentation
 
-- [[flow|notification-delivery]] — End-to-end notification delivery flow.
-- [[adr|adr-003-notification-smtp-provider-boundary]] — SMTP provider boundary and resilience.
+- [[flow|notification-delivery]] â€” End-to-end notification delivery flow.
+- [[adr|adr-003-notification-smtp-provider-boundary]] â€” SMTP provider boundary and resilience.

@@ -1,4 +1,4 @@
----
+﻿---
 id: adr-006-finance-delegate-notification-delivery
 name: "ADR-006: Delegate email delivery through shared Finance commands"
 version: 1.0.0
@@ -6,7 +6,7 @@ summary: Finance supplies order and recipient data through commands while Notifi
 status: accepted
 date: 2026-11-03
 owners:
-  - contributor-team
+  - commerce-fulfillment-team
 badges:
   - content: Integration
     backgroundColor: orange
@@ -40,7 +40,7 @@ This retrospective ADR documents the existing delegation boundary with [[system|
 
 ## 3. How It Works
 
-1. **Shared placement handoff:** When checkout coordination starts—and whenever a scheduled retry reissues it—Finance publishes a placement request immediately without waiting for basket cleanup first. Basket uses that request to clean up the submitted basket, while Notification independently uses it to prepare a new-order email.
+1. **Shared placement handoff:** When checkout coordination startsâ€”and whenever a scheduled retry reissues itâ€”Finance publishes a placement request immediately without waiting for basket cleanup first. Basket uses that request to clean up the submitted basket, while Notification independently uses it to prepare a new-order email.
 2. **Recipient check on final status emails:** When an Order reaches a completed or cancelled state, or when Finance exhausts its placement retries, Finance checks that both customer name and email are non-blank before sending a completion or cancellation email request. The initial placement request skips this check because Basket needs it regardless of contact fields.
 3. **Delegated email lifecycle:** [[system|notification-system]] takes full ownership of rendering the email, storing durable delivery records, submitting to the mail provider, and running maintenance retries.
 4. **No delivery acknowledgment back to Finance:** Finance treats email requests as fire-and-forget handoffs. Workflow completion depends strictly on Basket and Order lifecycle outcomes, not on email acceptance or inbox delivery.
@@ -56,7 +56,7 @@ This retrospective ADR documents the existing delegation boundary with [[system|
 ### Operational Realities & Caveats
 
 - **Not an exactly-once email mechanism:** Reissuing the shared placement request during timeout retries can create duplicate new-order emails as well as repeated basket cleanup.
-- **Strict terminal contact guard:** While Notification itself skips blank email addresses, Finance requires both name and email to be non-blank before sending completion or cancellation requests—meaning a workflow can finish without triggering a final email.
+- **Strict terminal contact guard:** While Notification itself skips blank email addresses, Finance requires both name and email to be non-blank before sending completion or cancellation requestsâ€”meaning a workflow can finish without triggering a final email.
 - **No validation or delivery guarantee:** Non-blank recipient details do not guarantee a valid or deliverable mailbox; mail-provider failures remain Notification's responsibility, and Finance completion cannot be equated with customer delivery.
 - **Shared contract review discipline:** Any schema or routing change to the shared placement command impacts both Basket and Notification independently and must be reviewed with both consumers.
 

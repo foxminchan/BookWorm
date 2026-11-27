@@ -1,12 +1,20 @@
----
+﻿---
 id: bookworm.{env}.finance.place-order
 name: Order Placement Command Channel
 version: 1.0.0
+type: topic
 summary: |
-  Kafka topic carrying Finance's shared order-placement command, consumed by
-  Basket for checkout cleanup and Notification to submit a new-order email.
+  Shared Kafka topic owned by the contributor team carrying Finance order
+  placement commands to Basket API for cleanup and Notification API for email.
 owners:
-  - contributor-team
+  - commerce-fulfillment-team
+badges:
+  - content: Kafka
+    backgroundColor: blue
+    textColor: blue
+  - content: Shared Topic
+    backgroundColor: purple
+    textColor: purple
 address: bookworm.{env}.finance.place-order
 parameters:
   env:
@@ -15,9 +23,12 @@ parameters:
       - staging
       - production
     default: development
+    examples:
+      - development
+      - staging
+      - production
     description: BookWorm deployment environment.
 deliveryGuarantee: at-least-once
-type: stream
 protocols:
   - kafka
 deadLetterChannel:
@@ -25,61 +36,56 @@ deadLetterChannel:
   version: 1.0.0
 ---
 
-Finance publishes this command after checkout to two independent consumers. Basket removes the basket and reports success or failure; Notification may submit a new-order email when contact details are available.
+## Purpose & Scope
 
-**Producer:** Finance order coordination. **Consumers:** Basket and Notification services.
+This shared command topic carries order-placement commands published by [[service|order-orchestration]] after checkout begins. Two independent consumers subscribe to it: [[service|basket-api]] removes the submitted basket and reports the outcome, while [[service|notification-api]] renders and submits a new-order confirmation email. Publication here does not confirm that basket cleanup or email delivery succeeded.
 
-A message here does not prove that the order was persisted, that the basket was removed, or that an email was delivered. Basket and Notification failures are tracked separately in their own dead-letter topics.
+:::warning
+**Shared Multi-Consumer Topic:** Never blindly replay messages to `bookworm.{env}.finance.place-order`. Replaying to this topic triggers _both_ [[service|basket-api]] and [[service|notification-api]] again. Use the consumer-specific dead-letter channel ([[channel|bookworm.&#123;env&#125;.basket.dead-letter-queue]] or [[channel|bookworm.&#123;env&#125;.notification.dead-letter-queue]]) when recovering a single consumer.
+:::
 
-## Channel information
+## Channel Specification
+
+| Property                               | Value                                                                                                                                                           |
+| :------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Bounded Context / Owner**            | [[domain\|ordering]] / [[team\|commerce-fulfillment-team]]                                                                                                      |
+| **Channel Type**                       | Topic                                                                                                                                                           |
+| **Address Pattern**                    | `bookworm.{env}.finance.place-order`                                                                                                                            |
+| **Parameters**                         | `env` (`development`, `staging`, `production`; default: `development`)                                                                                          |
+| **Protocol & Envelope Format**         | Kafka + CloudEvents JSON (`application/json`)                                                                                                                   |
+| **Partition Key & Ordering Guarantee** | Keyed by `orderId`; preserves per-order command ordering within a partition                                                                                     |
+| **Delivery Semantics**                 | At-least-once                                                                                                                                                   |
+| **Dead-Letter Channel**                | [[channel\|bookworm.&#123;env&#125;.notification.dead-letter-queue]] (Notification) and [[channel\|bookworm.&#123;env&#125;.basket.dead-letter-queue]] (Basket) |
+
+## Messages & Participants
+
+| Message                        | Type    | Producer                         | Consumer(s)                                            | Consumer Group                                         |
+| :----------------------------- | :------ | :------------------------------- | :----------------------------------------------------- | :----------------------------------------------------- |
+| [[command\|PlaceOrderCommand]] | Command | [[service\|order-orchestration]] | [[service\|basket-api]], [[service\|notification-api]] | Basket service consumer; Notification service consumer |
+
+## Ordering, Retries & Failure Handling
+
+- **Partition-key ordering:** Keying by `orderId` ensures commands for the same order stay serialized per partition across both consumer groups.
+- **Transient retries:** Each consumer group manages its own bounded retry/backoff policy independently (Redis retries in Basket; SMTP retries and listener cooldowns in Notification).
+- **Immediate DLQ routing:** Poison payloads, deserialization errors, or exhausted retries route independently to [[channel|bookworm.&#123;env&#125;.basket.dead-letter-queue]] or [[channel|bookworm.&#123;env&#125;.notification.dead-letter-queue]].
+- **Consumer idempotency:** [[service|basket-api]] handles repeated cleanup idempotently; [[service|notification-api]] uses a 24-hour message-ID cache, though timeout reissues with a new message ID can send another email.
+
+## Channel Details & Visualization
 
 <ChannelInformation />
 
-## Topic and message
-
-The topic is `bookworm.{env}.finance.place-order`. Replace `{env}` with `development`, `staging`, or `production`. Messages are CloudEvents JSON keyed by `orderId`. The example includes basket and order IDs, customer details, and total. The same message is visible to both consumers.
-
-## Operations and recovery
-
-Do not blindly replay this shared topic: it may repeat both basket cleanup and email processing. Check order and basket state, and check the mail provider if an email may already have been accepted. Use the consumer-specific dead-letter route when recovering only one failed consumer. Timeout reissues can have a new message ID and may produce another email.
-
-## Examples
-
-### CloudEvents Kafka message
-
-Kafka key: `0193f1a2-1111-7d8e-9f01-23456789abcd` (`orderId`)
-
-<CodeGroup>
-
-```json
-{
-	"specversion": "1.0",
-	"id": "0193f1a2-6e01-7d8e-9f01-23456789abcd",
-	"type": "BookWorm.Contracts.PlaceOrderCommand",
-	"source": "urn:bookworm:book-worm.finance",
-	"time": "2026-11-25T16:14:52Z",
-	"datacontenttype": "application/json",
-	"messagetype": "BookWorm.Contracts.PlaceOrderCommand",
-	"data": {
-		"id": "0193f1a2-6e01-7d8e-9f01-23456789abcd",
-		"creationDate": "2026-11-25T16:14:52Z",
-		"basketId": "0193f1a2-2222-7d8e-9f01-23456789abcd",
-		"fullName": "Alex Reader",
-		"email": "reader@example.com",
-		"orderId": "0193f1a2-1111-7d8e-9f01-23456789abcd",
-		"totalMoney": 59.98
-	}
-}
-```
-
-</CodeGroup>
-
-## Related documentation
-
-- [[channel|bookworm.&#123;env&#125;.ordering.user-checked-out]]
-- [[channel|bookworm.&#123;env&#125;.basket.delete-complete]]
-- [[channel|bookworm.&#123;env&#125;.basket.delete-failed]]
-- [[channel|bookworm.&#123;env&#125;.basket.dead-letter-queue]]
-- [[channel|bookworm.&#123;env&#125;.notification.dead-letter-queue]]
-
 <NodeGraph />
+
+## Related Documentation
+
+- [[channel|bookworm.&#123;env&#125;.basket.dead-letter-queue]] â€” Basket consumer dead-letter queue
+- [[channel|bookworm.&#123;env&#125;.notification.dead-letter-queue]] â€” Notification consumer dead-letter queue
+- [[channel|bookworm.&#123;env&#125;.ordering.user-checked-out]] â€” Upstream checkout trigger topic
+- [[channel|bookworm.&#123;env&#125;.basket.delete-complete]] â€” Basket cleanup success topic
+- [[channel|bookworm.&#123;env&#125;.basket.delete-failed]] â€” Basket cleanup failure topic
+- [[service|order-orchestration]] â€” Command producer
+- [[service|basket-api]] â€” Cleanup consumer
+- [[service|notification-api]] â€” Email consumer
+- [[flow|user-checkout]] â€” End-to-end checkout workflow
+- [[flow|notification-delivery]] â€” Notification delivery workflow
+- [[doc|arc42/08-crosscutting-concepts/002-contracts-and-messaging]] â€” Messaging standards and idempotency rules

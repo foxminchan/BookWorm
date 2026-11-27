@@ -1,4 +1,4 @@
----
+﻿---
 id: adr-bw-004-explicit-http-and-grpc-contracts
 name: "ADR-BW-004: Integrate request-response operations through owned HTTP and gRPC contracts"
 version: 1.0.0
@@ -6,7 +6,7 @@ summary: Use service-owned HTTP APIs and defined Protocol Buffer interfaces rath
 status: proposed
 date: 2026-11-07
 owners:
-  - contributor-team
+  - architecture-enabling-team
 appliesTo:
   - type: domain
     id: bookworm
@@ -15,7 +15,7 @@ related:
   - id: adr-bw-017-compatible-contract-evolution
   - id: adr-004-use-domain-apis-as-mcp-backends
 decisionMakers:
-  - contributor-team
+  - architecture-enabling-team
 x-scope: "Whole system"
 ---
 
@@ -23,13 +23,13 @@ x-scope: "Whole system"
 | :--------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Status**             | Proposed                                                                                                                                            |
 | **Date**               | 2026-11-07                                                                                                                                          |
-| **Owners**             | [[team\|contributor-team]]                                                                                                                          |
+| **Owners**             | [[team\|architecture-enabling-team]]                                                                                                                |
 | **Affected Resources** | [[domain\|bookworm]]                                                                                                                                |
 | **Related ADRs**       | [[adr\|adr-bw-005-kafka-integration-backbone]], [[adr\|adr-bw-017-compatible-contract-evolution]], [[adr\|adr-004-use-domain-apis-as-mcp-backends]] |
 
 ## Context & Problem Statement
 
-Synchronous interactions—such as checkout price validation between [[service|order-api]] and [[service|catalog-api]], basket reads, and [[service|mcp-server]] tool calls—require immediate responses. Reading another service's database or invoking internal handlers directly couples callers to private implementation details and bypasses authorization.
+Synchronous interactionsâ€”such as checkout price validation between [[service|order-api]] and [[service|catalog-api]], basket reads, and [[service|mcp-server]] tool callsâ€”require immediate responses. Reading another service's database or invoking internal handlers directly couples callers to private implementation details and bypasses authorization.
 
 ## Decision Drivers
 

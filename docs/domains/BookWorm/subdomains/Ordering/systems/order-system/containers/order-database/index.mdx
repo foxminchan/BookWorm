@@ -1,10 +1,10 @@
----
+﻿---
 id: order-database
 name: Order Database
 version: 1.0.0
 summary: Authoritative PostgreSQL system of record owned by the Ordering bounded context for buyers, accepted orders, purchase-time line items, and order lifecycle event streams.
 owners:
-  - business-strategy
+  - commerce-fulfillment-team
 container_type: database
 badges:
   - content: Database
@@ -29,7 +29,7 @@ Order Database (`orderingdb`) is the authoritative PostgreSQL system of record o
 
 | Property                            | Value                                                                             |
 | :---------------------------------- | :-------------------------------------------------------------------------------- |
-| **Bounded Context / Owner**         | Ordering — [[team\|business-strategy]]                                            |
+| **Bounded Context / Owner**         | Ordering â€” [[team\|commerce-fulfillment-team]]                                  |
 | **Engine / Technology**             | PostgreSQL 18 (Azure Database for PostgreSQL Flexible Server)                     |
 | **Store Type**                      | Database                                                                          |
 | **Primary Writer(s)**               | [[service\|order-api]]                                                            |
@@ -46,7 +46,7 @@ Order Database (`orderingdb`) is the authoritative PostgreSQL system of record o
 | `orders`               | [[entity\|order]]      | `id` (`uuidv7()`)                                 | Accepted orders with status (`New`, `Cancelled`, `Completed`), order note, timestamps, and soft-delete flag; optimistic concurrency via row-version token.                                                                                                                    |
 | `order_items`          | [[entity\|order-item]] | `id` (`uuidv7()`), unique (`book_id`, `order_id`) | Immutable checkout-time line item snapshots locking `book_id`, quantity, and unit price at purchase time.                                                                                                                                                                     |
 | Event store (`public`) | [[entity\|order]]      | Stream ID (`order_id`)                            | Append-only order placement, completion, and cancellation events; live stream aggregation and asynchronous summary projection (`DaemonLockId = 44444`).                                                                                                                       |
-| `wolverine` schema     | —                      | Envelope ID                                       | Transactional outbox and inbox tables sharing the domain write transaction; partitions Kafka events ([[event\|UserCheckedOutIntegrationEvent]], [[event\|OrderStatusChangedToCompleteIntegrationEvent]], [[event\|OrderStatusChangedToCancelIntegrationEvent]]) by `OrderId`. |
+| `wolverine` schema     | â€”                    | Envelope ID                                       | Transactional outbox and inbox tables sharing the domain write transaction; partitions Kafka events ([[event\|UserCheckedOutIntegrationEvent]], [[event\|OrderStatusChangedToCompleteIntegrationEvent]], [[event\|OrderStatusChangedToCancelIntegrationEvent]]) by `OrderId`. |
 
 ## Consistency, Isolation & Security Guardrails
 
@@ -81,9 +81,9 @@ Order Database (`orderingdb`) is the authoritative PostgreSQL system of record o
 
 ## Related Documentation
 
-- [[service|order-api]] — Owning service endpoints, gRPC clients, and Kafka handlers.
-- [[container|order-cache]] — Redis locks, atomic HTTP idempotency, and cached responses.
-- [[service|order-orchestration]] — Saga coordinating post-checkout cleanup and notifications.
-- [[adr|adr-001-postgresql-order-system-of-record]] — Decision establishing PostgreSQL as Ordering's system of record.
-- [[adr|adr-002-preserve-checkout-purchase-snapshot]] — Decision locking checkout-time prices in `order_items`.
-- [[doc|operational/005-backup-restore-and-dr]] — Platform backup, restore, and disaster recovery runbook.
+- [[service|order-api]] â€” Owning service endpoints, gRPC clients, and Kafka handlers.
+- [[container|order-cache]] â€” Redis locks, atomic HTTP idempotency, and cached responses.
+- [[service|order-orchestration]] â€” Saga coordinating post-checkout cleanup and notifications.
+- [[adr|adr-001-postgresql-order-system-of-record]] â€” Decision establishing PostgreSQL as Ordering's system of record.
+- [[adr|adr-002-preserve-checkout-purchase-snapshot]] â€” Decision locking checkout-time prices in `order_items`.
+- [[doc|operational/005-backup-restore-and-dr]] â€” Platform backup, restore, and disaster recovery runbook.

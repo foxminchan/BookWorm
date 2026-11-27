@@ -1,4 +1,4 @@
----
+﻿---
 id: adr-005-explicit-checkout-cleanup-outcomes
 name: "ADR-005: Publish explicit basket cleanup outcomes"
 version: 1.0.0
@@ -6,9 +6,9 @@ summary: Checkout basket deletion publishes distinct completion and failure inte
 status: accepted
 date: 2026-10-21
 owners:
-  - contributor-team
+  - commerce-fulfillment-team
 decisionMakers:
-  - contributor-team
+  - commerce-fulfillment-team
 appliesTo:
   - type: system
     id: cart-system
@@ -42,7 +42,7 @@ Once checkout passes a customer's purchase intent to downstream order processing
 
 After checkout begins processing an order, it sends a cleanup request to delete the customer's basket. If the deletion succeeds, the cart service announces a cleanup-completed outcome. If deletion fails, it announces a separate cleanup-failed outcome instead.
 
-These two outcomes travel along separate communication channels so downstream systems and monitoring tools can tell successful cleanups apart from cases that need recovery. Neither announcement means that payment or order processing is finished, and a cleanup failure never cancels or alters ownership of the confirmed order. Because Finance may resend the cleanup request after a timeout—and Notification also listens to that request to send new-order emails—every receiving system must safely handle duplicate messages.
+These two outcomes travel along separate communication channels so downstream systems and monitoring tools can tell successful cleanups apart from cases that need recovery. Neither announcement means that payment or order processing is finished, and a cleanup failure never cancels or alters ownership of the confirmed order. Because Finance may resend the cleanup request after a timeoutâ€”and Notification also listens to that request to send new-order emailsâ€”every receiving system must safely handle duplicate messages.
 
 ## 4. Trade-offs & Lessons Learned
 

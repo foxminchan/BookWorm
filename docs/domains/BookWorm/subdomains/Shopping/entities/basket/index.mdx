@@ -1,4 +1,4 @@
----
+﻿---
 id: basket
 name: Basket
 version: 1.0.0
@@ -6,7 +6,7 @@ identifier: customerId
 aggregateRoot: true
 summary: Customer-scoped, pre-order collection of one or more requested books.
 owners:
-  - contributor-team
+  - commerce-fulfillment-team
 properties:
   - name: customerId
     type: string
@@ -41,11 +41,11 @@ properties:
 
 | Name (JSON)      | Type                    | Required | Default           | Constraints                                | Description                                        |
 | :--------------- | :---------------------- | :------- | :---------------- | :----------------------------------------- | :------------------------------------------------- |
-| `id`             | `CustomerId` (`string`) | Yes      | —                 | GUID format; not null                      | Authenticated customer ID; one basket per customer |
-| `items`          | `BasketItem[]`          | Yes      | —                 | At least 1 item on create and update (API) | Requested books; see [[entity\|basket-item]]       |
+| `id`             | `CustomerId` (`string`) | Yes      | â€”               | GUID format; not null                      | Authenticated customer ID; one basket per customer |
+| `items`          | `BasketItem[]`          | Yes      | â€”               | At least 1 item on create and update (API) | Requested books; see [[entity\|basket-item]]       |
 | `createdAt`      | `DateTime`              | Yes      | `DateTime.UtcNow` | UTC                                        | Inherited from `AuditableEntity<TId>`              |
-| `lastModifiedAt` | `DateTime`              | No       | —                 | UTC                                        | Inherited from `AuditableEntity<TId>`              |
-| `rowVersion`     | `uint`                  | —        | `0`               | Not used by Redis                          | Inherited from `AuditableEntity<TId>`              |
+| `lastModifiedAt` | `DateTime`              | No       | â€”               | UTC                                        | Inherited from `AuditableEntity<TId>`              |
+| `rowVersion`     | `uint`                  | â€”      | `0`               | Not used by Redis                          | Inherited from `AuditableEntity<TId>`              |
 
 `BasketSerializationContext` serializes the `CustomerBasket` JSON model with camel-case property names. The inherited auditable fields follow the same source-generated JSON contract as `CustomerBasket`; inspect a live Redis value only for environment-specific data content.
 
@@ -86,5 +86,5 @@ properties:
 
 ## Related documentation
 
-- [[entity|basket-item]] — Item schema and enriched response fields.
-- [[entity|order]] — Purchase record created at checkout.
+- [[entity|basket-item]] â€” Item schema and enriched response fields.
+- [[entity|order]] â€” Purchase record created at checkout.

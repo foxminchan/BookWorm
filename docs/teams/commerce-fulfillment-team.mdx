@@ -1,0 +1,63 @@
+---
+id: commerce-fulfillment-team
+name: Commerce Fulfillment Team
+summary: |
+  Stream-Aligned team owning customer shopping baskets, checkout coordination, order lifecycle, and financial saga orchestration.
+members:
+  - nxnhan
+---
+
+## Mission & Topology Boundary
+
+The **Commerce Fulfillment Team** owns the end-to-end purchase journey across [[domain|shopping]] and [[domain|ordering]], from pre-purchase basket management through checkout saga execution and durable order lifecycle tracking. Its boundary focuses on transactional integrity, customer-scoped basket ownership, and locked purchase-time order records. Explicitly **out of scope** are canonical catalog metadata, customer review authoring, external payment settlement internals, and transactional email delivery infrastructure.
+
+## Team Profile & Interaction Modes
+
+| Property                            | Value                                                                                                                                     |
+| :---------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------- |
+| **Topology Type**                   | Stream-Aligned                                                                                                                            |
+| **Primary Mission**                 | Ensure accurate basket state, reliable checkout sagas, and durable order fulfillment                                                      |
+| **Default Interaction Mode**        | _X-as-a-Service_ (consumes catalog & platform services); _Collaboration_ (with Catalog on checkout pricing)                               |
+| **Key Partner Teams**               | [[team\|catalog-experience-team]], [[team\|platform-engineering-team]], [[team\|architecture-enabling-team]]                              |
+| **Escalation / Engagement Channel** | [GitHub Discussions](https://github.com/foxminchan/BookWorm/discussions) · [Issue Tracker](https://github.com/foxminchan/BookWorm/issues) |
+
+## Owned Capabilities & Assets
+
+- **Domains:** [[domain|shopping]], [[domain|ordering]]
+- **Systems:** [[system|cart-system]], [[system|order-system]], [[system|finance-system]]
+- **Services:** [[service|basket-api]], [[service|order-api]], [[service|order-orchestration]]
+- **Flows:** [[flow|user-checkout]]
+- **Messaging Channels:** [[channel|bookworm.&#123;env&#125;.basket.delete-complete]], [[channel|bookworm.&#123;env&#125;.basket.delete-failed]], [[channel|bookworm.&#123;env&#125;.finance.place-order]], [[channel|bookworm.&#123;env&#125;.finance.complete-order]], [[channel|bookworm.&#123;env&#125;.finance.cancel-order]], [[channel|bookworm.&#123;env&#125;.finance.delete-basket-complete]], [[channel|bookworm.&#123;env&#125;.finance.delete-basket-failed]], [[channel|bookworm.&#123;env&#125;.ordering.user-checked-out]], [[channel|bookworm.&#123;env&#125;.ordering.order-status-change-to-complete]], [[channel|bookworm.&#123;env&#125;.ordering.order-status-change-to-cancel]]
+
+<Accordion title="Interaction Modes with Neighboring Teams">
+
+- **With [[team|catalog-experience-team]] (*X-as-a-Service*):** Calls catalog gRPC endpoints to enrich basket views and lock authoritative book prices at checkout.
+- **With [[team|platform-engineering-team]] (*X-as-a-Service*):** Delegates customer order email delivery via asynchronous notification commands and relies on shared messaging, identity, and observability primitives.
+- **With [[team|architecture-enabling-team]] (*Facilitating*):** Aligns saga state machines, idempotency guarantees, and contract evolution with platform ADRs.
+
+</Accordion>
+
+## Working Agreements
+
+- Never share mutable persistence between [[domain|shopping]] and [[domain|ordering]]; coordinate checkout cleanup and order transitions exclusively through documented events and commands.
+- Lock book titles and unit prices onto order items at purchase time so historical orders remain immutable when catalog prices change.
+- Delegate notification rendering and SMTP dispatch to [[service|notification-api]] rather than embedding email provider logic in ordering or finance services.
+
+:::note
+Any change to checkout saga states or basket cleanup contracts must preserve idempotent retry semantics across [[flow|user-checkout]].
+:::
+
+<Tiles columns={2}>
+	<Tile
+		icon="ShoppingBagIcon"
+		href="/docs/domains/shopping"
+		title="Shopping Domain"
+		description="Customer-scoped baskets and pre-purchase shopping intent."
+	/>
+	<Tile
+		icon="ClipboardDocumentCheckIcon"
+		href="/docs/domains/ordering"
+		title="Ordering Domain"
+		description="Accepted purchase records, order lifecycle, and finance orchestration."
+	/>
+</Tiles>

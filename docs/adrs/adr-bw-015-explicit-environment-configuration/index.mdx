@@ -1,4 +1,4 @@
----
+﻿---
 id: adr-bw-015-explicit-environment-configuration
 name: "ADR-BW-015: Separate logical architecture from environment configuration"
 version: 1.0.0
@@ -6,7 +6,7 @@ summary: Document configured dependencies and environment differences explicitly
 status: proposed
 date: 2026-11-07
 owners:
-  - platform-team
+  - platform-engineering-team
 appliesTo:
   - type: domain
     id: bookworm
@@ -15,7 +15,7 @@ related:
   - id: adr-bw-005-kafka-integration-backbone
   - id: adr-bw-013-opentelemetry-observability
 decisionMakers:
-  - platform-team
+  - platform-engineering-team
 x-scope: "Whole system"
 ---
 
@@ -23,7 +23,7 @@ x-scope: "Whole system"
 | :--------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Status**             | Proposed                                                                                                                                            |
 | **Date**               | 2026-11-07                                                                                                                                          |
-| **Owners**             | [[team\|platform-team]]                                                                                                                             |
+| **Owners**             | [[team\|platform-engineering-team]]                                                                                                                 |
 | **Affected Resources** | [[domain\|bookworm]]                                                                                                                                |
 | **Related ADRs**       | [[adr\|adr-bw-003-aspire-shared-service-defaults]], [[adr\|adr-bw-005-kafka-integration-backbone]], [[adr\|adr-bw-013-opentelemetry-observability]] |
 
@@ -57,4 +57,4 @@ BookWorm runs locally under Aspire orchestration using emulators (Mailpit, Azuri
 
 - Service contracts and business logic must not branch on hardcoded environment names where configuration parameters suffice.
 - Development-only endpoints (such as unauthenticated health/scalar helpers) must be gated out of production.
-- Secrets and connection strings must be injected via user secrets locally and Key Vault / Managed Identity in Azure—never committed.
+- Secrets and connection strings must be injected via user secrets locally and Key Vault / Managed Identity in Azureâ€”never committed.

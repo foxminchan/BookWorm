@@ -1,4 +1,4 @@
----
+﻿---
 id: adr-001-finance-persisted-order-saga
 name: "ADR-001: Coordinate checkout with a persisted Order saga"
 version: 1.0.0
@@ -6,7 +6,7 @@ summary: Finance uses Azure Durable Task Scheduler (DTS) keyed by Order ID to co
 status: accepted
 date: 2026-11-03
 owners:
-  - contributor-team
+  - commerce-fulfillment-team
 badges:
   - content: Integration
     backgroundColor: orange
@@ -22,7 +22,7 @@ appliesTo:
 
 ## 1. Context & Problem
 
-Customer checkout begins in Ordering, while follow-up steps—such as cleaning up the shopping basket and sending customer emails—occur across independently deployed capabilities. These steps cannot rely on a single continuous request or temporary in-memory tracking because outcome messages arrive later and services may restart in between.
+Customer checkout begins in Ordering, while follow-up stepsâ€”such as cleaning up the shopping basket and sending customer emailsâ€”occur across independently deployed capabilities. These steps cannot rely on a single continuous request or temporary in-memory tracking because outcome messages arrive later and services may restart in between.
 
 At the same time, Finance's role is coordination, not ownership of the purchase record. It needs to remember enough context to route basket cleanup and notifications while respecting that Basket, Ordering, and Notification each own their own records. Therefore, the checkout workflow requires both a durable shared reference and a clear completion rule.
 
@@ -36,14 +36,14 @@ At the same time, Finance's role is coordination, not ownership of the purchase 
 
 When checkout completes, Finance starts a durable coordination workflow tied directly to the Order's unique identifier:
 
-- **Stored coordination context:** Finance keeps only the details needed to coordinate follow-up work—the basket reference, customer recipient details, order total, placement timestamp, current workflow stage, and timeout retry count.
+- **Stored coordination context:** Finance keeps only the details needed to coordinate follow-up workâ€”the basket reference, customer recipient details, order total, placement timestamp, current workflow stage, and timeout retry count.
 - **Stage progression:** Explicit handlers track basket cleanup outcomes, Order status updates, and scheduled timeout checks across four stages: **Placed**, **BasketDeletionFailed**, **Completed**, and **Cancelled**.
 - **Clear completion rules:** Removing the shopping basket is an intermediate step, not the end of the workflow; after successful basket cleanup, Finance continues waiting until Ordering explicitly reports that the Order is completed or cancelled. Conversely, if basket cleanup fails or retries run out, Finance can close its coordination workflow without changing the Order's status in Ordering.
 
 ## 4. Trade-offs & Lessons Learned
 
 - **Persisted coordination vs. single-request chaining:** Storing workflow state avoids holding connections open across independent deployments and prevents losing progress on restart, at the trade-off of depending on Finance's database availability and compatible workflow mappings.
-- **Operational state vs. permanent audit history:** The workflow record is operational coordination state, not a permanent audit log or the authoritative Order status—completing the workflow does not guarantee permanent retention of the record or prove that an email was delivered.
+- **Operational state vs. permanent audit history:** The workflow record is operational coordination state, not a permanent audit log or the authoritative Order statusâ€”completing the workflow does not guarantee permanent retention of the record or prove that an email was delivered.
 - **No cross-system atomicity:** Durable local state helps Finance resume work after interruptions, but does not make updates across Finance storage, messaging, Basket, Ordering, and Notification atomic.
 - **Confidential data protection:** Because the workflow stores recipient details for later emails, Finance storage requires confidential-data access and retention controls.
 - **Alternatives rejected:**

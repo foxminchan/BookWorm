@@ -1,4 +1,4 @@
----
+﻿---
 id: adr-005-blob-storage-for-book-images
 name: "ADR-005: Store book images in Blob Storage and persist only the URN"
 version: 1.0.0
@@ -6,9 +6,9 @@ summary: Image bytes live in Blob Storage; the database keeps a stable URN and f
 status: accepted
 date: 2026-10-20
 owners:
-  - platform-team
+  - catalog-experience-team
 decisionMakers:
-  - platform-team
+  - platform-engineering-team
 appliesTo:
   - type: system
     id: product-catalog-system
@@ -44,7 +44,7 @@ At the same time, direct download links used by storefronts are intentionally ti
 
 When a [[entity|book]] cover image is uploaded through [[service|catalog-api]], the image file is saved to [[container|catalog-blob]] under a unique generated name while preserving its file type. Instead of storing the image content in [[container|catalog-database]], the book record stores only a permanent asset reference identifying where the file lives.
 
-Whenever a client or storefront requests book details, Catalog API checks that the saved asset reference matches the active storage location and generates a fresh, read-only, time-limited access link for viewing the image. These temporary links are never written back to the database. When an image is explicitly removed—or when the book itself is deleted—Catalog API deletes both the stored image file and any saved snapshots from object storage.
+Whenever a client or storefront requests book details, Catalog API checks that the saved asset reference matches the active storage location and generates a fresh, read-only, time-limited access link for viewing the image. These temporary links are never written back to the database. When an image is explicitly removedâ€”or when the book itself is deletedâ€”Catalog API deletes both the stored image file and any saved snapshots from object storage.
 
 ### Alternatives considered
 
@@ -56,7 +56,7 @@ Whenever a client or storefront requests book details, Catalog API checks that t
 
 - **Non-atomic updates and orphan risk:** The product database and object storage do not share a single all-or-nothing transaction. If an image upload succeeds before a book update fails, an unreferenced file can remain in object storage; operational reconciliation must account for cleaning up orphaned files or repairing broken links.
 - **On-demand link resolution:** Reading a book requires generating a fresh access link, and client applications must handle time-limited links by fetching a current book representation rather than caching image links indefinitely.
-- **Operational recovery rules:** An expired image link does not mean the cover image is missing—fetching the book again resolves a fresh link. When moving or restoring records, teams must preserve the asset reference and restore the image under the exact same name in the configured storage location. If an image cannot be recovered, replace or remove it through [[service|catalog-api]] rather than hand-editing database records.
+- **Operational recovery rules:** An expired image link does not mean the cover image is missingâ€”fetching the book again resolves a fresh link. When moving or restoring records, teams must preserve the asset reference and restore the image under the exact same name in the configured storage location. If an image cannot be recovered, replace or remove it through [[service|catalog-api]] rather than hand-editing database records.
 - **Storage-target coupling:** Because the asset reference encodes the storage account and container, moving images between storage targets requires coordinated updates across both object storage and catalog references.
 
 ## 5. Technical Reference

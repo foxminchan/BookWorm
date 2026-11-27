@@ -1,4 +1,4 @@
----
+﻿---
 id: adr-002-notification-postgresql-email-outbox
 name: "ADR-002: Persist email work in a PostgreSQL outbox before SMTP submission"
 version: 1.0.0
@@ -6,9 +6,9 @@ summary: Notification owns durable email records in PostgreSQL and marks them se
 status: superseded
 date: 2026-11-01
 owners:
-  - platform-team
+  - platform-engineering-team
 decisionMakers:
-  - contributor-team
+  - platform-engineering-team
 appliesTo:
   - type: system
     id: notification-system
@@ -43,7 +43,7 @@ External email providers can fail or time out after an email has already been fo
 
 ## 4. Trade-offs & Lessons Learned
 
-- **Sent status is not a delivery receipt:** Marking a record as sent confirms only that the local mail sender completed without error—not that the provider delivered the email to the customer's inbox or that the underlying business action succeeded.
+- **Sent status is not a delivery receipt:** Marking a record as sent confirms only that the local mail sender completed without errorâ€”not that the provider delivered the email to the customer's inbox or that the underlying business action succeeded.
 - **No atomic guarantee across database and mail provider:** Saving to the database and submitting to an external mail provider are separate steps. If the provider accepts an email but the response is lost or the subsequent database update fails, the record stays marked unsent and can be retried, causing a duplicate delivery.
 - **Row counts do not equal unique customer emails:** Because resends insert new rows through the shared sender wrapper (and a failed resend can leave both old and new rows unsent), backlog counts reflect database rows rather than distinct logical notifications. Monitoring must consider row age and outcomes alongside raw counts.
 - **Limited failure metadata:** The current outbox table does not store attempt counters, next-attempt schedules, permanent vs. transient failure categories, full provider responses, or uniqueness constraints per business message. Operators should check for ambiguous outcomes before manually retrying items.

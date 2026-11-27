@@ -1,13 +1,20 @@
----
+﻿---
 id: bookworm.{env}.basket.delete-failed
 name: Basket Delete Failed
 version: 1.0.0
+type: topic
 summary: |
-  Kafka channel published by Basket when checkout cleanup cannot delete the
-  submitted basket. Consumers use this explicit failure outcome to trigger
-  recovery or notification behavior.
+  Kafka topic owned by the contributor team carrying Basket API's explicit
+  checkout cleanup failure outcome for Finance compensation.
 owners:
-  - contributor-team
+  - commerce-fulfillment-team
+badges:
+  - content: Kafka
+    backgroundColor: blue
+    textColor: blue
+  - content: Topic
+    backgroundColor: teal
+    textColor: teal
 address: bookworm.{env}.basket.delete-failed
 parameters:
   env:
@@ -20,65 +27,53 @@ parameters:
       - development
       - staging
       - production
-    description: "Environment to use"
+    description: BookWorm deployment environment.
 deliveryGuarantee: at-least-once
-type: stream
 protocols:
   - kafka
 ---
 
-Basket publishes this topic when it cannot remove the basket during checkout. Finance records the failure and asks Ordering to soft-delete the order. No customer email is sent for this outcome.
+## Purpose & Scope
 
-**Producer:** Basket service. **Consumer:** Finance order coordination.
+This topic transports explicit business failure outcomes published by [[service|basket-api]] within the Shopping bounded context when a submitted basket cannot be deleted during checkout. [[service|order-orchestration]] consumes this signal to trigger compensating order soft-deletion without sending a customer email. Transient infrastructure exceptions during basket storage access are not published here; those route to [[channel|bookworm.&#123;env&#125;.basket.dead-letter-queue]].
 
-An exception while accessing basket storage is not this business outcome; it is a processing failure and may appear in the Basket dead-letter topic.
+## Channel Specification
 
-## Channel information
+| Property                               | Value                                                                     |
+| :------------------------------------- | :------------------------------------------------------------------------ |
+| **Bounded Context / Owner**            | [[domain\|shopping]] / [[team\|commerce-fulfillment-team]]                |
+| **Channel Type**                       | Topic                                                                     |
+| **Address Pattern**                    | `bookworm.{env}.basket.delete-failed`                                     |
+| **Parameters**                         | `env` (`development`, `staging`, `production`; default: `development`)    |
+| **Protocol & Envelope Format**         | Kafka + CloudEvents JSON (`application/json`)                             |
+| **Partition Key & Ordering Guarantee** | Keyed by `orderId`; preserves per-order event ordering within a partition |
+| **Delivery Semantics**                 | At-least-once                                                             |
+| **Dead-Letter Channel**                | None (direct worker consumption by [[service\|order-orchestration]])      |
+
+## Messages & Participants
+
+| Message                                        | Type  | Producer                | Consumer(s)                      | Consumer Group               |
+| :--------------------------------------------- | :---- | :---------------------- | :------------------------------- | :--------------------------- |
+| [[event\|BasketDeletedFailedIntegrationEvent]] | Event | [[service\|basket-api]] | [[service\|order-orchestration]] | Finance orchestration worker |
+
+## Ordering, Retries & Failure Handling
+
+- **Partition-key ordering:** Records are partitioned by `orderId` so failure outcomes stay ordered with other lifecycle events for the same order.
+- **Transient retries:** [[service|order-orchestration]] applies bounded retry/backoff on transient orchestration host or state faults.
+- **Poison & failure posture:** Direct worker consumption has no dedicated service DLQ; inspect worker logs and order saga state before replaying, as replay can trigger order soft-deletion.
+- **Consumer idempotency:** [[service|order-orchestration]] deduplicates repeated failure outcomes so the compensating transition is not applied twice.
+
+## Channel Details & Visualization
 
 <ChannelInformation />
 
-## Topic and message
-
-The topic is `bookworm.{env}.basket.delete-failed`. Replace `{env}` with `development`, `staging`, or `production`. Messages are CloudEvents JSON and are keyed by `orderId`. The example includes the order and basket IDs, customer email when available, and order total.
-
-## Operations and recovery
-
-Check the order and basket state before replay. A missing basket can be a valid failure outcome, while a storage outage should be resolved before retrying. Finance handles duplicate failure outcomes without applying the same workflow transition twice. Replaying this event can lead to the order being soft-deleted; verify the order state first.
-
-## Examples
-
-### CloudEvents Kafka message
-
-Kafka key: `0193f1a2-1111-7d8e-9f01-23456789abcd` (`orderId`)
-
-<CodeGroup>
-
-```json
-{
-	"specversion": "1.0",
-	"id": "0193f1a2-7b01-7d8e-9f01-23456789abcd",
-	"type": "BookWorm.Contracts.BasketDeletedFailedIntegrationEvent",
-	"source": "urn:bookworm:book-worm.basket",
-	"time": "2026-11-25T16:15:00Z",
-	"datacontenttype": "application/json",
-	"messagetype": "BookWorm.Contracts.BasketDeletedFailedIntegrationEvent",
-	"data": {
-		"id": "0193f1a2-7b01-7d8e-9f01-23456789abcd",
-		"creationDate": "2026-11-25T16:15:00Z",
-		"orderId": "0193f1a2-1111-7d8e-9f01-23456789abcd",
-		"basketId": "0193f1a2-2222-7d8e-9f01-23456789abcd",
-		"email": "reader@example.com",
-		"totalMoney": 59.98
-	}
-}
-```
-
-</CodeGroup>
-
-## Related documentation
-
-- [[channel|bookworm.&#123;env&#125;.finance.place-order]]
-- [[channel|bookworm.&#123;env&#125;.basket.delete-complete]]
-- [[channel|bookworm.&#123;env&#125;.finance.delete-basket-failed]]
-
 <NodeGraph />
+
+## Related Documentation
+
+- [[service|basket-api]] â€” Basket cleanup producer
+- [[service|order-orchestration]] â€” Finance saga consumer
+- [[channel|bookworm.&#123;env&#125;.basket.delete-complete]] â€” Paired cleanup success topic
+- [[channel|bookworm.&#123;env&#125;.finance.delete-basket-failed]] â€” Downstream compensation command topic
+- [[flow|user-checkout]] â€” End-to-end checkout workflow
+- [[doc|arc42/08-crosscutting-concepts/002-contracts-and-messaging]] â€” Messaging standards and idempotency rules

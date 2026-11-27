@@ -1,11 +1,11 @@
----
+﻿---
 id: conversational
 name: Conversational
 summary: |
   Routes BookWorm customer requests through privacy-filtered AI agents for
   catalog-backed book discovery and read-only store-policy guidance.
 owners:
-  - contributor-team
+  - ai-capabilities-team
 version: 1.0.0
 systems:
   - id: chat-system
@@ -45,22 +45,22 @@ Conversational agents operate strictly **read-only** across transactional domain
 
 ## Core Responsibilities & Capabilities
 
-| Capability                                         | Owning Service / Agent                                                                               | Primary Entities              |
-| :------------------------------------------------- | :--------------------------------------------------------------------------------------------------- | :---------------------------- |
-| **Multi-Agent Chat Orchestration & Session State** | [[service\|chat-api]]                                                                                | — (Session state only)        |
-| **Single-Pass Safety, Scope & Specialist Routing** | [[service\|chat-api]]                                                                                | —                             |
-| **Book Discovery & Recommendations**               | [[agent\|book-agent]], [[agent\|book-catalog-researcher]], [[agent\|book-recommendation-researcher]] | — (Reads [[domain\|catalog]]) |
-| **Store Policy & Support Guidance**                | [[agent\|qa-agent]]                                                                                  | —                             |
-| **Read-Only Catalog Tool & Prompt Exposure**       | [[service\|mcp-server]]                                                                              | — (Reads [[domain\|catalog]]) |
+| Capability                                         | Owning Service / Agent                                                                               | Primary Entities                |
+| :------------------------------------------------- | :--------------------------------------------------------------------------------------------------- | :------------------------------ |
+| **Multi-Agent Chat Orchestration & Session State** | [[service\|chat-api]]                                                                                | â€” (Session state only)        |
+| **Single-Pass Safety, Scope & Specialist Routing** | [[service\|chat-api]]                                                                                | â€”                             |
+| **Book Discovery & Recommendations**               | [[agent\|book-agent]], [[agent\|book-catalog-researcher]], [[agent\|book-recommendation-researcher]] | â€” (Reads [[domain\|catalog]]) |
+| **Store Policy & Support Guidance**                | [[agent\|qa-agent]]                                                                                  | â€”                             |
+| **Read-Only Catalog Tool & Prompt Exposure**       | [[service\|mcp-server]]                                                                              | â€” (Reads [[domain\|catalog]]) |
 
 ## Cross-Domain Interactions (Context Map)
 
-| Neighboring Domain / System       | Direction                                         | Integration Mechanism                   | Business Data Exchanged                                                             |
-| :-------------------------------- | :------------------------------------------------ | :-------------------------------------- | :---------------------------------------------------------------------------------- |
-| **[[domain\|catalog]]**           | Upstream (`Catalog` → `Conversational`)           | Sync (gRPC via [[service\|mcp-server]]) | Read-only book searches, book details, categories, and authors                      |
-| **[[domain\|reviews]]**           | Upstream (`Reviews` → `Conversational`)           | Sync (A2A gRPC)                         | Delegated requests to [[agent\|rating-agent]] for summarized book feedback          |
-| **[[system\|data-privacy]]**      | Upstream (`Data Privacy` → `Conversational`)      | Sync (HTTP)                             | Fail-closed PII analysis and anonymization on incoming prompts and buffered replies |
-| **[[system\|identity-provider]]** | Upstream (`Identity Provider` → `Conversational`) | Sync (OIDC / OBO)                       | Customer and agent identity tokens with per-agent claim isolation                   |
+| Neighboring Domain / System       | Direction                                           | Integration Mechanism                   | Business Data Exchanged                                                             |
+| :-------------------------------- | :-------------------------------------------------- | :-------------------------------------- | :---------------------------------------------------------------------------------- |
+| **[[domain\|catalog]]**           | Upstream (`Catalog` â†’ `Conversational`)           | Sync (gRPC via [[service\|mcp-server]]) | Read-only book searches, book details, categories, and authors                      |
+| **[[domain\|reviews]]**           | Upstream (`Reviews` â†’ `Conversational`)           | Sync (A2A gRPC)                         | Delegated requests to [[agent\|rating-agent]] for summarized book feedback          |
+| **[[system\|data-privacy]]**      | Upstream (`Data Privacy` â†’ `Conversational`)      | Sync (HTTP)                             | Fail-closed PII analysis and anonymization on incoming prompts and buffered replies |
+| **[[system\|identity-provider]]** | Upstream (`Identity Provider` â†’ `Conversational`) | Sync (OIDC / OBO)                       | Customer and agent identity tokens with per-agent claim isolation                   |
 
 :::note
 **Read-Only Boundary & Fail-Closed Privacy:** Conversational has no transactional SQL database, cache, or broker integration. Any recommendation that a customer chooses to add to a basket requires explicit customer confirmation in the storefront UI, preserving [[domain|shopping]]'s ownership of basket mutations.
@@ -84,9 +84,9 @@ Conversational agents operate strictly **read-only** across transactional domain
 
 ## Related Governance & Documentation
 
-- [[system|chat-system]] — Chat orchestration boundary and [[service|chat-api]].
-- [[system|mcp-tools]] — Read-only MCP tool server boundary and [[service|mcp-server]].
-- [[flow|agent-orchestration]] — End-to-end request validation, routing, privacy screening, and agent delegation.
-- [[adr|adr-bw-014-composable-ai-governance]] — Composable validation, PII, and guardrail controls on every AI path.
-- [[doc|misc/001-ms-decisions-model-use-case-and-lessons-learned]] — Single-pass decision routing design and lessons learned.
-- [[doc|arc42/12-glossary]] — Shared conversational and cross-domain terminology.
+- [[system|chat-system]] â€” Chat orchestration boundary and [[service|chat-api]].
+- [[system|mcp-tools]] â€” Read-only MCP tool server boundary and [[service|mcp-server]].
+- [[flow|agent-orchestration]] â€” End-to-end request validation, routing, privacy screening, and agent delegation.
+- [[adr|adr-bw-014-composable-ai-governance]] â€” Composable validation, PII, and guardrail controls on every AI path.
+- [[doc|misc/001-ms-decisions-model-use-case-and-lessons-learned]] â€” Single-pass decision routing design and lessons learned.
+- [[doc|arc42/12-glossary]] â€” Shared conversational and cross-domain terminology.

@@ -1,66 +1,69 @@
----
+﻿---
 id: scheduler.process-vector-batch
 name: Process Vector Batch Channel
 version: 1.0.0
+type: topic
 summary: |
-  Kafka channel used by Scheduler to trigger Catalog Ingestion vector batch
-  processing every five minutes.
+  Unprefixed Kafka trigger topic owned by the platform team used by Scheduler
+  Service every five minutes to initiate Catalog Ingestion vector indexing.
 owners:
-  - platform-team
+  - ai-capabilities-team
+badges:
+  - content: Kafka
+    backgroundColor: blue
+    textColor: blue
+  - content: Scheduled Trigger
+    backgroundColor: yellow
+    textColor: yellow
 address: scheduler.process-vector-batch
 deliveryGuarantee: at-least-once
-type: stream
 protocols:
   - kafka
 ---
 
-Scheduler publishes this periodic signal to ask Catalog Ingestion to synchronize pending book-search vectors. The signal is issued every five minutes and contains no individual book or customer data.
+## Purpose & Scope
 
-**Producer:** Scheduler service. **Consumer:** Catalog Ingestion worker.
+This platform trigger topic carries periodic five-minute signals published by [[service|scheduler-service]] to instruct [[service|catalog-ingestion]] to synchronize pending book-search embeddings into the vector store. The payload contains only an event identifier and timestamp, with no book or customer data.
 
-This topic is intentionally named `scheduler.process-vector-batch` in every environment; it has no `{env}` parameter.
+:::note
+**Intentional Naming Exception:** This topic is unprefixed (`scheduler.process-vector-batch`) across all environments and omits the `{env}` parameter so static serverless Kafka triggers can bind to a constant topic name.
+:::
 
-## Channel information
+## Channel Specification
+
+| Property                               | Value                                                                                   |
+| :------------------------------------- | :-------------------------------------------------------------------------------------- |
+| **Bounded Context / Owner**            | [[domain\|platform]] / [[team\|platform-engineering-team]]                              |
+| **Channel Type**                       | Topic                                                                                   |
+| **Address Pattern**                    | `scheduler.process-vector-batch`                                                        |
+| **Parameters**                         | None (static topic name across all environments)                                        |
+| **Protocol & Envelope Format**         | Kafka + CloudEvents JSON (`application/json`)                                           |
+| **Partition Key & Ordering Guarantee** | Unkeyed; no strict partition ordering required (work is coalesced in the catalog queue) |
+| **Delivery Semantics**                 | At-least-once                                                                           |
+| **Dead-Letter Channel**                | None (unacknowledged work remains queued for the next 5-minute trigger)                 |
+
+## Messages & Participants
+
+| Message                                       | Type  | Producer                       | Consumer(s)                    | Consumer Group           |
+| :-------------------------------------------- | :---- | :----------------------------- | :----------------------------- | :----------------------- |
+| [[event\|ProcessVectorBatchIntegrationEvent]] | Event | [[service\|scheduler-service]] | [[service\|catalog-ingestion]] | Catalog ingestion worker |
+
+## Ordering, Retries & Failure Handling
+
+- **Single-writer exclusivity:** [[service|catalog-ingestion]] acquires an exclusive database advisory lock; overlapping triggers exit immediately without duplicate indexing.
+- **Transient retries:** If embedding generation or vector store writes fail, unacknowledged rows remain in the pending catalog queue rather than being discarded.
+- **No DLQ required:** Because the five-minute schedule re-triggers batch processing automatically, failed batches self-heal on the next cycle once dependencies recover.
+- **Consumer idempotency:** Queue revision checks prevent stale embeddings from overwriting newer book edits made while a batch is in flight.
+
+## Channel Details & Visualization
 
 <ChannelInformation />
 
-## Topic and message
-
-The message is a small CloudEvents JSON trigger with an event ID and creation time. There is no Kafka key. Catalog Ingestion processes pending updates in batches; if another worker is already processing, a trigger may finish without doing work. Failed work remains pending for a later scheduled run.
-
-## Operations and recovery
-
-Check Scheduler and Catalog Ingestion logs, plus the availability of the embedding, vector-search, and database services. A failed batch leaves pending updates for a subsequent run, so restoring dependencies is normally sufficient; do not manually acknowledge or delete pending updates. This worker trigger has no dedicated dead-letter topic. The five-minute schedule retries outstanding work.
-
-## Examples
-
-### CloudEvents Kafka message
-
-Kafka header: `traceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01`
-
-<CodeGroup>
-
-```json
-{
-	"specversion": "1.0",
-	"id": "0193f1c0-5a01-7d8e-9f01-23456789abcd",
-	"type": "BookWorm.Contracts.ProcessVectorBatchIntegrationEvent",
-	"source": "urn:bookworm:book-worm.scheduler",
-	"time": "2026-11-25T16:40:00Z",
-	"datacontenttype": "application/json",
-	"messagetype": "BookWorm.Contracts.ProcessVectorBatchIntegrationEvent",
-	"data": {
-		"id": "0193f1c0-5a01-7d8e-9f01-23456789abcd",
-		"creationDate": "2026-11-25T16:40:00Z"
-	}
-}
-```
-
-</CodeGroup>
-
-## Related documentation
-
-- [[service|scheduler-service]]
-- [[service|catalog-ingestion]]
-
 <NodeGraph />
+
+## Related Documentation
+
+- [[service|scheduler-service]] â€” Periodic trigger producer
+- [[service|catalog-ingestion]] â€” Vector indexing worker consumer
+- [[flow|product-ingestion]] â€” End-to-end catalog vector ingestion flow
+- [[doc|arc42/08-crosscutting-concepts/002-contracts-and-messaging]] â€” Messaging standards and idempotency rules

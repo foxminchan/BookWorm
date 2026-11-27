@@ -1,4 +1,4 @@
----
+﻿---
 id: feedback-publication
 name: Customer Feedback Publication and Projection
 version: 1.0.0
@@ -7,7 +7,7 @@ summary: >-
   integration event; Catalog API updates the derived book rating summary or
   emits a compensating failure event to delete orphaned feedback.
 owners:
-  - contributor-team
+  - catalog-experience-team
 badges:
   - content: Event-Driven
     backgroundColor: purple
@@ -115,7 +115,7 @@ steps:
 
 ## Trigger & Business Outcome
 
-This flow starts when a customer submits [[command|CreateFeedback]] for a book through [[service|rating-api]]. Success is confirmed when [[service|rating-api]] persists the authoritative [[entity|feedback]] document in [[container|rating-database]] and [[service|catalog-api]] asynchronously updates the book's derived average rating and review count in [[container|catalog-database]]—or, if the book does not exist, compensates by deleting the orphaned feedback.
+This flow starts when a customer submits [[command|CreateFeedback]] for a book through [[service|rating-api]]. Success is confirmed when [[service|rating-api]] persists the authoritative [[entity|feedback]] document in [[container|rating-database]] and [[service|catalog-api]] asynchronously updates the book's derived average rating and review count in [[container|catalog-database]]â€”or, if the book does not exist, compensates by deleting the orphaned feedback.
 
 ## Interactive Flow Visualization
 

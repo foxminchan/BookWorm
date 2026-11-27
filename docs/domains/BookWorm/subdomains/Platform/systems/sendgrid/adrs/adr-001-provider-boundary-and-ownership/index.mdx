@@ -1,4 +1,4 @@
----
+﻿---
 id: adr-001-provider-boundary-and-ownership
 name: "ADR-001: Keep notification ownership inside BookWorm"
 version: 1.0.0
@@ -6,9 +6,9 @@ summary: BookWorm treats SendGrid as an external delivery provider while the Not
 status: accepted
 date: 2026-10-27
 owners:
-  - platform-team
+  - platform-engineering-team
 decisionMakers:
-  - contributor-team
+  - platform-engineering-team
 appliesTo:
   - type: system
     id: sendgrid
@@ -24,7 +24,7 @@ badges:
 
 ## 1. Context & Problem
 
-BookWorm uses [[system|sendgrid]] to deliver customer and operational email notifications, but an external delivery provider has no knowledge of the business workflows—such as an order placement—that triggered a message. If BookWorm relied on the external provider to hold notification status or treated a provider response as proof of business completion, domain state would become tightly coupled to a third-party service.
+BookWorm uses [[system|sendgrid]] to deliver customer and operational email notifications, but an external delivery provider has no knowledge of the business workflowsâ€”such as an order placementâ€”that triggered a message. If BookWorm relied on the external provider to hold notification status or treated a provider response as proof of business completion, domain state would become tightly coupled to a third-party service.
 
 The architecture must draw a clear line between three distinct milestones:
 
@@ -45,7 +45,7 @@ BookWorm establishes [[system|sendgrid]] strictly as an external delivery bounda
 
 1. A business capability initiates a notification need, and the [[system|notification-system]] records the work internally in its [[entity|outbox]].
 2. The [[service|sendgrid-api]] integration translates BookWorm's internal notification data into the structure expected by the external provider.
-3. When the provider responds, an acceptance means only that the provider took the submission into its queue—not that the email reached the recipient's inbox or that the original business action finished.
+3. When the provider responds, an acceptance means only that the provider took the submission into its queueâ€”not that the email reached the recipient's inbox or that the original business action finished.
 4. The [[system|notification-system]] translates the provider's response back into its own internal delivery state and links it to the originating [[entity|outbox]] item. Provider reference identifiers may be kept for troubleshooting, but ownership never leaves BookWorm.
 
 ## 4. Trade-offs & Lessons Learned

@@ -1,4 +1,4 @@
----
+﻿---
 id: adr-004-read-only-governed-feedback-summarization
 name: "ADR-004: Keep AI feedback summarization read-only and governed"
 version: 1.0.0
@@ -6,11 +6,10 @@ summary: Rating generates feedback insights at read time with allow-listed read 
 status: accepted
 date: 2026-10-25
 owners:
-  - business-strategy
-  - contributor-team
+  - catalog-experience-team
 decisionMakers:
-  - business-strategy
-  - contributor-team
+  - catalog-experience-team
+  - catalog-experience-team
 appliesTo:
   - type: system
     id: rating-system
@@ -30,7 +29,7 @@ badges:
 
 ## 1. Context & Problem
 
-Customers benefit from a concise summary of a [[entity|book]]'s [[entity|feedback]], especially when a title has many reviews. However, an AI-generated summary and classification is a derived interpretation—not an authoritative business record.
+Customers benefit from a concise summary of a [[entity|book]]'s [[entity|feedback]], especially when a title has many reviews. However, an AI-generated summary and classification is a derived interpretationâ€”not an authoritative business record.
 
 Allowing an AI summarization workflow to write directly to data stores could let an untrusted or unexpected model path alter real customer ratings or Catalog's rating counts. In addition, summarizing customer comments combines private review text with Catalog product context, requiring strict privacy protection, controlled tool access, and bounded usage rather than unrestricted model access.
 
@@ -48,8 +47,8 @@ Allowing an AI summarization workflow to write directly to data stores could let
 1. **Check cache first:** The service first checks whether a recent summary is already cached for the book. If found, it returns that cached result immediately without invoking the AI workflow.
 2. **Gather governed, read-only context:** On a cache miss, the workflow retrieves Catalog product context and raw reviews using only explicitly approved, read-only tools. Write or destructive actions are blocked by default, and review reads are rate-limited.
 3. **Protect personal data:** Personally identifiable information is redacted before comments are sent to the model and again on the model's output.
-4. **Separate math from narrative:** Application logic—not the AI model—calculates the exact review count, arithmetic mean rating, and final classification rules. The model partitions reviews into bounded batches, summarizes them in parallel, consolidates the evidence, and produces explanatory narrative and confidence assessment.
-5. **Return without saving as truth:** The generated summary is returned to the caller and optionally placed in a temporary, disposable cache—never persisted as an authoritative record.
+4. **Separate math from narrative:** Application logicâ€”not the AI modelâ€”calculates the exact review count, arithmetic mean rating, and final classification rules. The model partitions reviews into bounded batches, summarizes them in parallel, consolidates the evidence, and produces explanatory narrative and confidence assessment.
+5. **Return without saving as truth:** The generated summary is returned to the caller and optionally placed in a temporary, disposable cacheâ€”never persisted as an authoritative record.
 
 ## 4. Trade-offs & Lessons Learned
 

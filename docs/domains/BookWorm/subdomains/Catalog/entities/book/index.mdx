@@ -1,4 +1,4 @@
----
+﻿---
 id: book
 name: Book
 version: 1.0.0
@@ -70,7 +70,7 @@ properties:
     required: true
     description: Version of the record for optimistic concurrency control
 owners:
-  - contributor-team
+  - catalog-experience-team
 ---
 
 `Book` is the Catalog aggregate root for a sellable title. Catalog API owns it and persists it in PostgreSQL (`catalogdb`) through EF Core with `snake_case` naming.
@@ -91,17 +91,17 @@ owners:
 | Name                  | Type                   | Required       | Default                    | Constraints                                       | Description                                |
 | :-------------------- | :--------------------- | :------------- | :------------------------- | :------------------------------------------------ | :----------------------------------------- |
 | `id`                  | `BookId` (`Guid`)      | Yes            | `uuidv7()` (database)      | Primary key                                       | Unique book identifier                     |
-| `name`                | `string`               | Yes            | —                          | Non-whitespace; max 50 chars; indexed             | Book title                                 |
-| `description`         | `string`               | Yes (database) | —                          | Max 1,000 chars                                   | Book description                           |
-| `image`               | `string`               | No             | —                          | Max 255 chars                                     | Blob name or URL of the cover image        |
-| `price.originalPrice` | `decimal`              | Yes            | —                          | `>= 0`; precision `(18,2)`                        | Regular price                              |
-| `price.discountPrice` | `decimal`              | No             | —                          | `>= 0` and `<= originalPrice`; precision `(18,2)` | Sale price                                 |
+| `name`                | `string`               | Yes            | â€”                        | Non-whitespace; max 50 chars; indexed             | Book title                                 |
+| `description`         | `string`               | Yes (database) | â€”                        | Max 1,000 chars                                   | Book description                           |
+| `image`               | `string`               | No             | â€”                        | Max 255 chars                                     | Blob name or URL of the cover image        |
+| `price.originalPrice` | `decimal`              | Yes            | â€”                        | `>= 0`; precision `(18,2)`                        | Regular price                              |
+| `price.discountPrice` | `decimal`              | No             | â€”                        | `>= 0` and `<= originalPrice`; precision `(18,2)` | Sale price                                 |
 | `status`              | `Status` (`byte`)      | Yes            | `InStock`                  | `InStock` = 0, `OutOfStock` = 1; indexed          | Availability; serialized as a string       |
 | `averageRating`       | `double`               | Yes            | `0.0`                      | Derived                                           | Rating summary average from Reviews events |
 | `totalReviews`        | `int`                  | Yes            | `0`                        | Derived                                           | Rating summary count from Reviews events   |
-| `categoryId`          | `CategoryId` (`Guid`)  | No             | —                          | FK to `categories.id`; `ON DELETE SET NULL`       | Owning category                            |
-| `publisherId`         | `PublisherId` (`Guid`) | No             | —                          | FK to `publishers.id`; `ON DELETE SET NULL`       | Owning publisher                           |
-| `bookAuthors`         | `BookAuthor[]`         | —              | `[]`                       | Child rows in `book_authors`                      | Join links to `Author` (`book_authors`)    |
+| `categoryId`          | `CategoryId` (`Guid`)  | No             | â€”                        | FK to `categories.id`; `ON DELETE SET NULL`       | Owning category                            |
+| `publisherId`         | `PublisherId` (`Guid`) | No             | â€”                        | FK to `publishers.id`; `ON DELETE SET NULL`       | Owning publisher                           |
+| `bookAuthors`         | `BookAuthor[]`         | â€”            | `[]`                       | Child rows in `book_authors`                      | Join links to `Author` (`book_authors`)    |
 | `isDeleted`           | `bool`                 | Yes            | `false`                    | Global query filter `!IsDeleted`                  | Soft-delete flag                           |
 | `createdAt`           | `DateTime`             | Yes            | `NOW() AT TIME ZONE 'UTC'` | UTC                                               | Creation timestamp                         |
 | `lastModifiedAt`      | `DateTime`             | No             | `NOW() AT TIME ZONE 'UTC'` | UTC                                               | Last modification timestamp                |
@@ -162,5 +162,5 @@ The `Book` constructor accepts a nullable description, but `BookConfiguration` m
 
 ## Related documentation
 
-- [[entity|author]] — Author records linked to books via `book_authors`.
-- [[entity|feedback]] — Source of the derived rating summary.
+- [[entity|author]] â€” Author records linked to books via `book_authors`.
+- [[entity|feedback]] â€” Source of the derived rating summary.

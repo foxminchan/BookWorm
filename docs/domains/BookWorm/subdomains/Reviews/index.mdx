@@ -1,4 +1,4 @@
----
+﻿---
 id: reviews
 name: Reviews
 summary: |
@@ -6,7 +6,7 @@ summary: |
   Catalog discovery, and provides privacy-screened AI feedback summaries.
 version: 1.0.0
 owners:
-  - business-strategy
+  - catalog-experience-team
 systems:
   - id: rating-system
     version: 1.0.0
@@ -33,7 +33,7 @@ badges:
 [[domain|reviews]] is BookWorm's Supporting bounded context for individual customer book feedback, centered on the [[entity|feedback]] entity (a book reference, integer rating from `0` to `5`, reviewer name, and optional comment). It persists authoritative feedback records, publishes rating lifecycle events so [[domain|catalog]] can project aggregate scores, compensates orphaned feedback when a referenced book does not exist, and hosts [[agent|rating-agent]] to generate read-only AI review summaries. Explicitly **out of scope** are owning canonical book metadata ([[domain|catalog]]), managing shopping baskets ([[domain|shopping]]), and processing orders ([[domain|ordering]]).
 
 :::warning
-Reviews references books strictly by identifier and never duplicates Catalog metadata. AI-generated feedback summaries are read-only derived insights—they never alter persisted [[entity|feedback]] records or Catalog's numeric rating summary.
+Reviews references books strictly by identifier and never duplicates Catalog metadata. AI-generated feedback summaries are read-only derived insightsâ€”they never alter persisted [[entity|feedback]] records or Catalog's numeric rating summary.
 :::
 
 ## Core Responsibilities & Capabilities
@@ -46,12 +46,12 @@ Reviews references books strictly by identifier and never duplicates Catalog met
 
 ## Cross-Domain Interactions (Context Map)
 
-| Neighboring Domain / System    | Direction                                 | Integration Mechanism      | Business Data Exchanged                                                                                                    |
-| :----------------------------- | :---------------------------------------- | :------------------------- | :------------------------------------------------------------------------------------------------------------------------- |
-| **[[domain\|catalog]]**        | Downstream (`Reviews` → `Catalog`)        | Async (Events)             | [[event\|FeedbackCreatedIntegrationEvent]] and [[event\|FeedbackDeletedIntegrationEvent]] to update aggregate book ratings |
-| **[[domain\|catalog]]**        | Upstream (`Catalog` → `Reviews`)          | Async (Compensation Event) | [[event\|BookUpdatedRatingFailedIntegrationEvent]] triggers idempotent deletion of orphaned feedback                       |
-| **[[domain\|conversational]]** | Downstream (`Reviews` → `Conversational`) | Sync (A2A gRPC)            | [[agent\|rating-agent]] returns read-only sentiment and review summaries for a requested book                              |
-| **[[system\|data-privacy]]**   | Upstream (`Data Privacy` → `Reviews`)     | Sync (HTTP)                | Fail-closed PII detection and anonymization before AI summarization                                                        |
+| Neighboring Domain / System    | Direction                                   | Integration Mechanism      | Business Data Exchanged                                                                                                    |
+| :----------------------------- | :------------------------------------------ | :------------------------- | :------------------------------------------------------------------------------------------------------------------------- |
+| **[[domain\|catalog]]**        | Downstream (`Reviews` â†’ `Catalog`)        | Async (Events)             | [[event\|FeedbackCreatedIntegrationEvent]] and [[event\|FeedbackDeletedIntegrationEvent]] to update aggregate book ratings |
+| **[[domain\|catalog]]**        | Upstream (`Catalog` â†’ `Reviews`)          | Async (Compensation Event) | [[event\|BookUpdatedRatingFailedIntegrationEvent]] triggers idempotent deletion of orphaned feedback                       |
+| **[[domain\|conversational]]** | Downstream (`Reviews` â†’ `Conversational`) | Sync (A2A gRPC)            | [[agent\|rating-agent]] returns read-only sentiment and review summaries for a requested book                              |
+| **[[system\|data-privacy]]**   | Upstream (`Data Privacy` â†’ `Reviews`)     | Sync (HTTP)                | Fail-closed PII detection and anonymization before AI summarization                                                        |
 
 :::note
 **Decoupled Availability & Compensation:** Storefront discovery in [[domain|catalog]] never calls Reviews synchronously, so catalog browsing stays available even during Reviews maintenance. Eventual consistency between individual feedback writes and Catalog's rating summary is maintained asynchronously, with explicit compensating deletion when feedback targets an invalid or deleted book.
@@ -62,7 +62,7 @@ Reviews references books strictly by identifier and never duplicates Catalog met
 - **Feedback & Review:** Synonyms for the same individual customer submission about a book (`Review` in customer-facing experiences, [[entity|feedback]] in the domain model).
 - **Rating & Comment:** An integer score from `0` through `5` paired with an optional written customer comment.
 - **Book Reference:** The book identifier linking feedback to [[domain|catalog]] without copying catalog attributes.
-- **Rating Summary:** [[domain|catalog]]'s aggregated average rating and review count—explicitly distinct from individual feedback records.
+- **Rating Summary:** [[domain|catalog]]'s aggregated average rating and review countâ€”explicitly distinct from individual feedback records.
 
 ## Architecture Visualizations
 
@@ -76,8 +76,8 @@ Reviews references books strictly by identifier and never duplicates Catalog met
 
 ## Related Governance & Documentation
 
-- [[system|rating-system]] — System boundary, Cosmos DB persistence, and [[service|rating-api]].
-- [[flow|feedback-publication]] — Feedback publication, Catalog projection, and compensation workflow.
-- [[adr|adr-bw-007-derived-eventually-consistent-views]] — Authoritative feedback vs. derived Catalog rating summaries.
-- [[adr|adr-bw-014-composable-ai-governance]] — Fail-closed privacy and guardrail governance for [[agent|rating-agent]].
-- [[doc|arc42/12-glossary]] — Shared feedback, rating, and summary terminology.
+- [[system|rating-system]] â€” System boundary, Cosmos DB persistence, and [[service|rating-api]].
+- [[flow|feedback-publication]] â€” Feedback publication, Catalog projection, and compensation workflow.
+- [[adr|adr-bw-007-derived-eventually-consistent-views]] â€” Authoritative feedback vs. derived Catalog rating summaries.
+- [[adr|adr-bw-014-composable-ai-governance]] â€” Fail-closed privacy and guardrail governance for [[agent|rating-agent]].
+- [[doc|arc42/12-glossary]] â€” Shared feedback, rating, and summary terminology.

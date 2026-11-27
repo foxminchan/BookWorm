@@ -1,4 +1,4 @@
----
+﻿---
 id: CreateBasket
 name: Create basket
 version: 1.0.0
@@ -8,7 +8,7 @@ badges:
     textColor: blue
 summary: Creates a basket containing the supplied item identifiers and quantities.
 owners:
-  - contributor-team
+  - commerce-fulfillment-team
 schemaPath: schema.json
 operation:
   method: POST
@@ -28,7 +28,7 @@ sidebar:
 | **Owner Service**                  | [[service\|basket-api]]                                                                                                                                          |
 | **Protocol / Format**              | HTTP `POST`, `application/json` request and response                                                                                                             |
 | **Gateway Endpoint**               | `POST /basket/api/v1/baskets` (service path `/api/v1/baskets`)                                                                                                   |
-| **Authentication & Authorization** | Microsoft Entra ID JWT — `customer` role plus scopes `basket_read`, `basket_write`                                                                               |
+| **Authentication & Authorization** | Microsoft Entra ID JWT â€” `customer` role plus scopes `basket_read`, `basket_write`                                                                             |
 | **Idempotency / Concurrency**      | Overwrites any existing basket for the authenticated customer; no `x-request-id` header is enforced                                                              |
 | **Rate Limit / Caching**           | Global concurrency (`100`), per-IP fixed-window (`30 req/min`), and per-user token bucket (`30` tokens, `+20` per `10s`, queue `5`); stored in Redis with no TTL |
 | **Contract Version**               | `1.0.0` (`ApiVersions.V1`)                                                                                                                                       |
@@ -69,11 +69,11 @@ sidebar:
 
 ## Related Documentation
 
-- [[service|basket-api]] — Service overview, Redis storage, and authorization policy.
-- [[entity|basket]] — Basket entity model.
-- [[command|UpdateBasket]] — Replace all items in an existing basket.
-- [[command|DeleteBasket]] — Remove the authenticated customer's basket.
-- [[query|GetBasket]] — Retrieve the current basket enriched with Catalog titles and prices.
+- [[service|basket-api]] â€” Service overview, Redis storage, and authorization policy.
+- [[entity|basket]] â€” Basket entity model.
+- [[command|UpdateBasket]] â€” Replace all items in an existing basket.
+- [[command|DeleteBasket]] â€” Remove the authenticated customer's basket.
+- [[query|GetBasket]] â€” Retrieve the current basket enriched with Catalog titles and prices.
 
 <NodeGraph />
 

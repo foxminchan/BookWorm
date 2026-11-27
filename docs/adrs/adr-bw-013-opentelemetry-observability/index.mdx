@@ -1,4 +1,4 @@
----
+﻿---
 id: adr-bw-013-opentelemetry-observability
 name: "ADR-BW-013: Use shared structured logging and OpenTelemetry"
 version: 1.0.0
@@ -6,7 +6,7 @@ summary: Produce correlated logs, traces, metrics, and configured health signals
 status: proposed
 date: 2026-11-07
 owners:
-  - platform-team
+  - platform-engineering-team
 appliesTo:
   - type: domain
     id: bookworm
@@ -15,7 +15,7 @@ related:
   - id: adr-bw-010-cross-boundary-correlation
   - id: adr-bw-015-explicit-environment-configuration
 decisionMakers:
-  - platform-team
+  - platform-engineering-team
 x-scope: "Whole system"
 ---
 
@@ -23,7 +23,7 @@ x-scope: "Whole system"
 | :--------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Status**             | Proposed                                                                                                                                                   |
 | **Date**               | 2026-11-07                                                                                                                                                 |
-| **Owners**             | [[team\|platform-team]]                                                                                                                                    |
+| **Owners**             | [[team\|platform-engineering-team]]                                                                                                                        |
 | **Affected Resources** | [[domain\|bookworm]]                                                                                                                                       |
 | **Related ADRs**       | [[adr\|adr-bw-003-aspire-shared-service-defaults]], [[adr\|adr-bw-010-cross-boundary-correlation]], [[adr\|adr-bw-015-explicit-environment-configuration]] |
 

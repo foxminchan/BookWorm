@@ -1,4 +1,4 @@
----
+﻿---
 id: adr-005-govern-agent-tools-per-agent
 name: "ADR-005: Grant tools according to each agent's responsibility"
 version: 1.0.0
@@ -6,9 +6,9 @@ summary: Chat agents receive only the MCP tools or delegated capabilities needed
 status: accepted
 date: 2026-11-04
 owners:
-  - contributor-team
+  - ai-capabilities-team
 decisionMakers:
-  - contributor-team
+  - ai-capabilities-team
 appliesTo:
   - type: system
     id: chat-system
@@ -32,7 +32,7 @@ badges:
 
 The chat host connects to a shared tool server that exposes capabilities for multiple consumers across the platform. Giving every conversational agent access to every available tool would blur agent responsibilities and unnecessarily widen the impact of any single invocation.
 
-In addition, local delegation between agents—where one specialist asks research subagents to gather information—creates a distinct capability boundary from calling external tools directly. Both direct tool access and agent-to-agent delegation require explicit ownership and governance policies.
+In addition, local delegation between agentsâ€”where one specialist asks research subagents to gather informationâ€”creates a distinct capability boundary from calling external tools directly. Both direct tool access and agent-to-agent delegation require explicit ownership and governance policies.
 
 ## 2. Business Value
 
@@ -45,7 +45,7 @@ In addition, local delegation between agents—where one specialist asks researc
 Capabilities are assigned per agent role and paired with an explicit governance policy:
 
 - **Question-and-answer specialist:** Operates with no live catalog lookup tools; it answers strictly from the context and instructions supplied to it.
-- **Book specialist and its research helpers:** Receive only four declared read-only catalog lookup capabilities—searching the catalog, retrieving a book's details, listing categories, and listing authors. None of these can create or update records.
+- **Book specialist and its research helpers:** Receive only four declared read-only catalog lookup capabilitiesâ€”searching the catalog, retrieving a book's details, listing categories, and listing authors. None of these can create or update records.
 - **Separated delegation governance:** Delegating work from the book specialist to its catalog and recommendation researchers is configured and governed separately from direct tool calls. The researchers inherit only the book specialist's approved read-only scope, never a broader server capability set.
 - **Dual enforcement:** Having a capability registered for an agent never bypasses server-side security. Every tool request remains subject to server authentication, authorization filters, and server-side governance.
 

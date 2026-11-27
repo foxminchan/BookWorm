@@ -1,4 +1,4 @@
----
+﻿---
 id: GetDashboardGrpc
 name: Get catalog dashboard over gRPC
 version: 1.0.0
@@ -8,7 +8,7 @@ badges:
     textColor: green
 summary: Returns Catalog totals and category counts through the admin-protected book.v1 gRPC contract.
 owners:
-  - contributor-team
+  - catalog-experience-team
 schemaPath: schema.proto
 sidebar:
   badge: "gRPC"
@@ -18,16 +18,16 @@ sidebar:
 
 ## Overview
 
-| Property                           | Value                                                                                                                                         |
-| :--------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Bounded Context**                | Catalog                                                                                                                                       |
-| **Owner Service**                  | [[service\|catalog-api]]                                                                                                                      |
-| **Protocol / Format**              | gRPC unary RPC (`book.v1.BookGrpcService/GetDashboard`), Protobuf `edition = "2023"`                                                          |
-| **Gateway Endpoint**               | Internal gRPC RPC `book.v1.BookGrpcService/GetDashboard` (not exposed via API Gateway)                                                        |
-| **Authentication & Authorization** | Microsoft Entra ID JWT — `admin` policy (`admin` role and `catalog_read`/`catalog_write` scopes) via `Authorization: Bearer <token>` metadata |
-| **Idempotency / Concurrency**      | Read-only and naturally idempotent                                                                                                            |
-| **Rate Limit / Caching**           | Cached in L1 + Redis L2 for `15 seconds`                                                                                                      |
-| **Contract Version**               | `1.0.0`                                                                                                                                       |
+| Property                           | Value                                                                                                                                           |
+| :--------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Bounded Context**                | Catalog                                                                                                                                         |
+| **Owner Service**                  | [[service\|catalog-api]]                                                                                                                        |
+| **Protocol / Format**              | gRPC unary RPC (`book.v1.BookGrpcService/GetDashboard`), Protobuf `edition = "2023"`                                                            |
+| **Gateway Endpoint**               | Internal gRPC RPC `book.v1.BookGrpcService/GetDashboard` (not exposed via API Gateway)                                                          |
+| **Authentication & Authorization** | Microsoft Entra ID JWT â€” `admin` policy (`admin` role and `catalog_read`/`catalog_write` scopes) via `Authorization: Bearer <token>` metadata |
+| **Idempotency / Concurrency**      | Read-only and naturally idempotent                                                                                                              |
+| **Rate Limit / Caching**           | Cached in L1 + Redis L2 for `15 seconds`                                                                                                        |
+| **Contract Version**               | `1.0.0`                                                                                                                                         |
 
 ## Request & Response Contract
 
@@ -59,9 +59,9 @@ Empty Protobuf message with no fields.
 
 ## Related Documentation
 
-- [[service|catalog-api]] — Service overview, persistence, and gRPC services.
-- [[service|order-api]] — Primary caller hosting the administrative dashboard.
-- [[query|ListCategoriesGrpc]] — Anonymous gRPC category listing.
+- [[service|catalog-api]] â€” Service overview, persistence, and gRPC services.
+- [[service|order-api]] â€” Primary caller hosting the administrative dashboard.
+- [[query|ListCategoriesGrpc]] â€” Anonymous gRPC category listing.
 
 <NodeGraph />
 

@@ -1,8 +1,8 @@
----
+﻿---
 title: Observability & Alert Response
 summary: Operator playbook for inspecting live Aspire Dashboard telemetry, running Log Analytics KQL queries, checking resource saturation, and responding to alerts.
 owners:
-  - platform-team
+  - platform-engineering-team
 badges:
   - content: SRE / Incident
     backgroundColor: teal
@@ -96,7 +96,7 @@ az monitor metrics list --resource "${REDIS_ID}" --metric usedmemorypercentage -
 
 <Step title="Inspect live traces in the managed Aspire Dashboard">
 
-In the Azure Portal, open **Resource groups** → `<RESOURCE_GROUP>` → **Container Apps Environment** → **Aspire Dashboard** to view end-to-end W3C traces, ASP.NET Core / HTTP metrics, and structured logs. For local troubleshooting, open `https://localhost:17290`.
+In the Azure Portal, open **Resource groups** â†’ `<RESOURCE_GROUP>` â†’ **Container Apps Environment** â†’ **Aspire Dashboard** to view end-to-end W3C traces, ASP.NET Core / HTTP metrics, and structured logs. For local troubleshooting, open `https://localhost:17290`.
 
 </Step>
 

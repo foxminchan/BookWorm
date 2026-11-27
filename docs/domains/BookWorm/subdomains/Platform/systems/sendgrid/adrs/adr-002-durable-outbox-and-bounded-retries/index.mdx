@@ -1,4 +1,4 @@
----
+﻿---
 id: adr-002-durable-outbox-and-bounded-retries
 name: "ADR-002: Use a durable outbox with bounded provider retries"
 version: 1.0.0
@@ -6,9 +6,9 @@ summary: Notification delivery attempts are driven by durable outbox records and
 status: accepted
 date: 2026-10-27
 owners:
-  - platform-team
+  - platform-engineering-team
 decisionMakers:
-  - contributor-team
+  - platform-engineering-team
 appliesTo:
   - type: system
     id: sendgrid
@@ -51,7 +51,7 @@ Because BookWorm's internal storage and the external email service cannot confir
 
 - **Eventual consistency and operational dependencies**: Notification delivery is asynchronous, meaning teams must monitor queue age, retry counts, and terminal failures, and operate the notification store and worker reliably.
 - **Ambiguous-outcome window**: Even with durable local tracking, a failure between external acceptance and local confirmation can still cause a duplicate email; support workflows must account for that possibility.
-- **Policy requires persisted state**: Limiting batch sizes or short-term sender retries alone does not establish a true lifetime limit—bounded retries require stored attempt counts and an explicit terminal-failure state.
+- **Policy requires persisted state**: Limiting batch sizes or short-term sender retries alone does not establish a true lifetime limitâ€”bounded retries require stored attempt counts and an explicit terminal-failure state.
 - **Target design vs. current gap**: An accepted architecture decision sets the target contract, not automatic proof that current code satisfies every guarantee. Until attempt tracking, failure classification, and recovery tests are fully implemented, operations teams must not assume those safeguards are active.
 - **Alternatives rejected**:
   - _Sending without an outbox_: Risks losing notifications whenever the provider or network fails.

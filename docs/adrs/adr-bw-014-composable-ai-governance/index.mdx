@@ -1,4 +1,4 @@
----
+﻿---
 id: adr-bw-014-composable-ai-governance
 name: "ADR-BW-014: Compose shared governance on each enabled AI path"
 version: 1.0.0
@@ -6,7 +6,7 @@ summary: Reuse privacy, guardrail, and policy mechanisms across Chat and Rating 
 status: proposed
 date: 2026-11-07
 owners:
-  - contributor-team
+  - ai-capabilities-team
 appliesTo:
   - type: domain
     id: bookworm
@@ -21,7 +21,7 @@ related:
   - id: adr-001-use-presidio-analyze-for-pii-detection
   - id: adr-002-anonymize-detected-pii
 decisionMakers:
-  - contributor-team
+  - ai-capabilities-team
 x-scope: "Whole system (Chat API, Rating API, MCP Tools)"
 ---
 
@@ -29,7 +29,7 @@ x-scope: "Whole system (Chat API, Rating API, MCP Tools)"
 | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Status**             | Proposed                                                                                                                                                                                                                                                 |
 | **Date**               | 2026-11-07                                                                                                                                                                                                                                               |
-| **Owners**             | [[team\|contributor-team]]                                                                                                                                                                                                                               |
+| **Owners**             | [[team\|ai-capabilities-team]]                                                                                                                                                                                                                           |
 | **Affected Resources** | [[domain\|bookworm]], [[system\|chat-system]], [[system\|rating-system]], [[service\|chat-api]], [[service\|rating-api]], [[service\|mcp-server]], [[service\|presidio-api]]                                                                             |
 | **Related ADRs**       | [[adr\|adr-002-fail-closed-pii-middleware]], [[adr\|adr-005-govern-agent-tools-per-agent]], [[adr\|adr-004-read-only-governed-feedback-summarization]], [[adr\|adr-001-use-presidio-analyze-for-pii-detection]], [[adr\|adr-002-anonymize-detected-pii]] |
 
@@ -54,7 +54,7 @@ x-scope: "Whole system (Chat API, Rating API, MCP Tools)"
 
 ## Decision & Consequences
 
-**Chosen Option:** Compose shared AI governance—[[service|presidio-api]] PII anonymization, input/output guardrails, and default-deny tool policies—explicitly on every enabled AI path across [[system|chat-system]], [[system|rating-system]], and [[system|mcp-tools]].
+**Chosen Option:** Compose shared AI governanceâ€”[[service|presidio-api]] PII anonymization, input/output guardrails, and default-deny tool policiesâ€”explicitly on every enabled AI path across [[system|chat-system]], [[system|rating-system]], and [[system|mcp-tools]].
 
 - **Positive:** Consistent privacy and safety enforcement without granting one agent another's tool permissions.
 - **Negative:** Additional middleware hops add measurable latency to AI turns.

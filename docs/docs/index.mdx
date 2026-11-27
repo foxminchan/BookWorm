@@ -1,14 +1,14 @@
----
+﻿---
 title: "BookWorm documentation"
 summary: "Navigate BookWorm tutorials, how-to guides, technical references, and architecture docs by role across .NET 11, Aspire 17, and Next.js 16."
 owners:
-  - contributor-team
+  - architecture-enabling-team
 ---
 
 BookWorm is an open-source, cloud-native bookstore reference application built with .NET 11, Aspire 17, Domain-Driven Design, Vertical Slice Architecture, Wolverine over Kafka, Next.js 16 microfrontends, and Microsoft Foundry AI agents. Use this home page to jump directly to the guide that matches your role and task.
 
 :::warning
-BookWorm is a reference and demonstration application. It is not hardened for production use out of the box—see [[doc|operational/004-security-hardening-checklist]] before deploying to a live environment.
+BookWorm is a reference and demonstration application. It is not hardened for production use out of the boxâ€”see [[doc|operational/004-security-hardening-checklist]] before deploying to a live environment.
 :::
 
 ## Start by role
@@ -22,54 +22,54 @@ BookWorm is a reference and demonstration application. It is not hardened for pr
 
 ## Documentation map
 
-BookWorm documentation is organized into four Diátaxis quadrants so every page serves one clear purpose:
+BookWorm documentation is organized into four DiÃ¡taxis quadrants so every page serves one clear purpose:
 
 ### Tutorials (learning-oriented)
 
-- [[doc|development/000-local-quickstart]] — End-to-end guided walkthrough from cloning the repo to running Aspire AppHost, exploring the Storefront, and verifying APIs.
+- [[doc|development/000-local-quickstart]] â€” End-to-end guided walkthrough from cloning the repo to running Aspire AppHost, exploring the Storefront, and verifying APIs.
 
 ### How-to guides (task-oriented)
 
 - **Development:**
-  - [[doc|development/002-getting-started]] — Fork, install tools with `mise`, configure Git hooks, and install frontend/docs workspaces.
-  - [[doc|development/003-development-workflow]] — Branching, formatting, pre-commit hooks, and repository skills.
-  - [[doc|development/005-testing]] — Run TUnit, ArchUnit, Pact consumer/provider verification, and EventCatalog checks.
-  - [[doc|development/006-pull-request-process]] — Conventional Commit titles, PR checklist, CI workflows, and maintainer review.
-  - [[doc|development/007-troubleshoot-local-dev]] — Fix common Docker, Aspire, Entra ID, Kafka, Qdrant, Redis, and Bun errors.
+  - [[doc|development/002-getting-started]] â€” Fork, install tools with `mise`, configure Git hooks, and install frontend/docs workspaces.
+  - [[doc|development/003-development-workflow]] â€” Branching, formatting, pre-commit hooks, and repository skills.
+  - [[doc|development/005-testing]] â€” Run TUnit, ArchUnit, Pact consumer/provider verification, and EventCatalog checks.
+  - [[doc|development/006-pull-request-process]] â€” Conventional Commit titles, PR checklist, CI workflows, and maintainer review.
+  - [[doc|development/007-troubleshoot-local-dev]] â€” Fix common Docker, Aspire, Entra ID, Kafka, Qdrant, Redis, and Bun errors.
 - **Frontend:**
-  - [[doc|frontend/009-add-customer-page]] — Add routes across Storefront and Commerce microfrontends.
-  - [[doc|frontend/004-testing-and-quality-gates]] — Run Turborepo boundary, type, lint, Vitest, and Playwright BDD checks.
-  - [[doc|frontend/005-accessibility]] — Run WCAG 2.1 AA checks with `axe-core` and ESLint `jsx-a11y`.
+  - [[doc|frontend/009-add-customer-page]] â€” Add routes across Storefront and Commerce microfrontends.
+  - [[doc|frontend/004-testing-and-quality-gates]] â€” Run Turborepo boundary, type, lint, Vitest, and Playwright BDD checks.
+  - [[doc|frontend/005-accessibility]] â€” Run WCAG 2.1 AA checks with `axe-core` and ESLint `jsx-a11y`.
 - **Operations:**
-  - [[doc|operational/001-azure-deployment-guide]] — Publish BookWorm to Azure Container Apps with `aspire deploy`.
-  - [[doc|operational/002-observability-and-diagnostics]] — Inspect Aspire Dashboard telemetry, Log Analytics KQL queries, and Application Insights.
-  - [[doc|operational/003-incident-response-and-runbooks]] — Symptom-first triage for Container Apps, Entra ID RBAC, Finance sagas, vector lag, and AI chat.
-  - [[doc|operational/004-security-hardening-checklist]] — Security, networking, scaling, and operational readiness checklist.
+  - [[doc|operational/001-azure-deployment-guide]] â€” Publish BookWorm to Azure Container Apps with `aspire deploy`.
+  - [[doc|operational/002-observability-and-diagnostics]] â€” Inspect Aspire Dashboard telemetry, Log Analytics KQL queries, and Application Insights.
+  - [[doc|operational/003-incident-response-and-runbooks]] â€” Symptom-first triage for Container Apps, Entra ID RBAC, Finance sagas, vector lag, and AI chat.
+  - [[doc|operational/004-security-hardening-checklist]] â€” Security, networking, scaling, and operational readiness checklist.
 
 ### Reference (information-oriented)
 
 - **Core standards & governance:**
-  - [[doc|development/004-engineering-standards]] — C# 15, DDD/VSA, integration events, Protocol Buffers, and frontend rules.
-  - [[doc|development/008-testing-matrix]] — Complete backend, frontend, and documentation test inventory and frameworks.
-  - [[team|business-strategy]] — Logical ownership roles, repository mappings, and maintainer channels.
-  - [[doc|arc42/12-glossary]] — Canonical BookWorm business and architecture vocabulary.
+  - [[doc|development/004-engineering-standards]] â€” C# 15, DDD/VSA, integration events, Protocol Buffers, and frontend rules.
+  - [[doc|development/008-testing-matrix]] â€” Complete backend, frontend, and documentation test inventory and frameworks.
+  - [[team|architecture-enabling-team]] â€” Logical ownership roles, repository mappings, and maintainer channels.
+  - [[doc|arc42/12-glossary]] â€” Canonical BookWorm business and architecture vocabulary.
 - **Platform & cloud:**
-  - [[doc|platform/001-platform-overview]] — Subscription deployment model, shared backbone, and single-gateway ingress.
-  - [[doc|platform/002-compute-and-container-apps]] — Complete compute inventory including Storefront, Commerce, Backoffice, APIs, workers, and Presidio.
-  - [[doc|platform/003-data-ai-and-messaging-resources]] — PostgreSQL, Cosmos DB, Redis, Blob Storage, Qdrant, Kafka, Durable Task Scheduler, and Microsoft Foundry.
-  - [[doc|platform/004-identity-and-rbac-matrix]] — Microsoft Entra ID app registrations, Entra Agent Identities, and managed-identity RBAC.
+  - [[doc|platform/001-platform-overview]] â€” Subscription deployment model, shared backbone, and single-gateway ingress.
+  - [[doc|platform/002-compute-and-container-apps]] â€” Complete compute inventory including Storefront, Commerce, Backoffice, APIs, workers, and Presidio.
+  - [[doc|platform/003-data-ai-and-messaging-resources]] â€” PostgreSQL, Cosmos DB, Redis, Blob Storage, Qdrant, Kafka, Durable Task Scheduler, and Microsoft Foundry.
+  - [[doc|platform/004-identity-and-rbac-matrix]] â€” Microsoft Entra ID app registrations, Entra Agent Identities, and managed-identity RBAC.
 - **Frontend & APIs:**
-  - [[doc|frontend/001-monorepo-architecture]] — Four-tier Turborepo monorepo and 16 `@workspace/*` packages.
-  - [[doc|frontend/002-applications-and-routing]] — Storefront, Commerce, and Backoffice route maps and gateway prefixes.
-  - [[doc|frontend/003-data-fetching-and-state]] — Typed API clients, TanStack Query factories, ETag concurrency, and AG-UI streaming.
-  - [[doc|platform/006-api-and-contracts]] — Consolidated HTTP, gRPC, and Kafka contracts across all services.
+  - [[doc|frontend/001-monorepo-architecture]] â€” Four-tier Turborepo monorepo and 16 `@workspace/*` packages.
+  - [[doc|frontend/002-applications-and-routing]] â€” Storefront, Commerce, and Backoffice route maps and gateway prefixes.
+  - [[doc|frontend/003-data-fetching-and-state]] â€” Typed API clients, TanStack Query factories, ETag concurrency, and AG-UI streaming.
+  - [[doc|platform/006-api-and-contracts]] â€” Consolidated HTTP, gRPC, and Kafka contracts across all services.
 
 ### Explanation and architecture (understanding-oriented)
 
-- [[doc|development/001-developer-onboarding]] — Bounded contexts, system shape, and architectural principles.
-- [[doc|arc42/00-c4-overview]] — Single-page overview of system context and containers.
-- [[doc|frontend/006-microfrontend-architecture]] — Why Storefront and Commerce split into multi-zone Next.js apps behind API Gateway.
-- [[doc|frontend/007-architecture-and-state-design]] — Monorepo tiers, thin routes, feature slices, and caching design.
-- [[doc|frontend/008-accessibility-principles]] — WCAG 2.1 AA strategy and inclusive design practices.
-- [[doc|misc/001-ms-decisions-model-use-case-and-lessons-learned]] — Single-pass chat routing, safety gating, and dynamic tool selection with `Microsoft-Decision-1`.
-- [[doc|arc42/09-architecture-decisions]] — Whole-system and system-level architectural decisions.
+- [[doc|development/001-developer-onboarding]] â€” Bounded contexts, system shape, and architectural principles.
+- [[doc|arc42/00-c4-overview]] â€” Single-page overview of system context and containers.
+- [[doc|frontend/006-microfrontend-architecture]] â€” Why Storefront and Commerce split into multi-zone Next.js apps behind API Gateway.
+- [[doc|frontend/007-architecture-and-state-design]] â€” Monorepo tiers, thin routes, feature slices, and caching design.
+- [[doc|frontend/008-accessibility-principles]] â€” WCAG 2.1 AA strategy and inclusive design practices.
+- [[doc|misc/001-ms-decisions-model-use-case-and-lessons-learned]] â€” Single-pass chat routing, safety gating, and dynamic tool selection with `Microsoft-Decision-1`.
+- [[doc|arc42/09-architecture-decisions]] â€” Whole-system and system-level architectural decisions.

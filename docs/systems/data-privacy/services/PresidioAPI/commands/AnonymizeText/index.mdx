@@ -1,4 +1,4 @@
----
+﻿---
 id: AnonymizeText
 name: Anonymize text
 version: 1.0.0
@@ -8,7 +8,7 @@ badges:
     textColor: red
 summary: Replaces or transforms detected PII in text using the supplied analysis results and configured anonymization operators.
 owners:
-  - platform-team
+  - platform-engineering-team
 schemaPath: schema.json
 operation:
   method: POST
@@ -51,7 +51,7 @@ Pass `analyzer_results` computed against the exact same `text` string. Stale cha
 
 | Name    | Type       | Required | Constraints                                                                        | Description                                          |
 | :------ | :--------- | :------- | :--------------------------------------------------------------------------------- | :--------------------------------------------------- |
-| `text`  | `string`   | Yes      | —                                                                                  | Transformed text after applying configured operators |
+| `text`  | `string`   | Yes      | â€”                                                                                | Transformed text after applying configured operators |
 | `items` | `object[]` | No       | Each item includes `start`, `end`, `entity_type`, and optional `operator` / `text` | Applied operator metadata                            |
 
 ## Behavior & Side Effects
@@ -69,9 +69,9 @@ Pass `analyzer_results` computed against the exact same `text` string. Stale cha
 
 ## Related Documentation
 
-- [[service|presidio-api]] — Overview of the Presidio Analyzer and Anonymizer sidecars.
-- [[command|AnalyzeText]] — Generate `analyzer_results` spans before calling `AnonymizeText`.
-- [[query|GetAnonymizers]] — List supported anonymization operators.
+- [[service|presidio-api]] â€” Overview of the Presidio Analyzer and Anonymizer sidecars.
+- [[command|AnalyzeText]] â€” Generate `analyzer_results` spans before calling `AnonymizeText`.
+- [[query|GetAnonymizers]] â€” List supported anonymization operators.
 
 <NodeGraph />
 

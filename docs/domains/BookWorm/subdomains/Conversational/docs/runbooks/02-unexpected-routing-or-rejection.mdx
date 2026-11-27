@@ -1,4 +1,4 @@
----
+﻿---
 title: Unexpected request routing or rejection
 summary: Diagnose whether an unexpected outcome came from validation, Decision Router classification, or specialist handoffs.
 version: 1.0.0
@@ -70,9 +70,9 @@ Decision router selected <Book|QA|Rating> (confidence >= 0.600)
 ## Rollback / Escalation
 
 - **Rollback:** If a recent `Microsoft-Decision-1` configuration or prompt-policy update caused false rejections, revert the policy/revision in `<RESOURCE_GROUP>`.
-- **Escalation:** Log false-positive regex/guardrail rejections (without raw PII) and escalate to [[team|contributor-team]].
+- **Escalation:** Log false-positive regex/guardrail rejections (without raw PII) and escalate to [[team|ai-capabilities-team]].
 
 ## Related documentation
 
-- [[flow|agent-orchestration]] — Routing thresholds and handoff rules.
-- [[adr|adr-007-system-one-decision-model-routing-and-tool-selection]] — Decision model routing architecture.
+- [[flow|agent-orchestration]] â€” Routing thresholds and handoff rules.
+- [[adr|adr-007-system-one-decision-model-routing-and-tool-selection]] â€” Decision model routing architecture.

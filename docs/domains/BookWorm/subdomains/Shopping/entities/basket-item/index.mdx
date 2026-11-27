@@ -1,4 +1,4 @@
----
+﻿---
 id: basket-item
 name: Basket Item
 version: 1.0.0
@@ -6,7 +6,7 @@ identifier: bookId
 aggregateRoot: false
 summary: Requested item quantity within a customer's Basket.
 owners:
-  - contributor-team
+  - commerce-fulfillment-team
 properties:
   - name: bookId
     type: UUID
@@ -39,8 +39,8 @@ properties:
 
 | Name (JSON) | Type     | Required | Default | Constraints            | Description                             |
 | :---------- | :------- | :------- | :------ | :--------------------- | :-------------------------------------- |
-| `id`        | `string` | Yes      | —       | GUID format; not empty | Catalog `Book.id` of the requested book |
-| `quantity`  | `int`    | Yes      | —       | `> 0`                  | Number of copies requested              |
+| `id`        | `string` | Yes      | â€”     | GUID format; not empty | Catalog `Book.id` of the requested book |
+| `quantity`  | `int`    | Yes      | â€”     | `> 0`                  | Number of copies requested              |
 
 ### Enriched response fields (`BasketItemDto`)
 
@@ -48,9 +48,9 @@ Basket API adds these fields when it returns a basket. They are not stored in Re
 
 | Name (JSON) | Type      | Required | Default | Constraints | Description                             |
 | :---------- | :-------- | :------- | :------ | :---------- | :-------------------------------------- |
-| `name`      | `string`  | No       | `null`  | —           | Book title from Catalog API             |
-| `price`     | `decimal` | No       | `0`     | —           | Current original price from Catalog API |
-| `priceSale` | `decimal` | No       | `null`  | —           | Current sale price from Catalog API     |
+| `name`      | `string`  | No       | `null`  | â€”         | Book title from Catalog API             |
+| `price`     | `decimal` | No       | `0`     | â€”         | Current original price from Catalog API |
+| `priceSale` | `decimal` | No       | `null`  | â€”         | Current sale price from Catalog API     |
 
 The basket post-processor resolves missing display fields through Catalog API's `book.v1.BookGrpcService` read path and fills `Name`, `Price`, and `PriceSale` into the returned basket item.
 
@@ -100,5 +100,5 @@ The basket post-processor resolves missing display fields through Catalog API's 
 
 ## Related documentation
 
-- [[entity|basket]] — Parent aggregate and Redis key.
-- [[entity|book]] — Source of names and prices.
+- [[entity|basket]] â€” Parent aggregate and Redis key.
+- [[entity|book]] â€” Source of names and prices.

@@ -1,4 +1,4 @@
----
+﻿---
 id: adr-005-authenticate-and-govern-mcp-calls
 name: "ADR-005: Authenticate and govern MCP requests"
 version: 1.0.0
@@ -6,9 +6,9 @@ summary: The MCP endpoint requires an authenticated caller with the read scope a
 status: accepted
 date: 2026-11-04
 owners:
-  - contributor-team
+  - ai-capabilities-team
 decisionMakers:
-  - contributor-team
+  - ai-capabilities-team
 appliesTo:
   - type: system
     id: mcp-tools
@@ -43,7 +43,7 @@ Every incoming request to [[service|mcp-server]] passes through a strict two-lay
 1. **Caller authentication and read permission check:** Callers must present valid credentials verified through [[system|identity-provider]] showing they are authorized to read MCP capabilities. Internal consumers such as [[service|chat-api]] and [[service|rating-api]] obtain these credentials using service-to-service credential exchange.
 2. **Server-side capability governance:** Even after a caller is authenticated, the server enforces a default-deny policy on tool invocations. Only explicitly approved tool categories are permitted, and unsafe tool patterns are blocked at the server boundary.
 
-Client applications still configure which subset of tools they intend to use, while capability discovery only advertises what exists—it never grants permission to run a tool.
+Client applications still configure which subset of tools they intend to use, while capability discovery only advertises what existsâ€”it never grants permission to run a tool.
 
 ## 4. Trade-offs & Lessons Learned
 

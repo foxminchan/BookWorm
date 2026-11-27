@@ -1,4 +1,4 @@
----
+﻿---
 id: adr-bw-009-local-cqrs-building-blocks
 name: "ADR-BW-009: Use local CQRS handlers and the established Mediator"
 version: 1.0.0
@@ -6,7 +6,7 @@ summary: Reuse CQRS and Mediator.SourceGenerator for in-process request handling
 status: proposed
 date: 2026-11-07
 owners:
-  - contributor-team
+  - architecture-enabling-team
 appliesTo:
   - type: domain
     id: bookworm
@@ -14,7 +14,7 @@ related:
   - id: adr-bw-011-shared-validation-and-error-contracts
   - id: adr-bw-016-layered-architecture-verification
 decisionMakers:
-  - contributor-team
+  - architecture-enabling-team
 x-scope: "Whole system (backend API services)"
 ---
 
@@ -22,7 +22,7 @@ x-scope: "Whole system (backend API services)"
 | :--------------------- | :--------------------------------------------------------------------------------------------------------------- |
 | **Status**             | Proposed                                                                                                         |
 | **Date**               | 2026-11-07                                                                                                       |
-| **Owners**             | [[team\|contributor-team]]                                                                                       |
+| **Owners**             | [[team\|architecture-enabling-team]]                                                                             |
 | **Affected Resources** | [[domain\|bookworm]]                                                                                             |
 | **Related ADRs**       | [[adr\|adr-bw-011-shared-validation-and-error-contracts]], [[adr\|adr-bw-016-layered-architecture-verification]] |
 

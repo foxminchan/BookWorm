@@ -1,4 +1,4 @@
----
+﻿---
 id: adr-002-fail-closed-pii-middleware
 name: "ADR-002: Apply PII filtering to agent input and output"
 version: 1.0.0
@@ -6,9 +6,9 @@ summary: Chat agents use Presidio middleware to analyze and anonymize sensitive 
 status: accepted
 date: 2026-11-04
 owners:
-  - contributor-team
+  - ai-capabilities-team
 decisionMakers:
-  - contributor-team
+  - ai-capabilities-team
 appliesTo:
   - type: system
     id: chat-system
@@ -30,7 +30,7 @@ badges:
 
 ## 1. Context & Problem
 
-Customer conversations can contain personally identifiable information (PII). Sending unfiltered customer text to an AI model—or returning unfiltered model output to a caller—risks exposing sensitive values beyond the intended processing boundary.
+Customer conversations can contain personally identifiable information (PII). Sending unfiltered customer text to an AI modelâ€”or returning unfiltered model output to a callerâ€”risks exposing sensitive values beyond the intended processing boundary.
 
 Filtering only incoming requests would still leave sensitive content generated in responses unprotected, while filtering only final answers would still send the original unredacted input to the AI model. BookWorm needed a consistent, bidirectional privacy boundary applied across all conversational assistants.
 
@@ -42,7 +42,7 @@ Filtering only incoming requests would still leave sensitive content generated i
 
 ## 3. How It Works
 
-1. **Universal coverage**: All five Chat assistants—primary specialists and delegated researchers alike—route every non-empty interaction through a shared privacy screening step.
+1. **Universal coverage**: All five Chat assistantsâ€”primary specialists and delegated researchers alikeâ€”route every non-empty interaction through a shared privacy screening step.
 2. **Analyze and anonymize**: Before text goes to an AI model, and again before generated output is returned, the screening step analyzes the text for personal information and anonymizes any sensitive values found.
 3. **Hold streamed replies until checked**: When an assistant generates a streamed reply, the output is held until privacy screening finishes, then released together.
 4. **Fail closed on errors**: If privacy screening fails for any reason, the request is stopped rather than allowing unfiltered text through.

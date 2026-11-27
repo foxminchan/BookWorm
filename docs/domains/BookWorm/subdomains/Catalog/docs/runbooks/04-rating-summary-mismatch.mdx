@@ -1,4 +1,4 @@
----
+﻿---
 title: Rating summary mismatch
 summary: Investigate when a book's average rating or review count disagrees with Reviews.
 version: 1.0.0
@@ -79,7 +79,7 @@ Expected output:
 ## Rollback / Escalation
 
 - **Rollback:** Re-run the authoritative reconciliation query from [[container|rating-database]] and evict `book:<BOOK_ID>` in [[container|catalog-cache]] if a manual correction used wrong values.
-- **Escalation:** Escalate persistent projection or compensation failures to [[team|contributor-team]] with `<BOOK_ID>` and event IDs.
+- **Escalation:** Escalate persistent projection or compensation failures to [[team|catalog-experience-team]] with `<BOOK_ID>` and event IDs.
 
 <AccordionGroup>
 <Accordion title="Troubleshooting edge cases">
@@ -95,5 +95,5 @@ Expected output:
 
 ## Related documentation
 
-- [[flow|feedback-publication]] — End-to-end review projection and compensation flow.
-- [[adr|adr-006-reviews-rating-projection-on-book]] — Derived rating summary boundary.
+- [[flow|feedback-publication]] â€” End-to-end review projection and compensation flow.
+- [[adr|adr-006-reviews-rating-projection-on-book]] â€” Derived rating summary boundary.

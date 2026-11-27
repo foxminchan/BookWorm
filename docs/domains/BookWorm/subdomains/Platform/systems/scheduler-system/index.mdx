@@ -1,4 +1,4 @@
----
+﻿---
 id: scheduler-system
 name: Scheduler System
 version: 1.0.0
@@ -7,7 +7,7 @@ summary: |
   recurring jobs, and dispatches background work without owning domain data.
 scope: internal
 owners:
-  - platform-team
+  - platform-engineering-team
 services:
   - id: scheduler-service
     version: 1.0.0
@@ -44,7 +44,7 @@ badges:
 The Scheduler System coordinates recurring background job schedules and operational trigger inspection within the [[domain|platform]] domain. It serves **Administrators** monitoring and controlling job schedules while triggering downstream maintenance work in [[system|product-catalog-system]] and [[system|notification-system]]. Owning domain business tables, executing search-index mutations directly, and storing credentials or business payloads in job metadata are explicitly out of scope.
 
 :::note
-A completed job firing in the Scheduler System confirms only that the trigger was dispatched—not that downstream business processing succeeded. Operators must verify target-side metrics (such as pending catalog vector updates) to confirm end-to-end completion.
+A completed job firing in the Scheduler System confirms only that the trigger was dispatchedâ€”not that downstream business processing succeeded. Operators must verify target-side metrics (such as pending catalog vector updates) to confirm end-to-end completion.
 :::
 
 ## Contained Capabilities
@@ -82,6 +82,6 @@ A completed job firing in the Scheduler System confirms only that the trigger wa
 
 ## Related Documentation
 
-- [[flow|product-ingestion]] — Scheduled catalog vector ingestion workflow.
-- [[doc|platform/005-quartz-schema]] — Persistent scheduler schema reference.
-- [[doc|domains/bookworm/subdomains/platform/guides/scheduled-work-and-email-notifications]] — Guide to scheduled platform work.
+- [[flow|product-ingestion]] â€” Scheduled catalog vector ingestion workflow.
+- [[doc|platform/005-quartz-schema]] â€” Persistent scheduler schema reference.
+- [[doc|domains/bookworm/subdomains/platform/guides/scheduled-work-and-email-notifications]] â€” Guide to scheduled platform work.

@@ -1,4 +1,4 @@
----
+﻿---
 id: adr-004-catalog-enrichment-at-read-time
 name: "ADR-004: Enrich basket items from Catalog at read time"
 version: 1.0.0
@@ -6,9 +6,9 @@ summary: Basket persistence stores book references and quantities, while current
 status: accepted
 date: 2026-10-21
 owners:
-  - contributor-team
+  - commerce-fulfillment-team
 decisionMakers:
-  - contributor-team
+  - commerce-fulfillment-team
 appliesTo:
   - type: system
     id: cart-system
@@ -35,9 +35,9 @@ When customers view their [[entity|basket]], they need to see book titles and cu
 
 ## 3. How It Works
 
-The [[system|cart-system]] saves only the customer's chosen book identifiers and positive requested quantities—it never stores quoted prices or reserved inventory. Whenever a customer reads their basket, the cart service collects all unique book identifiers in the cart and asks [[domain|catalog]] for their current names, regular prices, and sale prices in a single batch lookup.
+The [[system|cart-system]] saves only the customer's chosen book identifiers and positive requested quantitiesâ€”it never stores quoted prices or reserved inventory. Whenever a customer reads their basket, the cart service collects all unique book identifiers in the cart and asks [[domain|catalog]] for their current names, regular prices, and sale prices in a single batch lookup.
 
-If a book record cannot be found in the catalog, the cart service does not invent missing details or silently remove the item from the customer's saved basket; missing presentation fields simply remain absent. Importantly, the prices shown in the basket are for current display only—they are not a price guarantee, inventory reservation, or checkout snapshot.
+If a book record cannot be found in the catalog, the cart service does not invent missing details or silently remove the item from the customer's saved basket; missing presentation fields simply remain absent. Importantly, the prices shown in the basket are for current display onlyâ€”they are not a price guarantee, inventory reservation, or checkout snapshot.
 
 ## 4. Trade-offs & Lessons Learned
 

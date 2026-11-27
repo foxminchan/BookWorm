@@ -1,4 +1,4 @@
----
+﻿---
 id: order
 name: Order
 version: 1.0.0
@@ -6,7 +6,7 @@ identifier: id
 aggregateRoot: true
 summary: A purchase record owned by an authenticated Buyer, containing purchase-time items and an Order status.
 owners:
-  - business-strategy
+  - commerce-fulfillment-team
 properties:
   - name: id
     type: UUID
@@ -73,11 +73,11 @@ properties:
 | Name             | Type               | Required | Default                    | Constraints                                                            | Description                                     |
 | :--------------- | :----------------- | :------- | :------------------------- | :--------------------------------------------------------------------- | :---------------------------------------------- |
 | `id`             | `OrderId` (`Guid`) | Yes      | `uuidv7()` (database)      | Primary key                                                            | Unique order identifier                         |
-| `buyerId`        | `BuyerId` (`Guid`) | Yes      | —                          | FK to `buyers.id`; indexed with `created_at`                           | Buyer who placed the order                      |
+| `buyerId`        | `BuyerId` (`Guid`) | Yes      | â€”                        | FK to `buyers.id`; indexed with `created_at`                           | Buyer who placed the order                      |
 | `status`         | `Status` (`byte`)  | Yes      | `New`                      | `New` = 0, `Cancelled` = 1, `Completed` = 2; indexed with `created_at` | Lifecycle status; serialized as a string        |
-| `note`           | `string`           | No       | —                          | Max 500 chars                                                          | Optional customer note                          |
-| `orderItems`     | `OrderItem[]`      | Yes      | —                          | Child rows in `order_items`; `ON DELETE CASCADE`; `AutoInclude()`      | Purchase-time lines; see [[entity\|order-item]] |
-| `totalPrice`     | `decimal`          | —        | Computed                   | `[NotMapped]`; sum of `price * quantity`                               | Order total; not persisted                      |
+| `note`           | `string`           | No       | â€”                        | Max 500 chars                                                          | Optional customer note                          |
+| `orderItems`     | `OrderItem[]`      | Yes      | â€”                        | Child rows in `order_items`; `ON DELETE CASCADE`; `AutoInclude()`      | Purchase-time lines; see [[entity\|order-item]] |
+| `totalPrice`     | `decimal`          | â€”      | Computed                   | `[NotMapped]`; sum of `price * quantity`                               | Order total; not persisted                      |
 | `isDeleted`      | `bool`             | Yes      | `false`                    | Global query filter `!IsDeleted`                                       | Soft-delete flag; independent of `status`       |
 | `createdAt`      | `DateTime`         | Yes      | `NOW() AT TIME ZONE 'UTC'` | UTC; indexed                                                           | Creation timestamp                              |
 | `lastModifiedAt` | `DateTime`         | No       | `NOW() AT TIME ZONE 'UTC'` | UTC                                                                    | Last modification timestamp                     |
@@ -148,5 +148,5 @@ The `Buyer` relationship is nullable at the database-delete policy level: `Buyer
 
 ## Related documentation
 
-- [[entity|order-item]] — Purchase-time line items.
-- [[entity|buyer]] — Buyer profile and address.
+- [[entity|order-item]] â€” Purchase-time line items.
+- [[entity|buyer]] â€” Buyer profile and address.

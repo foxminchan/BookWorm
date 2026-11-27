@@ -1,12 +1,20 @@
----
+﻿---
 id: bookworm.{env}.catalog.book-update-rating-failed
 name: Book Rating Update Failed Channel
 version: 1.0.0
+type: topic
 summary: |
-  Kafka channel used by Catalog to publish failures when a feedback-created
-  event references a book that does not exist.
+  Kafka compensation topic owned by the contributor team used by Catalog API
+  when a feedback-created event references a missing book.
 owners:
-  - contributor-team
+  - catalog-experience-team
+badges:
+  - content: Kafka
+    backgroundColor: blue
+    textColor: blue
+  - content: Compensation
+    backgroundColor: orange
+    textColor: orange
 address: bookworm.{env}.catalog.book-update-rating-failed
 parameters:
   env:
@@ -19,9 +27,8 @@ parameters:
       - development
       - staging
       - production
-    description: Environment to use.
+    description: BookWorm deployment environment.
 deliveryGuarantee: at-least-once
-type: stream
 protocols:
   - kafka
 deadLetterChannel:
@@ -29,55 +36,47 @@ deadLetterChannel:
   version: 1.0.0
 ---
 
-Catalog publishes this compensation signal when a new feedback submission refers to a book it cannot find. Rating uses it to remove the orphaned feedback record.
+## Purpose & Scope
 
-**Producer:** Catalog service. **Consumer:** Rating service.
+This compensation topic carries failure signals published by [[service|catalog-api]] within the Catalog bounded context when a newly submitted feedback event references a book that does not exist. [[service|rating-api]] consumes this event to remove the orphaned feedback record and keep rating data consistent. Feedback deletions for unknown books are ignored and do not emit this signal.
 
-A feedback deletion for an unknown book is ignored and does not produce this signal.
+## Channel Specification
 
-## Channel information
+| Property                               | Value                                                                     |
+| :------------------------------------- | :------------------------------------------------------------------------ |
+| **Bounded Context / Owner**            | [[domain\|catalog]] / [[team\|catalog-experience-team]]                   |
+| **Channel Type**                       | Topic                                                                     |
+| **Address Pattern**                    | `bookworm.{env}.catalog.book-update-rating-failed`                        |
+| **Parameters**                         | `env` (`development`, `staging`, `production`; default: `development`)    |
+| **Protocol & Envelope Format**         | Kafka + CloudEvents JSON (`application/json`)                             |
+| **Partition Key & Ordering Guarantee** | Keyed by `feedbackId`; preserves per-feedback ordering within a partition |
+| **Delivery Semantics**                 | At-least-once                                                             |
+| **Dead-Letter Channel**                | [[channel\|bookworm.&#123;env&#125;.rating.dead-letter-queue]]            |
+
+## Messages & Participants
+
+| Message                                            | Type  | Producer                 | Consumer(s)             | Consumer Group          |
+| :------------------------------------------------- | :---- | :----------------------- | :---------------------- | :---------------------- |
+| [[event\|BookUpdatedRatingFailedIntegrationEvent]] | Event | [[service\|catalog-api]] | [[service\|rating-api]] | Rating service consumer |
+
+## Ordering, Retries & Failure Handling
+
+- **Partition-key ordering:** Records are partitioned by `feedbackId` so compensation actions for the same feedback item are serialized.
+- **Transient retries:** [[service|rating-api]] performs bounded retries with backoff for transient database or network errors.
+- **Immediate DLQ routing:** Poison payloads, deserialization errors, or exhausted retries route to [[channel|bookworm.&#123;env&#125;.rating.dead-letter-queue]].
+- **Consumer idempotency:** Removing an already-deleted feedback record is a safe no-op.
+
+## Channel Details & Visualization
 
 <ChannelInformation />
 
-## Topic and message
-
-The topic is `bookworm.{env}.catalog.book-update-rating-failed`. Replace `{env}` with `development`, `staging`, or `production`. Messages are CloudEvents JSON keyed by `feedbackId`. The example identifies the feedback whose rating could not be applied.
-
-## Operations and recovery
-
-Before replaying, verify that the book is still absent and that Rating storage is available. If the feedback record has already been removed, processing is a safe no-op. If the book exists, investigate the projection or message mismatch rather than replaying repeatedly. Failed messages are sent to the Rating dead-letter topic.
-
-## Examples
-
-### CloudEvents Kafka message
-
-Kafka key: `0193f1b0-3333-7d8e-9f01-23456789abcd` (`feedbackId`)
-
-<CodeGroup>
-
-```json
-{
-	"specversion": "1.0",
-	"id": "0193f1b0-4c01-7d8e-9f01-23456789abcd",
-	"type": "BookWorm.Contracts.BookUpdatedRatingFailedIntegrationEvent",
-	"source": "urn:bookworm:book-worm.catalog",
-	"time": "2026-11-25T16:30:01Z",
-	"datacontenttype": "application/json",
-	"messagetype": "BookWorm.Contracts.BookUpdatedRatingFailedIntegrationEvent",
-	"data": {
-		"id": "0193f1b0-4c01-7d8e-9f01-23456789abcd",
-		"creationDate": "2026-11-25T16:30:01Z",
-		"feedbackId": "0193f1b0-3333-7d8e-9f01-23456789abcd"
-	}
-}
-```
-
-</CodeGroup>
-
-## Related documentation
-
-- [[channel|bookworm.&#123;env&#125;.rating.feedback-create]]
-- [[channel|bookworm.&#123;env&#125;.rating.dead-letter-queue]]
-- [[flow|feedback-publication]]
-
 <NodeGraph />
+
+## Related Documentation
+
+- [[channel|bookworm.&#123;env&#125;.rating.dead-letter-queue]] â€” Consumer dead-letter queue
+- [[channel|bookworm.&#123;env&#125;.rating.feedback-create]] â€” Upstream feedback creation topic
+- [[service|catalog-api]] â€” Compensation producer
+- [[service|rating-api]] â€” Compensation consumer
+- [[flow|feedback-publication]] â€” Feedback publication and compensation flow
+- [[doc|arc42/08-crosscutting-concepts/002-contracts-and-messaging]] â€” Messaging standards and idempotency rules

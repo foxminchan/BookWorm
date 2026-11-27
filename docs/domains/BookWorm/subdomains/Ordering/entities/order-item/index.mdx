@@ -1,4 +1,4 @@
----
+﻿---
 id: order-item
 name: Order Item
 version: 1.0.0
@@ -6,7 +6,7 @@ identifier: id
 aggregateRoot: false
 summary: A child record on an Order that captures a book, its quantity, and its purchase-time price.
 owners:
-  - business-strategy
+  - commerce-fulfillment-team
 properties:
   - name: id
     type: UUID
@@ -54,10 +54,10 @@ properties:
 | Name       | Type               | Required | Default               | Constraints                            | Description                                   |
 | :--------- | :----------------- | :------- | :-------------------- | :------------------------------------- | :-------------------------------------------- |
 | `id`       | `Guid`             | Yes      | `uuidv7()` (database) | Primary key                            | Unique line identifier                        |
-| `orderId`  | `OrderId` (`Guid`) | Yes      | —                     | FK to `orders.id`; `ON DELETE CASCADE` | Parent order                                  |
-| `bookId`   | `Guid`             | Yes      | —                     | Unique with `order_id`                 | Catalog book ID; no cross-service foreign key |
-| `quantity` | `int`              | Yes      | —                     | `> 0`                                  | Number of copies                              |
-| `price`    | `decimal`          | Yes      | —                     | `>= 0`                                 | Unit price captured at checkout               |
+| `orderId`  | `OrderId` (`Guid`) | Yes      | â€”                   | FK to `orders.id`; `ON DELETE CASCADE` | Parent order                                  |
+| `bookId`   | `Guid`             | Yes      | â€”                   | Unique with `order_id`                 | Catalog book ID; no cross-service foreign key |
+| `quantity` | `int`              | Yes      | â€”                   | `> 0`                                  | Number of copies                              |
+| `price`    | `decimal`          | Yes      | â€”                   | `>= 0`                                 | Unit price captured at checkout               |
 
 ## Invariants and behavior
 
@@ -95,5 +95,5 @@ properties:
 
 ## Related documentation
 
-- [[entity|order]] — Parent aggregate and lifecycle.
-- [[entity|book]] — Catalog source of current prices.
+- [[entity|order]] â€” Parent aggregate and lifecycle.
+- [[entity|book]] â€” Catalog source of current prices.

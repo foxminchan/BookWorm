@@ -1,12 +1,20 @@
----
+﻿---
 id: bookworm.{env}.catalog.dead-letter-queue
 name: Catalog Dead Letter Queue
 version: 1.0.0
-type: stream
+type: topic
 summary: |
-  A Kafka topic that holds feedback messages that Catalog could not process.
+  Kafka dead-letter topic owned by the platform team that captures Rating
+  feedback events that Catalog API could not process.
 owners:
-  - platform-team
+  - platform-engineering-team
+badges:
+  - content: Kafka
+    backgroundColor: blue
+    textColor: blue
+  - content: Dead-Letter Queue
+    backgroundColor: red
+    textColor: red
 address: bookworm.{env}.catalog.dead-letter-queue
 parameters:
   env:
@@ -19,62 +27,50 @@ parameters:
       - development
       - staging
       - production
-    description: "Environment to use"
+    description: BookWorm deployment environment.
 deliveryGuarantee: at-least-once
 protocols:
   - kafka
 ---
 
-This topic holds feedback events that Catalog could not process. It receives failed messages from the feedback-created and feedback-deleted topics. A missing book on a new feedback event is handled through a separate compensation signal, not as a dead-letter failure.
+## Purpose & Scope
 
-**Writer:** Catalog service. **Reader:** Operators investigating or recovering failed messages. The record retains the original event and Kafka key.
+This dead-letter channel captures customer feedback integration events that [[service|catalog-api]] could not apply to book rating summaries. Messages are routed here when transient database or lock failures exhaust retries, or immediately when a payload is malformed. Note that a missing-book business condition on feedback creation is handled via [[channel|bookworm.&#123;env&#125;.catalog.book-update-rating-failed]] rather than dead-lettering.
 
-## Channel information
+## DLQ Profile
+
+| Property                          | Value                                                                                                                      |
+| :-------------------------------- | :------------------------------------------------------------------------------------------------------------------------- |
+| **Owning Service**                | [[service\|catalog-api]]                                                                                                   |
+| **Address Pattern**               | `bookworm.{env}.catalog.dead-letter-queue`                                                                                 |
+| **Upstream Source Channels**      | [[channel\|bookworm.&#123;env&#125;.rating.feedback-create]], [[channel\|bookworm.&#123;env&#125;.rating.feedback-delete]] |
+| **Routing Triggers**              | Exhausted transient retries (database/concurrency faults) or immediate poison/deserialization errors                       |
+| **Retention / Inspection Window** | Governed by Kafka broker retention policy; inspect and triage before broker expiry                                         |
+| **Replay Safety**                 | Requires manual validation of current book rating summary and feedback state                                               |
+
+## Triage & Replay Guardrails
+
+:::warning
+Before replaying any record from this DLQ:
+
+1. Verify [[service|catalog-api]] and [[service|rating-api]] health and confirm the underlying database or schema issue is resolved.
+2. Check whether the feedback record still exists in Rating and whether the book's rating summary in Catalog already reflects the event.
+3. Do not manually edit a book's rating summary as a substitute for replaying the authoritative event; isolate poison payloads before replaying valid records.
+
+Follow the operational triage procedures in [[doc|operational/003-incident-response-and-runbooks]].
+:::
+
+<Accordion title="Retention & Correlation Notes">
+	- **Preserved metadata:** Records retain the original CloudEvents envelope, `bookId` Kafka
+	partition key, and failure diagnostic context. - **Business compensation vs. DLQ:** When a newly
+	rated book does not exist in Catalog, [[service|catalog-api]] emits
+	[[event|BookUpdatedRatingFailedIntegrationEvent]] to
+	[[channel|bookworm.&#123;env&#125;.catalog.book-update-rating-failed]] instead of sending the
+	event here.
+</Accordion>
+
+## Channel Details & Visualization
 
 <ChannelInformation />
-
-## Topic and message
-
-The topic is `bookworm.{env}.catalog.dead-letter-queue`. Replace `{env}` with `development`, `staging`, or `production`. Records may come from [[channel|bookworm.&#123;env&#125;.rating.feedback-create]] or [[channel|bookworm.&#123;env&#125;.rating.feedback-delete]]. Kafka retention is set by the broker.
-
-## Operations and recovery
-
-Review the failure details, Catalog and Rating service health, and the affected book and feedback state before replay. Restore the cause first. Do not repair a book's rating summary manually as a substitute for replaying the source event. Replaying an already-applied event may be suppressed; a failed event can be processed again after its cause is corrected.
-
-## Examples
-
-### Dead-lettered record value
-
-Kafka key: `0193f1b0-1111-7d8e-9f01-23456789abcd` (`bookId`)
-
-<CodeGroup>
-
-```json
-{
-	"specversion": "1.0",
-	"id": "0193f1b0-4a01-7d8e-9f01-23456789abcd",
-	"type": "BookWorm.Contracts.FeedbackCreatedIntegrationEvent",
-	"source": "urn:bookworm:book-worm.rating",
-	"time": "2026-11-25T16:30:00Z",
-	"datacontenttype": "application/json",
-	"messagetype": "BookWorm.Contracts.FeedbackCreatedIntegrationEvent",
-	"data": {
-		"id": "0193f1b0-4a01-7d8e-9f01-23456789abcd",
-		"creationDate": "2026-11-25T16:30:00Z",
-		"bookId": "0193f1b0-1111-7d8e-9f01-23456789abcd",
-		"rating": 5,
-		"feedbackId": "0193f1b0-3333-7d8e-9f01-23456789abcd"
-	}
-}
-```
-
-</CodeGroup>
-
-## Related documentation
-
-- [[channel|bookworm.&#123;env&#125;.rating.feedback-create]]
-- [[channel|bookworm.&#123;env&#125;.rating.feedback-delete]]
-- [[channel|bookworm.&#123;env&#125;.catalog.book-update-rating-failed]]
-- [[service|catalog-api]]
 
 <NodeGraph />

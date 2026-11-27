@@ -1,4 +1,4 @@
----
+﻿---
 id: order-api
 name: Order API
 version: 1.0.0
@@ -6,7 +6,7 @@ summary: |
   Authenticated Ordering service for Buyer profiles and the Order lifecycle,
   creating Orders from baskets, snapshotting prices, and coordinating status events.
 owners:
-  - business-strategy
+  - commerce-fulfillment-team
 badges:
   - content: Internal
     backgroundColor: gray
@@ -137,7 +137,7 @@ Order API is the system of record within the [[domain|ordering]] domain for [[en
 | Property                                  | Value                                                                                                                                                                                                |
 | :---------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Bounded Context / Domain**              | [[domain\|ordering]]                                                                                                                                                                                 |
-| **Owner Team**                            | [[team\|business-strategy]]                                                                                                                                                                          |
+| **Owner Team**                            | [[team\|commerce-fulfillment-team]]                                                                                                                                                                  |
 | **Runtime Style**                         | REST API, SSE Dashboard Stream, gRPC Client, and Async Kafka Producer/Consumer                                                                                                                       |
 | **Public / Gateway Exposure**             | Yes via API Gateway                                                                                                                                                                                  |
 | **Authentication & Authorization Policy** | Microsoft Entra ID JWT via [[system\|identity-provider]]; `customer` or `admin` roles with ordering scopes; backoffice dashboard also requires `admin` and catalog read scope                        |
@@ -153,7 +153,7 @@ Every new Order starts in `New` status with line totals locked to active Catalog
 :::
 
 :::warning
-State-changing Order operations require an `x-request-id` idempotency header. Duplicate keys within the 1-hour idempotency window return `409 Conflict`—callers should inspect existing Order status before generating a new idempotency key.
+State-changing Order operations require an `x-request-id` idempotency header. Duplicate keys within the 1-hour idempotency window return `409 Conflict`â€”callers should inspect existing Order status before generating a new idempotency key.
 :::
 
 <MessageTable format="all" limit={20} showChannels={true} />
@@ -182,9 +182,9 @@ State-changing Order operations require an `x-request-id` idempotency header. Du
 
 ## Attached Resources & Related Docs
 
-- [[doc|platform/006-api-and-contracts]] — Consolidated service, HTTP, gRPC, and Kafka directory.
-- [[service|order-orchestration]] — Downstream Finance durable workflow.
-- [[container|order-database]] — PostgreSQL relational, event-store, and outbox storage.
-- [[container|order-cache]] — Redis locks, idempotency, and dashboard cache.
-- [[diagram|order-lifecycle]] — Order status transitions and saga separation.
-- [[doc|domains/bookworm/subdomains/ordering/engineering/01-order-consistency-and-data-ownership]] — Ordering consistency and ownership boundaries.
+- [[doc|platform/006-api-and-contracts]] â€” Consolidated service, HTTP, gRPC, and Kafka directory.
+- [[service|order-orchestration]] â€” Downstream Finance durable workflow.
+- [[container|order-database]] â€” PostgreSQL relational, event-store, and outbox storage.
+- [[container|order-cache]] â€” Redis locks, idempotency, and dashboard cache.
+- [[diagram|order-lifecycle]] â€” Order status transitions and saga separation.
+- [[doc|domains/bookworm/subdomains/ordering/engineering/01-order-consistency-and-data-ownership]] â€” Ordering consistency and ownership boundaries.

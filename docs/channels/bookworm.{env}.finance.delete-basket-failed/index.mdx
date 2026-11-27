@@ -1,12 +1,20 @@
----
+﻿---
 id: bookworm.{env}.finance.delete-basket-failed
 name: Failed Basket Cleanup Command Channel
 version: 1.0.0
+type: topic
 summary: |
-  Kafka topic carrying Finance's failed basket-cleanup outcome consumed
-  by Order API for recovery.
+  Kafka topic owned by the commerce-fulfillment-team carrying Finance's failed
+  basket-cleanup compensation command consumed by Order API.
 owners:
-  - business-strategy
+  - commerce-fulfillment-team
+badges:
+  - content: Kafka
+    backgroundColor: blue
+    textColor: blue
+  - content: Compensation
+    backgroundColor: orange
+    textColor: orange
 address: bookworm.{env}.finance.delete-basket-failed
 parameters:
   env:
@@ -15,9 +23,12 @@ parameters:
       - staging
       - production
     default: development
+    examples:
+      - development
+      - staging
+      - production
     description: BookWorm deployment environment.
 deliveryGuarantee: at-least-once
-type: stream
 protocols:
   - kafka
 deadLetterChannel:
@@ -25,60 +36,48 @@ deadLetterChannel:
   version: 1.0.0
 ---
 
-Finance publishes this command when Basket reports that checkout cleanup failed, or when the workflow must compensate for a later failure. Ordering consumes it to soft-delete the order record; the order's business status is not changed.
+## Purpose & Scope
 
-**Producer:** Finance order coordination. **Consumer:** Ordering service.
+This compensation topic transports failed basket-cleanup commands published by [[service|order-orchestration]] when [[service|basket-api]] reports a cleanup failure or the checkout saga must compensate for a timeout. [[service|order-api]] consumes this command to soft-delete the order record without changing its business status. This channel is distinct from Basket's upstream failure event topic, [[channel|bookworm.&#123;env&#125;.basket.delete-failed]].
 
-This topic is distinct from Basket's upstream failure event: [[channel|bookworm.&#123;env&#125;.basket.delete-failed]].
+## Channel Specification
 
-## Channel information
+| Property                               | Value                                                                       |
+| :------------------------------------- | :-------------------------------------------------------------------------- |
+| **Bounded Context / Owner**            | [[domain\|ordering]] / [[team\|commerce-fulfillment-team]]                  |
+| **Channel Type**                       | Topic                                                                       |
+| **Address Pattern**                    | `bookworm.{env}.finance.delete-basket-failed`                               |
+| **Parameters**                         | `env` (`development`, `staging`, `production`; default: `development`)      |
+| **Protocol & Envelope Format**         | Kafka + CloudEvents JSON (`application/json`)                               |
+| **Partition Key & Ordering Guarantee** | Keyed by `orderId`; preserves per-order command ordering within a partition |
+| **Delivery Semantics**                 | At-least-once                                                               |
+| **Dead-Letter Channel**                | [[channel\|bookworm.&#123;env&#125;.ordering.dead-letter-queue]]            |
+
+## Messages & Participants
+
+| Message                                | Type    | Producer                         | Consumer(s)            | Consumer Group            |
+| :------------------------------------- | :------ | :------------------------------- | :--------------------- | :------------------------ |
+| [[command\|DeleteBasketFailedCommand]] | Command | [[service\|order-orchestration]] | [[service\|order-api]] | Ordering service consumer |
+
+## Ordering, Retries & Failure Handling
+
+- **Partition-key ordering:** Keying by `orderId` serializes compensation commands for a given order within its partition.
+- **Transient retries:** [[service|order-api]] applies bounded retries with backoff for transient database or service faults.
+- **Immediate DLQ routing:** Malformed payloads, deserialization errors, or exhausted retries route to [[channel|bookworm.&#123;env&#125;.ordering.dead-letter-queue]].
+- **Consumer idempotency:** If the order record is already absent, processing is a safe no-op; operators must verify order state before replaying so an active order is not unintentionally soft-deleted.
+
+## Channel Details & Visualization
 
 <ChannelInformation />
 
-## Topic and message
-
-The topic is `bookworm.{env}.finance.delete-basket-failed`. Replace `{env}` with `development`, `staging`, or `production`. Messages are CloudEvents JSON keyed by `orderId` and carry basket and order details. Failed Ordering messages go to [[channel|bookworm.&#123;env&#125;.ordering.dead-letter-queue]].
-
-## Operations and recovery
-
-Verify the order state and failure context before replaying because this command soft-deletes the order record. If the order is already absent, handling is a no-op. For a dead-lettered message, restore database or service health and confirm the payload matches the intended order before replay.
-
-## Examples
-
-### CloudEvents Kafka message
-
-Kafka key: `0193f1a2-1111-7d8e-9f01-23456789abcd` (`orderId`)  
-Kafka header: `traceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01`
-
-<CodeGroup>
-
-```json
-{
-	"specversion": "1.0",
-	"id": "0193f1a2-7c20-7d8e-9f01-23456789abcd",
-	"type": "BookWorm.Contracts.DeleteBasketFailedCommand",
-	"source": "urn:bookworm:book-worm.finance",
-	"time": "2026-11-25T16:15:10Z",
-	"datacontenttype": "application/json",
-	"messagetype": "BookWorm.Contracts.DeleteBasketFailedCommand",
-	"data": {
-		"id": "0193f1a2-7c20-7d8e-9f01-23456789abcd",
-		"creationDate": "2026-11-25T16:15:10Z",
-		"basketId": "0193f1a2-2222-7d8e-9f01-23456789abcd",
-		"email": "reader@example.com",
-		"orderId": "0193f1a2-1111-7d8e-9f01-23456789abcd",
-		"totalMoney": 59.98
-	}
-}
-```
-
-</CodeGroup>
-
-## Related documentation
-
-- [[channel|bookworm.&#123;env&#125;.basket.delete-failed]]
-- [[channel|bookworm.&#123;env&#125;.finance.delete-basket-complete]]
-- [[channel|bookworm.&#123;env&#125;.ordering.dead-letter-queue]]
-- [[service|order-api]]
-
 <NodeGraph />
+
+## Related Documentation
+
+- [[channel|bookworm.&#123;env&#125;.ordering.dead-letter-queue]] â€” Consumer dead-letter queue
+- [[channel|bookworm.&#123;env&#125;.basket.delete-failed]] â€” Upstream Basket failure event topic
+- [[channel|bookworm.&#123;env&#125;.finance.delete-basket-complete]] â€” Paired cleanup success command topic
+- [[service|order-orchestration]] â€” Command producer
+- [[service|order-api]] â€” Compensation consumer
+- [[flow|user-checkout]] â€” End-to-end checkout workflow
+- [[doc|arc42/08-crosscutting-concepts/002-contracts-and-messaging]] â€” Messaging standards and idempotency rules

@@ -1,4 +1,4 @@
----
+﻿---
 id: mcp-server
 name: MCP Server
 version: 1.0.0
@@ -6,7 +6,7 @@ summary: |
   Internal stateless Streamable HTTP MCP service that exposes read-only
   Catalog lookup tools and reusable AI prompts.
 owners:
-  - contributor-team
+  - ai-capabilities-team
 sends:
   - id: ListBooksGrpc
     version: 1.0.0
@@ -43,7 +43,7 @@ MCP Server is a stateless Model Context Protocol (MCP) adapter within the [[doma
 | Property                                  | Value                                                                                                                              |
 | :---------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------- |
 | **Bounded Context / Domain**              | [[domain\|conversational]]                                                                                                         |
-| **Owner Team**                            | [[team\|contributor-team]]                                                                                                         |
+| **Owner Team**                            | [[team\|ai-capabilities-team]]                                                                                                     |
 | **Runtime Style**                         | Stateless Streamable HTTP MCP Server                                                                                               |
 | **Public / Gateway Exposure**             | Internal Only (not routed via public API Gateway)                                                                                  |
 | **Authentication & Authorization Policy** | Microsoft Entra ID JWT requiring `mcptools_read` scope with server-side authorization filters and default-deny governance policies |
@@ -72,7 +72,7 @@ MCP Server has no upstream dependency on [[service|rating-api]] and exposes no r
 
 ## Attached Resources & Related Docs
 
-- [[doc|platform/006-api-and-contracts]] — Consolidated service, HTTP, gRPC, and Kafka index.
-- [[service|catalog-api]] — Upstream gRPC catalog provider.
-- [[service|chat-api]] — Conversational consumer of Catalog MCP tools.
-- [[service|rating-api]] — Consumer of book detail lookups and rating analysis prompts.
+- [[doc|platform/006-api-and-contracts]] â€” Consolidated service, HTTP, gRPC, and Kafka index.
+- [[service|catalog-api]] â€” Upstream gRPC catalog provider.
+- [[service|chat-api]] â€” Conversational consumer of Catalog MCP tools.
+- [[service|rating-api]] â€” Consumer of book detail lookups and rating analysis prompts.

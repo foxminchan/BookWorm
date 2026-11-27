@@ -1,4 +1,4 @@
----
+﻿---
 title: Recover a failed basket cleanup
 summary: Operational procedure for investigating and recovering a failed basket deletion after checkout.
 version: 1.0.0
@@ -65,9 +65,9 @@ Expected output:
 ## Rollback / Escalation
 
 - **Rollback:** Do not restore deleted baskets after confirmed checkout; customers can add new items anytime.
-- **Escalation:** Escalate Mode A soft-deleted orders or ambiguous checkout outcomes to [[team|contributor-team]]; escalate Redis outages to [[team|platform-team]].
+- **Escalation:** Escalate Mode A soft-deleted orders or ambiguous checkout outcomes to [[team|commerce-fulfillment-team]]; escalate Redis outages to [[team|platform-engineering-team]].
 
 ## Related documentation
 
-- [[flow|user-checkout]] — End-to-end checkout and cleanup flow.
-- [[adr|adr-005-explicit-checkout-cleanup-outcomes]] — Explicit cleanup outcome events.
+- [[flow|user-checkout]] â€” End-to-end checkout and cleanup flow.
+- [[adr|adr-005-explicit-checkout-cleanup-outcomes]] â€” Explicit cleanup outcome events.

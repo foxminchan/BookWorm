@@ -1,4 +1,4 @@
----
+﻿---
 id: buyer
 name: Buyer
 version: 1.0.0
@@ -6,7 +6,7 @@ identifier: id
 aggregateRoot: true
 summary: The Ordering profile associated with a customer and the Orders they place.
 owners:
-  - business-strategy
+  - commerce-fulfillment-team
 properties:
   - name: id
     type: UUID
@@ -55,12 +55,12 @@ properties:
 | Name               | Type               | Required | Default               | Constraints                                     | Description                      |
 | :----------------- | :----------------- | :------- | :-------------------- | :---------------------------------------------- | :------------------------------- |
 | `id`               | `BuyerId` (`Guid`) | Yes      | `uuidv7()` (database) | Primary key                                     | Buyer identifier                 |
-| `name`             | `string`           | Yes      | —                     | Non-whitespace; max 20 chars                    | Buyer name                       |
-| `address.street`   | `string`           | Yes      | —                     | Non-whitespace; max 50 chars                    | Street address                   |
-| `address.city`     | `string`           | Yes      | —                     | Non-whitespace; max 50 chars                    | City                             |
-| `address.province` | `string`           | Yes      | —                     | Non-whitespace; max 50 chars                    | Province or state                |
-| `fullAddress`      | `string`           | —        | Computed              | `[NotMapped]`; `"{Street}, {City}, {Province}"` | Formatted address; not persisted |
-| `orders`           | `Order[]`          | —        | `[]`                  | Inverse navigation                              | Orders placed by the buyer       |
+| `name`             | `string`           | Yes      | â€”                   | Non-whitespace; max 20 chars                    | Buyer name                       |
+| `address.street`   | `string`           | Yes      | â€”                   | Non-whitespace; max 50 chars                    | Street address                   |
+| `address.city`     | `string`           | Yes      | â€”                   | Non-whitespace; max 50 chars                    | City                             |
+| `address.province` | `string`           | Yes      | â€”                   | Non-whitespace; max 50 chars                    | Province or state                |
+| `fullAddress`      | `string`           | â€”      | Computed              | `[NotMapped]`; `"{Street}, {City}, {Province}"` | Formatted address; not persisted |
+| `orders`           | `Order[]`          | â€”      | `[]`                  | Inverse navigation                              | Orders placed by the buyer       |
 
 `Address` is a value object stored as an EF Core complex property inside the `buyers` table.
 
@@ -102,4 +102,4 @@ The EF Core `Address` complex property maps `Street`, `City`, and `Province` as 
 
 ## Related documentation
 
-- [[entity|order]] — Orders placed by a buyer.
+- [[entity|order]] â€” Orders placed by a buyer.

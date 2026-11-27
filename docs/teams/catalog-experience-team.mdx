@@ -1,0 +1,65 @@
+---
+id: catalog-experience-team
+name: Catalog Experience Team
+summary: |
+  Stream-Aligned team owning BookWorm's product catalog, customer reviews, and storefront/backoffice discovery experience.
+members:
+  - nxnhan
+---
+
+## Mission & Topology Boundary
+
+The **Catalog Experience Team** owns end-to-end delivery for book discovery, canonical product metadata, pricing, taxonomies, and customer feedback across [[domain|catalog]] and [[domain|reviews]]. Its cognitive-load boundary centers on authoritative product information and customer sentiment without owning shopping-cart state, order fulfillment, or underlying platform infrastructure. Explicitly **out of scope** are checkout sagas, payment/order lifecycle transitions, conversational agent orchestration, and shared messaging or hosting infrastructure.
+
+## Team Profile & Interaction Modes
+
+| Property                            | Value                                                                                                                                                           |
+| :---------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Topology Type**                   | Stream-Aligned                                                                                                                                                  |
+| **Primary Mission**                 | Deliver reliable book discovery, catalog management, and customer review capabilities                                                                           |
+| **Default Interaction Mode**        | _X-as-a-Service_ (consumes platform capabilities); _Collaboration_ (with AI & Commerce teams on read contracts)                                                 |
+| **Key Partner Teams**               | [[team\|commerce-fulfillment-team]], [[team\|ai-capabilities-team]], [[team\|platform-engineering-team]], [[team\|architecture-enabling-team]]                  |
+| **Escalation / Engagement Channel** | [GitHub Discussions](https://github.com/foxminchan/BookWorm/discussions) · [Issue Tracker](https://github.com/foxminchan/BookWorm/issues)                       |
+
+## Owned Capabilities & Assets
+
+- **Domains:** [[domain|catalog]], [[domain|reviews]]
+- **Systems:** [[system|product-catalog-system]], [[system|rating-system]]
+- **Services:** [[service|catalog-api]], [[service|catalog-ingestion]], [[service|rating-api]]
+- **Agents:** [[agent|rating-agent]]
+- **Frontend & Guides:** [[doc|frontend/006-microfrontend-architecture]]
+- **Messaging Channels:** [[channel|bookworm.&#123;env&#125;.catalog.book-update-rating-failed]], [[channel|bookworm.&#123;env&#125;.rating.feedback-create]], [[channel|bookworm.&#123;env&#125;.rating.feedback-delete]]
+
+<Accordion title="Interaction Modes with Neighboring Teams">
+
+- **With [[team|commerce-fulfillment-team]] (*X-as-a-Service* / *Collaboration*):** Provides read-only gRPC book metadata and pricing lookups for basket enrichment and order price locking.
+- **With [[team|ai-capabilities-team]] (*Collaboration*):** Partners on semantic search index maintenance and read-only catalog/review exposure for conversational discovery.
+- **With [[team|platform-engineering-team]] (*X-as-a-Service*):** Consumes shared service defaults, Kafka messaging, observability, and scheduled vector-batch triggers.
+- **With [[team|architecture-enabling-team]] (*Facilitating*):** Adopts ADR standards, contract evolution rules, and EventCatalog documentation practices.
+
+</Accordion>
+
+## Working Agreements
+
+- Publish versioned HTTP, gRPC, and integration event contracts before downstream teams consume new catalog or rating fields.
+- Keep rating aggregations in [[domain|catalog]] strictly derived and rebuildable from authoritative feedback events in [[domain|reviews]].
+- Escalate dead-letter queue anomalies in catalog or rating topics jointly with [[team|platform-engineering-team]].
+
+:::note
+Changes that alter shared gRPC book contracts or feedback integration events require a compatibility check with [[team|commerce-fulfillment-team]] and [[team|ai-capabilities-team]] prior to merge.
+:::
+
+<Tiles columns={2}>
+	<Tile
+		icon="BookOpenIcon"
+		href="/docs/domains/catalog"
+		title="Catalog Domain"
+		description="Canonical book metadata, pricing, taxonomies, and hybrid search."
+	/>
+	<Tile
+		icon="StarIcon"
+		href="/docs/domains/reviews"
+		title="Reviews Domain"
+		description="Customer feedback submissions, ratings, and summarization."
+	/>
+</Tiles>

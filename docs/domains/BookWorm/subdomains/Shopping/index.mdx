@@ -1,4 +1,4 @@
----
+﻿---
 id: shopping
 name: Shopping
 summary: |
@@ -6,7 +6,7 @@ summary: |
   through handing an accepted purchase to Ordering.
 version: 1.0.0
 owners:
-  - business-strategy
+  - commerce-fulfillment-team
 systems:
   - id: cart-system
     version: 1.0.0
@@ -37,7 +37,7 @@ badges:
 [[domain|shopping]] is BookWorm's Core bounded context for pre-purchase customer intent, centered on the [[entity|basket]] and its [[entity|basket-item]] entries. It enables authenticated customers to create, inspect, replace, and clear their baskets with sub-millisecond reads, enriches basket items with live [[domain|catalog]] metadata at read time, and executes post-checkout basket cleanup once an order is accepted. Explicitly **out of scope** are owning canonical book details ([[domain|catalog]]), creating or managing accepted orders ([[domain|ordering]]), coordinating post-checkout workflows ([[domain|ordering]]), and external payment settlement.
 
 :::warning
-A [[entity|basket]] represents mutable shopping intent—**not** a confirmed order and **not** an inventory reservation. Basket items store only book identifiers and quantities, never copied catalog descriptions or locked order prices.
+A [[entity|basket]] represents mutable shopping intentâ€”**not** a confirmed order and **not** an inventory reservation. Basket items store only book identifiers and quantities, never copied catalog descriptions or locked order prices.
 :::
 
 ## Core Responsibilities & Capabilities
@@ -51,15 +51,15 @@ A [[entity|basket]] represents mutable shopping intent—**not** a confirmed ord
 
 ## Cross-Domain Interactions (Context Map)
 
-| Neighboring Domain             | Direction                                  | Integration Mechanism     | Business Data Exchanged                                                                                                                                                           |
-| :----------------------------- | :----------------------------------------- | :------------------------ | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **[[domain\|catalog]]**        | Upstream (`Catalog` → `Shopping`)          | Sync (gRPC)               | Live book titles, unit prices, and discount prices to enrich basket reads                                                                                                         |
-| **[[domain\|ordering]]**       | Downstream (`Shopping` → `Ordering`)       | Sync (gRPC)               | Customer basket book IDs and quantities read during checkout order creation                                                                                                       |
-| **[[domain\|ordering]]**       | Upstream (`Ordering` → `Shopping`)         | Async (Commands & Events) | [[command\|PlaceOrderCommand]] triggers basket deletion; Shopping replies with [[event\|BasketDeletedCompleteIntegrationEvent]] or [[event\|BasketDeletedFailedIntegrationEvent]] |
-| **[[domain\|conversational]]** | Downstream (`Shopping` ← `Conversational`) | User-confirmed UI action  | Conversational recommendations require explicit customer confirmation before mutating a basket                                                                                    |
+| Neighboring Domain             | Direction                                   | Integration Mechanism     | Business Data Exchanged                                                                                                                                                           |
+| :----------------------------- | :------------------------------------------ | :------------------------ | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **[[domain\|catalog]]**        | Upstream (`Catalog` â†’ `Shopping`)         | Sync (gRPC)               | Live book titles, unit prices, and discount prices to enrich basket reads                                                                                                         |
+| **[[domain\|ordering]]**       | Downstream (`Shopping` â†’ `Ordering`)      | Sync (gRPC)               | Customer basket book IDs and quantities read during checkout order creation                                                                                                       |
+| **[[domain\|ordering]]**       | Upstream (`Ordering` â†’ `Shopping`)        | Async (Commands & Events) | [[command\|PlaceOrderCommand]] triggers basket deletion; Shopping replies with [[event\|BasketDeletedCompleteIntegrationEvent]] or [[event\|BasketDeletedFailedIntegrationEvent]] |
+| **[[domain\|conversational]]** | Downstream (`Shopping` â† `Conversational`) | User-confirmed UI action  | Conversational recommendations require explicit customer confirmation before mutating a basket                                                                                    |
 
 :::note
-**Explicit Cleanup Outcomes & Idempotency:** Duplicate cleanup commands during post-checkout retries are deduplicated by Shopping's idempotency guard. When cleanup fails, [[service|basket-api]] emits [[event|BasketDeletedFailedIntegrationEvent]] so [[domain|ordering]] can compensate explicitly—cleanup failure is never treated as a successful cleanup or payment status.
+**Explicit Cleanup Outcomes & Idempotency:** Duplicate cleanup commands during post-checkout retries are deduplicated by Shopping's idempotency guard. When cleanup fails, [[service|basket-api]] emits [[event|BasketDeletedFailedIntegrationEvent]] so [[domain|ordering]] can compensate explicitlyâ€”cleanup failure is never treated as a successful cleanup or payment status.
 :::
 
 ## Ubiquitous Language Highlights
@@ -81,9 +81,9 @@ A [[entity|basket]] represents mutable shopping intent—**not** a confirmed ord
 
 ## Related Governance & Documentation
 
-- [[system|cart-system]] — System boundary, Redis persistence container, and [[service|basket-api]].
-- [[flow|user-checkout]] — End-to-end checkout, basket cleanup, and compensation sequence.
-- [[diagram|checkout-interaction]] — Checkout interaction between Shopping and Ordering.
-- [[adr|adr-bw-004-explicit-http-and-grpc-contracts]] — Explicit HTTP and gRPC service contracts.
-- [[adr|adr-bw-006-service-owned-business-state]] — Isolated basket state ownership.
-- [[doc|arc42/12-glossary]] — Shared shopping and checkout terminology.
+- [[system|cart-system]] â€” System boundary, Redis persistence container, and [[service|basket-api]].
+- [[flow|user-checkout]] â€” End-to-end checkout, basket cleanup, and compensation sequence.
+- [[diagram|checkout-interaction]] â€” Checkout interaction between Shopping and Ordering.
+- [[adr|adr-bw-004-explicit-http-and-grpc-contracts]] â€” Explicit HTTP and gRPC service contracts.
+- [[adr|adr-bw-006-service-owned-business-state]] â€” Isolated basket state ownership.
+- [[doc|arc42/12-glossary]] â€” Shared shopping and checkout terminology.

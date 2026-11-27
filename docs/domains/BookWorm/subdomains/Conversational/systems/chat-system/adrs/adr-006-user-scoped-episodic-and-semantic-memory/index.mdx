@@ -1,4 +1,4 @@
----
+﻿---
 id: adr-006-user-scoped-episodic-and-semantic-memory
 name: "ADR-006: Add user-scoped episodic and semantic memory to BookAgent"
 version: 1.0.0
@@ -6,7 +6,7 @@ summary: Proposes private, cross-session memory so BookAgent can use past book d
 status: proposed
 date: 2026-11-05
 owners:
-  - contributor-team
+  - ai-capabilities-team
 appliesTo:
   - type: system
     id: chat-system
@@ -54,7 +54,7 @@ Existing session memory supports work within a single active conversation only; 
 
 ## 3. How It Works
 
-BookAgent is backed by two private, user-scoped memory stores—one for past interaction summaries (episodes) matched by meaning, and one for structured reading preferences that can be inspected, corrected, and deleted. The application automatically loads relevant memory before BookAgent answers rather than letting the AI model decide when to request memory.
+BookAgent is backed by two private, user-scoped memory storesâ€”one for past interaction summaries (episodes) matched by meaning, and one for structured reading preferences that can be inspected, corrected, and deleted. The application automatically loads relevant memory before BookAgent answers rather than letting the AI model decide when to request memory.
 
 ### Expected customer experience
 
@@ -82,7 +82,7 @@ Catalog remains the source of truth for book facts. A remembered conversation is
 
 - **Verified identity required:** Resolve the authenticated customer on every invocation. Never reuse one user's identity across requests or accept a user identifier written in chat text as authorization. Without a verified identity, do not read or write personal memory.
 - **Strict user isolation:** Apply the same user boundary across retrieval, background writes, inspection, and deletion.
-- **De-identification and sensitive-topic exclusion:** Remove identifying personal text before running extraction or storing summaries, keeping only the user identifier needed to enforce ownership. Exclude sensitive topics—including health, religion, and political views—from both episodes and preferences, as anonymization alone does not make such content safe to retain.
+- **De-identification and sensitive-topic exclusion:** Remove identifying personal text before running extraction or storing summaries, keeping only the user identifier needed to enforce ownership. Exclude sensitive topicsâ€”including health, religion, and political viewsâ€”from both episodes and preferences, as anonymization alone does not make such content safe to retain.
 - **Evidence-grounded retention:** Save only eligible information directly grounded in customer statements, not model guesses, and validate extraction results before persisting.
 - **Safe grounding in responses:** Treat retrieved memory strictly as reference data, not instructions that override agent policies. Only refer to a past interaction when supporting memory was actually retrieved; if none was retrieved, do not pretend to remember.
 - **Complete deletion:** Inspection and deletion must cover both stores, and pending background work must not silently recreate information a customer has already deleted.
@@ -115,7 +115,7 @@ Catalog remains the source of truth for book facts. A remembered conversation is
 
 ### Costs, risks, and operational considerations
 
-- **Dual-store operational duties:** Chat gains database schema lifecycle, vector collection operations, and cross-store deletion responsibilities without an atomic cross-store transaction—requiring explicit consistency rules for concurrent conversations and partial writes.
+- **Dual-store operational duties:** Chat gains database schema lifecycle, vector collection operations, and cross-store deletion responsibilities without an atomic cross-store transactionâ€”requiring explicit consistency rules for concurrent conversations and partial writes.
 - **Model cost and background reliability:** Extraction and embeddings add model usage and background workload. Because the proposed in-process queue is non-durable, pending extraction can be lost on service restart; acceptable loss, overload handling, and retries must be agreed.
 - **Extraction accuracy:** Model-generated memories can be inaccurate; validation, customer inspectability, and correction controls are essential, and confidence scores alone do not eliminate this risk.
 - **User-linked data & latency:** Even with identifying text stripped, stored summaries remain user-linked data. Retrieval adds latency and consumes prompt context space, requiring strict caps on both result counts and text length.

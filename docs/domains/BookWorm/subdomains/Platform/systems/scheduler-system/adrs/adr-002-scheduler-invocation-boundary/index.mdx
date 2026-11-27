@@ -1,4 +1,4 @@
----
+﻿---
 id: adr-002-scheduler-invocation-boundary
 name: "ADR-002: Keep business ownership outside the Scheduler"
 version: 1.0.0
@@ -6,9 +6,9 @@ summary: The Scheduler System coordinates when work is attempted, while Catalog 
 status: accepted
 date: 2026-10-27
 owners:
-  - platform-team
+  - platform-engineering-team
 decisionMakers:
-  - contributor-team
+  - platform-engineering-team
 appliesTo:
   - type: system
     id: scheduler-system
@@ -41,7 +41,7 @@ The scheduler triggers recurring work for domains such as Catalog (for search ve
 1. The scheduler serves purely as a timing and trigger boundary, carrying only the minimal invocation data needed by the target contract.
 2. When a schedule fires, the job either publishes a versioned integration message to the target domain or invokes an authenticated domain entry point.
 3. The receiving system determines which records qualify for work, enforces its own validation and concurrency rules, runs the processing, and manages domain-level retries and final outcomes.
-4. The scheduler never reads or writes Catalog, Notification, or other domain tables directly. A successful firing confirms only that the scheduler completed its handoff—not that downstream processing succeeded.
+4. The scheduler never reads or writes Catalog, Notification, or other domain tables directly. A successful firing confirms only that the scheduler completed its handoffâ€”not that downstream processing succeeded.
 
 ## 4. Trade-offs & Lessons Learned
 

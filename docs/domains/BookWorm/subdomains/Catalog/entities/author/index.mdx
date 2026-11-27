@@ -1,4 +1,4 @@
----
+﻿---
 id: author
 name: Author
 version: 1.0.0
@@ -16,7 +16,7 @@ properties:
     required: true
     description: The author's display name
 owners:
-  - contributor-team
+  - catalog-experience-team
 ---
 
 `Author` is the Catalog aggregate root for a person credited on one or more books. Catalog API owns it and persists it in PostgreSQL (`catalogdb`).
@@ -39,8 +39,8 @@ owners:
 | Name          | Type                | Required | Default               | Constraints                   | Description                           |
 | :------------ | :------------------ | :------- | :-------------------- | :---------------------------- | :------------------------------------ |
 | `id`          | `AuthorId` (`Guid`) | Yes      | `uuidv7()` (database) | Primary key                   | Unique author identifier              |
-| `name`        | `string`            | Yes      | —                     | Non-whitespace; max 100 chars | Author display name                   |
-| `bookAuthors` | `BookAuthor[]`      | —        | `[]`                  | Inverse navigation            | Join links to `Book` (`book_authors`) |
+| `name`        | `string`            | Yes      | â€”                   | Non-whitespace; max 100 chars | Author display name                   |
+| `bookAuthors` | `BookAuthor[]`      | â€”      | `[]`                  | Inverse navigation            | Join links to `Book` (`book_authors`) |
 
 ## Invariants and behavior
 
@@ -71,4 +71,4 @@ owners:
 
 ## Related documentation
 
-- [[entity|book]] — Aggregate that credits authors via `book_authors` (`ON DELETE RESTRICT`).
+- [[entity|book]] â€” Aggregate that credits authors via `book_authors` (`ON DELETE RESTRICT`).

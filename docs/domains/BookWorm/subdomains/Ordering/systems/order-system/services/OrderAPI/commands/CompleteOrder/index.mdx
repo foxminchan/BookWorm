@@ -1,4 +1,4 @@
----
+﻿---
 id: CompleteOrder
 name: Complete order
 version: 1.0.0
@@ -8,7 +8,7 @@ badges:
     textColor: blue
 summary: Marks an existing Order as Completed when its current status is New.
 owners:
-  - contributor-team
+  - commerce-fulfillment-team
 schemaPath: schema.json
 operation:
   method: PATCH
@@ -28,7 +28,7 @@ sidebar:
 | **Owner Service**                  | [[service\|order-api]]                                                                                                                                       |
 | **Protocol / Format**              | HTTP `PATCH`, `application/json` response                                                                                                                    |
 | **Gateway Endpoint**               | `PATCH /ordering/api/v1/orders/{orderId}/complete` (service path `/api/v1/orders/{orderId}/complete`)                                                        |
-| **Authentication & Authorization** | Microsoft Entra ID JWT — `customer` or `admin` role plus scopes `ordering_read`, `ordering_write`                                                            |
+| **Authentication & Authorization** | Microsoft Entra ID JWT â€” `customer` or `admin` role plus scopes `ordering_read`, `ordering_write`                                                          |
 | **Idempotency / Concurrency**      | Required `x-request-id` header (Redis-backed 3600s TTL; returns `409 Conflict` on duplicate); optimistic concurrency (`412 Precondition Failed` on conflict) |
 | **Rate Limit / Caching**           | Global concurrency (`100`), per-IP fixed-window (`30 req/min`), and per-user token bucket (`30` burst, `20` per `10s`, queue `5`)                            |
 | **Contract Version**               | `1.0.0` (`ApiVersions.V1`)                                                                                                                                   |
@@ -80,11 +80,11 @@ Accepts no request body.
 
 ## Related Documentation
 
-- [[service|order-api]] — Service architecture, persistence, and endpoints.
-- [[entity|order]] — Order aggregate invariants and lifecycle statuses.
-- [[event|OrderStatusChangedToCompleteIntegrationEvent]] — Kafka event emitted on completion.
-- [[channel|bookworm.&#123;env&#125;.ordering.order-status-change-to-complete]] — Kafka topic specification.
-- [[command|CancelOrder]] — Transition a `New` order to `Cancelled`.
+- [[service|order-api]] â€” Service architecture, persistence, and endpoints.
+- [[entity|order]] â€” Order aggregate invariants and lifecycle statuses.
+- [[event|OrderStatusChangedToCompleteIntegrationEvent]] â€” Kafka event emitted on completion.
+- [[channel|bookworm.&#123;env&#125;.ordering.order-status-change-to-complete]] â€” Kafka topic specification.
+- [[command|CancelOrder]] â€” Transition a `New` order to `Cancelled`.
 
 <NodeGraph />
 

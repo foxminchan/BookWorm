@@ -1,4 +1,4 @@
----
+﻿---
 id: adr-001-postgresql-quartz-persistence
 name: "ADR-001: Persist Quartz scheduling state in PostgreSQL"
 version: 1.0.0
@@ -6,9 +6,9 @@ summary: The Scheduler System uses PostgreSQL as the authoritative durable store
 status: accepted
 date: 2026-10-27
 owners:
-  - platform-team
+  - platform-engineering-team
 decisionMakers:
-  - contributor-team
+  - platform-engineering-team
 appliesTo:
   - type: system
     id: scheduler-system
@@ -22,7 +22,7 @@ badges:
 
 ## 1. Context & Problem
 
-Background schedules—such as recurring maintenance and batch processing triggers—must survive service restarts and deployments. Storing schedules only in a service's temporary memory would erase job definitions, timing state, and run history every time the service restarts, leaving teams unable to recover or diagnose missed runs. In addition, deployments with multiple scheduler instances need a reliable shared coordination mechanism so due jobs are claimed cleanly without collisions.
+Background schedulesâ€”such as recurring maintenance and batch processing triggersâ€”must survive service restarts and deployments. Storing schedules only in a service's temporary memory would erase job definitions, timing state, and run history every time the service restarts, leaving teams unable to recover or diagnose missed runs. In addition, deployments with multiple scheduler instances need a reliable shared coordination mechanism so due jobs are claimed cleanly without collisions.
 
 ## 2. Business Value
 
@@ -36,7 +36,7 @@ Background schedules—such as recurring maintenance and batch processing trigge
 1. All job definitions, trigger schedules, instance check-ins, coordination locks, and recent execution and missed-run histories are persisted in a dedicated relational database owned by the scheduler system.
 2. When multiple scheduler instances run together, they coordinate through shared database locks so only one instance claims each eligible trigger firing.
 3. All schedule updates must go through the scheduler's supported management interfaces rather than editing underlying storage directly, protecting coordination and lock integrity.
-4. The scheduler store is the authority on _when_ a job was eligible to run and _whether_ the scheduler attempted to fire it—not on whether the downstream business task ultimately succeeded.
+4. The scheduler store is the authority on _when_ a job was eligible to run and _whether_ the scheduler attempted to fire itâ€”not on whether the downstream business task ultimately succeeded.
 5. Execution history is retained for 30 days (up to 100,000 entries per scheduler) to support operational diagnostics while bounding storage growth.
 
 ## 4. Trade-offs & Lessons Learned

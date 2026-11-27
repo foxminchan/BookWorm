@@ -1,4 +1,4 @@
----
+﻿---
 id: DeleteBasketCompleteCommand
 name: Acknowledge basket deletion completed
 version: 1.0.0
@@ -10,7 +10,7 @@ summary: |
   Reports Finance's successful basket-cleanup outcome to Order API without
   changing the Order's business status.
 owners:
-  - business-strategy
+  - commerce-fulfillment-team
 schemaPath: schema.json
 ---
 
@@ -54,12 +54,12 @@ schemaPath: schema.json
 
 ## Related Documentation
 
-- [[service|order-api]] — Consuming service and Kafka setup.
-- [[service|order-orchestration]] — Producing orchestration service.
-- [[channel|bookworm.&#123;env&#125;.finance.delete-basket-complete]] — Kafka topic specification.
-- [[channel|bookworm.&#123;env&#125;.ordering.dead-letter-queue]] — Dead-letter queue for failed Ordering consumers.
-- [[command|DeleteBasketFailedCommand]] — Companion compensation command that soft-deletes the order.
-- [[event|BasketDeletedCompleteIntegrationEvent]] — Upstream event from [[service|basket-api]].
+- [[service|order-api]] â€” Consuming service and Kafka setup.
+- [[service|order-orchestration]] â€” Producing orchestration service.
+- [[channel|bookworm.&#123;env&#125;.finance.delete-basket-complete]] â€” Kafka topic specification.
+- [[channel|bookworm.&#123;env&#125;.ordering.dead-letter-queue]] â€” Dead-letter queue for failed Ordering consumers.
+- [[command|DeleteBasketFailedCommand]] â€” Companion compensation command that soft-deletes the order.
+- [[event|BasketDeletedCompleteIntegrationEvent]] â€” Upstream event from [[service|basket-api]].
 
 <NodeGraph />
 

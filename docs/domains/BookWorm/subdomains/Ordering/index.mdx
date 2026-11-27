@@ -1,4 +1,4 @@
----
+﻿---
 id: ordering
 name: Ordering
 summary: |
@@ -6,7 +6,7 @@ summary: |
   and owns order lifecycle transitions from New to Completed or Cancelled.
 version: 1.0.0
 owners:
-  - business-strategy
+  - commerce-fulfillment-team
 systems:
   - id: order-system
     version: 1.0.0
@@ -42,7 +42,7 @@ badges:
 
 ## Business Purpose & Boundary
 
-[[domain|ordering]] is BookWorm's Core bounded context for committed customer purchases ([[entity|buyer]], [[entity|order]], [[entity|order-item]]) and their business lifecycle (`New` → `Completed` or `Cancelled`). It accepts checkouts by locking purchase-time pricing onto immutable order lines, maintains buyer profiles and delivery addresses, projects real-time order summaries, and orchestrates post-checkout basket cleanup and customer email triggers through [[service|order-orchestration]]. Explicitly **out of scope** are pre-order mutable baskets ([[domain|shopping]]), live catalog descriptions ([[domain|catalog]]), external payment settlement, physical shipping execution, and email rendering or transport ([[domain|platform]]).
+[[domain|ordering]] is BookWorm's Core bounded context for committed customer purchases ([[entity|buyer]], [[entity|order]], [[entity|order-item]]) and their business lifecycle (`New` â†’ `Completed` or `Cancelled`). It accepts checkouts by locking purchase-time pricing onto immutable order lines, maintains buyer profiles and delivery addresses, projects real-time order summaries, and orchestrates post-checkout basket cleanup and customer email triggers through [[service|order-orchestration]]. Explicitly **out of scope** are pre-order mutable baskets ([[domain|shopping]]), live catalog descriptions ([[domain|catalog]]), external payment settlement, physical shipping execution, and email rendering or transport ([[domain|platform]]).
 
 :::warning
 Only explicit Ordering commands transition an [[entity|order]]'s business status. Post-checkout orchestration retries, timeouts, and [[domain|platform]] email delivery outcomes never mark an order `Completed` or `Cancelled`.
@@ -59,12 +59,12 @@ Only explicit Ordering commands transition an [[entity|order]]'s business status
 
 ## Cross-Domain Interactions (Context Map)
 
-| Neighboring Domain       | Direction                            | Integration Mechanism     | Business Data Exchanged                                                                 |
-| :----------------------- | :----------------------------------- | :------------------------ | :-------------------------------------------------------------------------------------- |
-| **[[domain\|shopping]]** | Upstream (`Shopping` → `Ordering`)   | Sync (gRPC)               | Customer basket book IDs and quantities fetched at checkout                             |
-| **[[domain\|catalog]]**  | Upstream (`Catalog` → `Ordering`)    | Sync (gRPC)               | Current unit and promotional prices locked onto [[entity\|order-item]] lines            |
-| **[[domain\|shopping]]** | Downstream (`Ordering` → `Shopping`) | Async (Commands & Events) | [[command\|PlaceOrderCommand]] for basket cleanup; completion or failure outcome events |
-| **[[domain\|platform]]** | Downstream (`Ordering` → `Platform`) | Async (Commands)          | Order placement, completion, and cancellation email notification commands               |
+| Neighboring Domain       | Direction                              | Integration Mechanism     | Business Data Exchanged                                                                 |
+| :----------------------- | :------------------------------------- | :------------------------ | :-------------------------------------------------------------------------------------- |
+| **[[domain\|shopping]]** | Upstream (`Shopping` â†’ `Ordering`)   | Sync (gRPC)               | Customer basket book IDs and quantities fetched at checkout                             |
+| **[[domain\|catalog]]**  | Upstream (`Catalog` â†’ `Ordering`)    | Sync (gRPC)               | Current unit and promotional prices locked onto [[entity\|order-item]] lines            |
+| **[[domain\|shopping]]** | Downstream (`Ordering` â†’ `Shopping`) | Async (Commands & Events) | [[command\|PlaceOrderCommand]] for basket cleanup; completion or failure outcome events |
+| **[[domain\|platform]]** | Downstream (`Ordering` â†’ `Platform`) | Async (Commands)          | Order placement, completion, and cancellation email notification commands               |
 
 :::note
 **Checkout Consistency & Compensation:** Concurrent checkout submissions are serialized using buyer-scoped distributed locking and request idempotency keys. If post-checkout basket cleanup fails after bounded retries, [[service|order-orchestration]] issues a compensation command so [[service|order-api]] soft-deletes the order and suppresses confirmation emails.
@@ -93,11 +93,11 @@ Only explicit Ordering commands transition an [[entity|order]]'s business status
 
 ## Related Governance & Documentation
 
-- [[system|order-system]] — Authoritative order persistence and [[service|order-api]].
-- [[system|finance-system]] — Durable post-checkout workflow and [[service|order-orchestration]].
-- [[flow|order-lifecycle]] — Order state transitions and downstream triggers.
-- [[flow|user-checkout]] — End-to-end checkout, cleanup, and notification workflow.
-- [[diagram|order-lifecycle]] — Order status transition model.
-- [[adr|adr-bw-006-service-owned-business-state]] — Service-owned persistence isolation.
-- [[adr|adr-bw-008-durable-message-handoffs]] — Durable inbox/outbox message handoffs.
-- [[doc|arc42/12-glossary]] — Canonical order, buyer, and lifecycle definitions.
+- [[system|order-system]] â€” Authoritative order persistence and [[service|order-api]].
+- [[system|finance-system]] â€” Durable post-checkout workflow and [[service|order-orchestration]].
+- [[flow|order-lifecycle]] â€” Order state transitions and downstream triggers.
+- [[flow|user-checkout]] â€” End-to-end checkout, cleanup, and notification workflow.
+- [[diagram|order-lifecycle]] â€” Order status transition model.
+- [[adr|adr-bw-006-service-owned-business-state]] â€” Service-owned persistence isolation.
+- [[adr|adr-bw-008-durable-message-handoffs]] â€” Durable inbox/outbox message handoffs.
+- [[doc|arc42/12-glossary]] â€” Canonical order, buyer, and lifecycle definitions.

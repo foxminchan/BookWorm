@@ -1,13 +1,20 @@
----
+﻿---
 id: bookworm.{env}.basket.delete-complete
 name: Basket Delete Complete
 version: 1.0.0
+type: topic
 summary: |
-  Kafka channel published by Basket after checkout cleanup successfully
-  deletes the submitted basket. Consumers can use this outcome to continue
-  the order workflow without treating basket state as order state.
+  Kafka topic owned by the contributor team carrying Basket API's successful
+  checkout cleanup confirmation for Finance order orchestration.
 owners:
-  - contributor-team
+  - commerce-fulfillment-team
+badges:
+  - content: Kafka
+    backgroundColor: blue
+    textColor: blue
+  - content: Topic
+    backgroundColor: teal
+    textColor: teal
 address: bookworm.{env}.basket.delete-complete
 parameters:
   env:
@@ -20,64 +27,53 @@ parameters:
       - development
       - staging
       - production
-    description: "Environment to use"
+    description: BookWorm deployment environment.
 deliveryGuarantee: at-least-once
-type: stream
 protocols:
   - kafka
 ---
 
-Basket publishes this topic after checkout cleanup succeeds. Finance uses the confirmation to continue the order workflow; it does not mean the order itself is complete.
+## Purpose & Scope
 
-**Producer:** Basket service. **Consumer:** Finance order coordination.
+This topic transports successful basket-cleanup confirmations published by [[service|basket-api]] within the Shopping bounded context after a submitted basket is removed. [[service|order-orchestration]] consumes these events to advance the post-checkout saga; confirmation here indicates basket cleanup only, not final order completion.
 
-A repeated checkout request may also produce this confirmation when the basket was already handled. Finance ignores duplicate confirmations once it has recorded the outcome.
+## Channel Specification
 
-## Channel information
+| Property                               | Value                                                                     |
+| :------------------------------------- | :------------------------------------------------------------------------ |
+| **Bounded Context / Owner**            | [[domain\|shopping]] / [[team\|commerce-fulfillment-team]]                |
+| **Channel Type**                       | Topic                                                                     |
+| **Address Pattern**                    | `bookworm.{env}.basket.delete-complete`                                   |
+| **Parameters**                         | `env` (`development`, `staging`, `production`; default: `development`)    |
+| **Protocol & Envelope Format**         | Kafka + CloudEvents JSON (`application/json`)                             |
+| **Partition Key & Ordering Guarantee** | Keyed by `orderId`; preserves per-order event ordering within a partition |
+| **Delivery Semantics**                 | At-least-once                                                             |
+| **Dead-Letter Channel**                | None (direct worker consumption by [[service\|order-orchestration]])      |
+
+## Messages & Participants
+
+| Message                                          | Type  | Producer                | Consumer(s)                      | Consumer Group               |
+| :----------------------------------------------- | :---- | :---------------------- | :------------------------------- | :--------------------------- |
+| [[event\|BasketDeletedCompleteIntegrationEvent]] | Event | [[service\|basket-api]] | [[service\|order-orchestration]] | Finance orchestration worker |
+
+## Ordering, Retries & Failure Handling
+
+- **Partition-key ordering:** Records are partitioned by `orderId` so cleanup confirmations for a given order are processed sequentially.
+- **Transient retries:** [[service|order-orchestration]] applies bounded retry/backoff on transient storage or orchestration host faults.
+- **Poison & failure posture:** Because Finance consumes this topic directly via orchestration workers, there is no dedicated service DLQ; persistent consumer failures surface in worker diagnostics and orchestration state.
+- **Consumer idempotency:** Repeated checkout cleanup requests may emit duplicate confirmations; [[service|order-orchestration]] ignores duplicates once the saga has recorded the outcome.
+
+## Channel Details & Visualization
 
 <ChannelInformation />
 
-## Topic and message
-
-The topic is `bookworm.{env}.basket.delete-complete`. Replace `{env}` with `development`, `staging`, or `production`. Messages are CloudEvents JSON and are keyed by `orderId` so outcomes for an order stay together. The example shows the order ID, deleted basket ID, and order total.
-
-## Operations and recovery
-
-If Finance does not progress, check the Kafka record and Finance service logs using the order ID. Confirm that the order workflow is active before replaying. Replaying a successful cleanup confirmation is safe after the outcome has been recorded; do not treat it as an order-completion signal.
-
-## Examples
-
-### CloudEvents Kafka message
-
-Kafka key: `0193f1a2-1111-7d8e-9f01-23456789abcd` (`orderId`)
-
-<CodeGroup>
-
-```json
-{
-	"specversion": "1.0",
-	"id": "0193f1a2-7a01-7d8e-9f01-23456789abcd",
-	"type": "BookWorm.Contracts.BasketDeletedCompleteIntegrationEvent",
-	"source": "urn:bookworm:book-worm.basket",
-	"time": "2026-11-25T16:15:00Z",
-	"datacontenttype": "application/json",
-	"messagetype": "BookWorm.Contracts.BasketDeletedCompleteIntegrationEvent",
-	"data": {
-		"id": "0193f1a2-7a01-7d8e-9f01-23456789abcd",
-		"creationDate": "2026-11-25T16:15:00Z",
-		"orderId": "0193f1a2-1111-7d8e-9f01-23456789abcd",
-		"basketId": "0193f1a2-2222-7d8e-9f01-23456789abcd",
-		"totalMoney": 59.98
-	}
-}
-```
-
-</CodeGroup>
-
-## Related documentation
-
-- [[channel|bookworm.&#123;env&#125;.finance.place-order]]
-- [[channel|bookworm.&#123;env&#125;.basket.delete-failed]]
-- [[channel|bookworm.&#123;env&#125;.finance.delete-basket-complete]]
-
 <NodeGraph />
+
+## Related Documentation
+
+- [[service|basket-api]] â€” Basket cleanup producer
+- [[service|order-orchestration]] â€” Finance saga consumer
+- [[channel|bookworm.&#123;env&#125;.basket.delete-failed]] â€” Paired cleanup failure topic
+- [[channel|bookworm.&#123;env&#125;.finance.delete-basket-complete]] â€” Downstream command issued to Ordering
+- [[flow|user-checkout]] â€” End-to-end checkout workflow
+- [[doc|arc42/08-crosscutting-concepts/002-contracts-and-messaging]] â€” Messaging standards and idempotency rules

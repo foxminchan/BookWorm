@@ -1,4 +1,4 @@
----
+﻿---
 title: Order creation conflict or failure
 summary: Safely investigate failed or repeated Order creation requests and Redis coordination issues.
 version: 1.0.0
@@ -78,9 +78,9 @@ Expected output:
 ## Rollback / Escalation
 
 - **Rollback:** Do not manually delete persisted orders; use standard administrative cancellation (`PATCH /api/v1/orders/{id}/cancel`) if a duplicate order was created externally.
-- **Escalation:** Escalate persistent Redis outages to [[team|platform-team]]; escalate idempotency or lock bugs to [[team|contributor-team]].
+- **Escalation:** Escalate persistent Redis outages to [[team|platform-engineering-team]]; escalate idempotency or lock bugs to [[team|commerce-fulfillment-team]].
 
 ## Related documentation
 
-- [[flow|user-checkout]] — Checkout validation and snapshot locking.
-- [[adr|adr-001-postgresql-order-system-of-record]] — Authoritative role of [[container|order-database]].
+- [[flow|user-checkout]] â€” Checkout validation and snapshot locking.
+- [[adr|adr-001-postgresql-order-system-of-record]] â€” Authoritative role of [[container|order-database]].

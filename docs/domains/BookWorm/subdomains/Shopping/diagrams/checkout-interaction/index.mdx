@@ -1,10 +1,10 @@
----
+﻿---
 id: checkout-interaction
 name: Checkout Interaction
 version: 1.0.0
 summary: End-to-end checkout acceptance and independent basket cleanup, order email, and Finance timeout outcomes across Ordering, Shopping, Catalog, and Platform.
 owners:
-  - contributor-team
+  - commerce-fulfillment-team
 badges:
   - content: Cross-Domain Interaction
     backgroundColor: blue
@@ -26,7 +26,7 @@ _Checkout Acceptance and Independent Post-Checkout Coordination_
 - **Immediate order acceptance**: [[service|order-api]] reads persisted quantities from [[service|basket-api]] and authoritative prices from [[service|catalog-api]], saves the **New** [[entity|order]] snapshot in [[container|order-database]], and confirms checkout without waiting on cleanup or email providers.
 - **Independent parallel consumers**: [[service|basket-api]] and [[service|notification-api]] consume [[command|PlaceOrderCommand]] independently from <ResourceLink id="bookworm.{env}.finance.place-order" type="channel">`bookworm.{env}.finance.place-order`</ResourceLink>, so an email delay never blocks basket cleanup and vice versa.
 - **Stateless email delivery**: [[service|notification-api]] uses a Redis idempotency guard and submits MIME emails over SMTP to [[system|sendgrid]] (or Mailpit locally), routing exhausted failures to <ResourceLink id="bookworm.{env}.notification.dead-letter-queue" type="channel">`bookworm.{env}.notification.dead-letter-queue`</ResourceLink>.
-- **Bounded timeout retries**: [[service|order-orchestration]] reissues [[command|PlaceOrderCommand]] on a 30-minute timer (up to two reissues) while active, and cancels only its own orchestration—never the customer's [[entity|order]]—when retries exhaust.
+- **Bounded timeout retries**: [[service|order-orchestration]] reissues [[command|PlaceOrderCommand]] on a 30-minute timer (up to two reissues) while active, and cancels only its own orchestrationâ€”never the customer's [[entity|order]]â€”when retries exhaust.
 
 :::warning
 **Soft deletion and orchestration timeouts do not cancel an accepted order.**
@@ -36,7 +36,7 @@ If [[service|basket-api]] reports deletion failure via [[event|BasketDeletedFail
 
 ## Related Resources
 
-- [[domain|shopping]], [[domain|ordering]], [[domain|catalog]], [[domain|platform]] — Participating bounded contexts
-- [[service|order-api]], [[service|basket-api]], [[service|catalog-api]], [[service|order-orchestration]], [[service|notification-api]] — Participating services
-- [[flow|user-checkout]] — Complete step-by-step checkout workflow and recovery table
-- [[diagram|order-lifecycle]] — Authoritative [[entity|order]] state transitions
+- [[domain|shopping]], [[domain|ordering]], [[domain|catalog]], [[domain|platform]] â€” Participating bounded contexts
+- [[service|order-api]], [[service|basket-api]], [[service|catalog-api]], [[service|order-orchestration]], [[service|notification-api]] â€” Participating services
+- [[flow|user-checkout]] â€” Complete step-by-step checkout workflow and recovery table
+- [[diagram|order-lifecycle]] â€” Authoritative [[entity|order]] state transitions

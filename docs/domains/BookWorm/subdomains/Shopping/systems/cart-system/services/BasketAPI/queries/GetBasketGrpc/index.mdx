@@ -1,4 +1,4 @@
----
+﻿---
 id: GetBasketGrpc
 name: Get basket over gRPC
 version: 1.0.0
@@ -8,7 +8,7 @@ badges:
     textColor: blue
 summary: Returns the current basket through the basket.v1 gRPC contract.
 owners:
-  - contributor-team
+  - commerce-fulfillment-team
 schemaPath: schema.proto
 sidebar:
   badge: "gRPC"
@@ -64,10 +64,10 @@ When no basket exists in Redis for the authenticated customer, this RPC returns 
 
 ## Related Documentation
 
-- [[service|basket-api]] — Service overview, Redis persistence, and endpoints.
-- [[entity|basket]] — Basket entity model.
-- [[query|GetBasket]] — Public HTTP endpoint that enriches basket items with Catalog details.
-- [[command|CreateOrder]] — Ordering API checkout flow that calls `GetBasket`.
+- [[service|basket-api]] â€” Service overview, Redis persistence, and endpoints.
+- [[entity|basket]] â€” Basket entity model.
+- [[query|GetBasket]] â€” Public HTTP endpoint that enriches basket items with Catalog details.
+- [[command|CreateOrder]] â€” Ordering API checkout flow that calls `GetBasket`.
 
 <NodeGraph />
 

@@ -1,4 +1,4 @@
----
+﻿---
 id: adr-003-replace-basket-items-as-a-set
 name: "ADR-003: Replace the basket item collection on update"
 version: 1.0.0
@@ -6,9 +6,9 @@ summary: Basket updates replace the complete item collection, with validation en
 status: accepted
 date: 2026-10-21
 owners:
-  - contributor-team
+  - commerce-fulfillment-team
 decisionMakers:
-  - contributor-team
+  - commerce-fulfillment-team
 appliesTo:
   - type: system
     id: cart-system
@@ -34,7 +34,7 @@ When customers edit their [[entity|basket]] on the storefront, they expect the s
 
 - **Predictable cart state**: Ensures what the customer sees on screen matches what is stored, reducing "ghost item" bugs.
 - **Simpler validation**: Every update is checked as a complete set, guaranteeing that carts always contain valid books and positive quantities.
-- **Cleaner removal semantics**: Removing an item is unambiguous—it is simply omitted from the submitted selection rather than tracked through special zero-quantity flags.
+- **Cleaner removal semantics**: Removing an item is unambiguousâ€”it is simply omitted from the submitted selection rather than tracked through special zero-quantity flags.
 
 ## 3. How It Works
 
@@ -45,7 +45,7 @@ Before saving, the system checks that the submitted basket is not empty, that ev
 ## 4. Trade-offs & Lessons Learned
 
 - **Full list required on every edit**: Storefront clients must always send the complete item collection rather than lightweight single-item patches.
-- **Last-write-wins behavior**: Because this design does not include version checks for simultaneous edits, a customer editing an outdated view—or a delayed retry of an older update—can overwrite a newer cart change.
+- **Last-write-wins behavior**: Because this design does not include version checks for simultaneous edits, a customer editing an outdated viewâ€”or a delayed retry of an older updateâ€”can overwrite a newer cart change.
 - **Reconciliation responsibility**: Clients need to refresh the basket state when reconciling concurrent changes across multiple tabs or devices; adding conflict detection later would require an explicit contract change.
 
 ## 5. Technical Reference

@@ -1,4 +1,4 @@
----
+﻿---
 id: adr-001-postgresql-system-of-record
 name: "ADR-001: Use PostgreSQL as the Catalog system of record"
 version: 1.0.0
@@ -6,9 +6,9 @@ summary: Catalog Database (PostgreSQL) is the single authoritative store for boo
 status: accepted
 date: 2026-10-20
 owners:
-  - platform-team
+  - catalog-experience-team
 decisionMakers:
-  - platform-team
+  - platform-engineering-team
 appliesTo:
   - type: system
     id: product-catalog-system
@@ -30,7 +30,7 @@ badges:
 
 Catalog information is deeply interconnected: [[entity|book]]s link to [[entity|author]]s, [[entity|category]]s, and [[entity|publisher]]s, including many-to-many relationships between books and authors. These records must stay consistent whenever products are created, updated, filtered, sorted, or paged. Price and availability also require a single trusted value that downstream checkout validation can rely on.
 
-At the same time, Catalog uses a read cache to speed up popular queries and a search index to match books by meaning and keywords. Both are derived helpers that can lag behind edits or become temporarily unavailable—neither should become a competing source of product truth. Because book cover images and customer reviews belong to separate capabilities, Catalog also needs an explicit boundary around what data it owns.
+At the same time, Catalog uses a read cache to speed up popular queries and a search index to match books by meaning and keywords. Both are derived helpers that can lag behind edits or become temporarily unavailableâ€”neither should become a competing source of product truth. Because book cover images and customer reviews belong to separate capabilities, Catalog also needs an explicit boundary around what data it owns.
 
 ## 2. Business Value
 
@@ -45,9 +45,9 @@ At the same time, Catalog uses a read cache to speed up popular queries and a se
 [[container|catalog-database]] serves as the single authoritative store for Catalog-owned books, authors, categories, publishers, and their relationships.
 
 - **Controlled access:** [[service|catalog-api]] validates and applies all product updates. Other domains consume Catalog's published service interfaces rather than reading its database tables directly. [[service|catalog-ingestion]] reads catalog data and manages the search-indexing work queue, but never authors or alters canonical product records.
-- **Automatic relationship protection:** Database rules keep relationships coherent—removing a category or publisher preserves affected books by clearing that link, deleting a book removes its author associations, and an author cannot be deleted while still linked to books.
+- **Automatic relationship protection:** Database rules keep relationships coherentâ€”removing a category or publisher preserves affected books by clearing that link, deleting a book removes its author associations, and an author cannot be deleted while still linked to books.
 - **Guaranteed handoff to search:** Whenever catalog data changes, a pending search-update marker is saved in the exact same step. This lets [[service|catalog-ingestion]] refresh [[container|catalog-vector]] in the background without making product saves wait on AI embeddings or search availability (see [[adr|adr-003-database-queue-for-vector-indexing]]).
-- **Derived helpers only:** [[container|catalog-cache]] and [[container|catalog-vector]] are non-authoritative copies that can be rebuilt or repopulated from source data at any time. Search queries use the vector index only to identify candidate books, then load current details from the authoritative database—ensuring purchase-time price and availability checks never rely on cached or search-index copies.
+- **Derived helpers only:** [[container|catalog-cache]] and [[container|catalog-vector]] are non-authoritative copies that can be rebuilt or repopulated from source data at any time. Search queries use the vector index only to identify candidate books, then load current details from the authoritative databaseâ€”ensuring purchase-time price and availability checks never rely on cached or search-index copies.
 - **Scoped authority:** Book cover images live in [[container|catalog-blob]] and are linked by reference. Individual customer reviews are owned by the Reviews domain; Catalog keeps only a summary rating updated via integration messages.
 
 ## 4. Trade-offs & Lessons Learned

@@ -1,4 +1,4 @@
----
+﻿---
 title: Scheduled job failure
 summary: Investigate missed, failing, or apparently successful jobs in the Platform Scheduler.
 version: 1.0.0
@@ -79,9 +79,9 @@ Expected output:
 ## Rollback / Escalation
 
 - **Rollback:** Pause the affected trigger in `/quartz` if a downstream dependency is overwhelmed, then resume once healthy.
-- **Escalation:** Escalate Scheduler, [[container|scheduler-database]], or Kafka issues to [[team|platform-team]]; escalate ingestion/embedding issues to [[team|contributor-team]].
+- **Escalation:** Escalate Scheduler, [[container|scheduler-database]], or Kafka issues to [[team|platform-engineering-team]]; escalate ingestion/embedding issues to [[team|platform-engineering-team]].
 
 ## Related documentation
 
-- [[flow|product-ingestion]] — End-to-end scheduled vector ingestion flow.
-- [[adr|adr-001-postgresql-quartz-persistence]] — Quartz persistence in [[container|scheduler-database]].
+- [[flow|product-ingestion]] â€” End-to-end scheduled vector ingestion flow.
+- [[adr|adr-001-postgresql-quartz-persistence]] â€” Quartz persistence in [[container|scheduler-database]].

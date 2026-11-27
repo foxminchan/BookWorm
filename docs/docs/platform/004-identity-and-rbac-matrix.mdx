@@ -1,8 +1,8 @@
----
+﻿---
 title: Identity, Entra Agent Identities & RBAC Matrix
 summary: Reference for Microsoft Entra ID app registrations, Agent Identities for OBO token exchange, and per-service Managed Identity RBAC assignments.
 owners:
-  - platform-team
+  - platform-engineering-team
 badges:
   - content: Security & IAM
     backgroundColor: purple
@@ -50,17 +50,17 @@ Each protected .NET API registers read and write scopes (12 total):
 
 | Service                                                                | PostgreSQL                        | Azure Managed Redis | Cosmos DB                      | Azure Storage                 | Microsoft Foundry       | Other                  |
 | :--------------------------------------------------------------------- | :-------------------------------- | :------------------ | :----------------------------- | :---------------------------- | :---------------------- | :--------------------- |
-| [[service\|catalog-api]]                                               | [[container\|catalog-database]]   | Yes                 | —                              | Storage Blob Data Contributor | Cognitive Services User | —                      |
-| [[service\|catalog-ingestion]]                                         | [[container\|catalog-database]]   | —                   | —                              | Storage Blob Data Owner       | Cognitive Services User | —                      |
-| [[service\|basket-api]]                                                | —                                 | Yes                 | —                              | —                             | —                       | —                      |
-| [[service\|order-api]]                                                 | [[container\|order-database]]     | Yes                 | —                              | —                             | —                       | —                      |
-| [[service\|order-orchestration]]                                       | —                                 | —                   | —                              | Storage Blob Data Owner       | —                       | Durable Task Scheduler |
-| [[service\|chat-api]]                                                  | —                                 | —                   | —                              | Storage Blob Data Contributor | Cognitive Services User | —                      |
-| [[service\|rating-api]]                                                | —                                 | Yes                 | [[container\|rating-database]] | —                             | Cognitive Services User | —                      |
-| [[service\|notification-api]]                                          | —                                 | Yes                 | —                              | —                             | —                       | —                      |
-| [[service\|scheduler-service]]                                         | [[container\|scheduler-database]] | —                   | —                              | —                             | —                       | —                      |
-| [[service\|mcp-server]], Gateway, Frontends, [[service\|presidio-api]] | —                                 | —                   | —                              | —                             | —                       | —                      |
-| Environment identity                                                   | —                                 | —                   | —                              | —                             | —                       | `AcrPull` on ACR       |
+| [[service\|catalog-api]]                                               | [[container\|catalog-database]]   | Yes                 | â€”                            | Storage Blob Data Contributor | Cognitive Services User | â€”                    |
+| [[service\|catalog-ingestion]]                                         | [[container\|catalog-database]]   | â€”                 | â€”                            | Storage Blob Data Owner       | Cognitive Services User | â€”                    |
+| [[service\|basket-api]]                                                | â€”                               | Yes                 | â€”                            | â€”                           | â€”                     | â€”                    |
+| [[service\|order-api]]                                                 | [[container\|order-database]]     | Yes                 | â€”                            | â€”                           | â€”                     | â€”                    |
+| [[service\|order-orchestration]]                                       | â€”                               | â€”                 | â€”                            | Storage Blob Data Owner       | â€”                     | Durable Task Scheduler |
+| [[service\|chat-api]]                                                  | â€”                               | â€”                 | â€”                            | Storage Blob Data Contributor | Cognitive Services User | â€”                    |
+| [[service\|rating-api]]                                                | â€”                               | Yes                 | [[container\|rating-database]] | â€”                           | Cognitive Services User | â€”                    |
+| [[service\|notification-api]]                                          | â€”                               | Yes                 | â€”                            | â€”                           | â€”                     | â€”                    |
+| [[service\|scheduler-service]]                                         | [[container\|scheduler-database]] | â€”                 | â€”                            | â€”                           | â€”                     | â€”                    |
+| [[service\|mcp-server]], Gateway, Frontends, [[service\|presidio-api]] | â€”                               | â€”                 | â€”                            | â€”                           | â€”                     | â€”                    |
+| Environment identity                                                   | â€”                               | â€”                 | â€”                            | â€”                           | â€”                     | `AcrPull` on ACR       |
 
 PostgreSQL assigns each service principal as a Flexible Server administrator. Redis uses the default database access policy. Cosmos DB assigns the built-in Data Contributor role at the account scope.
 
@@ -70,7 +70,7 @@ PostgreSQL assigns each service principal as a Flexible Server administrator. Re
 		| :----- | :------------ |
 		| **Storefront** | `/api/auth/oauth2/callback/microsoft-entra-id` (via Gateway) |
 		| **Backoffice** | `/backoffice/api/auth/oauth2/callback/microsoft-entra-id` (via Gateway) |
-		| **Commerce** | — (shares Storefront session) |
+		| **Commerce** | â€” (shares Storefront session) |
 		| **Quartz Dashboard** | `/signin-oidc` (via Quartz Dashboard host) |
 
     	In local run mode, the gateway's local HTTP endpoint is also registered as a redirect URI. Quartz Dashboard uses OpenID Connect against the tenant v2.0 authority and restricts access to the `admin` role.
@@ -118,9 +118,9 @@ PostgreSQL assigns each service principal as a Flexible Server administrator. Re
 
 ## Related Documentation
 
-- [[doc|platform/001-platform-overview]] — Ingress boundary and Entra ID proxy route.
-- [[doc|platform/002-compute-and-container-apps]] — Workloads and their auth configuration.
-- [[doc|platform/003-data-ai-and-messaging-resources]] — Resources protected by these role assignments.
-- [[doc|operational/003-incident-response-and-runbooks]] — RBAC and On-Behalf-Of (OBO) failure runbooks.
+- [[doc|platform/001-platform-overview]] â€” Ingress boundary and Entra ID proxy route.
+- [[doc|platform/002-compute-and-container-apps]] â€” Workloads and their auth configuration.
+- [[doc|platform/003-data-ai-and-messaging-resources]] â€” Resources protected by these role assignments.
+- [[doc|operational/003-incident-response-and-runbooks]] â€” RBAC and On-Behalf-Of (OBO) failure runbooks.
 
 <NodeGraph id="identity-provider" version="1.0.0" type="system" maxHeight="28" />

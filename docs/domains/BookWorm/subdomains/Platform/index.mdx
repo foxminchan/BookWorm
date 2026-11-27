@@ -1,4 +1,4 @@
----
+﻿---
 id: platform
 name: Platform
 summary: |
@@ -6,7 +6,7 @@ summary: |
   idempotent transactional email notification delivery across BookWorm.
 version: 1.0.0
 owners:
-  - platform-team
+  - platform-engineering-team
 systems:
   - id: scheduler-system
     version: 1.0.0
@@ -35,24 +35,24 @@ badges:
 [[domain|platform]] is BookWorm's Generic bounded context for cross-cutting background job scheduling and transactional email delivery. Through [[service|scheduler-service]] and [[service|notification-api]], it emits recurring operational triggers (such as catalog vector-batch refreshes) and renders and submits order lifecycle emails via [[service|sendgrid-api]]. Explicitly **out of scope** are owning books, baskets, orders, payments, or reviews; guaranteeing recipient inbox placement after SMTP handoff; and maintaining a relational email-outbox database.
 
 :::warning
-Platform delivery outcomes and scheduled job executions **never** mutate authoritative business state in upstream domains. A successful scheduler trigger confirms event publication only—not downstream indexing completion—and email delivery status never alters an [[entity|order]]'s lifecycle state.
+Platform delivery outcomes and scheduled job executions **never** mutate authoritative business state in upstream domains. A successful scheduler trigger confirms event publication onlyâ€”not downstream indexing completionâ€”and email delivery status never alters an [[entity|order]]'s lifecycle state.
 :::
 
 ## Core Responsibilities & Capabilities
 
-| Capability                                              | Owning Service / Agent         | Primary Entities                |
-| :------------------------------------------------------ | :----------------------------- | :------------------------------ |
-| **Recurring Job Scheduling & Operational History**      | [[service\|scheduler-service]] | — (Operational schedules only)  |
-| **Transactional Order Email Rendering & Deduplication** | [[service\|notification-api]]  | — (Stateless idempotency guard) |
-| **External SMTP Relay Boundary**                        | [[service\|sendgrid-api]]      | — (External delivery provider)  |
+| Capability                                              | Owning Service / Agent         | Primary Entities                  |
+| :------------------------------------------------------ | :----------------------------- | :-------------------------------- |
+| **Recurring Job Scheduling & Operational History**      | [[service\|scheduler-service]] | â€” (Operational schedules only)  |
+| **Transactional Order Email Rendering & Deduplication** | [[service\|notification-api]]  | â€” (Stateless idempotency guard) |
+| **External SMTP Relay Boundary**                        | [[service\|sendgrid-api]]      | â€” (External delivery provider)  |
 
 ## Cross-Domain Interactions (Context Map)
 
-| Neighboring Domain / System | Direction                            | Integration Mechanism | Business Data Exchanged                                                                                                        |
-| :-------------------------- | :----------------------------------- | :-------------------- | :----------------------------------------------------------------------------------------------------------------------------- |
-| **[[domain\|catalog]]**     | Upstream (`Platform` → `Catalog`)    | Async (Event)         | [[event\|ProcessVectorBatchIntegrationEvent]] triggers periodic vector embedding refreshes                                     |
-| **[[domain\|ordering]]**    | Downstream (`Ordering` → `Platform`) | Async (Commands)      | [[command\|PlaceOrderCommand]], [[command\|CompleteOrderCommand]], and [[command\|CancelOrderCommand]] trigger customer emails |
-| **[[system\|sendgrid]]**    | Downstream (`Platform` → `SendGrid`) | Sync (SMTP)           | Rendered MIME HTML order confirmation, completion, and cancellation emails                                                     |
+| Neighboring Domain / System | Direction                              | Integration Mechanism | Business Data Exchanged                                                                                                        |
+| :-------------------------- | :------------------------------------- | :-------------------- | :----------------------------------------------------------------------------------------------------------------------------- |
+| **[[domain\|catalog]]**     | Upstream (`Platform` â†’ `Catalog`)    | Async (Event)         | [[event\|ProcessVectorBatchIntegrationEvent]] triggers periodic vector embedding refreshes                                     |
+| **[[domain\|ordering]]**    | Downstream (`Ordering` â†’ `Platform`) | Async (Commands)      | [[command\|PlaceOrderCommand]], [[command\|CompleteOrderCommand]], and [[command\|CancelOrderCommand]] trigger customer emails |
+| **[[system\|sendgrid]]**    | Downstream (`Platform` â†’ `SendGrid`) | Sync (SMTP)           | Rendered MIME HTML order confirmation, completion, and cancellation emails                                                     |
 
 :::note
 **Idempotency & Dead-Letter Resilience:** Because [[service|notification-api]] operates statelessly without a relational outbox, it protects customers from duplicate emails using a 24-hour Redis idempotency guard. Commands with blank recipient addresses are skipped safely, and messages that exhaust transient delivery retries route to the notification dead-letter queue for operator triage.
@@ -75,10 +75,10 @@ Platform delivery outcomes and scheduled job executions **never** mutate authori
 
 ## Related Governance & Documentation
 
-- [[system|scheduler-system]] — Recurring job scheduling boundary and [[service|scheduler-service]].
-- [[system|notification-system]] — Stateless email rendering and [[service|notification-api]].
-- [[system|sendgrid]] — External SMTP relay boundary.
-- [[flow|notification-delivery]] — End-to-end order notification delivery workflow.
-- [[flow|product-ingestion]] — Scheduled vector batch trigger to Catalog ingestion.
-- [[adr|adr-bw-005-kafka-integration-backbone]] — Standardized asynchronous messaging backbone.
-- [[doc|arc42/12-glossary]] — Shared platform and operational terminology.
+- [[system|scheduler-system]] â€” Recurring job scheduling boundary and [[service|scheduler-service]].
+- [[system|notification-system]] â€” Stateless email rendering and [[service|notification-api]].
+- [[system|sendgrid]] â€” External SMTP relay boundary.
+- [[flow|notification-delivery]] â€” End-to-end order notification delivery workflow.
+- [[flow|product-ingestion]] â€” Scheduled vector batch trigger to Catalog ingestion.
+- [[adr|adr-bw-005-kafka-integration-backbone]] â€” Standardized asynchronous messaging backbone.
+- [[doc|arc42/12-glossary]] â€” Shared platform and operational terminology.

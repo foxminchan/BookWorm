@@ -1,4 +1,4 @@
----
+﻿---
 id: adr-bw-005-kafka-integration-backbone
 name: "ADR-BW-005: Use Kafka for configured asynchronous integration"
 version: 1.0.0
@@ -6,7 +6,7 @@ summary: Retain the shared Wolverine Kafka integration for asynchronous cross-ca
 status: proposed
 date: 2026-11-07
 owners:
-  - platform-team
+  - platform-engineering-team
 appliesTo:
   - type: domain
     id: bookworm
@@ -16,7 +16,7 @@ related:
   - id: adr-003-finance-kafka-order-correlation
   - id: adr-001-notification-kafka-command-intake
 decisionMakers:
-  - platform-team
+  - platform-engineering-team
 x-scope: "Whole system"
 ---
 
@@ -24,7 +24,7 @@ x-scope: "Whole system"
 | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Status**             | Proposed                                                                                                                                                                                           |
 | **Date**               | 2026-11-07                                                                                                                                                                                         |
-| **Owners**             | [[team\|platform-team]]                                                                                                                                                                            |
+| **Owners**             | [[team\|platform-engineering-team]]                                                                                                                                                                |
 | **Affected Resources** | [[domain\|bookworm]]                                                                                                                                                                               |
 | **Related ADRs**       | [[adr\|adr-bw-008-durable-message-handoffs]], [[adr\|adr-bw-010-cross-boundary-correlation]], [[adr\|adr-003-finance-kafka-order-correlation]], [[adr\|adr-001-notification-kafka-command-intake]] |
 

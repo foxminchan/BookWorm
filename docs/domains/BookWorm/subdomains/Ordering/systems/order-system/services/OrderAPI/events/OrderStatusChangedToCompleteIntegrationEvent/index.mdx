@@ -1,11 +1,11 @@
----
+﻿---
 id: OrderStatusChangedToCompleteIntegrationEvent
 name: Order completed
 version: 1.0.0
 summary: |
   Reports that an Order transitioned from New to Completed.
 owners:
-  - business-strategy
+  - commerce-fulfillment-team
 schemaPath: schema.json
 badges:
   - content: Order Lifecycle
@@ -63,13 +63,13 @@ The current producer populates `basketId` with the order's `BuyerId`. Downstream
 
 ## Related Documentation
 
-- [[service|order-api]] — Producer service.
-- [[service|order-orchestration]] — Consumer orchestration service.
-- [[channel|bookworm.&#123;env&#125;.ordering.order-status-change-to-complete]] — Kafka channel specification.
-- [[channel|bookworm.&#123;env&#125;.ordering.dead-letter-queue]] — Dead-letter queue for failed Ordering consumers.
-- [[event|OrderStatusChangedToCancelIntegrationEvent]] — Companion event for `New` to `Cancelled` transitions.
-- [[event|UserCheckedOutIntegrationEvent]] — Initial order placement event.
-- [[entity|order]] — Ordering aggregate schema and status lifecycle.
+- [[service|order-api]] â€” Producer service.
+- [[service|order-orchestration]] â€” Consumer orchestration service.
+- [[channel|bookworm.&#123;env&#125;.ordering.order-status-change-to-complete]] â€” Kafka channel specification.
+- [[channel|bookworm.&#123;env&#125;.ordering.dead-letter-queue]] â€” Dead-letter queue for failed Ordering consumers.
+- [[event|OrderStatusChangedToCancelIntegrationEvent]] â€” Companion event for `New` to `Cancelled` transitions.
+- [[event|UserCheckedOutIntegrationEvent]] â€” Initial order placement event.
+- [[entity|order]] â€” Ordering aggregate schema and status lifecycle.
 
 <NodeGraph />
 

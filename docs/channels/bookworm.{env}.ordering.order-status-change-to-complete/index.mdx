@@ -1,12 +1,20 @@
----
+﻿---
 id: bookworm.{env}.ordering.order-status-change-to-complete
 name: Order Completion Event Channel
 version: 1.0.0
+type: topic
 summary: |
-  Kafka topic carrying Order API events when an Order transitions from New
-  to Completed.
+  Kafka topic owned by the commerce-fulfillment-team carrying Order API events
+  when an order transitions from New to Completed.
 owners:
-  - business-strategy
+  - commerce-fulfillment-team
+badges:
+  - content: Kafka
+    backgroundColor: blue
+    textColor: blue
+  - content: Topic
+    backgroundColor: teal
+    textColor: teal
 address: bookworm.{env}.ordering.order-status-change-to-complete
 parameters:
   env:
@@ -15,68 +23,62 @@ parameters:
       - staging
       - production
     default: development
+    examples:
+      - development
+      - staging
+      - production
     description: BookWorm deployment environment.
 deliveryGuarantee: at-least-once
-type: stream
 protocols:
   - kafka
 ---
 
-Ordering publishes this event when an order changes from New to Completed. Finance consumes it to finish the checkout workflow and may ask Notification to send a completion email.
+## Purpose & Scope
 
-**Producer:** Ordering service. **Consumer:** Finance order coordination.
+This topic transports order completion events published by [[service|order-api]] when an order transitions from `New` to `Completed`. [[service|order-orchestration]] consumes these events to advance the order saga and dispatch a completion email command to [[channel|bookworm.&#123;env&#125;.finance.complete-order]]. This event reports order status only and does not confirm email delivery.
 
-This event reports order status only; it does not confirm email delivery. Finance consumes it directly, without a service dead-letter topic.
+:::note
+In current payloads, the `basketId` field carries the buyer identifier rather than an independent Basket service record identifier.
+:::
 
-## Channel information
+## Channel Specification
+
+| Property                               | Value                                                                     |
+| :------------------------------------- | :------------------------------------------------------------------------ |
+| **Bounded Context / Owner**            | [[domain\|ordering]] / [[team\|commerce-fulfillment-team]]                |
+| **Channel Type**                       | Topic                                                                     |
+| **Address Pattern**                    | `bookworm.{env}.ordering.order-status-change-to-complete`                 |
+| **Parameters**                         | `env` (`development`, `staging`, `production`; default: `development`)    |
+| **Protocol & Envelope Format**         | Kafka + CloudEvents JSON (`application/json`)                             |
+| **Partition Key & Ordering Guarantee** | Keyed by `orderId`; preserves per-order event ordering within a partition |
+| **Delivery Semantics**                 | At-least-once                                                             |
+| **Dead-Letter Channel**                | None (direct worker consumption by [[service\|order-orchestration]])      |
+
+## Messages & Participants
+
+| Message                                                 | Type  | Producer               | Consumer(s)                      | Consumer Group               |
+| :------------------------------------------------------ | :---- | :--------------------- | :------------------------------- | :--------------------------- |
+| [[event\|OrderStatusChangedToCompleteIntegrationEvent]] | Event | [[service\|order-api]] | [[service\|order-orchestration]] | Finance orchestration worker |
+
+## Ordering, Retries & Failure Handling
+
+- **Partition-key ordering:** Keying by `orderId` ensures completion events are serialized per order within a partition.
+- **Transient retries:** [[service|order-orchestration]] applies bounded retry/backoff on transient orchestration host or state faults.
+- **Poison & failure posture:** Direct worker consumption has no dedicated service DLQ; inspect Finance worker logs and saga state before replaying or resetting offsets.
+- **Consumer idempotency:** Completed orchestration instances ignore late or duplicate completion events.
+
+## Channel Details & Visualization
 
 <ChannelInformation />
 
-## Topic and message
-
-The topic is `bookworm.{env}.ordering.order-status-change-to-complete`. Replace `{env}` with `development`, `staging`, or `production`. Messages are CloudEvents JSON keyed by `orderId` and may include customer contact details and total. The `basketId` field in current messages represents the buyer identifier, not necessarily a Basket service record. Finance may publish [[channel|bookworm.&#123;env&#125;.finance.complete-order]].
-
-## Operations and recovery
-
-If Finance does not reflect completion, check its worker logs, consumer progress, and workflow status for the order ID. Confirm the event was not already handled before resetting offsets or replaying; completed workflows may ignore late duplicates. Check the email provider separately if the issue is customer notification.
-
-## Examples
-
-### CloudEvents Kafka message
-
-Kafka key: `0193f1a2-1111-7d8e-9f01-23456789abcd` (`orderId`)  
-Kafka header: `traceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01`
-
-<CodeGroup>
-
-```json
-{
-	"specversion": "1.0",
-	"id": "0193f1a2-8b01-7d8e-9f01-23456789abcd",
-	"type": "BookWorm.Contracts.OrderStatusChangedToCompleteIntegrationEvent",
-	"source": "urn:bookworm:book-worm.ordering",
-	"time": "2026-11-25T16:25:00Z",
-	"datacontenttype": "application/json",
-	"messagetype": "BookWorm.Contracts.OrderStatusChangedToCompleteIntegrationEvent",
-	"data": {
-		"id": "0193f1a2-8b01-7d8e-9f01-23456789abcd",
-		"creationDate": "2026-11-25T16:25:00Z",
-		"orderId": "0193f1a2-1111-7d8e-9f01-23456789abcd",
-		"basketId": "0193f1a2-2222-7d8e-9f01-23456789abcd",
-		"fullName": "Alex Reader",
-		"email": "reader@example.com",
-		"totalMoney": 59.98
-	}
-}
-```
-
-</CodeGroup>
-
-## Related documentation
-
-- [[channel|bookworm.&#123;env&#125;.finance.complete-order]]
-- [[channel|bookworm.&#123;env&#125;.ordering.user-checked-out]]
-- [[service|order-api]]
-- [[service|order-orchestration]]
-
 <NodeGraph />
+
+## Related Documentation
+
+- [[channel|bookworm.&#123;env&#125;.finance.complete-order]] â€” Downstream notification command topic
+- [[channel|bookworm.&#123;env&#125;.ordering.user-checked-out]] â€” Upstream checkout event topic
+- [[channel|bookworm.&#123;env&#125;.ordering.order-status-change-to-cancel]] â€” Paired cancellation event topic
+- [[service|order-api]] â€” Order status event producer
+- [[service|order-orchestration]] â€” Finance saga consumer
+- [[flow|order-lifecycle]] â€” End-to-end order lifecycle flow
+- [[doc|arc42/08-crosscutting-concepts/002-contracts-and-messaging]] â€” Messaging standards and idempotency rules

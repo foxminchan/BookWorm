@@ -1,4 +1,4 @@
----
+﻿---
 id: feedback
 name: Feedback
 version: 1.0.0
@@ -6,7 +6,7 @@ identifier: id
 aggregateRoot: true
 summary: A customer's persisted rating and optional comment about a Catalog book.
 owners:
-  - business-strategy
+  - catalog-experience-team
 properties:
   - name: id
     type: UUID
@@ -71,13 +71,13 @@ repository:
 | Name (JSON)      | Type                  | Required  | Default                 | Constraints                          | Description                        |
 | :--------------- | :-------------------- | :-------- | :---------------------- | :----------------------------------- | :--------------------------------- |
 | `id`             | `FeedbackId` (`Guid`) | Yes       | `Guid.CreateVersion7()` | Document ID                          | Unique feedback identifier         |
-| `bookId`         | `Guid`                | Yes       | —                       | Partition key; non-empty             | Catalog book the feedback concerns |
-| `firstName`      | `string`              | Yes (API) | —                       | Non-empty; max 50 chars; `[PIIData]` | Reviewer first name                |
-| `lastName`       | `string`              | Yes (API) | —                       | Non-empty; max 50 chars; `[PIIData]` | Reviewer last name                 |
-| `comment`        | `string`              | No        | —                       | Max 1,000 chars                      | Optional written review            |
-| `rating`         | `int`                 | Yes       | —                       | `0`-`5` inclusive                    | Score                              |
+| `bookId`         | `Guid`                | Yes       | â€”                     | Partition key; non-empty             | Catalog book the feedback concerns |
+| `firstName`      | `string`              | Yes (API) | â€”                     | Non-empty; max 50 chars; `[PIIData]` | Reviewer first name                |
+| `lastName`       | `string`              | Yes (API) | â€”                     | Non-empty; max 50 chars; `[PIIData]` | Reviewer last name                 |
+| `comment`        | `string`              | No        | â€”                     | Max 1,000 chars                      | Optional written review            |
+| `rating`         | `int`                 | Yes       | â€”                     | `0`-`5` inclusive                    | Score                              |
 | `createdAt`      | `DateTime`            | Yes       | `DateTime.UtcNow`       | UTC                                  | Creation timestamp                 |
-| `lastModifiedAt` | `DateTime`            | No        | —                       | UTC                                  | Last modification timestamp        |
+| `lastModifiedAt` | `DateTime`            | No        | â€”                     | UTC                                  | Last modification timestamp        |
 
 `FirstName` and `LastName` are nullable in `Feedback.cs`. `CreateFeedbackValidator` enforces the API-level required and length rules.
 
@@ -124,4 +124,4 @@ Cosmos DB adds system properties such as `_etag` and `_ts` to stored documents.
 
 ## Related documentation
 
-- [[entity|book]] — Holds the derived rating summary.
+- [[entity|book]] â€” Holds the derived rating summary.

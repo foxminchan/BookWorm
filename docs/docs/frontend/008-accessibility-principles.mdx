@@ -1,8 +1,8 @@
----
+﻿---
 title: Accessibility & Inclusive UX
 summary: WCAG 2.1 Level AA target, four-layer accessibility defense, streaming AI chat announcements, and barrier reporting governance.
 owners:
-  - contributor-team
+  - catalog-experience-team
 badges:
   - content: Architecture
     backgroundColor: purple
@@ -14,7 +14,7 @@ badges:
 
 ## Purpose & Scope
 
-This reference defines BookWorm's accessibility architecture across **Storefront**, **Commerce**, and **Backoffice**, targeting **WCAG 2.1 Level AA**. Because automated scanners detect only a fraction of real-world barriers—particularly around keyboard focus management and streaming AI responses—BookWorm enforces a four-layer defense from authoring time through runtime assistive-technology behavior.
+This reference defines BookWorm's accessibility architecture across **Storefront**, **Commerce**, and **Backoffice**, targeting **WCAG 2.1 Level AA**. Because automated scanners detect only a fraction of real-world barriersâ€”particularly around keyboard focus management and streaming AI responsesâ€”BookWorm enforces a four-layer defense from authoring time through runtime assistive-technology behavior.
 
 ## Four-Layer Accessibility Defense
 
@@ -24,7 +24,7 @@ The visual below illustrates how static linting, browser audits, keyboard focus 
 
 ## Architectural Principles & Rules
 
-- **Full keyboard operability:** Every interactive workflow—including catalog filtering, modal dialogs, and end-to-end checkout across **Storefront** and **Commerce**—must be operable without a mouse, with a visible skip-to-main-content link and predictable focus order.
+- **Full keyboard operability:** Every interactive workflowâ€”including catalog filtering, modal dialogs, and end-to-end checkout across **Storefront** and **Commerce**â€”must be operable without a mouse, with a visible skip-to-main-content link and predictable focus order.
 - **Focus trapping & restoration:** Modal dialogs, drawers, and popovers must trap focus while open, dismiss on `Escape`, and restore focus to the triggering control upon closure.
 - **Semantic landmarks & headings:** Every page must expose proper landmark regions (`main`, `navigation`, `contentinfo`), a single top-level heading, and non-skipped heading levels.
 - **Non-color cues & contrast:** Text and interactive borders must meet WCAG 2.1 Level AA contrast ratios (4.5:1 normal text, 3:1 large text and UI components), and status or validation errors must never rely on color alone.

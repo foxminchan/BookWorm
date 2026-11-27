@@ -1,4 +1,4 @@
----
+﻿---
 title: Checkout basket cleanup stalled or failed
 summary: Investigate Finance basket-cleanup retries without confusing saga progress with Order status.
 version: 1.0.0
@@ -76,21 +76,21 @@ Expected output:
 ## Rollback / Escalation
 
 - **Rollback:** No manual state rollback is required once broker/service connectivity is restored; consumers drain queued events idempotently.
-- **Escalation:** Escalate repeated [[command|PlaceOrderCommand]] dispatches or soft-delete discrepancies to [[team|contributor-team]] with `<ORDER_ID>` and orchestration timestamps.
+- **Escalation:** Escalate repeated [[command|PlaceOrderCommand]] dispatches or soft-delete discrepancies to [[team|commerce-fulfillment-team]] with `<ORDER_ID>` and orchestration timestamps.
 
 <AccordionGroup>
 <Accordion title="Troubleshooting edge cases">
 
-| Symptom                                                      | Cause                                                                  | Fix                                                                                  |
-| :----------------------------------------------------------- | :--------------------------------------------------------------------- | :----------------------------------------------------------------------------------- |
-| Order is `New`, basket still populated, retries incrementing | [[service\|basket-api]] or Redis unavailable, or message in Basket DLQ | Restore dependency and follow the Basket cleanup failure runbook                     |
-| Cancellation email sent, order still `New`                   | Finance exhausted 30m retry loop without canceling Ordering            | Confirm commercial intent with customer; do not assume order is cancelled            |
-| Order returns `404` after checkout                           | Basket deletion failed and triggered soft delete                       | Confirm `BasketDeletionFailed` in Finance and escalate to [[team\|contributor-team]] |
+| Symptom                                                      | Cause                                                                  | Fix                                                                                           |
+| :----------------------------------------------------------- | :--------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------- |
+| Order is `New`, basket still populated, retries incrementing | [[service\|basket-api]] or Redis unavailable, or message in Basket DLQ | Restore dependency and follow the Basket cleanup failure runbook                              |
+| Cancellation email sent, order still `New`                   | Finance exhausted 30m retry loop without canceling Ordering            | Confirm commercial intent with customer; do not assume order is cancelled                     |
+| Order returns `404` after checkout                           | Basket deletion failed and triggered soft delete                       | Confirm `BasketDeletionFailed` in Finance and escalate to [[team\|commerce-fulfillment-team]] |
 
 </Accordion>
 </AccordionGroup>
 
 ## Related documentation
 
-- [[flow|user-checkout]] — End-to-end checkout and cleanup flow.
-- [[adr|adr-005-finance-separate-workflow-and-order-status]] — Why Finance saga state is separate from Order status.
+- [[flow|user-checkout]] â€” End-to-end checkout and cleanup flow.
+- [[adr|adr-005-finance-separate-workflow-and-order-status]] â€” Why Finance saga state is separate from Order status.

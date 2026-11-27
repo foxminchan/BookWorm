@@ -1,10 +1,10 @@
----
+﻿---
 id: catalog-cache
 name: Catalog Cache
 version: 1.0.0
 summary: Non-authoritative FusionCache and Redis caching layer owned by the Catalog bounded context for fast book detail lookups and dashboard summaries.
 owners:
-  - contributor-team
+  - catalog-experience-team
 container_type: cache
 badges:
   - content: Cache
@@ -29,7 +29,7 @@ Catalog Cache is the non-authoritative, read-through caching tier owned by [[ser
 
 | Property                            | Value                                                                               |
 | :---------------------------------- | :---------------------------------------------------------------------------------- |
-| **Bounded Context / Owner**         | Catalog — [[team\|contributor-team]]                                                |
+| **Bounded Context / Owner**         | Catalog â€” [[team\|catalog-experience-team]]                                       |
 | **Engine / Technology**             | Redis + FusionCache (Azure Managed Redis in cloud; Redis container locally)         |
 | **Store Type**                      | Cache                                                                               |
 | **Primary Writer(s)**               | [[service\|catalog-api]]                                                            |
@@ -54,7 +54,7 @@ Catalog Cache is the non-authoritative, read-through caching tier owned by [[ser
 - **Dashboard staleness window:** Dashboard aggregates (`catalog:dashboard:v1`) can lag live writes by up to `15 seconds` due to TTL-only expiration.
 
 :::warning
-**Shared Redis Key-Prefix & Flush Isolation:** Catalog Cache shares the `redis` cluster with [[container|basket-database]], [[container|order-cache]], [[container|rating-cache]], and Notification idempotency markers. Never issue a global `FLUSHALL`/`FLUSHDB` on the shared instance—doing so simultaneously erases active customer baskets, distributed checkout locks, and 24-hour Kafka idempotency guards across five services. Always target `book:{id}` or `catalog:*` keys for manual invalidation.
+**Shared Redis Key-Prefix & Flush Isolation:** Catalog Cache shares the `redis` cluster with [[container|basket-database]], [[container|order-cache]], [[container|rating-cache]], and Notification idempotency markers. Never issue a global `FLUSHALL`/`FLUSHDB` on the shared instanceâ€”doing so simultaneously erases active customer baskets, distributed checkout locks, and 24-hour Kafka idempotency guards across five services. Always target `book:{id}` or `catalog:*` keys for manual invalidation.
 :::
 
 ## Operational & Resilience Notes
@@ -78,8 +78,8 @@ Catalog Cache is the non-authoritative, read-through caching tier owned by [[ser
 
 ## Related Documentation
 
-- [[service|catalog-api]] — Owning service read/write paths and cache eviction handlers.
-- [[container|catalog-database]] — Authoritative PostgreSQL system of record behind this cache.
-- [[container|catalog-blob]] — SAS URL resolution for cached book image URNs.
-- [[adr|adr-004-fusioncache-redis-for-catalog-reads]] — Decision adopting two-tier FusionCache with Redis backplane.
-- [[doc|operational/005-backup-restore-and-dr]] — Platform backup, restore, and disaster recovery runbook.
+- [[service|catalog-api]] â€” Owning service read/write paths and cache eviction handlers.
+- [[container|catalog-database]] â€” Authoritative PostgreSQL system of record behind this cache.
+- [[container|catalog-blob]] â€” SAS URL resolution for cached book image URNs.
+- [[adr|adr-004-fusioncache-redis-for-catalog-reads]] â€” Decision adopting two-tier FusionCache with Redis backplane.
+- [[doc|operational/005-backup-restore-and-dr]] â€” Platform backup, restore, and disaster recovery runbook.

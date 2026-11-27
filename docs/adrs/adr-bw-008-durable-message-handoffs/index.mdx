@@ -1,4 +1,4 @@
----
+﻿---
 id: adr-bw-008-durable-message-handoffs
 name: "ADR-BW-008: Persist configured broker handoffs with local inboxes and outboxes"
 version: 1.0.0
@@ -6,7 +6,7 @@ summary: Use the shared event framework's per-service durable message storage wi
 status: proposed
 date: 2026-11-07
 owners:
-  - platform-team
+  - platform-engineering-team
 appliesTo:
   - type: domain
     id: bookworm
@@ -15,7 +15,7 @@ related:
   - id: adr-bw-012-operation-aware-resilience
   - id: adr-002-finance-postgresql-message-persistence
 decisionMakers:
-  - platform-team
+  - platform-engineering-team
 x-scope: "Whole system (Kafka-enabled services)"
 ---
 
@@ -23,7 +23,7 @@ x-scope: "Whole system (Kafka-enabled services)"
 | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Status**             | Proposed                                                                                                                                                |
 | **Date**               | 2026-11-07                                                                                                                                              |
-| **Owners**             | [[team\|platform-team]]                                                                                                                                 |
+| **Owners**             | [[team\|platform-engineering-team]]                                                                                                                     |
 | **Affected Resources** | [[domain\|bookworm]]                                                                                                                                    |
 | **Related ADRs**       | [[adr\|adr-bw-005-kafka-integration-backbone]], [[adr\|adr-bw-012-operation-aware-resilience]], [[adr\|adr-002-finance-postgresql-message-persistence]] |
 

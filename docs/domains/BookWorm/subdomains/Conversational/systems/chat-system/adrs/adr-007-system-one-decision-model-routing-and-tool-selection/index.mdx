@@ -1,4 +1,4 @@
----
+﻿---
 id: adr-007-system-one-decision-model-routing-and-tool-selection
 name: "ADR-007: Use Microsoft Decision-1 for Chat routing, safety gating, and tool selection"
 version: 1.0.0
@@ -6,9 +6,9 @@ summary: Replaces the generative router agent with a provider-agnostic IDecision
 status: accepted
 date: 2026-11-20
 owners:
-  - contributor-team
+  - ai-capabilities-team
 decisionMakers:
-  - contributor-team
+  - ai-capabilities-team
 appliesTo:
   - type: system
     id: chat-system
@@ -55,7 +55,7 @@ If any of the safety, language, or scope checks falls below the 50% confidence t
 
 ### Dynamic per-turn tool selection
 
-For the book and Q&A specialists, a pre-turn filter reviews the recent conversation window (up to the last six messages by default) and scores each permitted tool for relevance to the current turn. Only tools meeting the confidence threshold—plus any tools marked as always included or required—are passed to the downstream chat model. If no tools are configured, tool use is disabled, or the decision check fails, the filter either skips evaluation or falls back safely by retaining all permitted tools.
+For the book and Q&A specialists, a pre-turn filter reviews the recent conversation window (up to the last six messages by default) and scores each permitted tool for relevance to the current turn. Only tools meeting the confidence thresholdâ€”plus any tools marked as always included or requiredâ€”are passed to the downstream chat model. If no tools are configured, tool use is disabled, or the decision check fails, the filter either skips evaluation or falls back safely by retaining all permitted tools.
 
 ## 4. Trade-offs & Lessons Learned
 

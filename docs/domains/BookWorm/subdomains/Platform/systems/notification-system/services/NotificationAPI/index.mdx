@@ -1,4 +1,4 @@
----
+﻿---
 id: notification-api
 name: Notification API
 version: 1.0.0
@@ -6,7 +6,7 @@ summary: |
   Internal background worker that consumes order commands from Kafka, renders
   MJML email templates, and submits mail over SMTP via MailKit.
 owners:
-  - platform-team
+  - platform-engineering-team
 badges:
   - content: Internal
     backgroundColor: gray
@@ -46,18 +46,18 @@ repository:
 
 ## Service Responsibility & Boundary
 
-Notification API is an internal background worker within the [[domain|platform]] domain that consumes order lifecycle commands from [[service|order-orchestration]] over Kafka, renders MJML email templates, and submits MIME messages over SMTP to [[service|sendgrid-api]] (or a local test inbox in development). It owns no relational database, maintains no email outbox, and publishes no reply events—calling domains retain full ownership of business outcomes.
+Notification API is an internal background worker within the [[domain|platform]] domain that consumes order lifecycle commands from [[service|order-orchestration]] over Kafka, renders MJML email templates, and submits MIME messages over SMTP to [[service|sendgrid-api]] (or a local test inbox in development). It owns no relational database, maintains no email outbox, and publishes no reply eventsâ€”calling domains retain full ownership of business outcomes.
 
 ## Service Profile
 
 | Property                                  | Value                                                                                                                                                                                        |
 | :---------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Bounded Context / Domain**              | [[domain\|platform]]                                                                                                                                                                         |
-| **Owner Team**                            | [[team\|platform-team]]                                                                                                                                                                      |
+| **Owner Team**                            | [[team\|platform-engineering-team]]                                                                                                                                                          |
 | **Runtime Style**                         | Async Worker (Kafka Consumer & SMTP Client)                                                                                                                                                  |
 | **Public / Gateway Exposure**             | Internal Only (not routed via API Gateway)                                                                                                                                                   |
 | **Authentication & Authorization Policy** | Internal worker; Azure Managed Identity for cache access and runtime secret configuration for SMTP credentials                                                                               |
-| **Owned Data Store(s)**                   | Redis (24-hour message-ID deduplication cache) — no SQL database or outbox                                                                                                                   |
+| **Owned Data Store(s)**                   | Redis (24-hour message-ID deduplication cache) â€” no SQL database or outbox                                                                                                                 |
 | **Key Resilience / Idempotency Pattern**  | 24-hour message-ID idempotency guard, bounded SMTP retry pipeline, Kafka listener cooldowns, and dead-letter routing on [[channel\|bookworm.&#123;env&#125;.notification.dead-letter-queue]] |
 
 ## Contracts & Data Ownership
@@ -65,7 +65,7 @@ Notification API is an internal background worker within the [[domain|platform]]
 Notification API consumes [[command|PlaceOrderCommand]], [[command|CompleteOrderCommand]], and [[command|CancelOrderCommand]] partitioned by Order ID. Blank recipient email addresses are skipped safely without error or retry.
 
 :::warning
-SMTP acceptance from the mail provider confirms only submission—not inbox arrival—and Notification does not ingest bounce or delivery webhooks. Additionally, because [[service|order-orchestration]] retries [[command|PlaceOrderCommand]] with a new message ID on basket-cleanup timeouts, retries can send an additional placement email.
+SMTP acceptance from the mail provider confirms only submissionâ€”not inbox arrivalâ€”and Notification does not ingest bounce or delivery webhooks. Additionally, because [[service|order-orchestration]] retries [[command|PlaceOrderCommand]] with a new message ID on basket-cleanup timeouts, retries can send an additional placement email.
 :::
 
 <MessageTable format="all" limit={10} showChannels={true} />
@@ -89,7 +89,7 @@ SMTP acceptance from the mail provider confirms only submission—not inbox arri
 
 ## Attached Resources & Related Docs
 
-- [[doc|platform/006-api-and-contracts]] — Consolidated service, HTTP, gRPC, and Kafka contract directory.
-- [[service|sendgrid-api]] — External SMTP email delivery boundary.
-- [[service|order-orchestration]] — Upstream Finance workflow producing order email commands.
-- [[flow|notification-delivery]] — End-to-end notification rendering and submission flow.
+- [[doc|platform/006-api-and-contracts]] â€” Consolidated service, HTTP, gRPC, and Kafka contract directory.
+- [[service|sendgrid-api]] â€” External SMTP email delivery boundary.
+- [[service|order-orchestration]] â€” Upstream Finance workflow producing order email commands.
+- [[flow|notification-delivery]] â€” End-to-end notification rendering and submission flow.

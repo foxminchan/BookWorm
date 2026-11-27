@@ -1,4 +1,4 @@
----
+﻿---
 id: ListOrders
 name: List orders
 version: 1.0.0
@@ -8,7 +8,7 @@ badges:
     textColor: blue
 summary: Returns Orders with pagination and optional status and Buyer filters.
 owners:
-  - contributor-team
+  - commerce-fulfillment-team
 schemaPath: schema.json
 operation:
   method: GET
@@ -28,7 +28,7 @@ sidebar:
 | **Owner Service**                  | [[service\|order-api]]                                                                                                            |
 | **Protocol / Format**              | HTTP `GET`, `application/json` response                                                                                           |
 | **Gateway Endpoint**               | `GET /ordering/api/v1/orders` (service path `/api/v1/orders`)                                                                     |
-| **Authentication & Authorization** | Microsoft Entra ID JWT — `customer` or `admin` role plus scopes `ordering_read`, `ordering_write`                                 |
+| **Authentication & Authorization** | Microsoft Entra ID JWT â€” `customer` or `admin` role plus scopes `ordering_read`, `ordering_write`                               |
 | **Idempotency / Concurrency**      | Read-only and naturally idempotent                                                                                                |
 | **Rate Limit / Caching**           | Global concurrency (`100`), per-IP fixed-window (`30 req/min`), and per-user token bucket (`30` limit, `20` per `10s`, queue `5`) |
 | **Contract Version**               | `1.0.0` (`ApiVersions.V1`)                                                                                                        |
@@ -78,10 +78,10 @@ Returns a JSON array of order summary objects. To retrieve line items for an ord
 
 ## Related Documentation
 
-- [[service|order-api]] — Service overview, persistence, and endpoints.
-- [[entity|order]] — Order entity model.
-- [[query|GetOrder]] — Retrieve full order details including line items.
-- [[command|CreateOrder]] — Place a new order from the active basket.
+- [[service|order-api]] â€” Service overview, persistence, and endpoints.
+- [[entity|order]] â€” Order entity model.
+- [[query|GetOrder]] â€” Retrieve full order details including line items.
+- [[command|CreateOrder]] â€” Place a new order from the active basket.
 
 <NodeGraph />
 

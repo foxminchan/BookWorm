@@ -1,10 +1,10 @@
----
+﻿---
 id: bookworm-event-storming
 name: BookWorm Event Storming
 version: 1.0.0
 summary: Collaborative event-storming board capturing the BookWorm customer journey, business events, and domain boundaries across catalog, shopping, ordering, reviews, and conversational flows.
 owners:
-  - business-strategy
+  - architecture-enabling-team
 badges:
   - content: Domain Discovery
     backgroundColor: blue
@@ -13,7 +13,7 @@ badges:
 
 ## Purpose & Scope
 
-This collaborative workshop board maps the end-to-end BookWorm customer journey—from book discovery and shopping baskets through checkout, order fulfillment, reviews, and conversational assistance—before diving into service-level implementation details. Product managers, architects, and engineers should read this view to align on business events, decision ownership, and bounded-context boundaries across [[domain|bookworm]].
+This collaborative workshop board maps the end-to-end BookWorm customer journeyâ€”from book discovery and shopping baskets through checkout, order fulfillment, reviews, and conversational assistanceâ€”before diving into service-level implementation details. Product managers, architects, and engineers should read this view to align on business events, decision ownership, and bounded-context boundaries across [[domain|bookworm]].
 
 ## Visual Reference
 
@@ -27,11 +27,11 @@ _End-to-End BookWorm Business Events and Domain Boundaries_
 
 - **Behavior-first domain boundaries**: Business occurrences and policies are grouped under clear owners across [[domain|catalog]], [[domain|shopping]], [[domain|ordering]], [[domain|reviews]], [[domain|conversational]], and [[domain|platform]].
 - **Explicit handoff from intent to commitment**: Adding titles to a [[entity|basket]] remains mutable shopping intent until checkout transfers responsibility to [[domain|ordering]] to create an immutable [[entity|order]].
-- **Event-driven downstream projections**: Post-purchase experiences—such as [[entity|feedback]] summaries and customer notifications—react to business events without duplicating or mutating authoritative source records.
+- **Event-driven downstream projections**: Post-purchase experiencesâ€”such as [[entity|feedback]] summaries and customer notificationsâ€”react to business events without duplicating or mutating authoritative source records.
 - **Isolated external collaborators**: Third-party capabilities such as email delivery ([[system|sendgrid]]), identity ([[system|identity-provider]]), and PII screening ([[system|data-privacy]]) sit outside core BookWorm domain boundaries.
 
 ## Related Resources
 
-- [[domain|bookworm]] — Top-level BookWorm domain overview
-- [[domain|catalog]], [[domain|shopping]], [[domain|ordering]], [[domain|reviews]], [[domain|conversational]], [[domain|platform]] — Bounded contexts mapped on the board
-- [[flow|user-checkout]], [[flow|order-lifecycle]], [[flow|feedback-publication]] — Detailed runtime workflows derived from these domain boundaries
+- [[domain|bookworm]] â€” Top-level BookWorm domain overview
+- [[domain|catalog]], [[domain|shopping]], [[domain|ordering]], [[domain|reviews]], [[domain|conversational]], [[domain|platform]] â€” Bounded contexts mapped on the board
+- [[flow|user-checkout]], [[flow|order-lifecycle]], [[flow|feedback-publication]] â€” Detailed runtime workflows derived from these domain boundaries

@@ -1,4 +1,4 @@
----
+﻿---
 id: scheduler-service
 name: Scheduler Service
 version: 1.0.0
@@ -8,7 +8,7 @@ summary: |
 styles:
   icon: /icons/languages/dotnet.svg
 owners:
-  - platform-team
+  - platform-engineering-team
 badges:
   - content: Internal
     backgroundColor: gray
@@ -47,7 +47,7 @@ Scheduler Service is the Quartz.NET job host and paired administrative dashboard
 | Property                                  | Value                                                                                                                |
 | :---------------------------------------- | :------------------------------------------------------------------------------------------------------------------- |
 | **Bounded Context / Domain**              | [[domain\|platform]]                                                                                                 |
-| **Owner Team**                            | [[team\|platform-team]]                                                                                              |
+| **Owner Team**                            | [[team\|platform-engineering-team]]                                                                                  |
 | **Runtime Style**                         | Scheduled Job Host & Administrative Dashboard UI                                                                     |
 | **Public / Gateway Exposure**             | Admin UI exposed via OIDC; job host is Internal Only (not routed via API Gateway)                                    |
 | **Authentication & Authorization Policy** | Microsoft Entra ID OIDC requiring the `admin` app role for the operator dashboard; internal worker for job execution |
@@ -59,7 +59,7 @@ Scheduler Service is the Quartz.NET job host and paired administrative dashboard
 Scheduler Service owns schedule definitions, trigger state, and execution history in [[container|scheduler-database]]. Every five minutes UTC, it publishes [[event|ProcessVectorBatchIntegrationEvent]] to [[channel|scheduler.process-vector-batch]] via its transactional outbox for [[service|catalog-ingestion]] to consume.
 
 :::note
-A successful job firing proves only that the trigger event was dispatched—not that downstream indexing completed. Operators should inspect pending vector update counts in [[container|catalog-database]] alongside [[service|catalog-ingestion]] logs when diagnosing search lag.
+A successful job firing proves only that the trigger event was dispatchedâ€”not that downstream indexing completed. Operators should inspect pending vector update counts in [[container|catalog-database]] alongside [[service|catalog-ingestion]] logs when diagnosing search lag.
 :::
 
 :::warning
@@ -80,7 +80,7 @@ Never store credentials, authorization headers, notification bodies, or personal
 
 ## Attached Resources & Related Docs
 
-- [[doc|platform/006-api-and-contracts]] — Consolidated service and messaging index.
-- [[container|scheduler-database]] — Persistent storage for Quartz schedules and outbox.
-- [[doc|platform/005-quartz-schema]] — Persistent Quartz table definitions.
-- [[service|catalog-ingestion]] — Downstream worker consuming scheduled batch triggers.
+- [[doc|platform/006-api-and-contracts]] â€” Consolidated service and messaging index.
+- [[container|scheduler-database]] â€” Persistent storage for Quartz schedules and outbox.
+- [[doc|platform/005-quartz-schema]] â€” Persistent Quartz table definitions.
+- [[service|catalog-ingestion]] â€” Downstream worker consuming scheduled batch triggers.

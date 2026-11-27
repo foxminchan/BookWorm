@@ -1,4 +1,4 @@
----
+﻿---
 id: data-privacy
 name: Data Privacy
 version: 1.0.0
@@ -7,7 +7,7 @@ summary: |
   information in the Reviews feedback-summarization and Chat agent pipelines.
 scope: external
 owners:
-  - platform-team
+  - platform-engineering-team
 services:
   - id: presidio-api
     version: 1.0.0
@@ -20,7 +20,7 @@ badges:
 
 ## System Purpose & Boundary
 
-The Data Privacy system provides external personally identifiable information (PII) detection and anonymization for BookWorm's AI agent pipelines using Microsoft Presidio. It serves internal AI-hosting systems—[[system|chat-system]] and [[system|rating-system]]—by screening prompts and model responses before they reach foundation models or end users. Owning customer feedback, storing conversation transcripts, and modifying persisted domain records are explicitly out of scope.
+The Data Privacy system provides external personally identifiable information (PII) detection and anonymization for BookWorm's AI agent pipelines using Microsoft Presidio. It serves internal AI-hosting systemsâ€”[[system|chat-system]] and [[system|rating-system]]â€”by screening prompts and model responses before they reach foundation models or end users. Owning customer feedback, storing conversation transcripts, and modifying persisted domain records are explicitly out of scope.
 
 :::warning
 BookWorm's PII middleware executes **fail-closed**: any timeout, connection error, or non-success response from Presidio aborts the AI turn rather than sending unscreened text to foundation models or customers.
@@ -54,6 +54,6 @@ BookWorm's PII middleware executes **fail-closed**: any timeout, connection erro
 
 ## Related Documentation
 
-- [[service|presidio-api]] — External sidecar endpoints, consumers, and fail-closed semantics.
-- [[system|chat-system]] — Conversational AI consumer of PII screening.
-- [[system|rating-system]] — Review summarization consumer of PII screening.
+- [[service|presidio-api]] â€” External sidecar endpoints, consumers, and fail-closed semantics.
+- [[system|chat-system]] â€” Conversational AI consumer of PII screening.
+- [[system|rating-system]] â€” Review summarization consumer of PII screening.

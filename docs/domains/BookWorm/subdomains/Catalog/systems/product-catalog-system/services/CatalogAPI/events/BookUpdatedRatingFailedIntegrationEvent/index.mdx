@@ -1,4 +1,4 @@
----
+﻿---
 id: BookUpdatedRatingFailedIntegrationEvent
 name: Book rating update failed
 version: 1.0.0
@@ -6,7 +6,7 @@ summary: |
   Indicates that Catalog could not apply a feedback-created event because the
   referenced book was not found.
 owners:
-  - contributor-team
+  - catalog-experience-team
 schemaPath: schema.json
 badges:
   - content: Reviews
@@ -58,12 +58,12 @@ badges:
 
 ## Related Documentation
 
-- [[channel|bookworm.&#123;env&#125;.catalog.book-update-rating-failed]] — Kafka channel specification.
-- [[channel|bookworm.&#123;env&#125;.rating.dead-letter-queue]] — Dead-letter channel for failed Rating consumers.
-- [[event|FeedbackCreatedIntegrationEvent]] — Upstream event that triggers this compensation when a book is missing.
-- [[service|catalog-api]] — Producer service.
-- [[service|rating-api]] — Consumer service owning feedback records.
-- [[entity|feedback]] — Feedback document schema.
+- [[channel|bookworm.&#123;env&#125;.catalog.book-update-rating-failed]] â€” Kafka channel specification.
+- [[channel|bookworm.&#123;env&#125;.rating.dead-letter-queue]] â€” Dead-letter channel for failed Rating consumers.
+- [[event|FeedbackCreatedIntegrationEvent]] â€” Upstream event that triggers this compensation when a book is missing.
+- [[service|catalog-api]] â€” Producer service.
+- [[service|rating-api]] â€” Consumer service owning feedback records.
+- [[entity|feedback]] â€” Feedback document schema.
 
 <NodeGraph />
 

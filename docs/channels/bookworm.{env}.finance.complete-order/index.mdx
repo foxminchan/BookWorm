@@ -1,12 +1,20 @@
----
+﻿---
 id: bookworm.{env}.finance.complete-order
 name: Order Completion Command Channel
 version: 1.0.0
+type: topic
 summary: |
-  Kafka topic carrying Finance's shared order-completion command, consumed
-  by Notification to submit a completed-order email.
+  Kafka topic owned by the contributor team carrying Finance order-completion
+  commands consumed by Notification API to send completion emails.
 owners:
-  - contributor-team
+  - commerce-fulfillment-team
+badges:
+  - content: Kafka
+    backgroundColor: blue
+    textColor: blue
+  - content: Topic
+    backgroundColor: teal
+    textColor: teal
 address: bookworm.{env}.finance.complete-order
 parameters:
   env:
@@ -15,9 +23,12 @@ parameters:
       - staging
       - production
     default: development
+    examples:
+      - development
+      - staging
+      - production
     description: BookWorm deployment environment.
 deliveryGuarantee: at-least-once
-type: stream
 protocols:
   - kafka
 deadLetterChannel:
@@ -25,58 +36,49 @@ deadLetterChannel:
   version: 1.0.0
 ---
 
-Finance publishes this command after Ordering reports that an order is complete. Notification consumes it to submit a completion email when customer contact details are available.
+## Purpose & Scope
 
-**Producer:** Finance order coordination. **Consumer:** Notification service.
+This topic transports order-completion notification commands published by [[service|order-orchestration]] after [[service|order-api]] reports that an order has completed. [[service|notification-api]] consumes these commands to render and submit a completion email when usable customer contact details are present. No delivery confirmation is returned to Finance, and this channel never mutates order state.
 
-A successful email submission is not proof of final delivery, and no delivery result is sent back to Finance.
+## Channel Specification
 
-## Channel information
+| Property                               | Value                                                                       |
+| :------------------------------------- | :-------------------------------------------------------------------------- |
+| **Bounded Context / Owner**            | [[domain\|ordering]] / [[team\|commerce-fulfillment-team]]                  |
+| **Channel Type**                       | Topic                                                                       |
+| **Address Pattern**                    | `bookworm.{env}.finance.complete-order`                                     |
+| **Parameters**                         | `env` (`development`, `staging`, `production`; default: `development`)      |
+| **Protocol & Envelope Format**         | Kafka + CloudEvents JSON (`application/json`)                               |
+| **Partition Key & Ordering Guarantee** | Keyed by `orderId`; preserves per-order command ordering within a partition |
+| **Delivery Semantics**                 | At-least-once                                                               |
+| **Dead-Letter Channel**                | [[channel\|bookworm.&#123;env&#125;.notification.dead-letter-queue]]        |
+
+## Messages & Participants
+
+| Message                           | Type    | Producer                         | Consumer(s)                   | Consumer Group                |
+| :-------------------------------- | :------ | :------------------------------- | :---------------------------- | :---------------------------- |
+| [[command\|CompleteOrderCommand]] | Command | [[service\|order-orchestration]] | [[service\|notification-api]] | Notification service consumer |
+
+## Ordering, Retries & Failure Handling
+
+- **Partition-key ordering:** Keying by `orderId` preserves ordering for lifecycle notification commands targeting the same order.
+- **Transient retries:** [[service|notification-api]] applies bounded SMTP client retries and Kafka listener cooldowns on transient mail-provider failures.
+- **Immediate DLQ routing:** Malformed payloads, rendering errors, or exhausted retries route to [[channel|bookworm.&#123;env&#125;.notification.dead-letter-queue]].
+- **Consumer idempotency:** [[service|notification-api]] deduplicates by message ID for 24 hours; blank email addresses are skipped safely without error, and operators must check [[service|sendgrid-api]] activity before replaying to prevent duplicate emails.
+
+## Channel Details & Visualization
 
 <ChannelInformation />
 
-## Topic and message
-
-The topic is `bookworm.{env}.finance.complete-order`. Replace `{env}` with `development`, `staging`, or `production`. Messages are CloudEvents JSON keyed by `orderId` and include customer details and order total. Notification skips delivery when no usable email address is present. Failed messages go to [[channel|bookworm.&#123;env&#125;.notification.dead-letter-queue]].
-
-## Operations and recovery
-
-Check the mail provider's activity before replaying: a timeout can occur after acceptance and replay may send a duplicate. The same message is protected against prompt duplicate processing, but a newly issued message can send another email. Do not use this channel to change order status. Keep customer contact details out of incident notes.
-
-## Examples
-
-### CloudEvents Kafka message
-
-Kafka key: `0193f1a2-1111-7d8e-9f01-23456789abcd` (`orderId`)
-
-<CodeGroup>
-
-```json
-{
-	"specversion": "1.0",
-	"id": "0193f1a2-9d01-7d8e-9f01-23456789abcd",
-	"type": "BookWorm.Contracts.CompleteOrderCommand",
-	"source": "urn:bookworm:book-worm.finance",
-	"time": "2026-11-25T16:25:02Z",
-	"datacontenttype": "application/json",
-	"messagetype": "BookWorm.Contracts.CompleteOrderCommand",
-	"data": {
-		"id": "0193f1a2-9d01-7d8e-9f01-23456789abcd",
-		"creationDate": "2026-11-25T16:25:02Z",
-		"orderId": "0193f1a2-1111-7d8e-9f01-23456789abcd",
-		"fullName": "Alex Reader",
-		"email": "reader@example.com",
-		"totalMoney": 59.98
-	}
-}
-```
-
-</CodeGroup>
-
-## Related documentation
-
-- [[channel|bookworm.&#123;env&#125;.ordering.order-status-change-to-complete]]
-- [[channel|bookworm.&#123;env&#125;.notification.dead-letter-queue]]
-- [[channel|bookworm.&#123;env&#125;.finance.cancel-order]]
-
 <NodeGraph />
+
+## Related Documentation
+
+- [[channel|bookworm.&#123;env&#125;.notification.dead-letter-queue]] â€” Consumer dead-letter queue
+- [[channel|bookworm.&#123;env&#125;.ordering.order-status-change-to-complete]] â€” Upstream order completion event topic
+- [[channel|bookworm.&#123;env&#125;.finance.cancel-order]] â€” Paired order cancellation command topic
+- [[service|order-orchestration]] â€” Command producer
+- [[service|notification-api]] â€” Email consumer
+- [[flow|notification-delivery]] â€” Notification delivery workflow
+- [[flow|order-lifecycle]] â€” End-to-end order lifecycle flow
+- [[doc|arc42/08-crosscutting-concepts/002-contracts-and-messaging]] â€” Messaging standards and idempotency rules

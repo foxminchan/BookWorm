@@ -1,10 +1,10 @@
----
+﻿---
 id: qa-agent
 name: QA Agent
 version: 1.0.0
 summary: Read-only customer support and store-policy specialist that answers operational, shipping, returns, account, and billing questions without accessing live order data or mutating records.
 owners:
-  - contributor-team
+  - ai-capabilities-team
 repository:
   language: C#
   url: https://github.com/foxminchan/BookWorm
@@ -50,7 +50,7 @@ QA Agent has **no database access, no MCP catalog client, and no account or orde
 | Property                     | Value                                                                                                                                  |
 | :--------------------------- | :------------------------------------------------------------------------------------------------------------------------------------- |
 | **Bounded Context / Domain** | Conversational ([[domain\|bookworm]])                                                                                                  |
-| **Owner Team**               | [[team\|contributor-team]]                                                                                                             |
+| **Owner Team**               | [[team\|ai-capabilities-team]]                                                                                                         |
 | **Hosting Service**          | [[service\|chat-api]]                                                                                                                  |
 | **LLM Provider & Model**     | Microsoft Foundry `model-router` (`2025-11-18`; `temperature: 0.5`, `maxOutputTokens: 1000`, `reasoningEffort: medium`)                |
 | **Interaction Protocol**     | Streaming AG-UI over HTTP (inbound); in-process handoff (outbound to [[agent\|book-agent]])                                            |
@@ -104,11 +104,11 @@ QA Agent has **no database access, no MCP catalog client, and no account or orde
 
 ## Related Documentation
 
-- [[service|chat-api]] — Hosting AG-UI server, workflow orchestration, and intent routing.
-- [[flow|agent-orchestration]] — End-to-end conversational routing, disambiguation, and handoff flow.
-- [[agent|book-agent]] — Peer specialist for book discovery handoffs.
-- [[service|presidio-api]] — PII analysis and anonymization sidecars invoked by middleware.
-- [[doc|arc42/08-crosscutting-concepts/005-ai-governance]] — Cross-cutting AI governance rules and standards.
-- [[adr|adr-bw-014-composable-ai-governance]] — Shared governance composition across AI paths.
-- [[adr|adr-002-fail-closed-pii-middleware]] — Fail-closed PII screening decision.
-- [[adr|adr-005-govern-agent-tools-per-agent]] — Per-agent default-deny tool governance.
+- [[service|chat-api]] â€” Hosting AG-UI server, workflow orchestration, and intent routing.
+- [[flow|agent-orchestration]] â€” End-to-end conversational routing, disambiguation, and handoff flow.
+- [[agent|book-agent]] â€” Peer specialist for book discovery handoffs.
+- [[service|presidio-api]] â€” PII analysis and anonymization sidecars invoked by middleware.
+- [[doc|arc42/08-crosscutting-concepts/005-ai-governance]] â€” Cross-cutting AI governance rules and standards.
+- [[adr|adr-bw-014-composable-ai-governance]] â€” Shared governance composition across AI paths.
+- [[adr|adr-002-fail-closed-pii-middleware]] â€” Fail-closed PII screening decision.
+- [[adr|adr-005-govern-agent-tools-per-agent]] â€” Per-agent default-deny tool governance.

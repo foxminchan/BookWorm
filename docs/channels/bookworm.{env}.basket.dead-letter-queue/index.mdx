@@ -1,13 +1,20 @@
----
+﻿---
 id: bookworm.{env}.basket.dead-letter-queue
 name: Basket Dead Letter Queue
 version: 1.0.0
-type: stream
+type: topic
 summary: |
-  A Kafka topic that holds Basket API messages that could not be processed
-  after retries or because the message was invalid.
+  Kafka dead-letter topic owned by the platform team that captures Basket API
+  messages after retry exhaustion or deserialization failure.
 owners:
-  - platform-team
+  - platform-engineering-team
+badges:
+  - content: Kafka
+    backgroundColor: blue
+    textColor: blue
+  - content: Dead-Letter Queue
+    backgroundColor: red
+    textColor: red
 address: bookworm.{env}.basket.dead-letter-queue
 parameters:
   env:
@@ -20,98 +27,49 @@ parameters:
       - development
       - staging
       - production
-    description: "Environment to use"
+    description: BookWorm deployment environment.
 deliveryGuarantee: at-least-once
 protocols:
   - kafka
 ---
 
-`bookworm.{env}.basket.dead-letter-queue` (v1.0.0) stores Basket API messages that could not be processed. Basket API uses this topic when it has exhausted its retries or when a message does not use the expected format.
+## Purpose & Scope
 
-The topic currently receives failed order-placement messages from [[channel|bookworm.&#123;env&#125;.finance.place-order]].
+This dead-letter channel captures failed checkout cleanup commands that [[service|basket-api]] could not process. Messages arrive here either after bounded transient retries (such as Redis connectivity or timeout errors) are exhausted, or immediately when a record fails deserialization or schema validation as a poison message.
 
-## Channel information
+## DLQ Profile
 
-<ChannelInformation />
+| Property                          | Value                                                                                           |
+| :-------------------------------- | :---------------------------------------------------------------------------------------------- |
+| **Owning Service**                | [[service\|basket-api]]                                                                         |
+| **Address Pattern**               | `bookworm.{env}.basket.dead-letter-queue`                                                       |
+| **Upstream Source Channels**      | [[channel\|bookworm.&#123;env&#125;.finance.place-order]]                                       |
+| **Routing Triggers**              | Exhausted transient retries (storage/network faults) or immediate poison/deserialization errors |
+| **Retention / Inspection Window** | Governed by Kafka broker retention policy; inspect and triage before broker expiry              |
+| **Replay Safety**                 | Idempotent if basket is already deleted; verify order and basket state first                    |
 
-## Overview
+## Triage & Replay Guardrails
 
-| Property          | Value                                                                  |
-| :---------------- | :--------------------------------------------------------------------- |
-| **Owner**         | Shopping bounded context (**Basket API**)                              |
-| **Topic pattern** | `bookworm.{env}.basket.dead-letter-queue`                              |
-| **Source topic**  | [[channel\|bookworm.&#123;env&#125;.finance.place-order]]              |
-| **Message type**  | Order-placement request                                                |
-| **Protocol**      | Kafka                                                                  |
-| **Format**        | CloudEvents JSON                                                       |
-| **Readers**       | Operators or support tools that investigate or replay a failed message |
+:::warning
+Before replaying any record from this DLQ:
 
-## Parameters and fields
+1. Verify that the corresponding order still exists and check whether the checkout saga in [[service|order-orchestration]] has already completed or compensated.
+2. Confirm that Redis basket storage is healthy and whether the target basket has already been removed.
+3. Isolate permanent schema or deserialization errors rather than replaying poison records.
+4. **Replay only to [[service|basket-api]]** â€” never replay to the shared [[channel|bookworm.&#123;env&#125;.finance.place-order]] topic, as [[service|notification-api]] also consumes it and would send duplicate order emails.
 
-| Parameter | Type     | Required | Default       | Allowed values                         | Description                     |
-| :-------- | :------- | :------- | :------------ | :------------------------------------- | :------------------------------ |
-| `{env}`   | `string` | Yes      | `development` | `development`, `staging`, `production` | Environment for the topic name. |
-
-Each record contains the original order-placement request and details about why processing failed.
-
-The record includes an order ID and may include an error message, failure time, source topic, and number of processing attempts. These details help operators determine whether the failure is temporary or requires a message or application fix.
-
-## When a message arrives here
-
-- Basket API may move a message here after temporary connection or database failures have been retried.
-- Basket API may move a message here immediately when it cannot read or understand the message format.
-- Unexpected Basket API failures are also preserved here rather than discarded.
-
-The dead-letter topic is not a replacement for a normal Basket API response. It is a last-stop record for investigation and recovery.
-
-:::note
-Records remain in this topic according to the Kafka broker's retention policy.
+Follow the operational triage procedures in [[doc|operational/003-incident-response-and-runbooks]].
 :::
 
-## Before replaying a message
+<Accordion title="Retention, Correlation & Consumer Isolation">
+	- **Preserved metadata:** Records retain the original CloudEvents envelope, `orderId` Kafka
+	partition key, and failure diagnostic headers (error reason, timestamp, and attempt count). -
+	**Cross-consumer isolation:** [[service|notification-api]] failures on the same upstream topic
+	route separately to [[channel|bookworm.&#123;env&#125;.notification.dead-letter-queue]].
+</Accordion>
 
-1. Check whether the order still exists and whether checkout has finished.
-2. Confirm that Redis is healthy and that the basket has not already been deleted.
-3. Verify whether this is a temporary service outage or a permanent message-format problem.
-4. Replay only to Basket API. The original source topic is also consumed by Notification, so replaying the original topic could send another email.
+## Channel Details & Visualization
 
-Replaying a message after the basket was successfully deleted should not delete it again.
-
-## Examples
-
-### Failed order-placement record
-
-Kafka key: `0193f1a2-1111-7d8e-9f01-23456789abcd`
-
-<CodeGroup>
-
-```json
-{
-	"specversion": "1.0",
-	"id": "0193f1a2-6e01-7d8e-9f01-23456789abcd",
-	"type": "BookWorm.Contracts.PlaceOrderCommand",
-	"source": "urn:bookworm:book-worm.finance",
-	"time": "2026-11-25T16:14:52Z",
-	"datacontenttype": "application/json",
-	"messagetype": "BookWorm.Contracts.PlaceOrderCommand",
-	"data": {
-		"id": "0193f1a2-6e01-7d8e-9f01-23456789abcd",
-		"creationDate": "2026-11-25T16:14:52Z",
-		"basketId": "0193f1a2-2222-7d8e-9f01-23456789abcd",
-		"fullName": "Alex Reader",
-		"email": "reader@example.com",
-		"orderId": "0193f1a2-1111-7d8e-9f01-23456789abcd",
-		"totalMoney": 59.98
-	}
-}
-```
-
-</CodeGroup>
-
-## Related documentation
-
-- [[channel|bookworm.&#123;env&#125;.finance.place-order]] — Source topic.
-- [[service|basket-api]] — Basket service documentation.
-- [[channel|bookworm.&#123;env&#125;.notification.dead-letter-queue]] — DLQ for the other `PlaceOrderCommand` consumer.
+<ChannelInformation />
 
 <NodeGraph />

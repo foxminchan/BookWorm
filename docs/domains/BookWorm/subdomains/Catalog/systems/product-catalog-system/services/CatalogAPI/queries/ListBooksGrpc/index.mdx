@@ -1,4 +1,4 @@
----
+﻿---
 id: ListBooksGrpc
 name: List books over gRPC
 version: 1.0.0
@@ -8,7 +8,7 @@ badges:
     textColor: green
 summary: Searches and lists Catalog books with full metadata through the book.v1 gRPC contract.
 owners:
-  - contributor-team
+  - catalog-experience-team
 schemaPath: schema.proto
 sidebar:
   badge: "gRPC"
@@ -60,11 +60,11 @@ This RPC uses fixed defaults (`pageIndex = 1`, `pageSize = 20`, `orderBy = "Name
 
 ## Related Documentation
 
-- [[service|catalog-api]] — Service overview, persistence, and gRPC services.
-- [[service|mcp-server]] — Primary caller exposing the `search_catalog` MCP tool.
-- [[entity|book]] — Book entity model.
-- [[query|ListBooks]] — Public HTTP `QUERY /catalog/api/v1/books` supporting pagination and rich filters.
-- [[query|GetBookDetailsGrpc]] — Full `BookItem` field schema and single-book lookup.
+- [[service|catalog-api]] â€” Service overview, persistence, and gRPC services.
+- [[service|mcp-server]] â€” Primary caller exposing the `search_catalog` MCP tool.
+- [[entity|book]] â€” Book entity model.
+- [[query|ListBooks]] â€” Public HTTP `QUERY /catalog/api/v1/books` supporting pagination and rich filters.
+- [[query|GetBookDetailsGrpc]] â€” Full `BookItem` field schema and single-book lookup.
 
 <NodeGraph />
 

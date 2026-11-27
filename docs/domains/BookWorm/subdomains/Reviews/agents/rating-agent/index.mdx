@@ -1,11 +1,10 @@
----
+﻿---
 id: rating-agent
 name: Rating Agent
 version: 1.0.0
 summary: Read-only review intelligence specialist that summarizes customer feedback over A2A gRPC and map-reduce workflows while leaving final quality tier classification to deterministic service logic.
 owners:
-  - business-strategy
-  - contributor-team
+  - catalog-experience-team
 repository:
   language: C#
   url: https://github.com/foxminchan/BookWorm
@@ -43,14 +42,14 @@ model:
 
 Rating Agent is the read-only review analysis and quality-signal specialist hosted inside [[service|rating-api]] in the Reviews bounded context. It is triggered through two runtime paths: remote Agent-to-Agent (A2A) gRPC handoffs from [[service|chat-api]] (routed or handed off from [[agent|book-agent]]), and [[service|rating-api]]'s in-process map-reduce summarization pipeline backing [[query|SummarizeFeedback]].
 
-Rating Agent **never writes to [[container|rating-database]] or [[container|catalog-database]]**, never executes destructive queries, and never assigns final quality tiers—classifications (`No Data`, `Bad`, `Good`, `Top Rated`) are computed deterministically by service code rather than the language model.
+Rating Agent **never writes to [[container|rating-database]] or [[container|catalog-database]]**, never executes destructive queries, and never assigns final quality tiersâ€”classifications (`No Data`, `Bad`, `Good`, `Top Rated`) are computed deterministically by service code rather than the language model.
 
 ## Agent Profile & Model Governance
 
 | Property                     | Value                                                                                                                                                          |
 | :--------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Bounded Context / Domain** | Reviews ([[domain\|bookworm]])                                                                                                                                 |
-| **Owner Team**               | [[team\|business-strategy]], [[team\|contributor-team]]                                                                                                        |
+| **Owner Team**               | [[team\|catalog-experience-team]], [[team\|catalog-experience-team]]                                                                                           |
 | **Hosting Service**          | [[service\|rating-api]]                                                                                                                                        |
 | **LLM Provider & Model**     | Microsoft Foundry `model-router` (`2025-11-18`; `temperature: 0.4`, `maxOutputTokens: 1500`, `reasoningEffort: medium`)                                        |
 | **Interaction Protocol**     | Remote A2A gRPC server (`rating_read` policy, Entra Agent Identity); in-process workflow invocation; MCP Streamable HTTP (outbound to [[service\|mcp-server]]) |
@@ -85,7 +84,7 @@ A reduce stage merges batch outputs into unified sentiment, recurring themes, st
 </Step>
 <Step title="Apply deterministic tier classification">
 
-Deterministic service logic evaluates review count, average rating, and dominant negative pattern flags to assign `No Data`, `Bad`, `Good`, or `Top Rated`—never delegated to the LLM.
+Deterministic service logic evaluates review count, average rating, and dominant negative pattern flags to assign `No Data`, `Bad`, `Good`, or `Top Rated`â€”never delegated to the LLM.
 
 </Step>
 </Steps>
@@ -126,11 +125,11 @@ Deterministic service logic evaluates review count, average rating, and dominant
 
 ## Related Documentation
 
-- [[service|rating-api]] — Hosting service, [[query|SummarizeFeedback]] endpoint, and A2A gRPC server.
-- [[container|rating-database]] — Authoritative Azure Cosmos DB feedback store.
-- [[container|rating-cache]] — Caching layer for [[query|SummarizeFeedback]] results.
-- [[agent|book-agent]] — Conversational specialist that resolves a book ID before A2A handoff.
-- [[flow|agent-orchestration]] — Conversational workflow routing and A2A handoff flow.
-- [[doc|arc42/08-crosscutting-concepts/005-ai-governance]] — Cross-cutting AI governance rules and standards.
-- [[adr|adr-bw-014-composable-ai-governance]] — Shared governance composition across AI paths.
-- [[adr|adr-004-read-only-governed-feedback-summarization]] — Read-only governed feedback summarization decision.
+- [[service|rating-api]] â€” Hosting service, [[query|SummarizeFeedback]] endpoint, and A2A gRPC server.
+- [[container|rating-database]] â€” Authoritative Azure Cosmos DB feedback store.
+- [[container|rating-cache]] â€” Caching layer for [[query|SummarizeFeedback]] results.
+- [[agent|book-agent]] â€” Conversational specialist that resolves a book ID before A2A handoff.
+- [[flow|agent-orchestration]] â€” Conversational workflow routing and A2A handoff flow.
+- [[doc|arc42/08-crosscutting-concepts/005-ai-governance]] â€” Cross-cutting AI governance rules and standards.
+- [[adr|adr-bw-014-composable-ai-governance]] â€” Shared governance composition across AI paths.
+- [[adr|adr-004-read-only-governed-feedback-summarization]] â€” Read-only governed feedback summarization decision.

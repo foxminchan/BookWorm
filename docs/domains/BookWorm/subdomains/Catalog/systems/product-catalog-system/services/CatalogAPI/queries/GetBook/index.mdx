@@ -1,4 +1,4 @@
----
+﻿---
 id: GetBook
 name: Get book
 version: 1.0.0
@@ -8,7 +8,7 @@ badges:
     textColor: green
 summary: Returns one book and its catalog relationships by identifier.
 owners:
-  - contributor-team
+  - catalog-experience-team
 schemaPath: schema.json
 operation:
   method: GET
@@ -76,11 +76,11 @@ Returns a `BookDto` JSON object with an `ETag` response header.
 
 ## Related Documentation
 
-- [[service|catalog-api]] — Service overview, persistence, and endpoints.
-- [[entity|book]] — Book entity model.
-- [[query|ListBooks]] — Search, filter, and paginate books.
-- [[query|GetBookDetailsGrpc]] — Internal gRPC contract returning full book details.
-- [[command|UpdateBook]] — Update book details using the `ETag` returned by this query.
+- [[service|catalog-api]] â€” Service overview, persistence, and endpoints.
+- [[entity|book]] â€” Book entity model.
+- [[query|ListBooks]] â€” Search, filter, and paginate books.
+- [[query|GetBookDetailsGrpc]] â€” Internal gRPC contract returning full book details.
+- [[command|UpdateBook]] â€” Update book details using the `ETag` returned by this query.
 
 <NodeGraph />
 

@@ -1,10 +1,10 @@
----
+﻿---
 id: scheduler-database
 name: Scheduler Database
 version: 1.0.0
 summary: Authoritative PostgreSQL database owned by the Platform bounded context for Quartz.NET job definitions, cluster locks, execution history, and outbox envelopes.
 owners:
-  - platform-team
+  - platform-engineering-team
 container_type: database
 badges:
   - content: Database
@@ -29,7 +29,7 @@ Scheduler Database (`schedulerdb`) is the authoritative PostgreSQL database owne
 
 | Property                            | Value                                                                                        |
 | :---------------------------------- | :------------------------------------------------------------------------------------------- |
-| **Bounded Context / Owner**         | Platform — [[team\|platform-team]]                                                           |
+| **Bounded Context / Owner**         | Platform â€” [[team\|platform-engineering-team]]                                             |
 | **Engine / Technology**             | PostgreSQL 18 (Azure Database for PostgreSQL Flexible Server)                                |
 | **Store Type**                      | Database                                                                                     |
 | **Primary Writer(s)**               | [[service\|scheduler-service]]                                                               |
@@ -42,20 +42,20 @@ Scheduler Database (`schedulerdb`) is the authoritative PostgreSQL database owne
 
 | Table / Schema                                                                                                                                     | Owned Entity | Partition / Primary Key                          | Purpose & Concurrency                                                                                                                                                |
 | :------------------------------------------------------------------------------------------------------------------------------------------------- | :----------- | :----------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `qrtz_job_details`, `qrtz_triggers`, `qrtz_cron_triggers`, `qrtz_simple_triggers`, `qrtz_simprop_triggers`, `qrtz_blob_triggers`, `qrtz_calendars` | —            | (`sched_name`, `job_name`/`trigger_name`, group) | Persistent job metadata, cron/simple triggers (including `ProcessVectorBatchJob` every 5 minutes UTC and `HeartbeatJob` every 30 seconds), and calendar constraints. |
-| `qrtz_fired_triggers`, `qrtz_scheduler_state`, `qrtz_locks`, `qrtz_paused_trigger_grps`, `qrtz_paused_job_grps`, `qrtz_job_status`                 | —            | (`sched_name`, `lock_name` / `entry_id`)         | Active firing state, cluster instance heartbeats, and row-level distributed locks preventing split-brain execution.                                                  |
-| `qrtz_execution_history`, `qrtz_misfire_history`                                                                                                   | —            | History entry ID                                 | Bounded execution and misfire audit trail (`30 days` / `100,000` entries per scheduler).                                                                             |
-| `wolverine` schema                                                                                                                                 | —            | Envelope ID                                      | Transactional outbox/inbox tables for reliable Kafka publication (such as [[event\|ProcessVectorBatchIntegrationEvent]] on `scheduler.process-vector-batch`).        |
+| `qrtz_job_details`, `qrtz_triggers`, `qrtz_cron_triggers`, `qrtz_simple_triggers`, `qrtz_simprop_triggers`, `qrtz_blob_triggers`, `qrtz_calendars` | â€”          | (`sched_name`, `job_name`/`trigger_name`, group) | Persistent job metadata, cron/simple triggers (including `ProcessVectorBatchJob` every 5 minutes UTC and `HeartbeatJob` every 30 seconds), and calendar constraints. |
+| `qrtz_fired_triggers`, `qrtz_scheduler_state`, `qrtz_locks`, `qrtz_paused_trigger_grps`, `qrtz_paused_job_grps`, `qrtz_job_status`                 | â€”          | (`sched_name`, `lock_name` / `entry_id`)         | Active firing state, cluster instance heartbeats, and row-level distributed locks preventing split-brain execution.                                                  |
+| `qrtz_execution_history`, `qrtz_misfire_history`                                                                                                   | â€”          | History entry ID                                 | Bounded execution and misfire audit trail (`30 days` / `100,000` entries per scheduler).                                                                             |
+| `wolverine` schema                                                                                                                                 | â€”          | Envelope ID                                      | Transactional outbox/inbox tables for reliable Kafka publication (such as [[event\|ProcessVectorBatchIntegrationEvent]] on `scheduler.process-vector-batch`).        |
 
 ## Consistency, Isolation & Security Guardrails
 
-- **No direct SQL mutations:** Operators must manage schedules and triggers through the Entra ID-protected Quartz Dashboard (`/quartz`, `admin` role) or declarative job configuration—direct `UPDATE`/`DELETE` statements against `qrtz_*` tables corrupt cluster lock state.
+- **No direct SQL mutations:** Operators must manage schedules and triggers through the Entra ID-protected Quartz Dashboard (`/quartz`, `admin` role) or declarative job configurationâ€”direct `UPDATE`/`DELETE` statements against `qrtz_*` tables corrupt cluster lock state.
 - **No sensitive data in job payloads:** Never store connection strings, credentials, authorization headers, or personal data in `job_data` (`BYTEA`), as operational tables are inspected during diagnostics.
 - **Trigger vs. business completion:** A succeeded execution record confirms only that Scheduler ran the job and enqueued its outbound event; verify downstream consumers (such as [[service|catalog-ingestion]]) for end-to-end completion.
 - **Graceful shutdown:** In-flight jobs are awaited before container termination to prevent partial trigger states.
 
 :::warning
-**Database-per-Service & Destructive Script Guardrail:** Only [[service|scheduler-service]] may read or write `schedulerdb`—downstream services like [[service|catalog-api]], [[service|catalog-ingestion]], and [[service|notification-api]] never access it directly. Never execute the initialization DDL script with `DropDb := 1` against a live environment, as doing so drops all 15 `qrtz_*` tables and erases all registered schedules and execution history.
+**Database-per-Service & Destructive Script Guardrail:** Only [[service|scheduler-service]] may read or write `schedulerdb`â€”downstream services like [[service|catalog-api]], [[service|catalog-ingestion]], and [[service|notification-api]] never access it directly. Never execute the initialization DDL script with `DropDb := 1` against a live environment, as doing so drops all 15 `qrtz_*` tables and erases all registered schedules and execution history.
 :::
 
 ## Operational & Resilience Notes
@@ -87,8 +87,8 @@ Scheduler Database (`schedulerdb`) is the authoritative PostgreSQL database owne
 
 ## Related Documentation
 
-- [[service|scheduler-service]] — Owning service configuration, dashboard authentication, and job orchestration.
-- [[service|catalog-ingestion]] — Downstream consumer of `scheduler.process-vector-batch`.
-- [[doc|platform/005-quartz-schema]] — Complete PostgreSQL table definitions for all Quartz entities.
-- [[adr|adr-001-postgresql-quartz-persistence]] — Decision establishing PostgreSQL persistence for Quartz.NET.
-- [[doc|operational/005-backup-restore-and-dr]] — Platform backup, restore, and disaster recovery runbook.
+- [[service|scheduler-service]] â€” Owning service configuration, dashboard authentication, and job orchestration.
+- [[service|catalog-ingestion]] â€” Downstream consumer of `scheduler.process-vector-batch`.
+- [[doc|platform/005-quartz-schema]] â€” Complete PostgreSQL table definitions for all Quartz entities.
+- [[adr|adr-001-postgresql-quartz-persistence]] â€” Decision establishing PostgreSQL persistence for Quartz.NET.
+- [[doc|operational/005-backup-restore-and-dr]] â€” Platform backup, restore, and disaster recovery runbook.

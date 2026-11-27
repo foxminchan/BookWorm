@@ -1,4 +1,4 @@
----
+﻿---
 id: adr-003-separate-order-status-from-finance-saga
 name: "ADR-003: Keep Order status separate from Finance saga state"
 version: 1.0.0
@@ -6,7 +6,7 @@ summary: Ordering owns the Order's business status, while Finance owns checkout 
 status: accepted
 date: 2026-11-03
 owners:
-  - business-strategy
+  - commerce-fulfillment-team
 appliesTo:
   - type: system
     id: order-system
@@ -56,15 +56,15 @@ If the outcome of that follow-up workflow automatically changed an order's busin
 ### Operational Trade-offs & Risks
 
 - **Legitimate state divergence:** An order can remain in the "New" status even when the corresponding Finance workflow has finished or been cancelled. Downstream consumers must read the order directly when they need its true business status.
-- **Soft deletion vs. business status:** Operational soft deletion (such as hiding an order after a failed basket cleanup) is distinct from business cancellation or completion—a soft-deleted order is not considered completed or cancelled.
+- **Soft deletion vs. business status:** Operational soft deletion (such as hiding an order after a failed basket cleanup) is distinct from business cancellation or completionâ€”a soft-deleted order is not considered completed or cancelled.
 - **Dual-view troubleshooting:** Monitoring and support teams must inspect the Order and the Finance workflow independently, correlating the two by Order ID rather than assuming one mirrors the other.
 
 ## 5. Technical Reference
 
 - **Ownership split:** [[domain|ordering]] ([[system|order-system]] / [[service|order-api]]) owns the `Order` aggregate business status (`New`, `Completed`, `Cancelled`); [[system|finance-system]] owns its checkout coordination saga state.
 - **Integration contracts:**
-  - `UserCheckedOutIntegrationEvent` — published by Ordering upon placement; consumed by Finance to start the saga.
-  - `OrderStatusChangedToCompleteIntegrationEvent` — published by Ordering only after an explicit completion transition on an eligible `New` Order.
-  - `OrderStatusChangedToCancelIntegrationEvent` — published by Ordering only after an explicit cancellation transition on an eligible `New` Order.
+  - `UserCheckedOutIntegrationEvent` â€” published by Ordering upon placement; consumed by Finance to start the saga.
+  - `OrderStatusChangedToCompleteIntegrationEvent` â€” published by Ordering only after an explicit completion transition on an eligible `New` Order.
+  - `OrderStatusChangedToCancelIntegrationEvent` â€” published by Ordering only after an explicit cancellation transition on an eligible `New` Order.
 - **Non-mutating outcomes:** Downstream consumers must not infer `Completed` or `Cancelled` from basket cleanup, retry exhaustion, or notification requests. Failed basket deletion may be logged or trigger Order soft deletion, which remains separate from business status.
 - **Correlation:** Support and observability tooling must correlate Order records and Finance saga instances by Order ID.

@@ -1,4 +1,4 @@
----
+﻿---
 id: adr-bw-001-capability-aligned-boundaries
 name: "ADR-BW-001: Decompose BookWorm by business capability"
 version: 1.0.0
@@ -6,7 +6,7 @@ summary: Align independently deployable building blocks with bounded contexts ra
 status: proposed
 date: 2026-11-07
 owners:
-  - contributor-team
+  - architecture-enabling-team
 appliesTo:
   - type: domain
     id: bookworm
@@ -14,7 +14,7 @@ related:
   - id: adr-bw-006-service-owned-business-state
   - id: adr-bw-017-compatible-contract-evolution
 decisionMakers:
-  - contributor-team
+  - architecture-enabling-team
 x-scope: "Whole system"
 ---
 
@@ -22,7 +22,7 @@ x-scope: "Whole system"
 | :--------------------- | :-------------------------------------------------------------------------------------------------- |
 | **Status**             | Proposed                                                                                            |
 | **Date**               | 2026-11-07                                                                                          |
-| **Owners**             | [[team\|contributor-team]]                                                                          |
+| **Owners**             | [[team\|architecture-enabling-team]]                                                                |
 | **Affected Resources** | [[domain\|bookworm]]                                                                                |
 | **Related ADRs**       | [[adr\|adr-bw-006-service-owned-business-state]], [[adr\|adr-bw-017-compatible-contract-evolution]] |
 
@@ -57,4 +57,4 @@ Book discovery, shopping, ordering, reviews, conversations, and platform operati
 
 - New features must map to an existing bounded context or justify a new capability boundary.
 - Shared libraries must not reference domain entities, business rules, or capability-specific state.
-- Cross-capability communication must use documented HTTP, gRPC, or Kafka contracts—never direct database or internal handler calls.
+- Cross-capability communication must use documented HTTP, gRPC, or Kafka contractsâ€”never direct database or internal handler calls.

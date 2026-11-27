@@ -1,4 +1,4 @@
----
+﻿---
 title: Chat request does not return a usable response
 summary: Triage an interactive request that fails to return a useful assistant response.
 version: 1.0.0
@@ -93,9 +93,9 @@ Expected trace progression:
 ## Rollback / Escalation
 
 - **Rollback:** If a recent [[service|chat-api]] deployment introduced regressions in prompts, routing, or middleware, roll back to the previous Container App revision in `<RESOURCE_GROUP>`.
-- **Escalation:** Escalate repeated fallbacks or dependency faults to [[team|contributor-team]] (code/prompts) or [[team|platform-team]] (Foundry/RBAC/Storage).
+- **Escalation:** Escalate repeated fallbacks or dependency faults to [[team|ai-capabilities-team]] (code/prompts) or [[team|platform-engineering-team]] (Foundry/RBAC/Storage).
 
 ## Related documentation
 
-- [[flow|agent-orchestration]] — End-to-end conversational workflow.
-- [[adr|adr-002-fail-closed-pii-middleware]] — Fail-closed PII filtering behavior.
+- [[flow|agent-orchestration]] â€” End-to-end conversational workflow.
+- [[adr|adr-002-fail-closed-pii-middleware]] â€” Fail-closed PII filtering behavior.

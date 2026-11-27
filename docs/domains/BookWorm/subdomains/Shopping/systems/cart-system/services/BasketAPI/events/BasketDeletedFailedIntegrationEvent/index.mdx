@@ -1,4 +1,4 @@
----
+﻿---
 id: BasketDeletedFailedIntegrationEvent
 name: Basket deletion failed
 version: 1.0.0
@@ -6,7 +6,7 @@ summary: |
   Indicates that Basket could not delete the submitted basket during checkout
   cleanup.
 owners:
-  - contributor-team
+  - commerce-fulfillment-team
 schemaPath: schema.json
 badges:
   - content: Order Lifecycle
@@ -64,12 +64,12 @@ Consumers must handle `email` when it is `null` or omitted and must never interp
 
 ## Related Documentation
 
-- [[service|basket-api]] — Producer service contract and Redis storage details.
-- [[service|order-orchestration]] — Consumer orchestration service.
-- [[channel|bookworm.&#123;env&#125;.basket.delete-failed]] — Kafka channel specification.
-- [[channel|bookworm.&#123;env&#125;.basket.dead-letter-queue]] — Dead-letter channel for failed Basket consumers.
-- [[event|BasketDeletedCompleteIntegrationEvent]] — Companion success event for checkout basket cleanup.
-- [[entity|basket]] — Redis basket data model.
+- [[service|basket-api]] â€” Producer service contract and Redis storage details.
+- [[service|order-orchestration]] â€” Consumer orchestration service.
+- [[channel|bookworm.&#123;env&#125;.basket.delete-failed]] â€” Kafka channel specification.
+- [[channel|bookworm.&#123;env&#125;.basket.dead-letter-queue]] â€” Dead-letter channel for failed Basket consumers.
+- [[event|BasketDeletedCompleteIntegrationEvent]] â€” Companion success event for checkout basket cleanup.
+- [[entity|basket]] â€” Redis basket data model.
 
 <NodeGraph />
 

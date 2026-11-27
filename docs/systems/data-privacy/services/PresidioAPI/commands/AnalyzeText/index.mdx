@@ -1,4 +1,4 @@
----
+﻿---
 id: AnalyzeText
 name: Analyze text
 version: 1.0.0
@@ -8,7 +8,7 @@ badges:
     textColor: red
 summary: Detects PII entities in one text string or a batch, returning entity types, text offsets, confidence scores, and optional analysis explanations.
 owners:
-  - platform-team
+  - platform-engineering-team
 schemaPath: schema.json
 operation:
   method: POST
@@ -45,12 +45,12 @@ The Presidio Analyzer (`presidio-analyzer`) and Anonymizer (`presidio-anonymizer
 | :------------------------ | :------------------- | :------- | :--------------------------------------------------------- | :----------------------------------------------------------------------- |
 | `text`                    | `string \| string[]` | Yes      | Non-empty string or array of strings                       | Input text to scan for PII entities (BookWorm sends a single `string`)   |
 | `language`                | `string`             | Yes      | Two-character ISO 639-1 code (BookWorm defaults to `"en"`) | Language model used for PII recognition                                  |
-| `correlation_id`          | `string`             | No       | —                                                          | Caller-supplied correlation identifier echoed for request tracing        |
+| `correlation_id`          | `string`             | No       | â€”                                                        | Caller-supplied correlation identifier echoed for request tracing        |
 | `score_threshold`         | `number`             | No       | Default `0.0`; floating-point confidence floor             | Minimum confidence score required to include a detection                 |
 | `entities`                | `string[]`           | No       | Valid Presidio entity names                                | Optional allowlist of PII entity types (e.g., `PERSON`, `EMAIL_ADDRESS`) |
 | `return_decision_process` | `boolean`            | No       | Default `false`                                            | When `true`, includes recognizer decision-process metadata per detection |
 | `ad_hoc_recognizers`      | `object[]`           | No       | Presidio recognizer objects                                | Request-scoped custom pattern or deny-list recognizers                   |
-| `context`                 | `string[]`           | No       | —                                                          | Surrounding context words that can boost recognizer confidence           |
+| `context`                 | `string[]`           | No       | â€”                                                        | Surrounding context words that can boost recognizer confidence           |
 
 ### Success Response (`200 OK`)
 
@@ -79,10 +79,10 @@ For a single-string request, returns a JSON array of detection objects. For a ba
 
 ## Related Documentation
 
-- [[service|presidio-api]] — Overview of the Presidio Analyzer and Anonymizer sidecars.
-- [[command|AnonymizeText]] — Transform text using detections returned by `AnalyzeText`.
-- [[query|GetRecognizers]] — List active Presidio Analyzer recognizers.
-- [[query|GetSupportedEntities]] — List detectable PII entity types.
+- [[service|presidio-api]] â€” Overview of the Presidio Analyzer and Anonymizer sidecars.
+- [[command|AnonymizeText]] â€” Transform text using detections returned by `AnalyzeText`.
+- [[query|GetRecognizers]] â€” List active Presidio Analyzer recognizers.
+- [[query|GetSupportedEntities]] â€” List detectable PII entity types.
 
 <NodeGraph />
 

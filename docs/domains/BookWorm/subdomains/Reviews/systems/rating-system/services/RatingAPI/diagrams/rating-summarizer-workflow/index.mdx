@@ -1,10 +1,10 @@
----
+﻿---
 id: rating-summarizer-workflow
 name: Rating Summarizer Workflow
 version: 1.0.0
 summary: Bounded parallel review summarization with confidence-driven refinement and deterministic rating classification in Rating API.
 owners:
-  - contributor-team
+  - catalog-experience-team
 badges:
   - content: AI Workflow
     backgroundColor: purple
@@ -25,7 +25,7 @@ _Bounded Parallel Review Summarization and Quality Classification_
 
 - **Application-owned metrics and classification**: Review counts and average ratings are computed deterministically by [[service|rating-api]] from [[container|rating-database]], and final labels (`NoData`, `Bad`, `Good`, `TopRated`) are assigned by transparent business rules rather than model judgment.
 - **Bounded map-reduce parallelism**: Reviews are chunked into batches (20 per batch by default) and distributed across up to four concurrent workers, with a barrier join that restores original batch order before consolidation.
-- **Capped quality refinement**: If assessed confidence falls below the minimum threshold, refinement loops back to consolidation with assessment feedback—capped at two refinement passes without re-reading raw review batches.
+- **Capped quality refinement**: If assessed confidence falls below the minimum threshold, refinement loops back to consolidation with assessment feedbackâ€”capped at two refinement passes without re-reading raw review batches.
 - **Untrusted review isolation**: Customer review text is treated strictly as untrusted evidence with tool use disabled on every model session, preventing prompt injection from triggering actions or altering metrics.
 
 :::note
@@ -34,8 +34,8 @@ _Bounded Parallel Review Summarization and Quality Classification_
 
 ## Related Resources
 
-- [[domain|reviews]] — Reviews bounded context
-- [[service|rating-api]] — Service hosting [[query|SummarizeFeedback]]
-- [[agent|rating-agent]] — AI specialist used for structured summarization and quality assessment
-- [[container|rating-database]], [[container|rating-cache]] — Feedback store and summary cache
-- [[flow|feedback-publication]] — Upstream feedback creation and rating projection workflow
+- [[domain|reviews]] â€” Reviews bounded context
+- [[service|rating-api]] â€” Service hosting [[query|SummarizeFeedback]]
+- [[agent|rating-agent]] â€” AI specialist used for structured summarization and quality assessment
+- [[container|rating-database]], [[container|rating-cache]] â€” Feedback store and summary cache
+- [[flow|feedback-publication]] â€” Upstream feedback creation and rating projection workflow

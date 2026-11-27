@@ -1,4 +1,4 @@
----
+﻿---
 id: adr-004-notification-scheduled-maintenance-boundary
 name: "ADR-004: Let Scheduler trigger Notification-owned maintenance batches"
 version: 1.0.0
@@ -6,9 +6,9 @@ summary: Scheduler publishes hourly maintenance requests while Notification sele
 status: superseded
 date: 2026-11-01
 owners:
-  - platform-team
+  - platform-engineering-team
 decisionMakers:
-  - contributor-team
+  - platform-engineering-team
 appliesTo:
   - type: system
     id: notification-system
@@ -38,7 +38,7 @@ Two routine maintenance tasks keep BookWorm's notification system healthy: givin
 
 ## 3. How It Works
 
-1. **Hourly maintenance triggers:** Every hour, the scheduler publishes two lightweight maintenance requests—one to retry unsent emails and one to clean up sent records. These requests carry only timing and identity metadata, with no recipient data, batch sizes, or retention rules.
+1. **Hourly maintenance triggers:** Every hour, the scheduler publishes two lightweight maintenance requestsâ€”one to retry unsent emails and one to clean up sent records. These requests carry only timing and identity metadata, with no recipient data, batch sizes, or retention rules.
 2. **Bounded retry batch:** When Notification receives a resend request, it picks up to 100 unsent records in oldest-first order.
    - Eligibility checks only whether the record is unsent (it does not require a prior recorded error).
    - Notification attempts delivery for each item, logs individual send failures while continuing through the batch, and marks successful original records as sent.

@@ -1,4 +1,4 @@
----
+﻿---
 id: SummarizeFeedback
 name: Summarize feedback
 version: 1.0.0
@@ -8,7 +8,7 @@ badges:
     textColor: purple
 summary: Returns a generated feedback summary, classification, rating metrics, evidence, and confidence for a book.
 owners:
-  - contributor-team
+  - catalog-experience-team
 diagrams:
   - id: rating-summarizer-workflow
     version: 1.0.0
@@ -58,7 +58,7 @@ Only `summary` is strictly required in the schema; clients should handle remaini
 | `classification` | `string`         | No       | Enum: `NoData`, `Bad`, `Good`, `TopRated` | Application-derived classification computed by deterministic business rules                                         |
 | `averageRating`  | `number \| null` | No       | `double` or `null`                        | Arithmetic mean rating across included feedback records (`null` when `reviewCount` is `0`)                          |
 | `reviewCount`    | `integer`        | No       | `int32`                                   | Number of feedback records included in the summary (`0` when unreviewed)                                            |
-| `evidence`       | `string`         | No       | —                                         | Supporting evidence produced by the quality assessment step (empty string when `reviewCount` is `0`)                |
+| `evidence`       | `string`         | No       | â€”                                       | Supporting evidence produced by the quality assessment step (empty string when `reviewCount` is `0`)                |
 | `confidence`     | `string`         | No       | Free-form string                          | Confidence reported by the quality assessment step (empty string when `reviewCount` is `0`)                         |
 
 ## Behavior & Side Effects
@@ -79,10 +79,10 @@ Only `summary` is strictly required in the schema; clients should handle remaini
 
 ## Related Documentation
 
-- [[service|rating-api]] — Service overview, Azure Cosmos DB storage, and AI governance.
-- [[service|presidio-api]] — PII detection and anonymization service.
-- [[entity|feedback]] — Feedback document model.
-- [[query|ListFeedbacks]] — Retrieve paginated individual customer reviews for a book.
+- [[service|rating-api]] â€” Service overview, Azure Cosmos DB storage, and AI governance.
+- [[service|presidio-api]] â€” PII detection and anonymization service.
+- [[entity|feedback]] â€” Feedback document model.
+- [[query|ListFeedbacks]] â€” Retrieve paginated individual customer reviews for a book.
 
 <NodeGraph />
 

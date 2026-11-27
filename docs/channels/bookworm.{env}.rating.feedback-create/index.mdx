@@ -1,12 +1,20 @@
----
+﻿---
 id: bookworm.{env}.rating.feedback-create
 name: Feedback Created Channel
 version: 1.0.0
+type: topic
 summary: |
-  Kafka channel used by Rating to publish feedback-created events for Catalog
-  to consume and apply to a book's rating summary.
+  Kafka topic owned by the contributor team carrying Rating API feedback-created
+  events consumed by Catalog API to update book rating summaries.
 owners:
-  - contributor-team
+  - catalog-experience-team
+badges:
+  - content: Kafka
+    backgroundColor: blue
+    textColor: blue
+  - content: Topic
+    backgroundColor: teal
+    textColor: teal
 address: bookworm.{env}.rating.feedback-create
 parameters:
   env:
@@ -19,9 +27,8 @@ parameters:
       - development
       - staging
       - production
-    description: Environment to use.
+    description: BookWorm deployment environment.
 deliveryGuarantee: at-least-once
-type: stream
 protocols:
   - kafka
 deadLetterChannel:
@@ -29,59 +36,48 @@ deadLetterChannel:
   version: 1.0.0
 ---
 
-Rating publishes this event when a customer submits feedback. Catalog consumes it to update the book's displayed rating summary.
+## Purpose & Scope
 
-**Producer:** Rating service. **Consumer:** Catalog service.
+This topic transports customer feedback-created events published by [[service|rating-api]] within the Reviews bounded context. [[service|catalog-api]] consumes these events to project the new rating into the book's summary. If the referenced book does not exist in Catalog, [[service|catalog-api]] emits a compensation event to [[channel|bookworm.&#123;env&#125;.catalog.book-update-rating-failed]] rather than dead-lettering.
 
-If Catalog cannot find the book, it sends a compensation signal so Rating can remove the feedback rather than leaving an orphaned review.
+## Channel Specification
 
-## Channel information
+| Property                               | Value                                                                           |
+| :------------------------------------- | :------------------------------------------------------------------------------ |
+| **Bounded Context / Owner**            | [[domain\|reviews]] / [[team\|catalog-experience-team]]                         |
+| **Channel Type**                       | Topic                                                                           |
+| **Address Pattern**                    | `bookworm.{env}.rating.feedback-create`                                         |
+| **Parameters**                         | `env` (`development`, `staging`, `production`; default: `development`)          |
+| **Protocol & Envelope Format**         | Kafka + CloudEvents JSON (`application/json`)                                   |
+| **Partition Key & Ordering Guarantee** | Keyed by `bookId`; preserves per-book rating update ordering within a partition |
+| **Delivery Semantics**                 | At-least-once                                                                   |
+| **Dead-Letter Channel**                | [[channel\|bookworm.&#123;env&#125;.catalog.dead-letter-queue]]                 |
+
+## Messages & Participants
+
+| Message                                    | Type  | Producer                | Consumer(s)              | Consumer Group           |
+| :----------------------------------------- | :---- | :---------------------- | :----------------------- | :----------------------- |
+| [[event\|FeedbackCreatedIntegrationEvent]] | Event | [[service\|rating-api]] | [[service\|catalog-api]] | Catalog service consumer |
+
+## Ordering, Retries & Failure Handling
+
+- **Partition-key ordering:** Keying by `bookId` ensures rating additions and deletions for the same book are ordered per partition relative to concurrent updates.
+- **Transient retries:** [[service|catalog-api]] applies bounded retries with backoff on transient database or concurrency faults.
+- **Immediate DLQ routing:** Deserialization errors, malformed payloads, or exhausted retries route to [[channel|bookworm.&#123;env&#125;.catalog.dead-letter-queue]] (missing-book business rejections route to [[channel|bookworm.&#123;env&#125;.catalog.book-update-rating-failed]] instead).
+- **Consumer idempotency:** [[service|catalog-api]] guards against duplicate feedback projection; verify the current book rating summary before manual replay.
+
+## Channel Details & Visualization
 
 <ChannelInformation />
 
-## Topic and message
-
-The topic is `bookworm.{env}.rating.feedback-create`. Replace `{env}` with `development`, `staging`, or `production`. Messages are CloudEvents JSON keyed by `bookId` and include the rating and feedback ID. Failed Catalog processing goes to [[channel|bookworm.&#123;env&#125;.catalog.dead-letter-queue]]. A missing book follows [[channel|bookworm.&#123;env&#125;.catalog.book-update-rating-failed]] instead.
-
-## Operations and recovery
-
-Before replaying, check whether Catalog already applied the rating and whether the referenced book still exists. Resolve any service or data-store outage first. If the book is missing, use the compensation path rather than repeatedly replaying the create event. Duplicate deliveries are guarded, but verify the current summary before manual intervention.
-
-## Examples
-
-### CloudEvents Kafka message
-
-Kafka key: `0193f1b0-1111-7d8e-9f01-23456789abcd` (`bookId`)  
-Kafka header: `traceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01`
-
-<CodeGroup>
-
-```json
-{
-	"specversion": "1.0",
-	"id": "0193f1b0-4a01-7d8e-9f01-23456789abcd",
-	"type": "BookWorm.Contracts.FeedbackCreatedIntegrationEvent",
-	"source": "urn:bookworm:book-worm.rating",
-	"time": "2026-11-25T16:30:00Z",
-	"datacontenttype": "application/json",
-	"messagetype": "BookWorm.Contracts.FeedbackCreatedIntegrationEvent",
-	"data": {
-		"id": "0193f1b0-4a01-7d8e-9f01-23456789abcd",
-		"creationDate": "2026-11-25T16:30:00Z",
-		"bookId": "0193f1b0-1111-7d8e-9f01-23456789abcd",
-		"rating": 5,
-		"feedbackId": "0193f1b0-3333-7d8e-9f01-23456789abcd"
-	}
-}
-```
-
-</CodeGroup>
-
-## Related documentation
-
-- [[channel|bookworm.&#123;env&#125;.rating.feedback-delete]]
-- [[channel|bookworm.&#123;env&#125;.catalog.book-update-rating-failed]]
-- [[channel|bookworm.&#123;env&#125;.catalog.dead-letter-queue]]
-- [[flow|feedback-publication]]
-
 <NodeGraph />
+
+## Related Documentation
+
+- [[channel|bookworm.&#123;env&#125;.catalog.dead-letter-queue]] â€” Consumer dead-letter queue
+- [[channel|bookworm.&#123;env&#125;.rating.feedback-delete]] â€” Paired feedback deletion topic
+- [[channel|bookworm.&#123;env&#125;.catalog.book-update-rating-failed]] â€” Missing-book compensation topic
+- [[service|rating-api]] â€” Feedback producer
+- [[service|catalog-api]] â€” Rating projection consumer
+- [[flow|feedback-publication]] â€” End-to-end feedback publication flow
+- [[doc|arc42/08-crosscutting-concepts/002-contracts-and-messaging]] â€” Messaging standards and idempotency rules

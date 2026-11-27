@@ -1,4 +1,4 @@
----
+﻿---
 id: category
 name: Category
 version: 1.0.0
@@ -16,7 +16,7 @@ properties:
     required: true
     description: A name of the category
 owners:
-  - contributor-team
+  - catalog-experience-team
 ---
 
 `Category` is the Catalog aggregate root that classifies books into a single-level taxonomy. Catalog API owns it and persists it in PostgreSQL (`catalogdb`).
@@ -39,7 +39,7 @@ owners:
 | Name   | Type                  | Required | Default               | Constraints                                | Description                |
 | :----- | :-------------------- | :------- | :-------------------- | :----------------------------------------- | :------------------------- |
 | `id`   | `CategoryId` (`Guid`) | Yes      | `uuidv7()` (database) | Primary key                                | Unique category identifier |
-| `name` | `string`              | Yes      | —                     | Non-whitespace; max 50 chars; unique index | Category display name      |
+| `name` | `string`              | Yes      | â€”                   | Non-whitespace; max 50 chars; unique index | Category display name      |
 
 ## Invariants and behavior
 
@@ -71,5 +71,5 @@ owners:
 
 ## Related documentation
 
-- [[entity|book]] — Aggregate that references a category.
-- [[entity|publisher]] — Sibling Catalog classification entity.
+- [[entity|book]] â€” Aggregate that references a category.
+- [[entity|publisher]] â€” Sibling Catalog classification entity.

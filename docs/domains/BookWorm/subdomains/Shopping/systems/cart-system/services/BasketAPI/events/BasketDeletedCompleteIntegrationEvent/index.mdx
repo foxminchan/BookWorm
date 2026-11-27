@@ -1,4 +1,4 @@
----
+﻿---
 id: BasketDeletedCompleteIntegrationEvent
 name: Basket deletion completed
 version: 1.0.0
@@ -6,7 +6,7 @@ summary: |
   Indicates that Basket successfully deleted the submitted basket during
   checkout cleanup.
 owners:
-  - contributor-team
+  - commerce-fulfillment-team
 schemaPath: schema.json
 badges:
   - content: Order Lifecycle
@@ -59,11 +59,11 @@ badges:
 
 ## Related Documentation
 
-- [[service|basket-api]] — Producer service contract and Redis storage details.
-- [[service|order-orchestration]] — Consumer orchestration service.
-- [[channel|bookworm.&#123;env&#125;.basket.delete-complete]] — Kafka channel specification.
-- [[event|BasketDeletedFailedIntegrationEvent]] — Companion failure event when Redis deletion returns `false`.
-- [[entity|basket]] — Redis basket data model.
+- [[service|basket-api]] â€” Producer service contract and Redis storage details.
+- [[service|order-orchestration]] â€” Consumer orchestration service.
+- [[channel|bookworm.&#123;env&#125;.basket.delete-complete]] â€” Kafka channel specification.
+- [[event|BasketDeletedFailedIntegrationEvent]] â€” Companion failure event when Redis deletion returns `false`.
+- [[entity|basket]] â€” Redis basket data model.
 
 <NodeGraph />
 

@@ -1,4 +1,4 @@
----
+﻿---
 id: rating-api
 name: Rating API
 version: 1.0.0
@@ -19,7 +19,7 @@ entities:
   - id: feedback
     version: 1.0.0
 owners:
-  - contributor-team
+  - catalog-experience-team
 badges:
   - content: Internal
     backgroundColor: gray
@@ -100,7 +100,7 @@ Rating API is the system of record within the [[domain|reviews]] domain for indi
 | Property                                  | Value                                                                                                                                                                                  |
 | :---------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Bounded Context / Domain**              | [[domain\|reviews]]                                                                                                                                                                    |
-| **Owner Team**                            | [[team\|contributor-team]]                                                                                                                                                             |
+| **Owner Team**                            | [[team\|catalog-experience-team]]                                                                                                                                                      |
 | **Runtime Style**                         | REST API, A2A gRPC Server, and Async Kafka Producer/Consumer                                                                                                                           |
 | **Public / Gateway Exposure**             | Yes via API Gateway (HTTP) and Internal Only (A2A gRPC)                                                                                                                                |
 | **Authentication & Authorization Policy** | Microsoft Entra ID JWT and Entra Agent Identity via [[system\|identity-provider]]; `admin` policy for deletion, `rating_read` scope for A2A gRPC                                       |
@@ -139,8 +139,8 @@ If [[service|catalog-api]] emits [[event|BookUpdatedRatingFailedIntegrationEvent
 
 <Attachments />
 
-- [[doc|platform/006-api-and-contracts]] — Consolidated service, HTTP, gRPC, and Kafka directory.
-- [[agent|rating-agent]] — AI review summarization agent contract.
-- [[container|rating-database]] — Azure Cosmos DB persistence reference.
-- [[container|rating-cache]] — Redis caching and idempotency reference.
-- [[diagram|rating-summarizer-workflow]] — Read-time feedback summarization flow.
+- [[doc|platform/006-api-and-contracts]] â€” Consolidated service, HTTP, gRPC, and Kafka directory.
+- [[agent|rating-agent]] â€” AI review summarization agent contract.
+- [[container|rating-database]] â€” Azure Cosmos DB persistence reference.
+- [[container|rating-cache]] â€” Redis caching and idempotency reference.
+- [[diagram|rating-summarizer-workflow]] â€” Read-time feedback summarization flow.

@@ -1,4 +1,4 @@
----
+﻿---
 id: catalog-api
 name: Catalog API
 version: 1.0.0
@@ -24,7 +24,7 @@ entities:
   - id: publisher
     version: 1.0.0
 owners:
-  - contributor-team
+  - catalog-experience-team
 badges:
   - content: Internal
     backgroundColor: gray
@@ -149,7 +149,7 @@ Catalog API is the system of record within the [[domain|catalog]] domain for [[e
 | Property                                  | Value                                                                                                                                                                                         |
 | :---------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Bounded Context / Domain**              | [[domain\|catalog]]                                                                                                                                                                           |
-| **Owner Team**                            | [[team\|contributor-team]]                                                                                                                                                                    |
+| **Owner Team**                            | [[team\|catalog-experience-team]]                                                                                                                                                             |
 | **Runtime Style**                         | REST API, gRPC Server, and Async Kafka Consumer/Producer                                                                                                                                      |
 | **Public / Gateway Exposure**             | Yes via API Gateway (HTTP) and Internal Only (gRPC)                                                                                                                                           |
 | **Authentication & Authorization Policy** | Microsoft Entra ID JWT via [[system\|identity-provider]]; public catalog reads, `business_user` policy for catalog writes, and `admin` policy for dashboard gRPC                              |
@@ -194,9 +194,9 @@ When [[service|catalog-api]] consumes [[event|FeedbackCreatedIntegrationEvent]] 
 
 ## Attached Resources & Related Docs
 
-- [[doc|platform/006-api-and-contracts]] — Consolidated service, HTTP, gRPC, and Kafka directory.
-- [[service|catalog-ingestion]] — Asynchronous vector-indexing worker.
-- [[container|catalog-database]] — PostgreSQL schema, outbox, and vector queue triggers.
-- [[container|catalog-cache]] — Redis read-caching strategy.
-- [[container|catalog-vector]] — Vector search collection details.
-- [[container|catalog-blob]] — Blob storage for book cover images.
+- [[doc|platform/006-api-and-contracts]] â€” Consolidated service, HTTP, gRPC, and Kafka directory.
+- [[service|catalog-ingestion]] â€” Asynchronous vector-indexing worker.
+- [[container|catalog-database]] â€” PostgreSQL schema, outbox, and vector queue triggers.
+- [[container|catalog-cache]] â€” Redis read-caching strategy.
+- [[container|catalog-vector]] â€” Vector search collection details.
+- [[container|catalog-blob]] â€” Blob storage for book cover images.

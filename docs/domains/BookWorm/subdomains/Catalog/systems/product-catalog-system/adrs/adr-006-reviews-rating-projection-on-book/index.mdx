@@ -1,4 +1,4 @@
----
+﻿---
 id: adr-006-reviews-rating-projection-on-book
 name: "ADR-006: Keep only a derived rating summary on Catalog books"
 version: 1.0.0
@@ -6,9 +6,9 @@ summary: Reviews owns individual feedback; Catalog stores just an average rating
 status: accepted
 date: 2026-10-20
 owners:
-  - platform-team
+  - catalog-experience-team
 decisionMakers:
-  - platform-team
+  - platform-engineering-team
 appliesTo:
   - type: system
     id: product-catalog-system
@@ -45,7 +45,7 @@ On the other hand, copying full [[entity|feedback]] records into the Catalog dom
 
 ## 3. How It Works
 
-The [[domain|reviews]] domain remains the sole owner of individual customer [[entity|feedback]]. Rather than storing review text or individual ratings, Catalog keeps only two derived summary figures—an average rating and a total review count—alongside each [[entity|book]] in [[container|catalog-database]].
+The [[domain|reviews]] domain remains the sole owner of individual customer [[entity|feedback]]. Rather than storing review text or individual ratings, Catalog keeps only two derived summary figuresâ€”an average rating and a total review countâ€”alongside each [[entity|book]] in [[container|catalog-database]].
 
 When feedback is created or removed in Reviews, Reviews sends an asynchronous notification to [[service|catalog-api]] identifying both the book and the feedback entry. Catalog API adds the rating when feedback is created and removes it when feedback is deleted. Business users creating or updating book records cannot manually edit these summary figures.
 
@@ -60,7 +60,7 @@ If a newly created feedback notification arrives for a book that does not exist 
 ## 4. Trade-offs & Lessons Learned
 
 - **Eventual consistency:** Because rating summaries are updated through asynchronous messages, a book's displayed rating and review count can briefly lag behind newly submitted or deleted feedback.
-- **Reconciliation over manual fixes:** When message delivery or handling fails and leaves a book's summary stale, operators must inspect message delivery and handler logs, then replay failed messages or recalculate summaries from Reviews through an approved recovery process—never invent rating values by editing the book record directly.
+- **Reconciliation over manual fixes:** When message delivery or handling fails and leaves a book's summary stale, operators must inspect message delivery and handler logs, then replay failed messages or recalculate summaries from Reviews through an approved recovery processâ€”never invent rating values by editing the book record directly.
 - **Independent from search indexing:** Rating summaries live in the relational catalog database for browsing and sorting, not inside the semantic search index; search-index membership and rating freshness are managed as separate concerns.
 - **Explicit missing-book handling:** Catalog explicitly surfaces missing-book errors when new feedback cannot be applied, while treating deletions for unknown books as harmless no-ops.
 

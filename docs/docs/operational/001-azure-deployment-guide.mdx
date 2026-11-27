@@ -1,8 +1,8 @@
----
+﻿---
 title: Deployment & Rollback Runbook
 summary: Operator runbook for deploying BookWorm releases, shifting Container App revision traffic, and executing instant rollbacks.
 owners:
-  - platform-team
+  - platform-engineering-team
 badges:
   - content: Cloud / DevOps
     backgroundColor: green
@@ -17,7 +17,7 @@ Use this runbook to deploy new infrastructure or application releases to `Develo
 
 BookWorm deploys exclusively via `aspire deploy` or the CI/CD workflow (`apphost-cd.yml`). Do not
 use `azd up` or manual template deployments. In single-active-revision mode, deploying a new
-revision replaces live traffic immediately—verify candidate revisions or enable multiple-revision
+revision replaces live traffic immediatelyâ€”verify candidate revisions or enable multiple-revision
 mode before shifting production traffic.
 
 </Admonition>
@@ -187,11 +187,11 @@ and logs inside it. Never run this against Production.
 az group delete --name "<RESOURCE_GROUP>" --yes --no-wait
 ```
 
-| Symptom                                                         | Cause                                                             | Fix                                                                       |
-| :-------------------------------------------------------------- | :---------------------------------------------------------------- | :------------------------------------------------------------------------ |
-| Missing parameter error for `broker`, `vectordb`, or email      | Required environment variable is unset                            | Export all variables in Step 1 and re-run `aspire deploy`                 |
-| `AuthorizationFailed` during provisioning                       | Deploying identity lacks `User Access Administrator` or `Owner`   | Assign `Contributor` + `User Access Administrator` on `<SUBSCRIPTION_ID>` |
-| `403` or PostgreSQL token login errors right after first deploy | Newly assigned Entra ID RBAC roles take 5–10 minutes to propagate | Wait 10 minutes and restart the failing revision                          |
-| Unexpected resource drift                                       | Cached Aspire deployment state is stale                           | Re-run `aspire deploy` with `--clear-cache`                               |
+| Symptom                                                         | Cause                                                               | Fix                                                                       |
+| :-------------------------------------------------------------- | :------------------------------------------------------------------ | :------------------------------------------------------------------------ |
+| Missing parameter error for `broker`, `vectordb`, or email      | Required environment variable is unset                              | Export all variables in Step 1 and re-run `aspire deploy`                 |
+| `AuthorizationFailed` during provisioning                       | Deploying identity lacks `User Access Administrator` or `Owner`     | Assign `Contributor` + `User Access Administrator` on `<SUBSCRIPTION_ID>` |
+| `403` or PostgreSQL token login errors right after first deploy | Newly assigned Entra ID RBAC roles take 5â€“10 minutes to propagate | Wait 10 minutes and restart the failing revision                          |
+| Unexpected resource drift                                       | Cached Aspire deployment state is stale                             | Re-run `aspire deploy` with `--clear-cache`                               |
 
 </Accordion>

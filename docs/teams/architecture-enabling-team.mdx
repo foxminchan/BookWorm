@@ -1,0 +1,62 @@
+---
+id: architecture-enabling-team
+name: Architecture Enabling Team
+summary: |
+  Enabling team facilitating BookWorm's architecture governance, ADRs, arc42 documentation, engineering standards, testing practices, and EventCatalog curation.
+members:
+  - nxnhan
+---
+
+## Mission & Topology Boundary
+
+The **Architecture Enabling Team** elevates engineering capability across BookWorm through _Facilitating_ guidance rather than owning runtime production services. It stewards the root [[domain|bookworm]] architecture narrative, cross-cutting Architecture Decision Records (ADRs), arc42 documentation, developer onboarding, layered testing standards, and EventCatalog fitness/linter quality gates. Explicitly **out of scope** are day-to-day feature delivery for commerce/catalog domains and runtime infrastructure operations.
+
+## Team Profile & Interaction Modes
+
+| Property                            | Value                                                                                                                                          |
+| :---------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Topology Type**                   | Enabling                                                                                                                                       |
+| **Primary Mission**                 | Upskill teams on DDD boundaries, contract evolution, testing rigor, and living architecture documentation                                        |
+| **Default Interaction Mode**        | _Facilitating_ (advisory pairing, ADR reviews, fitness-function guidance)                                                                      |
+| **Key Partner Teams**               | [[team\|catalog-experience-team]], [[team\|commerce-fulfillment-team]], [[team\|platform-engineering-team]], [[team\|ai-capabilities-team]]    |
+| **Escalation / Engagement Channel** | [GitHub Discussions](https://github.com/foxminchan/BookWorm/discussions) · [[doc\|arc42/09-architecture-decisions]]                            |
+
+## Owned Capabilities & Assets
+
+- **Root Domain & Context:** [[domain|bookworm]]
+- **Architecture Documentation:** [[doc|arc42/09-architecture-decisions]] and cross-cutting arc42 views
+- **Developer Experience & Quality:** [[doc|development/004-engineering-standards]], [[doc|development/006-pull-request-process]]
+
+<Accordion title="Interaction Modes with Neighboring Teams">
+
+- **With [[team|catalog-experience-team]] (*Facilitating*):** Advises on bounded-context separation between catalog metadata and customer reviews, plus compatible contract evolution.
+- **With [[team|commerce-fulfillment-team]] (*Facilitating*):** Reviews saga boundary decisions, CQRS handler conventions, and contract test coverage.
+- **With [[team|platform-engineering-team]] (*Collaboration*):** Aligns cross-cutting architecture decisions with Aspire service defaults, observability, and deployment views.
+- **With [[team|ai-capabilities-team]] (*Facilitating*):** Ensures AI governance decisions and agent boundaries remain consistent with BookWorm's single-source ADR practices.
+
+</Accordion>
+
+## Working Agreements
+
+- **Advisory, Not Gatekeeping:** The enabling team equips stream-aligned and platform teams with clear standards and automated fitness checks so teams own their own delivery velocity.
+- **Single-Source Decisions:** Significant cross-boundary architectural choices are captured as ADRs and linked directly from affected domains and services.
+- **Catalog Hygiene:** Every service, message, channel, and decision in EventCatalog maintains valid team ownership and verified contract links.
+
+:::note
+Need an architecture review or ADR template? Start a thread in [GitHub Discussions](https://github.com/foxminchan/BookWorm/discussions) and reference [[doc|development/004-engineering-standards]].
+:::
+
+<Tiles columns={2}>
+	<Tile
+		icon="DocumentTextIcon"
+		href="/docs/custom/arc42/09-architecture-decisions"
+		title="Architecture Decisions"
+		description="Platform-wide ADRs governing boundaries, contracts, and quality."
+	/>
+	<Tile
+		icon="ClipboardDocumentListIcon"
+		href="/docs/custom/development/004-engineering-standards"
+		title="Engineering Standards"
+		description="Coding conventions, testing expectations, and PR guidelines."
+	/>
+</Tiles>

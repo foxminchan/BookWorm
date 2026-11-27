@@ -1,4 +1,4 @@
----
+﻿---
 id: notification-system
 name: Notification System
 version: 1.0.0
@@ -7,7 +7,7 @@ summary: |
   templates, and submits messages over SMTP.
 scope: internal
 owners:
-  - platform-team
+  - platform-engineering-team
 services:
   - id: notification-api
     version: 1.0.0
@@ -32,7 +32,7 @@ badges:
 The Notification System centralizes transactional email rendering and SMTP delivery handoff within the [[domain|platform]] domain. It consumes order lifecycle commands from [[system|finance-system]], merges supplied order and customer context into shared email templates, and submits MIME messages to the configured mail provider ([[system|sendgrid]] in publish environments, or a local test inbox in development). Owning order business state, tracking inbox delivery/bounces, and maintaining a relational email outbox are explicitly out of scope.
 
 :::warning
-Mail-provider acceptance confirms only SMTP submission—not recipient inbox arrival or underlying order success. Calling domains retain full ownership of business state, and exhausted delivery retries route to the dead-letter Kafka topic.
+Mail-provider acceptance confirms only SMTP submissionâ€”not recipient inbox arrival or underlying order success. Calling domains retain full ownership of business state, and exhausted delivery retries route to the dead-letter Kafka topic.
 :::
 
 ## Contained Capabilities
@@ -70,6 +70,6 @@ Mail-provider acceptance confirms only SMTP submission—not recipient inbox arr
 
 ## Related Documentation
 
-- [[flow|notification-delivery]] — End-to-end notification rendering and SMTP submission flow.
-- [[flow|user-checkout]] — Checkout flow triggering order placement notifications.
-- [[doc|domains/bookworm/subdomains/platform/engineering/platform-integration-boundaries]] — Platform service and external provider boundaries.
+- [[flow|notification-delivery]] â€” End-to-end notification rendering and SMTP submission flow.
+- [[flow|user-checkout]] â€” Checkout flow triggering order placement notifications.
+- [[doc|domains/bookworm/subdomains/platform/engineering/platform-integration-boundaries]] â€” Platform service and external provider boundaries.

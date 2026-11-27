@@ -1,4 +1,4 @@
----
+﻿---
 id: UserCheckedOutIntegrationEvent
 name: User checked out
 version: 1.0.0
@@ -6,7 +6,7 @@ summary: |
   Reports that an Order was placed and its checkout details are ready for
   Finance coordination.
 owners:
-  - business-strategy
+  - commerce-fulfillment-team
 schemaPath: schema.json
 badges:
   - content: Order Lifecycle
@@ -64,13 +64,13 @@ The current producer populates `basketId` with the order's `BuyerId`. Downstream
 
 ## Related Documentation
 
-- [[service|order-api]] — Producer service.
-- [[service|order-orchestration]] — Consumer orchestration service.
-- [[channel|bookworm.&#123;env&#125;.ordering.user-checked-out]] — Kafka channel specification.
-- [[channel|bookworm.&#123;env&#125;.ordering.dead-letter-queue]] — Dead-letter queue for failed Ordering consumers.
-- [[event|OrderStatusChangedToCompleteIntegrationEvent]] — Subsequent completion event.
-- [[event|OrderStatusChangedToCancelIntegrationEvent]] — Subsequent cancellation event.
-- [[entity|order]] — Ordering aggregate schema and lifecycle.
+- [[service|order-api]] â€” Producer service.
+- [[service|order-orchestration]] â€” Consumer orchestration service.
+- [[channel|bookworm.&#123;env&#125;.ordering.user-checked-out]] â€” Kafka channel specification.
+- [[channel|bookworm.&#123;env&#125;.ordering.dead-letter-queue]] â€” Dead-letter queue for failed Ordering consumers.
+- [[event|OrderStatusChangedToCompleteIntegrationEvent]] â€” Subsequent completion event.
+- [[event|OrderStatusChangedToCancelIntegrationEvent]] â€” Subsequent cancellation event.
+- [[entity|order]] â€” Ordering aggregate schema and lifecycle.
 
 <NodeGraph />
 

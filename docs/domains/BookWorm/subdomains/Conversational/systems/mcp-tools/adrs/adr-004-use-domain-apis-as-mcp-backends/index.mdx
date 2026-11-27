@@ -1,4 +1,4 @@
----
+﻿---
 id: adr-004-use-domain-apis-as-mcp-backends
 name: "ADR-004: Use domain APIs as MCP data sources"
 version: 1.0.0
@@ -6,9 +6,9 @@ summary: MCP data access goes through Catalog and Rating service APIs instead of
 status: accepted
 date: 2026-11-04
 owners:
-  - contributor-team
+  - ai-capabilities-team
 decisionMakers:
-  - contributor-team
+  - ai-capabilities-team
 appliesTo:
   - type: system
     id: mcp-tools
@@ -52,7 +52,7 @@ The shared AI integration server acts purely as a live pass-through adapter to t
 
 ## 4. Trade-offs & Lessons Learned
 
-- **Upstream dependency vs. schema coupling**: Routing through domain APIs adds a network hop and makes AI lookups depend on upstream API availability, latency, and authorization policies—an intentional trade-off to avoid brittle direct database coupling.
+- **Upstream dependency vs. schema coupling**: Routing through domain APIs adds a network hop and makes AI lookups depend on upstream API availability, latency, and authorization policiesâ€”an intentional trade-off to avoid brittle direct database coupling.
 - **Adapter maintenance on API changes**: Because the adapter consumes domain service contracts, changes to Catalog or Rating APIs may require corresponding updates to the adapter.
 - **No atomic cross-domain snapshot**: Combining data from multiple domain APIs means each source may reflect slightly different latency and freshness; the adapter does not provide a single point-in-time snapshot across domains.
 - **Infrastructure alignment required**: Network policies, service discovery, and identity permissions must explicitly allow the integration server to reach and authenticate with each upstream domain API.

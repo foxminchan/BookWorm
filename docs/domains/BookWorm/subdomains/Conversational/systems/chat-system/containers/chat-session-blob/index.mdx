@@ -1,10 +1,10 @@
----
+﻿---
 id: chat-session-blob
 name: Chat Session Blob Storage
 version: 1.0.0
 summary: Authoritative Azure Blob Storage container owned by the Conversational bounded context for durable AG-UI multi-turn chat session state.
 owners:
-  - contributor-team
+  - ai-capabilities-team
 container_type: objectStore
 badges:
   - content: Object Storage
@@ -29,7 +29,7 @@ Chat Session Blob Storage (`chatting-blob`) is the authoritative Azure Blob Stor
 
 | Property                            | Value                                                                          |
 | :---------------------------------- | :----------------------------------------------------------------------------- |
-| **Bounded Context / Owner**         | Conversational — [[team\|contributor-team]]                                    |
+| **Bounded Context / Owner**         | Conversational â€” [[team\|ai-capabilities-team]]                              |
 | **Engine / Technology**             | Azure Blob Storage (Azure Storage Account in cloud; Azurite emulator locally)  |
 | **Store Type**                      | Object Storage                                                                 |
 | **Primary Writer(s)**               | [[service\|chat-api]]                                                          |
@@ -76,7 +76,7 @@ Conversational state is intentionally split by concern: AG-UI workflow sessions 
 
 ## Related Documentation
 
-- [[service|chat-api]] — Owning AG-UI server, multi-agent workflow, and Microsoft Entra ID policies.
-- [[agent|book-agent]] — Primary conversational agent operating over AG-UI sessions.
-- [[container|catalog-blob]] — Sibling container on the shared Azure Storage Account.
-- [[doc|operational/005-backup-restore-and-dr]] — Platform backup, restore, and disaster recovery runbook.
+- [[service|chat-api]] â€” Owning AG-UI server, multi-agent workflow, and Microsoft Entra ID policies.
+- [[agent|book-agent]] â€” Primary conversational agent operating over AG-UI sessions.
+- [[container|catalog-blob]] â€” Sibling container on the shared Azure Storage Account.
+- [[doc|operational/005-backup-restore-and-dr]] â€” Platform backup, restore, and disaster recovery runbook.

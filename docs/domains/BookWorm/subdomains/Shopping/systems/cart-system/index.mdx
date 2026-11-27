@@ -1,4 +1,4 @@
----
+﻿---
 id: cart-system
 name: Cart System
 version: 1.0.0
@@ -8,7 +8,7 @@ summary: |
   checkout cleanup coordination.
 scope: internal
 owners:
-  - contributor-team
+  - commerce-fulfillment-team
 services:
   - id: basket-api
     version: 1.0.0
@@ -44,7 +44,7 @@ badges:
 The Cart System owns transient, customer-scoped shopping [[entity|basket]] state throughout the pre-order journey within the [[domain|shopping]] domain. It serves **Customers** creating, viewing, replacing, and clearing their active [[entity|basket-item]] selections. Product metadata and pricing ([[domain|catalog]]), accepted order history ([[domain|ordering]]), and post-checkout orchestration ([[system|finance-system]]) are explicitly out of scope.
 
 :::note
-[[container|basket-database]] is authoritative only for active pre-order shopping intent—never for reconstructing accepted orders. Basket updates replace the entire item list rather than merging partial edits, and read responses enrich items with live Catalog titles and prices.
+[[container|basket-database]] is authoritative only for active pre-order shopping intentâ€”never for reconstructing accepted orders. Basket updates replace the entire item list rather than merging partial edits, and read responses enrich items with live Catalog titles and prices.
 :::
 
 ## Contained Capabilities
@@ -86,7 +86,7 @@ The Cart System owns transient, customer-scoped shopping [[entity|basket]] state
 
 ## Related Documentation
 
-- [[flow|user-checkout]] — End-to-end checkout and basket cleanup flow.
-- [[diagram|checkout-interaction]] — Interaction between Shopping, Ordering, and Finance.
-- [[doc|domains/bookworm/subdomains/shopping/engineering/basket-api-contracts]] — Basket API contracts and boundaries.
-- [[doc|domains/bookworm/subdomains/shopping/guides/checkout-lifecycle]] — Pre-order to checkout handoff guide.
+- [[flow|user-checkout]] â€” End-to-end checkout and basket cleanup flow.
+- [[diagram|checkout-interaction]] â€” Interaction between Shopping, Ordering, and Finance.
+- [[doc|domains/bookworm/subdomains/shopping/engineering/basket-api-contracts]] â€” Basket API contracts and boundaries.
+- [[doc|domains/bookworm/subdomains/shopping/guides/checkout-lifecycle]] â€” Pre-order to checkout handoff guide.

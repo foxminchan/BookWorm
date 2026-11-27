@@ -1,4 +1,4 @@
----
+﻿---
 id: basket-api
 name: Basket API
 version: 1.0.0
@@ -17,7 +17,7 @@ entities:
   - id: basket-item
     version: 1.0.0
 owners:
-  - contributor-team
+  - commerce-fulfillment-team
 badges:
   - content: Internal
     backgroundColor: gray
@@ -89,7 +89,7 @@ Basket API owns transient, customer-scoped shopping [[entity|basket]] and [[enti
 | Property                                  | Value                                                                                                                                                   |
 | :---------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Bounded Context / Domain**              | [[domain\|shopping]]                                                                                                                                    |
-| **Owner Team**                            | [[team\|contributor-team]]                                                                                                                              |
+| **Owner Team**                            | [[team\|commerce-fulfillment-team]]                                                                                                                     |
 | **Runtime Style**                         | REST API, gRPC Server/Client, and Async Kafka Consumer/Producer                                                                                         |
 | **Public / Gateway Exposure**             | Yes via API Gateway (HTTP) and Internal Only (gRPC)                                                                                                     |
 | **Authentication & Authorization Policy** | Microsoft Entra ID JWT via [[system\|identity-provider]]; `customer` role with basket read/write scopes; basket owner derived strictly from token       |
@@ -126,8 +126,8 @@ Both Basket API and [[service|notification-api]] consume [[command|PlaceOrderCom
 
 ## Attached Resources & Related Docs
 
-- [[doc|platform/006-api-and-contracts]] — Consolidated HTTP, gRPC, and Kafka contract reference.
-- [[container|basket-database]] — Redis key structure and durability characteristics.
-- [[diagram|checkout-interaction]] — Interaction between Shopping, Ordering, and Finance.
-- [[doc|domains/bookworm/subdomains/shopping/engineering/basket-api-contracts]] — Basket API contracts and boundaries.
-- [[doc|domains/bookworm/subdomains/shopping/guides/checkout-lifecycle]] — Pre-order to checkout handoff guide.
+- [[doc|platform/006-api-and-contracts]] â€” Consolidated HTTP, gRPC, and Kafka contract reference.
+- [[container|basket-database]] â€” Redis key structure and durability characteristics.
+- [[diagram|checkout-interaction]] â€” Interaction between Shopping, Ordering, and Finance.
+- [[doc|domains/bookworm/subdomains/shopping/engineering/basket-api-contracts]] â€” Basket API contracts and boundaries.
+- [[doc|domains/bookworm/subdomains/shopping/guides/checkout-lifecycle]] â€” Pre-order to checkout handoff guide.

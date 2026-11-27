@@ -1,4 +1,4 @@
----
+﻿---
 id: PlaceOrderCommand
 name: Place order
 version: 1.0.0
@@ -11,7 +11,7 @@ summary: |
   and submit a new-order email.
 schemaPath: schema.json
 owners:
-  - platform-team
+  - platform-engineering-team
 ---
 
 `PlaceOrderCommand` is an asynchronous Kafka integration command published by [[service|order-orchestration]] after checkout and consumed independently by [[service|basket-api]] (to delete the customer's Redis basket) and [[service|notification-api]] (to send a new-order confirmation email). Neither consumer creates or modifies orders in [[service|order-api]].
@@ -58,14 +58,14 @@ owners:
 
 ## Related Documentation
 
-- [[service|notification-api]] — Stateless email worker architecture and SMTP configuration.
-- [[service|basket-api]] — Redis basket storage and checkout cleanup behavior.
-- [[service|order-orchestration]] — Producing orchestration service.
-- [[channel|bookworm.&#123;env&#125;.finance.place-order]] — Kafka channel specification.
-- [[command|CreateOrder]] — Ordering API HTTP command that creates the order.
-- [[event|UserCheckedOutIntegrationEvent]] — Upstream Ordering event that starts checkout orchestration.
-- [[event|BasketDeletedCompleteIntegrationEvent]] — Success event published by [[service|basket-api]].
-- [[event|BasketDeletedFailedIntegrationEvent]] — Failure event published by [[service|basket-api]].
+- [[service|notification-api]] â€” Stateless email worker architecture and SMTP configuration.
+- [[service|basket-api]] â€” Redis basket storage and checkout cleanup behavior.
+- [[service|order-orchestration]] â€” Producing orchestration service.
+- [[channel|bookworm.&#123;env&#125;.finance.place-order]] â€” Kafka channel specification.
+- [[command|CreateOrder]] â€” Ordering API HTTP command that creates the order.
+- [[event|UserCheckedOutIntegrationEvent]] â€” Upstream Ordering event that starts checkout orchestration.
+- [[event|BasketDeletedCompleteIntegrationEvent]] â€” Success event published by [[service|basket-api]].
+- [[event|BasketDeletedFailedIntegrationEvent]] â€” Failure event published by [[service|basket-api]].
 
 <NodeGraph />
 

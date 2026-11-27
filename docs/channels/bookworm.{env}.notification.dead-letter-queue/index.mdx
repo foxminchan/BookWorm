@@ -1,13 +1,20 @@
----
+﻿---
 id: bookworm.{env}.notification.dead-letter-queue
 name: Notification Dead Letter Queue
 version: 1.0.0
-type: stream
+type: topic
 summary: |
-  A Kafka topic that holds order-notification messages that Notification
-  could not process.
+  Kafka dead-letter topic owned by the platform team that captures order
+  notification commands that Notification API could not deliver.
 owners:
-  - platform-team
+  - platform-engineering-team
+badges:
+  - content: Kafka
+    backgroundColor: blue
+    textColor: blue
+  - content: Dead-Letter Queue
+    backgroundColor: red
+    textColor: red
 address: bookworm.{env}.notification.dead-letter-queue
 parameters:
   env:
@@ -20,63 +27,48 @@ parameters:
       - development
       - staging
       - production
-    description: "Environment to use"
+    description: BookWorm deployment environment.
 deliveryGuarantee: at-least-once
 protocols:
   - kafka
 ---
 
-This topic holds order-notification messages that Notification could not process. It collects failures from the place-order, complete-order, and cancel-order topics.
+## Purpose & Scope
 
-**Writer:** Notification service. **Reader:** Operators investigating or recovering failed messages. Records preserve the original message and its order key.
+This dead-letter channel captures order lifecycle email commands that [[service|notification-api]] failed to process. Records land here after bounded SMTP/MailKit retries and listener cooldowns are exhausted, or immediately upon template/deserialization failures.
 
-## Channel information
+## DLQ Profile
+
+| Property                          | Value                                                                                                                                                                               |
+| :-------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owning Service**                | [[service\|notification-api]]                                                                                                                                                       |
+| **Address Pattern**               | `bookworm.{env}.notification.dead-letter-queue`                                                                                                                                     |
+| **Upstream Source Channels**      | [[channel\|bookworm.&#123;env&#125;.finance.place-order]], [[channel\|bookworm.&#123;env&#125;.finance.complete-order]], [[channel\|bookworm.&#123;env&#125;.finance.cancel-order]] |
+| **Routing Triggers**              | Exhausted SMTP/provider retries or immediate poison/deserialization/rendering errors                                                                                                |
+| **Retention / Inspection Window** | Governed by Kafka broker retention policy; inspect and triage before broker expiry                                                                                                  |
+| **Replay Safety**                 | Requires manual validation â€” check mail provider logs to avoid duplicate customer emails                                                                                          |
+
+## Triage & Replay Guardrails
+
+:::warning
+Before replaying any record from this DLQ:
+
+1. Check [[service|sendgrid-api]] (mail provider) activity logs first â€” an SMTP timeout may have occurred _after_ the provider already accepted the email.
+2. Verify that the 24-hour message-ID deduplication cache behavior is understood; replaying a newly issued command ID can send a duplicate email.
+3. **Never replay [[command|PlaceOrderCommand]] to [[channel|bookworm.&#123;env&#125;.finance.place-order]]** to recover email alone, as [[service|basket-api]] also consumes that topic.
+4. Keep customer names and email addresses out of incident notes; correlate using `orderId` and message IDs only.
+
+Follow the operational triage procedures in [[doc|operational/003-incident-response-and-runbooks]].
+:::
+
+<Accordion title="Retention & Privacy Notes">
+	- **PII sensitivity:** Dead-lettered payloads contain customer contact fields (`fullName`,
+	`email`). Restrict DLQ inspection access to authorized operators. - **Preserved metadata:**
+	Records retain the `orderId` Kafka partition key and original CloudEvents metadata.
+</Accordion>
+
+## Channel Details & Visualization
 
 <ChannelInformation />
-
-## Topic and message
-
-The topic is `bookworm.{env}.notification.dead-letter-queue`. Replace `{env}` with `development`, `staging`, or `production`. Source topics are [[channel|bookworm.&#123;env&#125;.finance.place-order]], [[channel|bookworm.&#123;env&#125;.finance.complete-order]], and [[channel|bookworm.&#123;env&#125;.finance.cancel-order]]. Retention is governed by Kafka broker settings.
-
-## Operations and recovery
-
-Messages can contain customer names and email addresses. Keep those details out of incident notes and use order or message IDs for correlation. Before replaying, check the mail provider's activity; a timeout may occur after acceptance. Correct the underlying email or rendering issue first. The same message may be suppressed after a recent successful delivery, while a new message can send a duplicate. Do not replay a place-order message to this shared topic to recover email alone, because Basket also consumes it.
-
-## Examples
-
-### Dead-lettered record value
-
-Kafka key: `0193f1a2-1111-7d8e-9f01-23456789abcd` (`orderId`)
-
-<CodeGroup>
-
-```json
-{
-	"specversion": "1.0",
-	"id": "0193f1a2-9c01-7d8e-9f01-23456789abcd",
-	"type": "BookWorm.Contracts.CancelOrderCommand",
-	"source": "urn:bookworm:book-worm.finance",
-	"time": "2026-11-25T16:20:00Z",
-	"datacontenttype": "application/json",
-	"messagetype": "BookWorm.Contracts.CancelOrderCommand",
-	"data": {
-		"id": "0193f1a2-9c01-7d8e-9f01-23456789abcd",
-		"creationDate": "2026-11-25T16:20:00Z",
-		"orderId": "0193f1a2-1111-7d8e-9f01-23456789abcd",
-		"fullName": "Alex Reader",
-		"email": "reader@example.com",
-		"totalMoney": 59.98
-	}
-}
-```
-
-</CodeGroup>
-
-## Related documentation
-
-- [[channel|bookworm.&#123;env&#125;.finance.place-order]]
-- [[channel|bookworm.&#123;env&#125;.finance.complete-order]]
-- [[channel|bookworm.&#123;env&#125;.finance.cancel-order]]
-- [[service|notification-api]]
 
 <NodeGraph />

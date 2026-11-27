@@ -1,8 +1,8 @@
----
+﻿---
 title: "API and contracts index"
 summary: "Consolidated index of BookWorm HTTP v1, gRPC, AG-UI, MCP, A2A, and Kafka/Wolverine contracts grouped by service with auth, gateway routes, and error rules."
 owners:
-  - contributor-team
+  - platform-engineering-team
 badges:
   - content: Contracts Reference
     backgroundColor: blue
@@ -101,7 +101,7 @@ Topics follow `bookworm.{env}.{owner}.{topic}` (exception: `scheduler.process-ve
     	- **Ordering:** [[container|order-database]] (PostgreSQL + Marten), [[container|order-cache]] (Redis)
     	- **Reviews:** [[container|rating-database]] (Azure Cosmos DB), [[container|rating-cache]] (Redis)
     	- **Conversational:** [[container|chat-session-blob]] (Azure Blob)
-    	- **Platform:** [[container|scheduler-database]] (PostgreSQL — see also [[doc|platform/005-quartz-schema]])
+    	- **Platform:** [[container|scheduler-database]] (PostgreSQL â€” see also [[doc|platform/005-quartz-schema]])
 
     	#### Domain Entities (10)
     	- **Catalog:** [[entity|book]], [[entity|author]], [[entity|category]], [[entity|publisher]]
@@ -122,6 +122,6 @@ Topics follow `bookworm.{env}.{owner}.{topic}` (exception: `scheduler.process-ve
 
 ## Related Documentation
 
-- [[doc|arc42/00-c4-overview]] — System context and container overview across frontends and backend services.
-- [[doc|platform/004-identity-and-rbac-matrix]] — Azure Managed Identity and Microsoft Entra ID permission matrix.
-- [[doc|development/008-testing-matrix]] — Backend, frontend, contract, and documentation verification matrix.
+- [[doc|arc42/00-c4-overview]] â€” System context and container overview across frontends and backend services.
+- [[doc|platform/004-identity-and-rbac-matrix]] â€” Azure Managed Identity and Microsoft Entra ID permission matrix.
+- [[doc|development/008-testing-matrix]] â€” Backend, frontend, contract, and documentation verification matrix.

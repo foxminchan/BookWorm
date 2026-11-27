@@ -1,4 +1,4 @@
----
+﻿---
 id: adr-001-redis-authoritative-basket-store
 name: "ADR-001: Use Redis as the authoritative basket store"
 version: 1.0.0
@@ -6,9 +6,9 @@ summary: Redis is the authoritative store for active customer baskets, while acc
 status: accepted
 date: 2026-10-21
 owners:
-  - contributor-team
+  - commerce-fulfillment-team
 decisionMakers:
-  - contributor-team
+  - commerce-fulfillment-team
 appliesTo:
   - type: system
     id: cart-system
@@ -41,7 +41,7 @@ At the same time, active basket data must remain cleanly separated from complete
 
 Active customer baskets are stored in a dedicated, high-speed in-memory store rather than a permanent order database. Only the cart service manages this store, keeping each customer's active [[entity|basket]] separate using their customer identity.
 
-The basket records only the customer's current item selections and requested quantities—it never stores a checkout-time price snapshot, payment status, or fulfillment record. Once an order is placed, [[domain|ordering]] becomes the owner of the confirmed purchase, and the temporary basket can be cleared without affecting the order. All other systems interact with the basket through published cart service contracts instead of accessing the underlying database directly.
+The basket records only the customer's current item selections and requested quantitiesâ€”it never stores a checkout-time price snapshot, payment status, or fulfillment record. Once an order is placed, [[domain|ordering]] becomes the owner of the confirmed purchase, and the temporary basket can be cleared without affecting the order. All other systems interact with the basket through published cart service contracts instead of accessing the underlying database directly.
 
 ## 4. Trade-offs & Lessons Learned
 

@@ -1,4 +1,4 @@
----
+﻿---
 id: adr-bw-007-derived-eventually-consistent-views
 name: "ADR-BW-007: Distinguish authoritative state from derived views"
 version: 1.0.0
@@ -6,7 +6,7 @@ summary: Treat search and rating projections as derived information with explici
 status: proposed
 date: 2026-11-07
 owners:
-  - contributor-team
+  - architecture-enabling-team
 appliesTo:
   - type: domain
     id: bookworm
@@ -20,7 +20,7 @@ related:
   - id: adr-006-reviews-rating-projection-on-book
   - id: adr-002-publish-feedback-events-for-catalog-projection
 decisionMakers:
-  - contributor-team
+  - architecture-enabling-team
 x-scope: "Whole system (especially Catalog and Reviews)"
 ---
 
@@ -28,7 +28,7 @@ x-scope: "Whole system (especially Catalog and Reviews)"
 | :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Status**             | Proposed                                                                                                                                                                                                            |
 | **Date**               | 2026-11-07                                                                                                                                                                                                          |
-| **Owners**             | [[team\|contributor-team]]                                                                                                                                                                                          |
+| **Owners**             | [[team\|architecture-enabling-team]]                                                                                                                                                                                |
 | **Affected Resources** | [[domain\|bookworm]], [[system\|product-catalog-system]], [[system\|rating-system]]                                                                                                                                 |
 | **Related ADRs**       | [[adr\|adr-bw-006-service-owned-business-state]], [[adr\|adr-002-hybrid-vector-search-qdrant]], [[adr\|adr-006-reviews-rating-projection-on-book]], [[adr\|adr-002-publish-feedback-events-for-catalog-projection]] |
 

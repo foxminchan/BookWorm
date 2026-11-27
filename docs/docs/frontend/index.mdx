@@ -1,15 +1,15 @@
----
+﻿---
 title: Frontend Reference
 summary: Architectural reference for BookWorm's multi-zone web platform, rendering and caching boundaries, authentication, client state, design governance, and observability.
 owners:
-  - contributor-team
+  - catalog-experience-team
 badges:
   - content: Frontend Reference
     backgroundColor: blue
     textColor: blue
 ---
 
-BookWorm's frontend is a multi-zone web platform composed of three independent web applications—**Storefront**, **Commerce**, and **Backoffice**—served behind a single reverse-proxy **API Gateway** origin. Each surface is organized into domain-aligned vertical feature slices backed by layered shared foundations that enforce one-way dependencies, strict server-versus-client rendering boundaries, centralized authentication handoffs, and measurable accessibility and performance standards.
+BookWorm's frontend is a multi-zone web platform composed of three independent web applicationsâ€”**Storefront**, **Commerce**, and **Backoffice**â€”served behind a single reverse-proxy **API Gateway** origin. Each surface is organized into domain-aligned vertical feature slices backed by layered shared foundations that enforce one-way dependencies, strict server-versus-client rendering boundaries, centralized authentication handoffs, and measurable accessibility and performance standards.
 
 ## Frontend Application Topology
 
