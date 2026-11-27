@@ -1,4 +1,4 @@
-﻿---
+---
 id: adr-003-separate-mcp-tools-resources-and-prompts
 name: "ADR-003: Use MCP primitives according to interaction intent"
 version: 1.0.0
@@ -37,9 +37,9 @@ BookWorm needed a clear convention for structuring its shared AI integration cap
 
 The shared integration server organizes its capabilities into three distinct categories based on what the consumer intends to do:
 
-- **Lookups (Tools)**: Used when a client needs to run an explicit request with parametersâ€”such as looking up a specific book or retrieving reviews with filters.
-- **Reference data (Resources)**: Used when a client wants to read a stable, directly addressed item of contextâ€”such as a book record or a book's review collectionâ€”identified by a consistent address.
-- **Reusable guidance (Prompts)**: Used when a client wants structured instructions for a common taskâ€”such as recommending books, summarizing ratings, or analyzing book quality.
+- **Lookups (Tools)**: Used when a client needs to run an explicit request with parameters—such as looking up a specific book or retrieving reviews with filters.
+- **Reference data (Resources)**: Used when a client wants to read a stable, directly addressed item of context—such as a book record or a book's review collection—identified by a consistent address.
+- **Reusable guidance (Prompts)**: Used when a client wants structured instructions for a common task—such as recommending books, summarizing ratings, or analyzing book quality.
 
 Even when a lookup, a reference item, and a task template refer to the same book or review topic, they remain separate capabilities: retrieving reference data does not run a search, and fetching a prompt template provides guidance without executing any lookup or enforcing application policy on its own.
 

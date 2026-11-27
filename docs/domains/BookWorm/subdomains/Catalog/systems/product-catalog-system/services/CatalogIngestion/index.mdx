@@ -1,4 +1,4 @@
-﻿---
+---
 id: catalog-ingestion
 name: Catalog Ingestion
 version: 1.0.0
@@ -53,7 +53,7 @@ Catalog Ingestion is an internal background worker within the [[domain|catalog]]
 Catalog Ingestion owns no authoritative business entities. It processes bounded batches of up to 200 pending updates from [[container|catalog-database]] on each scheduled trigger and updates [[container|catalog-vector]] accordingly.
 
 :::note
-If a book is modified concurrently while a batch is in flight, its pending queue revision changes and the worker leaves the row queued for the next cycleâ€”preventing stale embeddings from overwriting newer edits.
+If a book is modified concurrently while a batch is in flight, its pending queue revision changes and the worker leaves the row queued for the next cycle—preventing stale embeddings from overwriting newer edits.
 :::
 
 <MessageTable format="all" limit={10} showChannels={true} />
@@ -77,8 +77,8 @@ If a book is modified concurrently while a batch is in flight, its pending queue
 
 ## Attached Resources & Related Docs
 
-- [[doc|platform/006-api-and-contracts]] â€” Consolidated service and messaging directory.
-- [[service|catalog-api]] â€” Authoritative Catalog service that enqueues vector updates.
-- [[service|scheduler-service]] â€” Scheduler dispatching periodic batch triggers.
-- [[container|catalog-database]] â€” Authoritative catalog store and pending update queue.
-- [[container|catalog-vector]] â€” Derived vector search collection.
+- [[doc|platform/006-api-and-contracts]] — Consolidated service and messaging directory.
+- [[service|catalog-api]] — Authoritative Catalog service that enqueues vector updates.
+- [[service|scheduler-service]] — Scheduler dispatching periodic batch triggers.
+- [[container|catalog-database]] — Authoritative catalog store and pending update queue.
+- [[container|catalog-vector]] — Derived vector search collection.

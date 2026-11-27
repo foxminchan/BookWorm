@@ -1,4 +1,4 @@
-﻿---
+---
 id: catalog-database
 name: Catalog Database
 version: 1.0.0
@@ -29,7 +29,7 @@ Catalog Database (`catalogdb`) is the authoritative relational system of record 
 
 | Property                            | Value                                                                                                |
 | :---------------------------------- | :--------------------------------------------------------------------------------------------------- |
-| **Bounded Context / Owner**         | Catalog â€” [[team\|catalog-experience-team]]                                                        |
+| **Bounded Context / Owner**         | Catalog — [[team\|catalog-experience-team]]                                                          |
 | **Engine / Technology**             | PostgreSQL 18 (Azure Database for PostgreSQL Flexible Server)                                        |
 | **Store Type**                      | Database                                                                                             |
 | **Primary Writer(s)**               | [[service\|catalog-api]] (domain writes), [[service\|catalog-ingestion]] (queue acknowledgment only) |
@@ -49,8 +49,8 @@ All identifiers use `snake_case`, primary keys default to time-ordered `uuidv7()
 | `categories`             | [[entity\|category]]                 | `id` (`uuidv7()`)        | Product category taxonomy with unique `name`; deleting a category sets `books.category_id` to `NULL`.                                                                                                                   |
 | `publishers`             | [[entity\|publisher]]                | `id` (`uuidv7()`)        | Publisher directory with unique `name`; deleting a publisher sets `books.publisher_id` to `NULL`.                                                                                                                       |
 | `book_authors`           | [[entity\|book]], [[entity\|author]] | (`book_id`, `author_id`) | Many-to-many join table; deleting a book cascades to its author links.                                                                                                                                                  |
-| `pending_vector_updates` | â€”                                  | `book_id` (`uuid`)       | Coalescing change-capture queue with `revision` UUID and `updated_at`; repeated edits update the row in place.                                                                                                          |
-| `wolverine` schema       | â€”                                  | Envelope ID              | Transactional outbox and inbox tables sharing the domain write transaction; partitions Kafka events by `BookId` and `FeedbackId`.                                                                                       |
+| `pending_vector_updates` | —                                    | `book_id` (`uuid`)       | Coalescing change-capture queue with `revision` UUID and `updated_at`; repeated edits update the row in place.                                                                                                          |
+| `wolverine` schema       | —                                    | Envelope ID              | Transactional outbox and inbox tables sharing the domain write transaction; partitions Kafka events by `BookId` and `FeedbackId`.                                                                                       |
 
 ## Consistency, Isolation & Security Guardrails
 
@@ -60,7 +60,7 @@ All identifiers use `snake_case`, primary keys default to time-ordered `uuidv7()
 - **Derived rating projections:** `average_rating` and `total_reviews` on `books` are eventually consistent projections updated from [[event|FeedbackCreatedIntegrationEvent]] and [[event|FeedbackDeletedIntegrationEvent]]; [[container|rating-database]] remains authoritative for individual reviews.
 
 :::warning
-**Database-per-Service Isolation:** Only [[service|catalog-api]] may mutate catalog domain tables, and [[service|catalog-ingestion]] is restricted to reading catalog state and acknowledging `pending_vector_updates`. External services (such as [[service|basket-api]], [[service|order-api]], or [[service|rating-api]]) must never connect to `catalogdb` directlyâ€”all cross-context reads flow through [[service|catalog-api]] HTTP/gRPC contracts or Kafka events.
+**Database-per-Service Isolation:** Only [[service|catalog-api]] may mutate catalog domain tables, and [[service|catalog-ingestion]] is restricted to reading catalog state and acknowledging `pending_vector_updates`. External services (such as [[service|basket-api]], [[service|order-api]], or [[service|rating-api]]) must never connect to `catalogdb` directly—all cross-context reads flow through [[service|catalog-api]] HTTP/gRPC contracts or Kafka events.
 :::
 
 ## Operational & Resilience Notes
@@ -93,10 +93,10 @@ All identifiers use `snake_case`, primary keys default to time-ordered `uuidv7()
 
 ## Related Documentation
 
-- [[service|catalog-api]] â€” Owning service endpoints, gRPC contracts, and transactional outbox.
-- [[service|catalog-ingestion]] â€” Worker draining `pending_vector_updates` into [[container|catalog-vector]].
-- [[container|catalog-vector]] â€” Derived Qdrant hybrid search index fed from this database.
-- [[container|catalog-blob]] â€” Binary cover media store referenced by `books.image` URNs.
-- [[adr|adr-001-postgresql-system-of-record]] â€” Decision establishing PostgreSQL as Catalog's system of record.
-- [[adr|adr-003-database-queue-for-vector-indexing]] â€” Decision for trigger-based vector update coalescing.
-- [[doc|operational/005-backup-restore-and-dr]] â€” Platform backup, restore, and disaster recovery runbook.
+- [[service|catalog-api]] — Owning service endpoints, gRPC contracts, and transactional outbox.
+- [[service|catalog-ingestion]] — Worker draining `pending_vector_updates` into [[container|catalog-vector]].
+- [[container|catalog-vector]] — Derived Qdrant hybrid search index fed from this database.
+- [[container|catalog-blob]] — Binary cover media store referenced by `books.image` URNs.
+- [[adr|adr-001-postgresql-system-of-record]] — Decision establishing PostgreSQL as Catalog's system of record.
+- [[adr|adr-003-database-queue-for-vector-indexing]] — Decision for trigger-based vector update coalescing.
+- [[doc|operational/005-backup-restore-and-dr]] — Platform backup, restore, and disaster recovery runbook.

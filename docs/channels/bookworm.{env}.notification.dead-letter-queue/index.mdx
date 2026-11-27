@@ -1,4 +1,4 @@
-﻿---
+---
 id: bookworm.{env}.notification.dead-letter-queue
 name: Notification Dead Letter Queue
 version: 1.0.0
@@ -46,14 +46,14 @@ This dead-letter channel captures order lifecycle email commands that [[service|
 | **Upstream Source Channels**      | [[channel\|bookworm.&#123;env&#125;.finance.place-order]], [[channel\|bookworm.&#123;env&#125;.finance.complete-order]], [[channel\|bookworm.&#123;env&#125;.finance.cancel-order]] |
 | **Routing Triggers**              | Exhausted SMTP/provider retries or immediate poison/deserialization/rendering errors                                                                                                |
 | **Retention / Inspection Window** | Governed by Kafka broker retention policy; inspect and triage before broker expiry                                                                                                  |
-| **Replay Safety**                 | Requires manual validation â€” check mail provider logs to avoid duplicate customer emails                                                                                          |
+| **Replay Safety**                 | Requires manual validation — check mail provider logs to avoid duplicate customer emails                                                                                            |
 
 ## Triage & Replay Guardrails
 
 :::warning
 Before replaying any record from this DLQ:
 
-1. Check [[service|sendgrid-api]] (mail provider) activity logs first â€” an SMTP timeout may have occurred _after_ the provider already accepted the email.
+1. Check [[service|sendgrid-api]] (mail provider) activity logs first — an SMTP timeout may have occurred _after_ the provider already accepted the email.
 2. Verify that the 24-hour message-ID deduplication cache behavior is understood; replaying a newly issued command ID can send a duplicate email.
 3. **Never replay [[command|PlaceOrderCommand]] to [[channel|bookworm.&#123;env&#125;.finance.place-order]]** to recover email alone, as [[service|basket-api]] also consumes that topic.
 4. Keep customer names and email addresses out of incident notes; correlate using `orderId` and message IDs only.

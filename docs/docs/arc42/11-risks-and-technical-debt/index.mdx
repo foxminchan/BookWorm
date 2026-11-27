@@ -1,4 +1,4 @@
-﻿---
+---
 title: Risks and Technical Debt
 summary: Prioritized architectural exposures and known compromises with actionable treatment and closure evidence.
 owners:
@@ -22,7 +22,7 @@ This register separates uncertain future exposures from known compromises and mi
 
 ## Architectural and operational risks
 
-The likelihood and impact ratings are qualitative: **H** high, **M** medium, and **L** low. â€œMitigatingâ€ means safeguards or treatment exist but closure evidence is incomplete.
+The likelihood and impact ratings are qualitative: **H** high, **M** medium, and **L** low. “Mitigating” means safeguards or treatment exist but closure evidence is incomplete.
 
 | ID       | Risk                                                                                                                                                                                                                                                    | Affected Building Blocks / Quality Goals                                                              | Likelihood (H/M/L) | Impact (H/M/L) | Mitigation / Contingency                                                                                                                                                                                                                          | Status                                        |
 | :------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :---------------------------------------------------------------------------------------------------- | :----------------: | :------------: | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :-------------------------------------------- |
@@ -57,6 +57,19 @@ These are known compromises or evidence gaps, not uncertain future events. Prior
 | **TD-05** | Critical cross-service persistence workflows and the customer checkout journey lack sufficient automated integration and end-to-end verification.                                                         | Ordering, Finance, Catalog, Shopping, and customer commerce | Regressions across persistence, messaging, and customer-visible behavior may pass unit or contract checks.                         | Add isolated integration coverage for checkout, saga, and persistence boundaries; add customer-journey and accessibility checks for checkout. Link: [[doc\|arc42/10-quality-requirements/002-quality-scenarios]] (QS-01, QS-11, QS-12, QS-16). |   High   |
 | **TD-06** | Older architecture records still describe persistence choices that have been superseded for Reviews, Finance, Notification, and Chat.                                                                     | Architecture records and operational guidance               | Contributors may follow obsolete ownership or recovery assumptions, resulting in incorrect changes or incident procedures.         | Mark superseded records clearly, link each to its current decision, and review related guidance when persistence changes. Reference: [[doc\|arc42/09-architecture-decisions]].                                                                 |  Medium  |
 
+### Known Contract and Runtime Quirks
+
+Concrete contract/runtime mismatches discovered during post-rewrite catalog verification. Service-level engineering invariants and workarounds live alongside each owning service.
+
+| ID        | Quirk / Mismatch                                                                                                             | Affected Resources                                                                                     | Impact                                                                                  | Remediation Direction                                                                                                               |
+| :-------- | :--------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------- |
+| **TD-07** | Image upload pre-processor expects a different multipart field shape than the endpoint validator under certain payloads.     | [[command\|CreateBook]], [[service\|catalog-api]]                                                      | Valid client uploads may fail validation unexpectedly.                                  | Align pre-processor binding and endpoint validation rules; add contract regression tests.                                           |
+| **TD-08** | Publisher creation and update enforce inconsistent maximum name lengths.                                                     | [[command\|CreatePublisher]], [[command\|UpdatePublisher]], [[service\|catalog-api]]                   | Names accepted on creation can be rejected on update.                                   | Unify max-length constraints across create/update validators.                                                                       |
+| **TD-09** | Creating a buyer with an existing identifier surfaces a database duplicate-key violation as `500` instead of `409`.          | [[command\|CreateBuyer]], [[service\|order-api]]                                                       | Clients treat `500` as transient and retry instead of reconciling existing buyer state. | Map duplicate-key exceptions to `409 Conflict` ProblemDetails.                                                                      |
+| **TD-10** | [[query\|GetBasketGrpc]] returns an empty basket rather than `NotFound`, and checkout does not reject an empty item list.    | [[command\|CreateOrder]], [[query\|GetBasketGrpc]], [[service\|order-api]], [[service\|basket-api]]    | Empty baskets can persist as `201 Created` orders with zero line items.                 | Reject empty-item checkouts with `400 Bad Request` before persistence.                                                              |
+| **TD-11** | Deleting a buyer with existing orders triggers an `ON DELETE SET NULL` foreign-key conflict against non-nullable `buyer_id`. | [[command\|DeleteBuyer]], [[service\|order-api]]                                                       | Buyer deletion fails at runtime when historical orders exist.                           | Enforce explicit pre-check (`409 Conflict`) or soft-delete semantics before persistence.                                            |
+| **TD-12** | OpenAPI metadata declares `404` as `application/problem+json`, while runtime returns `application/json`.                     | [[service\|order-api]], [[service\|catalog-api]], [[service\|rating-api]], [[command\|DeleteFeedback]] | Strict schema-validating clients may fail to parse `404` error bodies.                  | Standardize `404` responses on RFC 9457 `application/problem+json` (see [[adr\|adr-bw-011-shared-validation-and-error-contracts]]). |
+
 ## Review and acceptance
 
 - Reassess likelihood and impact when new evidence changes an assumption; do not lower a rating solely because a safeguard has been configured.
@@ -65,8 +78,8 @@ These are known compromises or evidence gaps, not uncertain future events. Prior
 
 ## Related architecture documentation
 
-- [[doc|arc42/09-architecture-decisions]] â€” Decision status and rationale, including superseding decisions.
-- [[doc|arc42/10-quality-requirements/002-quality-scenarios]] â€” Measurable acceptance criteria cited by this register.
+- [[doc|arc42/09-architecture-decisions]] — Decision status and rationale, including superseding decisions.
+- [[doc|arc42/10-quality-requirements/002-quality-scenarios]] — Measurable acceptance criteria cited by this register.
 
 ## Changelog
 

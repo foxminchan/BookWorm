@@ -1,4 +1,4 @@
-﻿---
+---
 id: adr-001-chat-agent-orchestration-boundary
 name: "ADR-001: Keep conversational orchestration within the Chat System"
 version: 1.0.0
@@ -41,7 +41,7 @@ The request path therefore needs explicit architectural boundaries separating in
 
 [[system|chat-system]] owns and coordinates the full interactive conversational workflow:
 
-1. **Input screening**: Incoming messages are checked upfrontâ€”rejecting empty or suspicious inputs and bounding oversized messages before routing begins.
+1. **Input screening**: Incoming messages are checked upfront—rejecting empty or suspicious inputs and bounding oversized messages before routing begins.
 2. **Specialist routing**: A dedicated routing step directs book requests (and review requests without a specific book identifier) to [[agent|book-agent]], store-policy and service questions to [[agent|qa-agent]], and review or rating requests with an already identified book to [[agent|rating-agent]].
 3. **Delegated book research**: For complex book inquiries, [[agent|book-agent]] may delegate independent research tasks to [[agent|book-catalog-researcher]] and [[agent|book-recommendation-researcher]] before synthesizing a reply.
 4. **Centralized formatting**: Final assistant replies pass through a shared formatting step before delivery.
@@ -53,7 +53,7 @@ The request path therefore needs explicit architectural boundaries separating in
 
 - **Cross-stage alignment**: Screening, routing, handoffs, delegation, and formatting are separate responsibilities that must be kept aligned whenever routing behavior changes.
 - **Explicit grounding**: Specialists must rely on owning systems and approved interfaces for business facts, clearly distinguishing unavailable details from verified information.
-- **Explicit authorization for future state changes**: Any future capability that reads or modifies protected business state requires an explicit ownership and authorization decisionâ€”it must never be added implicitly through a general-purpose assistant.
+- **Explicit authorization for future state changes**: Any future capability that reads or modifies protected business state requires an explicit ownership and authorization decision—it must never be added implicitly through a general-purpose assistant.
 
 ### Alternatives Considered
 

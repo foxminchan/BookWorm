@@ -1,4 +1,4 @@
-﻿---
+---
 id: oauth-api
 name: OAuth API
 version: 1.0.0
@@ -35,8 +35,8 @@ Authentication is not authorization: OAuth API verifies caller identity and issu
 | **BookWorm Consumers**           | [[service\|catalog-api]], [[service\|basket-api]], [[service\|order-api]], [[service\|rating-api]], [[service\|chat-api]], [[service\|mcp-server]], [[service\|scheduler-service]], Storefront, and Backoffice |
 | **Runtime Transport & Protocol** | HTTPS OAuth 2.0 / OIDC (proxied via API Gateway for browser flows; JWT & OBO token exchange for APIs)                                                                                                          |
 | **Auth / Credential Boundary**   | Federated Managed Identity in publish environments; client secrets and signing tokens kept strictly out of source control and logs                                                                             |
-| **Data / PII Sensitivity**       | High â€” carries user identity claims, access tokens, and session cookies; never log bearer tokens or refresh credentials                                                                                      |
-| **Failure / Fallback Behavior**  | Fail-closed â€” protected APIs reject unauthenticated or unverifiable requests with `401 Unauthorized` without anonymous fallback                                                                              |
+| **Data / PII Sensitivity**       | High — carries user identity claims, access tokens, and session cookies; never log bearer tokens or refresh credentials                                                                                        |
+| **Failure / Fallback Behavior**  | Fail-closed — protected APIs reject unauthenticated or unverifiable requests with `401 Unauthorized` without anonymous fallback                                                                                |
 
 ## Visualizations & Specifications
 
@@ -58,8 +58,8 @@ Authentication is not authorization: OAuth API verifies caller identity and issu
 
 ## Related Documentation
 
-- [[doc|platform/006-api-and-contracts]] â€” Consolidated service authentication and route index.
-- [[doc|platform/004-identity-and-rbac-matrix]] â€” Platform-wide Azure RBAC and Entra ID permissions.
-- [[service|chat-api]] â€” Consumer of agent identity and OBO token exchange.
-- [[service|rating-api]] â€” Consumer of agent identity and A2A read scope policy.
-- [[system|identity-provider]] â€” External Identity Provider system boundary.
+- [[doc|platform/006-api-and-contracts]] — Consolidated service authentication and route index.
+- [[doc|platform/004-identity-and-rbac-matrix]] — Platform-wide Azure RBAC and Entra ID permissions.
+- [[service|chat-api]] — Consumer of agent identity and OBO token exchange.
+- [[service|rating-api]] — Consumer of agent identity and A2A read scope policy.
+- [[system|identity-provider]] — External Identity Provider system boundary.

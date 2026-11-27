@@ -1,4 +1,4 @@
-﻿---
+---
 id: adr-002-preserve-checkout-purchase-snapshot
 name: "ADR-002: Preserve the checkout-time purchase snapshot"
 version: 1.0.0
@@ -26,7 +26,7 @@ badges:
 
 ## 1. Context & Problem
 
-When a customer places an order, the Ordering system reads items from the customer's shopping basket and looks up current book pricing from the Catalog. Both of those upstream sources change continuouslyâ€”customers clear or edit their baskets after checkout, and merchandisers update book prices or run promotions in the Catalog.
+When a customer places an order, the Ordering system reads items from the customer's shopping basket and looks up current book pricing from the Catalog. Both of those upstream sources change continuously—customers clear or edit their baskets after checkout, and merchandisers update book prices or run promotions in the Catalog.
 
 If an order relied on the basket or live Catalog prices to calculate its contents or total later on, a routine price change or basket edit would retroactively alter an already accepted purchase. Those upstream systems are authoritative for _current_ baskets and _current_ catalog offerings, not for what a customer agreed to pay at a past checkout.
 
@@ -58,7 +58,7 @@ The order total is calculated from these recorded values and stored with the ord
 
 ### Operational Trade-offs & Risks
 
-- **Pre-checkout dependency on Shopping and Catalog:** Because a complete snapshot is mandatory, temporary unavailability of basket or catalog lookupsâ€”or missing book dataâ€”blocks new order creation.
+- **Pre-checkout dependency on Shopping and Catalog:** Because a complete snapshot is mandatory, temporary unavailability of basket or catalog lookups—or missing book data—blocks new order creation.
 - **Display names can evolve:** Book names enriched at read time reflect current Catalog naming while prices and quantities remain frozen at checkout time; teams should not expect historical titles to stay frozen if Catalog renames a book.
 - **Snapshot is not payment or fulfillment proof:** Recording an accepted purchase snapshot does not mean payment has settled, fulfillment occurred, or the order reached a final status.
 

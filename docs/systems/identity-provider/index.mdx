@@ -1,4 +1,4 @@
-﻿---
+---
 id: identity-provider
 name: Identity Provider
 version: 1.0.0
@@ -38,7 +38,7 @@ badges:
 
 ## System Purpose & Boundary
 
-The Identity Provider system is BookWorm's external authentication and OAuth 2.0 / OpenID Connect (OIDC) boundary, backed by Microsoft Entra ID. It authenticates **Customers**, **Business Users**, and **Administrators**, issues JWT access tokens, and supports On-Behalf-Of (OBO) agent identity delegation across BookWorm services. Owning domain business data and making fine-grained resource authorization decisions are explicitly out of scopeâ€”each consuming BookWorm service enforces its own policies and ownership checks.
+The Identity Provider system is BookWorm's external authentication and OAuth 2.0 / OpenID Connect (OIDC) boundary, backed by Microsoft Entra ID. It authenticates **Customers**, **Business Users**, and **Administrators**, issues JWT access tokens, and supports On-Behalf-Of (OBO) agent identity delegation across BookWorm services. Owning domain business data and making fine-grained resource authorization decisions are explicitly out of scope—each consuming BookWorm service enforces its own policies and ownership checks.
 
 :::warning
 Authentication is a prerequisite for protected operations, not a substitute for service-level authorization. Protected BookWorm APIs must **fail closed** when token validation or provider metadata fails, never falling back to anonymous access.
@@ -72,7 +72,7 @@ Authentication is a prerequisite for protected operations, not a substitute for 
 
 ## Related Documentation
 
-- [[service|oauth-api]] â€” App roles, service scopes, and Entra Agent Identity details.
-- [[doc|platform/004-identity-and-rbac-matrix]] â€” Platform-wide Azure RBAC and Entra ID permissions matrix.
-- [[flow|user-checkout]] â€” Authenticated customer checkout flow.
-- [[flow|product-ingestion]] â€” Authenticated catalog authoring and scheduled ingestion flow.
+- [[service|oauth-api]] — App roles, service scopes, and Entra Agent Identity details.
+- [[doc|platform/004-identity-and-rbac-matrix]] — Platform-wide Azure RBAC and Entra ID permissions matrix.
+- [[flow|user-checkout]] — Authenticated customer checkout flow.
+- [[flow|product-ingestion]] — Authenticated catalog authoring and scheduled ingestion flow.

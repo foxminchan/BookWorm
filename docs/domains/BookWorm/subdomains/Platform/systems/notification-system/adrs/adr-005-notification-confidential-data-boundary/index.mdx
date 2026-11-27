@@ -1,4 +1,4 @@
-﻿---
+---
 id: adr-005-notification-confidential-data-boundary
 name: "ADR-005: Treat notification content and credentials as confidential"
 version: 1.0.0
@@ -22,7 +22,7 @@ badges:
 
 ## 1. Context & Problem
 
-Customer notification records store personal detailsâ€”such as recipient names and email addressesâ€”alongside email subjects and rendered order content. In addition, the notification service relies on privileged credentials to connect to its database and external mail provider.
+Customer notification records store personal details—such as recipient names and email addresses—alongside email subjects and rendered order content. In addition, the notification service relies on privileged credentials to connect to its database and external mail provider.
 
 If these customer details or connection secrets are copied into routine operational logs, scheduled maintenance requests, or architecture documentation, far more people and systems gain access to sensitive data than email delivery actually requires.
 
@@ -39,7 +39,7 @@ This decision sets clear access, secrecy, and monitoring rules around notificati
 
 - **Restricted storage**: The notification database is treated as confidential. Only the notification service and authorized staff with an active delivery or support need may access recipient details or message content.
 - **Authoritative boundaries**: Upstream business areas remain the single source of truth for order state. Stored notification records exist solely for delivery and are not a general-purpose order export.
-- **Isolated credentials**: Passwords and keys for data storage and email sending live exclusively in secure runtime configurationâ€”never in code repositories, documentation, stored messages, or routine logs.
+- **Isolated credentials**: Passwords and keys for data storage and email sending live exclusively in secure runtime configuration—never in code repositories, documentation, stored messages, or routine logs.
 - **Minimal maintenance messages**: Scheduled cleanup triggers carry only basic request metadata and never copy recipient details or email bodies.
 - **Privacy-friendly diagnostics**: Routine monitoring relies on record identifiers, sequence numbers, timestamps, backlog totals, and sanitized error categories rather than personal data.
 - **Known implementation gaps**: Existing retry and sending-failure logs currently still include recipient addresses (and, for sending failures, email subjects). Those paths are marked for remediation; this decision states the target policy rather than claiming full current compliance.
@@ -58,7 +58,7 @@ This decision sets clear access, secrecy, and monitoring rules around notificati
 ## 5. Technical Reference
 
 - **Decision status & scope**: Accepted (`2026-11-01`), applying to `notification-system` and [[service|notification-api]].
-- **Confidential data store**: [[container|notification-database]] (PostgreSQL) holds email outbox rows containing recipient names, addresses, subjects, and rendered order content.
+- **Confidential data store**: The Notification PostgreSQL database holds email outbox rows containing recipient names, addresses, subjects, and rendered order content.
 - **Runtime secrets**: SMTP authentication and PostgreSQL connection strings must be supplied via runtime secret configuration and excluded from catalog content, source control, outbox rows, and routine logs.
 - **Observability & logging policy**:
   - Prefer outbox identifiers, sequence numbers, timestamps, aggregate backlog counts, and sanitized error categories.

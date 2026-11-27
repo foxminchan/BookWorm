@@ -1,4 +1,4 @@
-﻿---
+---
 id: adr-004-protect-scheduler-secrets-and-telemetry
 name: "ADR-004: Keep Scheduler credentials and sensitive payloads out of job state"
 version: 1.0.0
@@ -36,7 +36,7 @@ Automated background jobs managed by the [[system|scheduler-system]] must call o
 ## 3. How It Works
 
 1. **Runtime-only credentials**: When a scheduled job calls another service, it obtains its authentication credentials from secure runtime configuration at execution time rather than reading them from saved job definitions.
-2. **Minimal job metadata**: Stored schedules keep only the bare minimum non-sensitive identifiers needed to start the workâ€”for instance, a notification maintenance job passes simple request metadata and lets the downstream service choose its own pending records.
+2. **Minimal job metadata**: Stored schedules keep only the bare minimum non-sensitive identifiers needed to start the work—for instance, a notification maintenance job passes simple request metadata and lets the downstream service choose its own pending records.
 3. **Sanitized operational telemetry**: Routine logs and monitoring records capture run identifiers, job and schedule names, target service names, completion status, duration, and sanitized failure categories, while excluding authorization headers, secrets, message bodies, and personal data.
 4. **Restricted deep investigation**: When an incident requires inspecting recipient details or message content, authorized support staff review records inside the responsible downstream service under that service's own security controls.
 

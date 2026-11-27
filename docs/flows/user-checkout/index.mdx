@@ -1,4 +1,4 @@
-﻿---
+---
 id: user-checkout
 name: User Checkout
 version: 1.0.0
@@ -113,7 +113,7 @@ steps:
     title: Customer receives checkout confirmation
     summary: >-
       Commerce displays the confirmation page with the Order ID. This confirms
-      order acceptance onlyâ€”not basket deletion, payment settlement, or email
+      order acceptance only—not basket deletion, payment settlement, or email
       delivery.
     actor:
       name: Customer
@@ -394,8 +394,8 @@ This flow is triggered when an authenticated customer confirms checkout in the C
 	<Step title="Enforce bounded timeout retries">
 		While orchestration remains active, each 30-minute timeout reissues
 		[[command|PlaceOrderCommand]] up to two times (three total attempts). When the retry limit is
-		reached, [[service|order-orchestration]] cancels its own orchestration andâ€”if contact details
-		are presentâ€”publishes [[command|CancelOrderCommand]] to [[service|notification-api]] without
+		reached, [[service|order-orchestration]] cancels its own orchestration and—if contact details
+		are present—publishes [[command|CancelOrderCommand]] to [[service|notification-api]] without
 		cancelling the [[entity|order]] in [[service|order-api]].
 	</Step>
 </Steps>
@@ -411,7 +411,7 @@ This flow is triggered when an authenticated customer confirms checkout in the C
 | **Orchestration timeout exhaustion**     | <ResourceLink id="order-orchestration" type="service">order-orchestration</ResourceLink> reaches its three-attempt cap                                                                              | Cancels orchestration only and requests a cancellation email via <ResourceLink id="CancelOrderCommand" type="command">CancelOrderCommand</ResourceLink> if contact details exist                                                                                                                                                                         |
 
 :::warning
-**Confirmation means order acceptanceâ€”not basket deletion, payment settlement, or email delivery.**
+**Confirmation means order acceptance—not basket deletion, payment settlement, or email delivery.**
 
 - Because [[service|basket-api]] and [[service|notification-api]] consume [[command|PlaceOrderCommand]] independently, a placement email may be submitted even if basket cleanup later fails.
 - Reissued timeout commands carry new message IDs, which bypass per-message-ID deduplication in [[service|notification-api]] and can result in a duplicate email.

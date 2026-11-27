@@ -1,4 +1,4 @@
-﻿---
+---
 id: order-cache
 name: Order Cache and Distributed Locks
 version: 1.0.0
@@ -29,7 +29,7 @@ Order Cache and Distributed Locks is the non-authoritative Redis coordination an
 
 | Property                            | Value                                                                       |
 | :---------------------------------- | :-------------------------------------------------------------------------- |
-| **Bounded Context / Owner**         | Ordering â€” [[team\|commerce-fulfillment-team]]                            |
+| **Bounded Context / Owner**         | Ordering — [[team\|commerce-fulfillment-team]]                              |
 | **Engine / Technology**             | Redis + FusionCache (Azure Managed Redis in cloud; Redis container locally) |
 | **Store Type**                      | Cache                                                                       |
 | **Primary Writer(s)**               | [[service\|order-api]]                                                      |
@@ -81,7 +81,7 @@ Order Cache and Distributed Locks is the non-authoritative Redis coordination an
 
 ## Related Documentation
 
-- [[service|order-api]] â€” Owning service endpoints, gRPC clients, and order creation flow.
-- [[container|order-database]] â€” Authoritative PostgreSQL store for buyers, orders, and event streams.
-- [[container|basket-database]] â€” Sibling workload on the shared Redis resource.
-- [[doc|operational/005-backup-restore-and-dr]] â€” Platform backup, restore, and disaster recovery runbook.
+- [[service|order-api]] — Owning service endpoints, gRPC clients, and order creation flow.
+- [[container|order-database]] — Authoritative PostgreSQL store for buyers, orders, and event streams.
+- [[container|basket-database]] — Sibling workload on the shared Redis resource.
+- [[doc|operational/005-backup-restore-and-dr]] — Platform backup, restore, and disaster recovery runbook.

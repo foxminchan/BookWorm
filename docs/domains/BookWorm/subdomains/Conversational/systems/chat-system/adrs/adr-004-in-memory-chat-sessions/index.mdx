@@ -1,4 +1,4 @@
-﻿---
+---
 id: adr-004-in-memory-chat-sessions
 name: "ADR-004: Keep Chat workflow sessions in memory"
 version: 1.0.0
@@ -35,7 +35,7 @@ The service also needs a clear boundary between temporary interaction state, aut
 ## 3. How It Works
 
 - During an active conversation, the chat workflow holds interaction state in temporary, in-memory storage on the running service instance.
-- Conversation history is treated purely as transient workflow stateâ€”it is not an authoritative business record and is not expected to survive service restarts or move seamlessly between service instances.
+- Conversation history is treated purely as transient workflow state—it is not an authoritative business record and is not expected to survive service restarts or move seamlessly between service instances.
 - This rule governs workflow sessions only. It does not prevent a separately designed personalization feature from storing approved, user-scoped preferences or summaries under dedicated identity, privacy, retention, inspection, and deletion controls.
 
 ## 4. Trade-offs & Lessons Learned

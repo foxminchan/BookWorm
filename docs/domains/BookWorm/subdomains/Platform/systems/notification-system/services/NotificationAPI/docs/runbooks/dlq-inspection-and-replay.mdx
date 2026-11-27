@@ -1,0 +1,28 @@
+---
+title: Notification DLQ Inspection and Replay
+summary: CLI-first procedure to inspect and safely replay failed email delivery commands from the Notification dead-letter queue.
+version: 1.0.0
+---
+
+Operational runbook for [[channel|bookworm.&#123;env&#125;.notification.dead-letter-queue]] owned by [[service|notification-api]].
+
+:::warning
+Replaying [[command|PlaceOrderCommand]] to the shared [[channel|bookworm.&#123;env&#125;.finance.place-order]] topic will also trigger [[service|basket-api]]. Verify whether the customer already received the email before replaying, and check the `24`-hour Redis deduplication key (`id`).
+:::
+
+<Steps>
+	<Step title="Inspect dead-lettered notification commands">
+		```bash kcat -C -b "$KAFKA_BOOTSTRAP" -t "bookworm.${ENV}.notification.dead-letter-queue" -o -20
+		-e -f '%t [%p] offset=%o key=%k headers=%h\n%s\n---\n' ```
+	</Step>
+	<Step title="Verify SMTP / SendGrid health">
+		Confirm SMTP relay connectivity and credentials are healthy before replaying messages. Blank or
+		`null` `email` payloads do not require replay.
+	</Step>
+	<Step title="Replay eligible commands">
+		For transient SMTP outages on [[command|CompleteOrderCommand]] or
+		[[command|CancelOrderCommand]], re-publish to `bookworm.${ENV}.finance.complete-order` or
+		`bookworm.${ENV}.finance.cancel-order`. If replaying within `24` hours with the same message
+		`id`, clear or rotate the `id` only after confirming no email was delivered.
+	</Step>
+</Steps>

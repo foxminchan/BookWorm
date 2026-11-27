@@ -1,4 +1,4 @@
-﻿---
+---
 id: catalog-blob
 name: Catalog Blob Storage
 version: 1.0.0
@@ -29,7 +29,7 @@ Catalog Blob Storage (`catalog-blob`) is the authoritative object store owned ex
 
 | Property                            | Value                                                                         |
 | :---------------------------------- | :---------------------------------------------------------------------------- |
-| **Bounded Context / Owner**         | Catalog â€” [[team\|catalog-experience-team]]                                 |
+| **Bounded Context / Owner**         | Catalog — [[team\|catalog-experience-team]]                                   |
 | **Engine / Technology**             | Azure Blob Storage (Azure Storage Account in cloud; Azurite emulator locally) |
 | **Store Type**                      | Object Storage                                                                |
 | **Primary Writer(s)**               | [[service\|catalog-api]]                                                      |
@@ -52,7 +52,7 @@ Catalog Blob Storage (`catalog-blob`) is the authoritative object store owned ex
 - **No cross-store distributed transaction:** Because PostgreSQL and Blob Storage do not share a two-phase commit, a failed database transaction after upload can leave an unreferenced blob that requires periodic reconciliation against `books.image`.
 
 :::warning
-**Shared Storage Account Isolation:** `catalog-blob` shares the Azure Storage Account with [[container|chat-session-blob]] (`chatting-blob`) and Azure Functions host storage. Services must use container-scoped referencesâ€”[[service|catalog-api]] must never access `chatting-blob`, and external services must never read `catalog-blob` directly or persist expiring SAS URLs.
+**Shared Storage Account Isolation:** `catalog-blob` shares the Azure Storage Account with [[container|chat-session-blob]] (`chatting-blob`) and Azure Functions host storage. Services must use container-scoped references—[[service|catalog-api]] must never access `chatting-blob`, and external services must never read `catalog-blob` directly or persist expiring SAS URLs.
 :::
 
 ## Operational & Resilience Notes
@@ -76,8 +76,8 @@ Catalog Blob Storage (`catalog-blob`) is the authoritative object store owned ex
 
 ## Related Documentation
 
-- [[service|catalog-api]] â€” Owning service managing image uploads, URN persistence, and SAS minting.
-- [[container|catalog-database]] â€” Relational store holding `books.image` URNs.
-- [[container|chat-session-blob]] â€” Sibling container on the shared Azure Storage Account.
-- [[adr|adr-005-blob-storage-for-book-images]] â€” Decision separating binary cover media from PostgreSQL.
-- [[doc|operational/005-backup-restore-and-dr]] â€” Platform backup, restore, and disaster recovery runbook.
+- [[service|catalog-api]] — Owning service managing image uploads, URN persistence, and SAS minting.
+- [[container|catalog-database]] — Relational store holding `books.image` URNs.
+- [[container|chat-session-blob]] — Sibling container on the shared Azure Storage Account.
+- [[adr|adr-005-blob-storage-for-book-images]] — Decision separating binary cover media from PostgreSQL.
+- [[doc|operational/005-backup-restore-and-dr]] — Platform backup, restore, and disaster recovery runbook.

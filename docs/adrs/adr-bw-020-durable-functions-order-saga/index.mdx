@@ -1,0 +1,45 @@
+---
+id: adr-bw-020-durable-functions-order-saga
+name: "ADR-BW-020: Coordinate checkout workflows with Azure Durable Functions sagas"
+version: 1.0.0
+summary: Use Azure Durable Functions in Order Orchestration keyed by OrderId with LIFO compensations instead of choreography or a custom state machine.
+status: accepted
+date: 2026-11-28
+owners:
+  - commerce-fulfillment-team
+appliesTo:
+  - type: service
+    id: order-orchestration
+  - type: service
+    id: order-api
+  - type: service
+    id: basket-api
+  - type: service
+    id: notification-api
+related:
+  - id: adr-bw-005-kafka-integration-backbone
+  - id: adr-bw-008-durable-message-handoffs
+decisionMakers:
+  - commerce-fulfillment-team
+  - architecture-enabling-team
+x-scope: "Ordering / Finance checkout saga"
+---
+
+| Field                  | Value                                                                                                            |
+| :--------------------- | :--------------------------------------------------------------------------------------------------------------- |
+| **Status**             | Accepted                                                                                                         |
+| **Date**               | 2026-11-28                                                                                                       |
+| **Owners**             | [[team\|commerce-fulfillment-team]]                                                                              |
+| **Affected Resources** | [[service\|order-orchestration]], [[service\|order-api]], [[service\|basket-api]], [[service\|notification-api]] |
+| **Related ADRs**       | [[adr\|adr-bw-005-kafka-integration-backbone]], [[adr\|adr-bw-008-durable-message-handoffs]]                     |
+
+## Context & Problem Statement
+
+Customer checkout spans [[service|order-api]], [[service|basket-api]], and [[service|notification-api]]. Pure event choreography makes multi-step failure compensation (such as basket cleanup failure) hard to trace and reason about.
+
+## Decision & Consequences
+
+**Chosen Option:** Implement [[service|order-orchestration]] as an Azure Durable Functions orchestrator keyed deterministically by `OrderId`. Upon receiving [[event|UserCheckedOutIntegrationEvent]], it dispatches [[command|PlaceOrderCommand]] and awaits [[event|BasketDeletedCompleteIntegrationEvent]] or [[event|BasketDeletedFailedIntegrationEvent]], issuing LIFO compensations ([[command|DeleteBasketFailedCommand]]) when cleanup fails.
+
+- **Positive:** Deterministic per-order instance state, built-in Durable Task Hub history, and explicit compensation paths.
+- **Negative:** Uses Azure Functions Kafka triggers rather than Wolverine's Kafka transport, requiring Durable Task Hub inspection instead of a Kafka DLQ.

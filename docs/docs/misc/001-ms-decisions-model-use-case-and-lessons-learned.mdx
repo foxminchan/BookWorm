@@ -1,4 +1,4 @@
-﻿---
+---
 title: MS Decisions Model Use Case & Lessons Learned
 summary: How BookWorm applies Microsoft-Decision-1 (System 1) for single-pass chat routing, safety gating, and dynamic tool selection, and the engineering lessons learned.
 owners:
@@ -59,10 +59,10 @@ Per-turn tool filtering and fail-open recovery inside `DecisionToolSelectionMidd
 ### Key engineering lessons
 
 - **Isolate vendor wire formats behind an internal contract:** Keeping `IDecisionClient` (`DecisionRequest`, `DecisionResponse`, `DecisionDefinition<T>`) decoupled from `SystemOneProtocolMapper` lets Chat API workflows remain independent of Microsoft Foundry protocol changes.
-- **Handle partial answers explicitly:** When `Microsoft-Decision-1` leaves `route` unanswered (`DecisionUnansweredException`), `HandlePartialResponse` still enforces any answered `is_safe`, `is_english`, or `is_in_scope` rejections and defaults the route to [[agent|book-agent]]â€”preventing both safety bypasses and avoidable chat crashes.
+- **Handle partial answers explicitly:** When `Microsoft-Decision-1` leaves `route` unanswered (`DecisionUnansweredException`), `HandlePartialResponse` still enforces any answered `is_safe`, `is_english`, or `is_in_scope` rejections and defaults the route to [[agent|book-agent]]—preventing both safety bypasses and avoidable chat crashes.
 - **Protect mandatory tools before filtering:** Partitioning always-included and explicitly required tools before invoking the decision model ensures required workflow tools are never pruned.
 - **Use AOT-safe source-generated JSON serialization:** `DecisionSerializationContext`, `ChatRoutingSerializationContext`, and `SystemOneSerializationContext` use compile-time `System.Text.Json` source generation (`UseStringEnumConverter = true`) to eliminate reflection overhead and preserve strict analyzer compliance.
-- **Layer probabilistic screening with deterministic controls:** `Microsoft-Decision-1` complementsâ€”never replacesâ€”`InputValidationExecutor`, Presidio `PIIMiddleware`, and Agent Governance `GuardrailMiddleware`.
+- **Layer probabilistic screening with deterministic controls:** `Microsoft-Decision-1` complements—never replaces—`InputValidationExecutor`, Presidio `PIIMiddleware`, and Agent Governance `GuardrailMiddleware`.
 - **Test cutoffs deterministically:** Unit tests (`DecisionRouterExecutorTests`, `WorkflowRegistrationTests`) inject simulated `IDecisionClient` stubs to verify boundary thresholds (`0.5` and `0.6`), partial responses, and fail-open paths offline without live Foundry calls.
 
 `SystemOneProtocolMapper`, `ChatRoutingDecisionService`, `DecisionUnansweredException`, and `HandlePartialResponse` exist in the referenced source trees. No symbol named `DecisionSerializationContext` exists there.
@@ -84,7 +84,7 @@ Per-turn tool filtering and fail-open recovery inside `DecisionToolSelectionMidd
 
 ## Related documentation
 
-- [[doc|development/001-developer-onboarding]] â€” How Chat API, MCP Tools, and Rating API fit into BookWorm's bounded contexts.
-- [[doc|arc42/09-architecture-decisions]] â€” Formal decision records for Chat orchestration, System 1 routing, and per-agent tool governance.
-- [[doc|platform/003-data-ai-and-messaging-resources]] â€” Microsoft Foundry deployments (`ModelRouter`, `MicrosoftDecision1`, `EmbedV40`) and Presidio configuration.
-- [[doc|operational/003-incident-response-and-runbooks]] â€” Diagnosing AI chat throttling, Presidio sidecar errors, and Entra Agent Identity failures.
+- [[doc|development/001-developer-onboarding]] — How Chat API, MCP Tools, and Rating API fit into BookWorm's bounded contexts.
+- [[doc|arc42/09-architecture-decisions]] — Formal decision records for Chat orchestration, System 1 routing, and per-agent tool governance.
+- [[doc|platform/003-data-ai-and-messaging-resources]] — Microsoft Foundry deployments (`ModelRouter`, `MicrosoftDecision1`, `EmbedV40`) and Presidio configuration.
+- [[doc|operational/003-incident-response-and-runbooks]] — Diagnosing AI chat throttling, Presidio sidecar errors, and Entra Agent Identity failures.

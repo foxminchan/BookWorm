@@ -1,0 +1,24 @@
+---
+title: Vector Re-Index and Lag Recovery
+summary: CLI-first runbook to verify pending embedding backlog in PostgreSQL and Qdrant collection health.
+version: 1.0.0
+---
+
+Operational runbook for [[service|catalog-ingestion]] when semantic search results lag behind [[service|catalog-api]] writes.
+
+<Steps>
+  <Step title="Verify Qdrant collection health">
+    Check point counts and collection status in [[container|catalog-vector]]:
+
+    ```bash
+    curl -sS "$QDRANT_URL/collections" | jq .
+    ```
+
+  </Step>
+  <Step title="Inspect Kafka consumer lag">
+    Confirm [[service|catalog-ingestion]] is actively consuming [[channel|scheduler.process-vector-batch]] without rebalance loops.
+  </Step>
+  <Step title="Trigger catch-up batch">
+    Use the [[service|scheduler-service]] manual batch trigger runbook to emit [[event|ProcessVectorBatchIntegrationEvent]] once Qdrant connectivity and embedding model quotas are healthy.
+  </Step>
+</Steps>

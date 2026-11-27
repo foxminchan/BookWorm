@@ -1,4 +1,4 @@
-﻿---
+---
 title: Recover a failed Catalog rating projection
 summary: Investigate and compensate when Catalog cannot apply a feedback rating change because the Book is missing.
 version: 1.0.0
@@ -38,7 +38,7 @@ SELECT c.id, c.bookId, c.rating, c.createdAt FROM c WHERE c.id = "<FEEDBACK_ID>"
 
 If the Catalog check returns **`404 Not Found`**, the book is absent and compensation is valid. Continue to Step 2.
 
-If the Catalog check returns **`200 OK`**, **stop immediately**. Do not delete the feedback recordâ€”this indicates a transient database or contract fault. Escalate to [[team|catalog-experience-team]].
+If the Catalog check returns **`200 OK`**, **stop immediately**. Do not delete the feedback record—this indicates a transient database or contract fault. Escalate to [[team|catalog-experience-team]].
 
 </Step>
 <Step title="Inspect Kafka consumer lag and dead-letter queues">
@@ -78,5 +78,5 @@ Expected output:
 
 ## Related documentation
 
-- [[flow|feedback-publication]] â€” End-to-end review projection and compensation flow.
-- [[adr|adr-003-compensate-invalid-feedback-after-catalog-rejection]] â€” Compensation decision record.
+- [[flow|feedback-publication]] — End-to-end review projection and compensation flow.
+- [[adr|adr-003-compensate-invalid-feedback-after-catalog-rejection]] — Compensation decision record.

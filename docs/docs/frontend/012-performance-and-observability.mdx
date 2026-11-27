@@ -1,4 +1,4 @@
-﻿---
+---
 title: Performance & Observability
 summary: Core Web Vitals targets, bundle discipline, OpenTelemetry distributed tracing, and graceful degradation across all frontend surfaces.
 owners:
@@ -25,7 +25,7 @@ The visual below shows how frontend server runtimes export OpenTelemetry traces 
 ## Architectural Principles & Rules
 
 - **Core Web Vitals discipline:** Public **Storefront** pages optimize for fast Largest Contentful Paint (LCP), minimal Cumulative Layout Shift (CLS) via explicit image dimensions and skeleton fallbacks, and low Interaction to Next Paint (INP) by keeping client hydration islands small.
-- **Bundle & dependency isolation:** Heavy client dependenciesâ€”such as the conversational AI runtimeâ€”are scoped strictly to **Storefront** so **Commerce** checkout and **Backoffice** bundles remain lean.
+- **Bundle & dependency isolation:** Heavy client dependencies—such as the conversational AI runtime—are scoped strictly to **Storefront** so **Commerce** checkout and **Backoffice** bundles remain lean.
 - **OpenTelemetry instrumentation:** Every frontend server runtime initializes the shared OpenTelemetry Node SDK at startup, propagating W3C trace context through **API Gateway** calls to backend capability services and exporting telemetry via OTLP.
 - **Graceful degradation:** Transient network errors, upstream timeouts, and rate limits surface non-blocking user feedback (offline/rate-limit banners and retry actions) rather than unhandled white-screen crashes.
 

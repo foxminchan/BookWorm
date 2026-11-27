@@ -1,0 +1,39 @@
+---
+id: adr-bw-023-nextjs-multizone-gateway-routing
+name: "ADR-BW-023: Decouple storefront into Next.js multi-zones behind the gateway"
+version: 1.0.0
+summary: Compose independent storefront and commerce Next.js applications via multi-zone routing behind the unified reverse proxy.
+status: accepted
+date: 2026-11-28
+owners:
+  - catalog-experience-team
+appliesTo:
+  - type: domain
+    id: bookworm
+related:
+  - id: adr-bw-001-capability-aligned-boundaries
+  - id: adr-bw-004-explicit-http-and-grpc-contracts
+decisionMakers:
+  - catalog-experience-team
+  - architecture-enabling-team
+x-scope: "Frontend storefront composition"
+---
+
+| Field                  | Value                                                                                                   |
+| :--------------------- | :------------------------------------------------------------------------------------------------------ |
+| **Status**             | Accepted                                                                                                |
+| **Date**               | 2026-11-28                                                                                              |
+| **Owners**             | [[team\|catalog-experience-team]]                                                                       |
+| **Affected Resources** | [[domain\|bookworm]]                                                                                    |
+| **Related ADRs**       | [[adr\|adr-bw-001-capability-aligned-boundaries]], [[adr\|adr-bw-004-explicit-http-and-grpc-contracts]] |
+
+## Context & Problem Statement
+
+Growing catalog discovery, checkout, and back-office surfaces in a single Next.js application coupled release cycles and blurred domain boundaries on the frontend.
+
+## Decision & Consequences
+
+**Chosen Option:** Split the frontend into independent Next.js zones composed via multi-zone routing behind the API gateway, sharing UI primitives and auth session boundaries without cross-zone state coupling (see [[doc|frontend/006-microfrontend-architecture]]).
+
+- **Positive:** Independent deployments per frontend surface and clear alignment with backend bounded contexts.
+- **Negative:** Requires coordinated gateway route prefixes and cross-zone navigation links.

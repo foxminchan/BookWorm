@@ -1,4 +1,4 @@
-﻿---
+---
 id: adr-005-finance-separate-workflow-and-order-status
 name: "ADR-005: Keep Finance workflow outcomes separate from Order status"
 version: 1.0.0
@@ -27,7 +27,7 @@ related:
 
 ## 1. Context & Problem
 
-Post-checkout processing involves several distinct outcomes owned by different capabilities: basket cleanup, Order business status, Finance workflow progress, and email delivery. Treating a Finance workflow outcomeâ€”such as a cleanup failure or retry timeoutâ€”as the Order's business status would create competing owners for the Order lifecycle.
+Post-checkout processing involves several distinct outcomes owned by different capabilities: basket cleanup, Order business status, Finance workflow progress, and email delivery. Treating a Finance workflow outcome—such as a cleanup failure or retry timeout—as the Order's business status would create competing owners for the Order lifecycle.
 
 Only Ordering can decide and declare that an Order is completed or cancelled. This retrospective ADR records Finance's side of that ownership boundary alongside the related Ordering decision.
 
@@ -43,7 +43,7 @@ Only Ordering can decide and declare that an Order is completed or cancelled. Th
 1. **Finance owns coordination only:** Finance tracks whether post-checkout steps (basket cleanup and notification triggers) succeeded, failed, or timed out, while Ordering owns the Order's business status.
 2. **Basket cleanup success:** Finance notifies Ordering that cleanup succeeded. Ordering logs that result without completing the Order, and Finance keeps its workflow open waiting for Ordering's explicit completion or cancellation decision.
 3. **Basket cleanup failure:** Finance closes its workflow with a basket-deletion failure outcome and informs Ordering. Ordering may soft-delete the matching Order record if it exists, without changing the Order's business status.
-4. **Coordination timeout exhaustion:** When Finance exhausts its placement retries, it marks only its internal workflow as cancelledâ€”not the Order itself.
+4. **Coordination timeout exhaustion:** When Finance exhausts its placement retries, it marks only its internal workflow as cancelled—not the Order itself.
 5. **Authoritative Order updates:** Only when Ordering publishes an explicit completed or cancelled status update does Finance close its workflow as completed or cancelled and request the corresponding customer notification (when recipient details allow).
 
 ## 4. Trade-offs & Lessons Learned
@@ -59,7 +59,7 @@ Only Ordering can decide and declare that an Order is completed or cancelled. Th
 - **Divergent states are normal:** An Order can legitimately remain in a new state while its Finance workflow has failed or been cancelled. Likewise, Ordering soft-deleting an Order record is distinct from changing its business status.
 - **Side-by-side observability required:** Monitoring dashboards and support tooling must show Finance workflow state and Order status as separate facts correlated by Order ID, never treating Finance state names as Order transitions.
 - **Avoid false inferences:** A timeout-triggered cancellation email does not confirm that Ordering cancelled the purchase, and none of Finance's coordination outcomes imply payment settlement, shipping execution, or confirmed email delivery.
-- **Respect service boundaries during recovery:** Cross-service incidents must be resolved through explicit workflows and messagesâ€”never by manually editing another service's database.
+- **Respect service boundaries during recovery:** Cross-service incidents must be resolved through explicit workflows and messages—never by manually editing another service's database.
 
 ## 5. Technical Reference
 

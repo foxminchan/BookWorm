@@ -1,4 +1,4 @@
-﻿---
+---
 id: adr-001-provider-boundary-and-ownership
 name: "ADR-001: Keep notification ownership inside BookWorm"
 version: 1.0.0
@@ -24,7 +24,7 @@ badges:
 
 ## 1. Context & Problem
 
-BookWorm uses [[system|sendgrid]] to deliver customer and operational email notifications, but an external delivery provider has no knowledge of the business workflowsâ€”such as an order placementâ€”that triggered a message. If BookWorm relied on the external provider to hold notification status or treated a provider response as proof of business completion, domain state would become tightly coupled to a third-party service.
+BookWorm uses [[system|sendgrid]] to deliver customer and operational email notifications, but an external delivery provider has no knowledge of the business workflows—such as an order placement—that triggered a message. If BookWorm relied on the external provider to hold notification status or treated a provider response as proof of business completion, domain state would become tightly coupled to a third-party service.
 
 The architecture must draw a clear line between three distinct milestones:
 
@@ -41,12 +41,12 @@ The architecture must draw a clear line between three distinct milestones:
 
 ## 3. How It Works
 
-BookWorm establishes [[system|sendgrid]] strictly as an external delivery boundary while the [[system|notification-system]] remains the single system of record for notification state, [[entity|outbox]] records, retry policies, duplicate-prevention decisions, and the business meaning of delivery outcomes.
+BookWorm establishes [[system|sendgrid]] strictly as an external delivery boundary while the [[system|notification-system]] remains the single system of record for notification state, outbox records, retry policies, duplicate-prevention decisions, and the business meaning of delivery outcomes.
 
-1. A business capability initiates a notification need, and the [[system|notification-system]] records the work internally in its [[entity|outbox]].
+1. A business capability initiates a notification need, and the [[system|notification-system]] records the work internally in its outbox.
 2. The [[service|sendgrid-api]] integration translates BookWorm's internal notification data into the structure expected by the external provider.
-3. When the provider responds, an acceptance means only that the provider took the submission into its queueâ€”not that the email reached the recipient's inbox or that the original business action finished.
-4. The [[system|notification-system]] translates the provider's response back into its own internal delivery state and links it to the originating [[entity|outbox]] item. Provider reference identifiers may be kept for troubleshooting, but ownership never leaves BookWorm.
+3. When the provider responds, an acceptance means only that the provider took the submission into its queue—not that the email reached the recipient's inbox or that the original business action finished.
+4. The [[system|notification-system]] translates the provider's response back into its own internal delivery state and links it to the originating outbox item. Provider reference identifiers may be kept for troubleshooting, but ownership never leaves BookWorm.
 
 ## 4. Trade-offs & Lessons Learned
 
@@ -63,7 +63,7 @@ BookWorm establishes [[system|sendgrid]] strictly as an external delivery bounda
 ### Ownership & Integration Boundary
 
 - **Applies to**: [[system|sendgrid]], [[system|notification-system]], and [[service|sendgrid-api]].
-- **System of record**: The [[system|notification-system]] owns notification state, [[entity|outbox]] persistence, retry policies, idempotency decisions, and domain interpretation of provider responses.
+- **System of record**: The [[system|notification-system]] owns notification state, outbox persistence, retry policies, idempotency decisions, and domain interpretation of provider responses.
 - **Provider adapter role**: [[service|sendgrid-api]] maps internal notification payloads to SendGrid's HTTP contract and records provider responses for correlation without transferring data ownership.
 
 ### Current Implementation Alignment

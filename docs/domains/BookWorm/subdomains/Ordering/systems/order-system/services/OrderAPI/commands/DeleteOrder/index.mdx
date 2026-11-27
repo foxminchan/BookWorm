@@ -1,4 +1,4 @@
-﻿---
+---
 id: DeleteOrder
 name: Delete order
 version: 1.0.0
@@ -28,7 +28,7 @@ sidebar:
 | **Owner Service**                  | [[service\|order-api]]                                                                                                            |
 | **Protocol / Format**              | HTTP `DELETE`, path parameter only, empty response (`204 No Content`)                                                             |
 | **Gateway Endpoint**               | `DELETE /ordering/api/v1/orders/{id}` (service path `/api/v1/orders/{id}`)                                                        |
-| **Authentication & Authorization** | Microsoft Entra ID JWT â€” `admin` policy (role `admin` plus scopes `ordering_read`, `ordering_write`)                            |
+| **Authentication & Authorization** | Microsoft Entra ID JWT — `admin` policy (role `admin` plus scopes `ordering_read`, `ordering_write`)                              |
 | **Idempotency / Concurrency**      | Not idempotent across retries; repeat calls return `404 Not Found`; no `x-request-id` header is required                          |
 | **Rate Limit / Caching**           | Global concurrency (`100`), per-IP fixed-window (`30 req/min`), and per-user token bucket (`30` burst, `20` per `10s`, queue `5`) |
 | **Contract Version**               | `1.0.0` (`ApiVersions.V1`)                                                                                                        |
@@ -66,10 +66,10 @@ Empty response body confirms the order was soft-deleted.
 
 ## Related Documentation
 
-- [[service|order-api]] â€” Service architecture, persistence, and endpoints.
-- [[entity|order]] â€” Order aggregate schema and soft-delete behavior.
-- [[command|CancelOrder]] â€” Transition a `New` order to `Cancelled` and notify downstream workflows.
-- [[command|DeleteBasketFailedCommand]] â€” Automated compensation command that also soft-deletes an order.
+- [[service|order-api]] — Service architecture, persistence, and endpoints.
+- [[entity|order]] — Order aggregate schema and soft-delete behavior.
+- [[command|CancelOrder]] — Transition a `New` order to `Cancelled` and notify downstream workflows.
+- [[command|DeleteBasketFailedCommand]] — Automated compensation command that also soft-deletes an order.
 
 <NodeGraph />
 

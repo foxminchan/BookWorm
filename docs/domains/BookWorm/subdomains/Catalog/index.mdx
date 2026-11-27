@@ -1,4 +1,4 @@
-﻿---
+---
 id: catalog
 name: Catalog
 summary: |
@@ -40,7 +40,7 @@ badges:
 [[domain|catalog]] is BookWorm's Core bounded context for authoritative book information, classification taxonomies ([[entity|author]], [[entity|category]], [[entity|publisher]]), pricing, availability, and hybrid text-and-semantic search. It serves low-latency product discovery reads, manages book cover assets, and projects aggregate rating summaries asynchronously from customer feedback events. Explicitly **out of scope** are customer shopping baskets ([[domain|shopping]]), accepted purchase snapshots ([[domain|ordering]]), and individual customer feedback records ([[domain|reviews]]).
 
 :::warning
-Catalog listing availability describes whether a title is in stock for discoveryâ€”it is **not** an inventory reservation held by a basket or a fulfillment guarantee. Catalog price updates never retroactively alter purchase-time prices locked onto accepted orders.
+Catalog listing availability describes whether a title is in stock for discovery—it is **not** an inventory reservation held by a basket or a fulfillment guarantee. Catalog price updates never retroactively alter purchase-time prices locked onto accepted orders.
 :::
 
 ## Core Responsibilities & Capabilities
@@ -54,13 +54,13 @@ Catalog listing availability describes whether a title is in stock for discovery
 
 ## Cross-Domain Interactions (Context Map)
 
-| Neighboring Domain             | Direction                                   | Integration Mechanism | Business Data Exchanged                                                                    |
-| :----------------------------- | :------------------------------------------ | :-------------------- | :----------------------------------------------------------------------------------------- |
-| **[[domain\|shopping]]**       | Downstream (`Catalog` â†’ `Shopping`)       | Sync (gRPC)           | Book titles, current prices, and availability for basket display enrichment                |
-| **[[domain\|ordering]]**       | Downstream (`Catalog` â†’ `Ordering`)       | Sync (gRPC)           | Authoritative unit and discount prices resolved at checkout time                           |
-| **[[domain\|reviews]]**        | Upstream (`Reviews` â†’ `Catalog`)          | Async (Events)        | Feedback created/deleted events updating aggregate rating; missing-book compensation event |
-| **[[domain\|platform]]**       | Upstream (`Platform` â†’ `Catalog`)         | Async (Events)        | Recurring vector-batch trigger initiating semantic index refreshes                         |
-| **[[domain\|conversational]]** | Downstream (`Catalog` â†’ `Conversational`) | Sync (via MCP Tools)  | Read-only catalog search, book details, categories, and authors                            |
+| Neighboring Domain             | Direction                                 | Integration Mechanism | Business Data Exchanged                                                                    |
+| :----------------------------- | :---------------------------------------- | :-------------------- | :----------------------------------------------------------------------------------------- |
+| **[[domain\|shopping]]**       | Downstream (`Catalog` → `Shopping`)       | Sync (gRPC)           | Book titles, current prices, and availability for basket display enrichment                |
+| **[[domain\|ordering]]**       | Downstream (`Catalog` → `Ordering`)       | Sync (gRPC)           | Authoritative unit and discount prices resolved at checkout time                           |
+| **[[domain\|reviews]]**        | Upstream (`Reviews` → `Catalog`)          | Async (Events)        | Feedback created/deleted events updating aggregate rating; missing-book compensation event |
+| **[[domain\|platform]]**       | Upstream (`Platform` → `Catalog`)         | Async (Events)        | Recurring vector-batch trigger initiating semantic index refreshes                         |
+| **[[domain\|conversational]]** | Downstream (`Catalog` → `Conversational`) | Sync (via MCP Tools)  | Read-only catalog search, book details, categories, and authors                            |
 
 :::note
 **Eventual Consistency & Compensation:** Catalog never queries [[domain|reviews]] synchronously, keeping storefront discovery available even if Reviews is degraded. Instead, rating summaries and semantic search vectors are rebuildable derived projections. If a rating event references a nonexistent or deleted book, [[service|catalog-api]] publishes [[event|BookUpdatedRatingFailedIntegrationEvent]] so [[domain|reviews]] can compensate idempotently.
@@ -71,7 +71,7 @@ Catalog listing availability describes whether a title is in stock for discovery
 - **Book:** The canonical listed title available for discovery, carrying descriptive metadata, cover image, pricing, availability, and taxonomy links.
 - **Price:** A book's original price paired with an optional discount price (never negative and never exceeding the original price), modeled as an attribute of [[entity|book]] rather than a separate product.
 - **Availability:** Whether a catalog listing is in stock or out of stock, independent of any customer basket.
-- **Rating Summary:** The derived average rating and total review count displayed for a bookâ€”an aggregate projection rather than individual customer feedback.
+- **Rating Summary:** The derived average rating and total review count displayed for a book—an aggregate projection rather than individual customer feedback.
 
 ## Architecture Visualizations
 
@@ -85,9 +85,9 @@ Catalog listing availability describes whether a title is in stock for discovery
 
 ## Related Governance & Documentation
 
-- [[system|product-catalog-system]] â€” System boundary, containers, and owned services.
-- [[flow|product-ingestion]] â€” End-to-end scheduled vector indexing workflow.
-- [[adr|adr-bw-004-explicit-http-and-grpc-contracts]] â€” Versioned synchronous HTTP and gRPC contract boundaries.
-- [[adr|adr-bw-006-service-owned-business-state]] â€” Service-owned persistence isolation.
-- [[adr|adr-bw-007-derived-eventually-consistent-views]] â€” Authoritative state vs. rebuildable derived projections.
-- [[doc|arc42/12-glossary]] â€” Shared catalog and cross-domain vocabulary.
+- [[system|product-catalog-system]] — System boundary, containers, and owned services.
+- [[flow|product-ingestion]] — End-to-end scheduled vector indexing workflow.
+- [[adr|adr-bw-004-explicit-http-and-grpc-contracts]] — Versioned synchronous HTTP and gRPC contract boundaries.
+- [[adr|adr-bw-006-service-owned-business-state]] — Service-owned persistence isolation.
+- [[adr|adr-bw-007-derived-eventually-consistent-views]] — Authoritative state vs. rebuildable derived projections.
+- [[doc|arc42/12-glossary]] — Shared catalog and cross-domain vocabulary.

@@ -1,4 +1,4 @@
-﻿---
+---
 id: adr-bw-015-explicit-environment-configuration
 name: "ADR-BW-015: Separate logical architecture from environment configuration"
 version: 1.0.0
@@ -57,4 +57,4 @@ BookWorm runs locally under Aspire orchestration using emulators (Mailpit, Azuri
 
 - Service contracts and business logic must not branch on hardcoded environment names where configuration parameters suffice.
 - Development-only endpoints (such as unauthenticated health/scalar helpers) must be gated out of production.
-- Secrets and connection strings must be injected via user secrets locally and Key Vault / Managed Identity in Azureâ€”never committed.
+- Secrets and connection strings must be injected via user secrets locally and Key Vault / Managed Identity in Azure—never committed.

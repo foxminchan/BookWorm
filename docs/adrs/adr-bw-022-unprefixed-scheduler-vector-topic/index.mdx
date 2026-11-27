@@ -1,0 +1,45 @@
+---
+id: adr-bw-022-unprefixed-scheduler-vector-topic
+name: "ADR-BW-022: Keep scheduler.process-vector-batch unprefixed"
+version: 1.0.0
+summary: Preserve the unprefixed scheduler.process-vector-batch Kafka topic for scheduled vector indexing triggers across environments.
+status: accepted
+date: 2026-11-28
+owners:
+  - platform-engineering-team
+appliesTo:
+  - type: channel
+    id: scheduler.process-vector-batch
+  - type: service
+    id: scheduler-service
+  - type: service
+    id: catalog-ingestion
+  - type: event
+    id: ProcessVectorBatchIntegrationEvent
+related:
+  - id: adr-bw-005-kafka-integration-backbone
+  - id: adr-bw-015-explicit-environment-configuration
+decisionMakers:
+  - platform-engineering-team
+  - catalog-experience-team
+x-scope: "Platform scheduling to Catalog ingestion"
+---
+
+| Field                  | Value                                                                                                                                                      |
+| :--------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Status**             | Accepted                                                                                                                                                   |
+| **Date**               | 2026-11-28                                                                                                                                                 |
+| **Owners**             | [[team\|platform-engineering-team]]                                                                                                                        |
+| **Affected Resources** | [[channel\|scheduler.process-vector-batch]], [[service\|scheduler-service]], [[service\|catalog-ingestion]], [[event\|ProcessVectorBatchIntegrationEvent]] |
+| **Related ADRs**       | [[adr\|adr-bw-005-kafka-integration-backbone]], [[adr\|adr-bw-015-explicit-environment-configuration]]                                                     |
+
+## Context & Problem Statement
+
+Domain integration topics follow the `bookworm.{env}.{domain}.{message}` naming convention, whereas [[channel|scheduler.process-vector-batch]] is an infrastructure-level cron trigger emitted by [[service|scheduler-service]] and consumed by [[service|catalog-ingestion]].
+
+## Decision & Consequences
+
+**Chosen Option:** Retain `scheduler.process-vector-batch` as an intentionally unprefixed topic name in [[service|scheduler-service]] and [[service|catalog-ingestion]] rather than renaming it to `bookworm.{env}.*`, assuming isolated Kafka clusters per environment.
+
+- **Positive:** Avoids breaking existing Quartz job and ingestion trigger bindings.
+- **Negative:** Operators must not share a single physical Kafka cluster across environments without topic isolation.

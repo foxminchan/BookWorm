@@ -1,4 +1,4 @@
-﻿---
+---
 id: adr-003-compensate-invalid-feedback-after-catalog-rejection
 name: "ADR-003: Compensate feedback rejected by Catalog"
 version: 1.0.0
@@ -48,7 +48,7 @@ When Catalog rejects a newly created feedback notice because the referenced book
 1. **Catalog signals the missing book:** Catalog cannot apply the rating update, so it sends a specific failure notice identifying the rejected feedback entry.
 2. **Reviews removes only that record:** The Rating service looks up the specific feedback record using the identifier in the notice and deletes it.
 3. **Repeated notices are harmless:** If that feedback entry has already been removed, the service simply finishes without modifying any other feedback for the same book or reviewer and without retrying endlessly.
-4. **Strictly scoped to missing books:** This cleanup runs only for missing-book rejections on newly created feedbackâ€”not for temporary outages, network glitches, or other processing errors.
+4. **Strictly scoped to missing books:** This cleanup runs only for missing-book rejections on newly created feedback—not for temporary outages, network glitches, or other processing errors.
 
 ## 4. Trade-offs & Lessons Learned
 

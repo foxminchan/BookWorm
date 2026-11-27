@@ -1,4 +1,4 @@
-﻿---
+---
 id: catalog-vector
 name: Catalog Vector
 version: 1.0.0
@@ -29,7 +29,7 @@ Catalog Vector (`vectordb`) is the non-authoritative Qdrant search index owned b
 
 | Property                            | Value                                                                           |
 | :---------------------------------- | :------------------------------------------------------------------------------ |
-| **Bounded Context / Owner**         | Catalog â€” [[team\|catalog-experience-team]]                                   |
+| **Bounded Context / Owner**         | Catalog — [[team\|catalog-experience-team]]                                     |
 | **Engine / Technology**             | Qdrant (Qdrant Cloud in cloud; Qdrant container locally)                        |
 | **Store Type**                      | Vector                                                                          |
 | **Primary Writer(s)**               | [[service\|catalog-ingestion]]                                                  |
@@ -44,7 +44,7 @@ Catalog Vector (`vectordb`) is the non-authoritative Qdrant search index owned b
 | :-------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `data-bookworm-snippets` / `book_id` (`uuid`) | Assembled text (`Title`, `Description`, `Authors`, `Category`, `Publisher`) + `1,536`-dim cosine embedding (`Cohere.EmbedV40`) | Retained while book is active (`is_deleted = false`) | Asynchronous 5-minute batch triggered by [[service\|scheduler-service]] (`scheduler.process-vector-batch`) draining `pending_vector_updates`. Soft-deleted books are removed from the index. |
 
-Commercial fieldsâ€”prices, stock status, cover image URNs, and rating summariesâ€”are intentionally excluded from Qdrant and always resolved from [[container|catalog-database]].
+Commercial fields—prices, stock status, cover image URNs, and rating summaries—are intentionally excluded from Qdrant and always resolved from [[container|catalog-database]].
 
 ## Consistency, Isolation & Security Guardrails
 
@@ -53,7 +53,7 @@ Commercial fieldsâ€”prices, stock status, cover image URNs, and rating summ
 - **No direct external access:** Only [[service|catalog-ingestion]] writes to `data-bookworm-snippets` and only [[service|catalog-api]] queries it.
 
 :::warning
-**Derived Index Only â€” Never Authoritative:** `vectordb` is strictly a derived search projection. Never treat vector payloads as canonical product data, and never return prices or availability from Qdrant without hydrating from [[container|catalog-database]]. Because the index is fully rebuildable from `catalogdb`, collection resets carry zero data-loss risk.
+**Derived Index Only — Never Authoritative:** `vectordb` is strictly a derived search projection. Never treat vector payloads as canonical product data, and never return prices or availability from Qdrant without hydrating from [[container|catalog-database]]. Because the index is fully rebuildable from `catalogdb`, collection resets carry zero data-loss risk.
 :::
 
 ## Operational & Resilience Notes
@@ -76,10 +76,10 @@ Commercial fieldsâ€”prices, stock status, cover image URNs, and rating summ
 
 ## Related Documentation
 
-- [[service|catalog-ingestion]] â€” Worker generating embeddings and updating Qdrant points.
-- [[service|catalog-api]] â€” Hybrid search query pipeline and PostgreSQL hydration.
-- [[container|catalog-database]] â€” Relational source of truth and `pending_vector_updates` queue.
-- [[container|scheduler-database]] â€” Schedule store driving the 5-minute vector batch trigger.
-- [[adr|adr-002-hybrid-vector-search-qdrant]] â€” Decision adopting Qdrant for hybrid catalog search.
-- [[adr|adr-003-database-queue-for-vector-indexing]] â€” Decision for coalesced database-queue indexing.
-- [[doc|operational/005-backup-restore-and-dr]] â€” Platform backup, restore, and disaster recovery runbook.
+- [[service|catalog-ingestion]] — Worker generating embeddings and updating Qdrant points.
+- [[service|catalog-api]] — Hybrid search query pipeline and PostgreSQL hydration.
+- [[container|catalog-database]] — Relational source of truth and `pending_vector_updates` queue.
+- [[container|scheduler-database]] — Schedule store driving the 5-minute vector batch trigger.
+- [[adr|adr-002-hybrid-vector-search-qdrant]] — Decision adopting Qdrant for hybrid catalog search.
+- [[adr|adr-003-database-queue-for-vector-indexing]] — Decision for coalesced database-queue indexing.
+- [[doc|operational/005-backup-restore-and-dr]] — Platform backup, restore, and disaster recovery runbook.

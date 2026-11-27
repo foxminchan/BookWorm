@@ -1,4 +1,4 @@
-﻿---
+---
 id: GetBuyer
 name: Get buyer
 version: 1.0.0
@@ -28,7 +28,7 @@ sidebar:
 | **Owner Service**                  | [[service\|order-api]]                                                                                                            |
 | **Protocol / Format**              | HTTP `GET`, `application/json` response                                                                                           |
 | **Gateway Endpoint**               | `GET /ordering/api/v1/buyers/me` (service path `/api/v1/buyers/me`)                                                               |
-| **Authentication & Authorization** | Microsoft Entra ID JWT â€” `customer` or `admin` role plus scopes `ordering_read`, `ordering_write`                               |
+| **Authentication & Authorization** | Microsoft Entra ID JWT — `customer` or `admin` role plus scopes `ordering_read`, `ordering_write`                                 |
 | **Idempotency / Concurrency**      | Read-only and naturally idempotent                                                                                                |
 | **Rate Limit / Caching**           | Global concurrency (`100`), per-IP fixed-window (`30 req/min`), and per-user token bucket (`30` limit, `20` per `10s`, queue `5`) |
 | **Contract Version**               | `1.0.0` (`ApiVersions.V1`)                                                                                                        |
@@ -70,11 +70,11 @@ Because `Id` binds as a non-nullable UUID, non-admin clients must still supply a
 
 ## Related Documentation
 
-- [[service|order-api]] â€” Service overview, persistence, and endpoints.
-- [[entity|buyer]] â€” Buyer entity model.
-- [[query|ListBuyers]] â€” Admin-only paginated listing of all buyer profiles.
-- [[command|CreateBuyer]] â€” Create a new buyer profile.
-- [[command|UpdateAddress]] â€” Update a buyer's shipping address.
+- [[service|order-api]] — Service overview, persistence, and endpoints.
+- [[entity|buyer]] — Buyer entity model.
+- [[query|ListBuyers]] — Admin-only paginated listing of all buyer profiles.
+- [[command|CreateBuyer]] — Create a new buyer profile.
+- [[command|UpdateAddress]] — Update a buyer's shipping address.
 
 <NodeGraph />
 

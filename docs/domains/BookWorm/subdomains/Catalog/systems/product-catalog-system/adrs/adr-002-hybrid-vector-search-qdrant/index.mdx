@@ -1,4 +1,4 @@
-﻿---
+---
 id: adr-002-hybrid-vector-search-qdrant
 name: "ADR-002: Use Qdrant hybrid vector and keyword search for product discovery"
 version: 1.0.0
@@ -43,7 +43,7 @@ Catalog separates **finding candidate matches** from **delivering authoritative 
 
 1. **Maintain a focused search index:** [[container|catalog-vector]] holds one search entry for each active [[entity|book]]. Each entry contains searchable text built from the book's title, description, [[entity|author]]s, [[entity|category]], and [[entity|publisher]], paired with a semantic meaning representation. Prices, cover images, and rating summaries are intentionally left out, and retired books are removed.
 2. **Match by meaning and keywords together:** When a customer runs a text search, [[service|catalog-api]] converts the search query into a semantic representation and performs a hybrid search in [[container|catalog-vector]] that combines conceptual similarity with exact keyword matching.
-3. **Return candidate identifiers, not final records:** The search engine returns only a list of matching book identifiersâ€”it never serves as the final product response.
+3. **Return candidate identifiers, not final records:** The search engine returns only a list of matching book identifiers—it never serves as the final product response.
 4. **Hydrate and filter from the authoritative database:** [[service|catalog-api]] fetches the live book records for those candidates from [[container|catalog-database]], applying the customer's requested filters, sort order, and page bounds before returning the response.
 
 Browsing and filtered listing requests that do not include a search term bypass the search index entirely and query [[container|catalog-database]] directly.

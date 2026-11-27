@@ -1,4 +1,4 @@
-﻿---
+---
 id: book-recommendation-researcher
 name: Book Recommendation Researcher
 version: 1.0.0
@@ -79,7 +79,7 @@ It has **no external user-facing surface**: it cannot be routed to directly by t
 
 - **Inherited Fail-Closed PII Redaction:** Every model invocation runs through [[service|presidio-api]] (`AnalyzeText` and `AnonymizeText`, masking detected PII with `<PII>`); any failure aborts execution.
 - **Fairness & Grounding Invariants:** Prohibits demographic inference or stereotyping; every recommendation must cite explicit catalog attributes returned by [[service|mcp-server]].
-- **Strict Least-Privilege Policy:** Default-deny governance permits only agent execution and the four read-only catalog toolsâ€”no handoff, planning, file-memory, or storefront UI tools are granted.
+- **Strict Least-Privilege Policy:** Default-deny governance permits only agent execution and the four read-only catalog tools—no handoff, planning, file-memory, or storefront UI tools are granted.
 - **Prompt & Output Guardrails:** Inherits decision-based tool filtering, prompt/output safety guardrails, and full context compaction from [[agent|book-agent]].
 
 <Admonition type="warning">
@@ -105,10 +105,10 @@ It has **no external user-facing surface**: it cannot be routed to directly by t
 
 ## Related Documentation
 
-- [[agent|book-agent]] â€” Parent coordinating agent and full governance specification.
-- [[agent|book-catalog-researcher]] â€” Sibling delegated subagent for factual catalog lookups.
-- [[service|mcp-server]] â€” Read-only Catalog MCP server exposing the four catalog tools.
-- [[service|chat-api]] â€” Hosting service and workflow orchestration.
-- [[flow|agent-orchestration]] â€” End-to-end conversational routing and delegation flow.
-- [[doc|arc42/08-crosscutting-concepts/005-ai-governance]] â€” Cross-cutting AI governance rules and standards.
-- [[adr|adr-005-govern-agent-tools-per-agent]] â€” Per-agent default-deny tool governance.
+- [[agent|book-agent]] — Parent coordinating agent and full governance specification.
+- [[agent|book-catalog-researcher]] — Sibling delegated subagent for factual catalog lookups.
+- [[service|mcp-server]] — Read-only Catalog MCP server exposing the four catalog tools.
+- [[service|chat-api]] — Hosting service and workflow orchestration.
+- [[flow|agent-orchestration]] — End-to-end conversational routing and delegation flow.
+- [[doc|arc42/08-crosscutting-concepts/005-ai-governance]] — Cross-cutting AI governance rules and standards.
+- [[adr|adr-005-govern-agent-tools-per-agent]] — Per-agent default-deny tool governance.

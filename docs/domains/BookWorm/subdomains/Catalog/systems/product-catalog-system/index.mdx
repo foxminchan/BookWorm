@@ -1,4 +1,4 @@
-﻿---
+---
 id: product-catalog-system
 name: Product Catalog System
 version: 1.0.0
@@ -61,7 +61,7 @@ badges:
 The Product Catalog System delivers product catalog management, hybrid keyword-and-semantic discovery, and asynchronous search index maintenance within the [[domain|catalog]] domain. It serves **Customers** browsing and searching for books and **Business Users** maintaining titles, pricing, cover art, and reference metadata ([[entity|book]], [[entity|author]], [[entity|category]], [[entity|publisher]]). Shopping baskets ([[domain|shopping]]), accepted order lifecycles ([[domain|ordering]]), and individual customer reviews ([[domain|reviews]]) are explicitly out of scope; the system stores only a derived rating summary on each book.
 
 :::note
-[[container|catalog-database]] is the sole system of record for catalog entities and pending search-index work. [[container|catalog-cache]] and [[container|catalog-vector]] are disposable, rebuildable projectionsâ€”search results always resolve final details from the authoritative database so stale projections never leak outdated prices or deleted listings.
+[[container|catalog-database]] is the sole system of record for catalog entities and pending search-index work. [[container|catalog-cache]] and [[container|catalog-vector]] are disposable, rebuildable projections—search results always resolve final details from the authoritative database so stale projections never leak outdated prices or deleted listings.
 :::
 
 ## Contained Capabilities
@@ -101,8 +101,8 @@ The Product Catalog System delivers product catalog management, hybrid keyword-a
 
 ## Related Documentation
 
-- [[flow|product-ingestion]] â€” End-to-end catalog authoring and vector indexing workflow.
-- [[flow|user-checkout]] â€” Checkout flow consuming catalog price and title lookups.
-- [[doc|domains/bookworm/subdomains/catalog/engineering/01-consistency-and-data-ownership]] â€” Catalog consistency and ownership invariants.
-- [[doc|domains/bookworm/subdomains/catalog/guides/01-managing-catalog-data]] â€” Guide for maintaining books, authors, categories, and publishers.
-- [[doc|domains/bookworm/subdomains/catalog/guides/02-search-and-discovery]] â€” Guide for hybrid keyword and semantic search.
+- [[flow|product-ingestion]] — End-to-end catalog authoring and vector indexing workflow.
+- [[flow|user-checkout]] — Checkout flow consuming catalog price and title lookups.
+- [[doc|domains/bookworm/subdomains/catalog/engineering/01-consistency-and-data-ownership]] — Catalog consistency and ownership invariants.
+- [[doc|domains/bookworm/subdomains/catalog/guides/01-managing-catalog-data]] — Guide for maintaining books, authors, categories, and publishers.
+- [[doc|domains/bookworm/subdomains/catalog/guides/02-search-and-discovery]] — Guide for hybrid keyword and semantic search.

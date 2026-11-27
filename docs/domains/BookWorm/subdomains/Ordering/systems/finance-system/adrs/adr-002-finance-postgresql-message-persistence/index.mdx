@@ -1,4 +1,4 @@
-﻿---
+---
 id: adr-002-finance-postgresql-message-persistence
 name: "ADR-002: Persist saga state and messages in Finance PostgreSQL"
 version: 1.0.0
@@ -61,7 +61,7 @@ Finance keeps both its active checkout workflow records and its durable queue of
 _Retrospective note: This ADR (`status: superseded`, dated `2026-11-03`) records the PostgreSQL/EF Core/Wolverine implementation approach, not a new database deployment or an assertion about historical approval._
 
 - **Persistence & transaction configuration:**
-  - Uses [[container|finance-database]] (`financedb` resource provided by AppHost) for EF Core saga storage and Wolverine durable message envelopes.
+  - Uses the Finance PostgreSQL database (`financedb` resource provided by AppHost) for EF Core saga storage and Wolverine durable message envelopes.
   - When the Finance connection string is available, configures `PersistMessagesWithPostgresql` with the `wolverine` schema and enables `UseEntityFrameworkCoreTransactions`.
   - Transaction integration is conditional on the Finance connection string and must remain aligned with the actual EF Core and Wolverine persistence configuration.
 - **Model mapping & concurrency:**

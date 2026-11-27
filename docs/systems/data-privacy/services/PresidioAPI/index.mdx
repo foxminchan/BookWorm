@@ -1,4 +1,4 @@
-﻿---
+---
 id: presidio-api
 name: Presidio API
 version: 1.0.0
@@ -44,7 +44,7 @@ specifications:
 Presidio provides external sidecar HTTP services (Analyzer and Anonymizer) for detecting and redacting personally identifiable information (PII) in text before and after AI model execution. BookWorm's deterministic PII middleware invokes Presidio on behalf of [[service|chat-api]] and [[service|rating-api]] agents so foundation models cannot bypass privacy screening.
 
 :::warning
-Although the attached upstream OpenAPI specification documents discovery endpoints (`GetRecognizers`, `GetSupportedEntities`, `GetAnonymizers`), BookWorm's runtime integration invokes only [[command|AnalyzeText]] and [[command|AnonymizeText]]â€”targeting email addresses, phone numbers, and credit-card numbers. All screening executes **fail-closed**: any timeout or non-success response aborts the AI turn rather than sending unscreened text.
+Although the attached upstream OpenAPI specification documents discovery endpoints (`GetRecognizers`, `GetSupportedEntities`, `GetAnonymizers`), BookWorm's runtime integration invokes only [[command|AnalyzeText]] and [[command|AnonymizeText]]—targeting email addresses, phone numbers, and credit-card numbers. All screening executes **fail-closed**: any timeout or non-success response aborts the AI turn rather than sending unscreened text.
 :::
 
 ## Integration Profile
@@ -55,8 +55,8 @@ Although the attached upstream OpenAPI specification documents discovery endpoin
 | **BookWorm Consumers**           | [[service\|chat-api]] ([[agent\|book-agent]], [[agent\|book-catalog-researcher]], [[agent\|book-recommendation-researcher]], [[agent\|qa-agent]]) and [[service\|rating-api]] ([[agent\|rating-agent]]) |
 | **Runtime Transport & Protocol** | Internal HTTP/HTTPS via service discovery (not routed via public API Gateway)                                                                                                                           |
 | **Auth / Credential Boundary**   | Internal cluster network boundary; no public exposure or customer credentials forwarded                                                                                                                 |
-| **Data / PII Sensitivity**       | Critical â€” processes raw customer prompts, review text, and model responses; never log raw inputs, outputs, or detected PII spans                                                                     |
-| **Failure / Fallback Behavior**  | Fail-closed â€” connection errors, timeouts, or non-success status codes propagate and fail the request immediately                                                                                     |
+| **Data / PII Sensitivity**       | Critical — processes raw customer prompts, review text, and model responses; never log raw inputs, outputs, or detected PII spans                                                                       |
+| **Failure / Fallback Behavior**  | Fail-closed — connection errors, timeouts, or non-success status codes propagate and fail the request immediately                                                                                       |
 
 ## Visualizations & Specifications
 
@@ -72,9 +72,9 @@ Although the attached upstream OpenAPI specification documents discovery endpoin
 
 ## Related Documentation
 
-- [[doc|platform/006-api-and-contracts]] â€” Consolidated service and contract index.
-- [[service|chat-api]] â€” Conversational consumer of Presidio PII middleware.
-- [[service|rating-api]] â€” Review summarization consumer of Presidio PII middleware.
-- [[command|AnalyzeText]] â€” Request and response contract for PII detection.
-- [[command|AnonymizeText]] â€” Request and response contract for PII redaction.
-- [[system|data-privacy]] â€” External Data Privacy system boundary.
+- [[doc|platform/006-api-and-contracts]] — Consolidated service and contract index.
+- [[service|chat-api]] — Conversational consumer of Presidio PII middleware.
+- [[service|rating-api]] — Review summarization consumer of Presidio PII middleware.
+- [[command|AnalyzeText]] — Request and response contract for PII detection.
+- [[command|AnonymizeText]] — Request and response contract for PII redaction.
+- [[system|data-privacy]] — External Data Privacy system boundary.

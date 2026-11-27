@@ -1,4 +1,4 @@
-﻿---
+---
 id: adr-001-notification-kafka-command-intake
 name: "ADR-001: Consume order notification commands through Kafka"
 version: 1.0.0
@@ -28,7 +28,7 @@ badges:
 
 ## 1. Context & Problem
 
-Finance coordinates critical order milestonesâ€”placement, cancellation, and completion. Sending customer emails requires formatting content and contacting external mail providers, both of which can be slow or temporarily fail. If Finance waited for email delivery to finish before confirming an order action, mail slowdowns or outages could delay or break core order workflows.
+Finance coordinates critical order milestones—placement, cancellation, and completion. Sending customer emails requires formatting content and contacting external mail providers, both of which can be slow or temporarily fail. If Finance waited for email delivery to finish before confirming an order action, mail slowdowns or outages could delay or break core order workflows.
 
 At the same time, the Notification capability needs recipient and order details to prepare those emails without taking ownership of Finance's business rules or order state. BookWorm needed an asynchronous intake boundary that keeps order workflows fast and authoritative while still giving Notification everything required to send order communications.
 
@@ -52,7 +52,7 @@ At the same time, the Notification capability needs recipient and order details 
 
 ## 4. Trade-offs & Lessons Learned
 
-- **Independent operational dependencies:** Because intake is asynchronous, health of the message broker, Notification's database, and the Notification consumer directly affects email timelinessâ€”even when Finance is healthy.
+- **Independent operational dependencies:** Because intake is asynchronous, health of the message broker, Notification's database, and the Notification consumer directly affects email timeliness—even when Finance is healthy.
 - **No exactly-once or cross-topic ordering guarantee:** Partitioning commands by order does not guarantee ordering across separate command types, and repeated commands (such as Finance retrying placement during basket cleanup) or ambiguous consumer retries can produce duplicate email records and deliveries.
 - **Blank-recipient skipping is narrow:** Skipping blank addresses prevents unnecessary failures, but it is not a full email validation guarantee or proof of delivery.
 - **Monitoring requires inspecting Notification directly:** Operators and business stakeholders cannot infer email success from Finance publishing a command or from basic service health checks; they must check Notification's processing and outbox state.
@@ -66,6 +66,6 @@ At the same time, the Notification capability needs recipient and order details 
 - **Recording Note:** Status `accepted` (`2026-11-01`). The date reflects when this current architecture was recorded, not when the implementation was first introduced.
 - **Service & Contract:** [[service|notification-api]] exposes only service-default HTTP endpoints (no business email-submission or delivery-status HTTP endpoints); its business contract is the AsyncAPI receive operations.
 - **Consumed Commands:** [[command|PlaceOrderCommand]], [[command|CancelOrderCommand]], and [[command|CompleteOrderCommand]] consumed via Wolverine on separate environment-scoped Kafka topics, partitioned by `OrderId`.
-- **Rendering & Outbox Hand-off:** Maps order status, skips blank recipient addresses, renders the `Orders/OrderEmail` template, and invokes the application email [[entity|outbox]] sender.
+- **Rendering & Outbox Hand-off:** Maps order status, skips blank recipient addresses, renders the `Orders/OrderEmail` template, and invokes the application email outbox sender.
 - **Infrastructure Persistence:** Wolverine uses PostgreSQL envelope persistence and EF Core transaction integration when the database connection is configured. These infrastructure envelopes are separate from the application email outbox and do not provide command-level deduplication.
 - **Failure Propagation:** Rendering, initial persistence, and sender failures propagate to messaging failure handling; SMTP failures leave work for Notification's scheduled maintenance path. No application-level result event is published.

@@ -1,4 +1,4 @@
-﻿---
+---
 title: Stateful Data, AI & Messaging Infrastructure
 summary: Technical reference for Azure-managed databases, caches, storage, Durable Task Scheduler, Microsoft Foundry, and external dependencies.
 owners:
@@ -36,15 +36,15 @@ Each BookWorm bounded context owns its authoritative persistence, isolated behin
 | Service                          | Primary store                                    | Cache / idempotency               | Messaging                         | Other                                                               |
 | :------------------------------- | :----------------------------------------------- | :-------------------------------- | :-------------------------------- | :------------------------------------------------------------------ |
 | [[service\|catalog-api]]         | [[container\|catalog-database]]                  | [[container\|catalog-cache]]      | Kafka + PostgreSQL outbox/inbox   | [[container\|catalog-vector]], [[container\|catalog-blob]], Foundry |
-| [[service\|catalog-ingestion]]   | [[container\|catalog-database]] (read)           | â€”                               | Kafka trigger + PostgreSQL outbox | [[container\|catalog-vector]] (write), Foundry, host storage        |
+| [[service\|catalog-ingestion]]   | [[container\|catalog-database]] (read)           | —                                 | Kafka trigger + PostgreSQL outbox | [[container\|catalog-vector]] (write), Foundry, host storage        |
 | [[service\|basket-api]]          | [[container\|basket-database]]                   | [[container\|basket-database]]    | Kafka                             | No SQL database                                                     |
-| [[service\|order-api]]           | [[container\|order-database]] (EF Core + Marten) | [[container\|order-cache]]        | Kafka + PostgreSQL outbox/inbox   | â€”                                                                 |
-| [[service\|order-orchestration]] | Durable Task Scheduler                           | â€”                               | Kafka                             | Host storage; no PostgreSQL                                         |
+| [[service\|order-api]]           | [[container\|order-database]] (EF Core + Marten) | [[container\|order-cache]]        | Kafka + PostgreSQL outbox/inbox   | —                                                                   |
+| [[service\|order-orchestration]] | Durable Task Scheduler                           | —                                 | Kafka                             | Host storage; no PostgreSQL                                         |
 | [[service\|rating-api]]          | [[container\|rating-database]]                   | [[container\|rating-cache]]       | Kafka + Cosmos DB persistence     | Foundry; no PostgreSQL                                              |
-| [[service\|chat-api]]            | [[container\|chat-session-blob]]                 | â€”                               | â€”                               | Foundry; no PostgreSQL, Redis, or Kafka                             |
-| [[service\|mcp-server]]          | â€” (stateless)                                  | â€”                               | â€”                               | â€”                                                                 |
-| [[service\|notification-api]]    | â€”                                              | Redis (FusionCache + idempotency) | Kafka                             | MailKit + Mjml.Net over SMTP; no PostgreSQL                         |
-| [[service\|scheduler-service]]   | [[container\|scheduler-database]]                | â€”                               | Kafka + PostgreSQL outbox/inbox   | â€”                                                                 |
+| [[service\|chat-api]]            | [[container\|chat-session-blob]]                 | —                                 | —                                 | Foundry; no PostgreSQL, Redis, or Kafka                             |
+| [[service\|mcp-server]]          | — (stateless)                                    | —                                 | —                                 | —                                                                   |
+| [[service\|notification-api]]    | —                                                | Redis (FusionCache + idempotency) | Kafka                             | MailKit + Mjml.Net over SMTP; no PostgreSQL                         |
+| [[service\|scheduler-service]]   | [[container\|scheduler-database]]                | —                                 | Kafka + PostgreSQL outbox/inbox   | —                                                                   |
 
 ### Kafka Messaging Conventions
 
@@ -116,9 +116,9 @@ Each BookWorm bounded context owns its authoritative persistence, isolated behin
 
 ## Related Documentation
 
-- [[doc|platform/002-compute-and-container-apps]] â€” Workloads that consume these resources.
-- [[doc|platform/004-identity-and-rbac-matrix]] â€” Role assignments for each resource.
-- [[doc|operational/004-security-hardening-checklist]] â€” Network, backup, and quota hardening.
-- [[doc|operational/003-incident-response-and-runbooks]] â€” Datastore and messaging recovery steps.
+- [[doc|platform/002-compute-and-container-apps]] — Workloads that consume these resources.
+- [[doc|platform/004-identity-and-rbac-matrix]] — Role assignments for each resource.
+- [[doc|operational/004-security-hardening-checklist]] — Network, backup, and quota hardening.
+- [[doc|operational/003-incident-response-and-runbooks]] — Datastore and messaging recovery steps.
 
 <ArchitectureGraph id="catalog-ingestion" type="service" depth="2" maxHeight="28" />

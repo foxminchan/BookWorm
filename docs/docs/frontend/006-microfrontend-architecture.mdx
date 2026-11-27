@@ -1,4 +1,4 @@
-﻿---
+---
 title: Multi-Zone Composition
 summary: Why BookWorm splits customer discovery and authenticated checkout into two zones behind one gateway origin, and how cross-zone navigation works.
 owners:
@@ -27,7 +27,7 @@ The visual below illustrates how an unauthenticated shopper crossing from **Stor
 - **Workload isolation by caching profile:** Public catalog discovery (**Storefront**) and private transactional workflows (**Commerce**) run as separate application deployments so aggressive component caching and SEO optimization never risk leaking user-specific basket or order state.
 - **Single-origin presentation:** Both customer zones share one HTTPS origin via the **API Gateway**, eliminating cross-domain cookie complexity, extra identity redirect URIs, and CORS overhead.
 - **Shared routing manifest:** Both the reverse proxy and the microfrontend framework read a single authoritative route manifest so path ownership and static asset prefixes stay synchronized.
-- **Document-level zone isolation:** Transitions across the **Storefront**â€“**Commerce** boundary use full-document navigation with prefetching rather than runtime bundle federation, preventing React tree or global state coupling across independent deployments.
+- **Document-level zone isolation:** Transitions across the **Storefront**–**Commerce** boundary use full-document navigation with prefetching rather than runtime bundle federation, preventing React tree or global state coupling across independent deployments.
 
 <Admonition type="info" title="Single Customer Authentication Owner">
 	**Storefront** owns the customer authentication callback and identity provider integration.

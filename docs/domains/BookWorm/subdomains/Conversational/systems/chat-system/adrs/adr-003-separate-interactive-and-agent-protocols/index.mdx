@@ -1,4 +1,4 @@
-﻿---
+---
 id: adr-003-separate-interactive-and-agent-protocols
 name: "ADR-003: Separate interactive chat from agent-to-agent protocols"
 version: 1.0.0
@@ -40,8 +40,8 @@ Treating both needs as a single undifferentiated entry point would tightly coupl
 The chat system provides distinct entry points depending on who is calling and what they need:
 
 - **Interactive customer workflow:** Customer-facing applications connect to the interactive workflow channel. Every request through this channel goes through request validation, coordinated handoffs to the appropriate local specialists, and final response formatting before returning an answer.
-- **Agent discovery:** A separate discovery directory lets agent-to-agent consumers see which agents are registered and available. Seeing an agent in this directory only identifies itâ€”it does not grant permission to invoke it.
-- **Direct agent-to-agent calls:** Individual agents expose direct agent-to-agent access only when they explicitly opt in. Direct calls require proper authorization and run only the targeted specialist agentâ€”they do not automatically trigger the full customer workflow's validation, routing, specialist handoffs, or final response formatting.
+- **Agent discovery:** A separate discovery directory lets agent-to-agent consumers see which agents are registered and available. Seeing an agent in this directory only identifies it—it does not grant permission to invoke it.
+- **Direct agent-to-agent calls:** Individual agents expose direct agent-to-agent access only when they explicitly opt in. Direct calls require proper authorization and run only the targeted specialist agent—they do not automatically trigger the full customer workflow's validation, routing, specialist handoffs, or final response formatting.
 - **Selective participation:** Supporting one communication style for a service does not mean every local or remote agent participates in every protocol.
 
 ## 4. Trade-offs & Lessons Learned

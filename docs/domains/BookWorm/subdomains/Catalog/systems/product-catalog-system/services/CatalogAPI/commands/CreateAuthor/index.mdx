@@ -1,4 +1,4 @@
-﻿---
+---
 id: CreateAuthor
 name: Create author
 version: 1.0.0
@@ -22,16 +22,16 @@ sidebar:
 
 ## Overview
 
-| Property                           | Value                                                                                                                          |
-| :--------------------------------- | :----------------------------------------------------------------------------------------------------------------------------- |
-| **Bounded Context**                | Catalog                                                                                                                        |
-| **Owner Service**                  | [[service\|catalog-api]]                                                                                                       |
-| **Protocol / Format**              | HTTP `POST`, `application/json` request and JSON string response                                                               |
-| **Gateway Endpoint**               | `POST /catalog/api/v1/authors` (service path `/api/v1/authors`)                                                                |
-| **Authentication & Authorization** | Microsoft Entra ID JWT â€” `business_user` policy (role `business_user` or `admin` and scopes `catalog_read`, `catalog_write`) |
-| **Idempotency / Concurrency**      | Not idempotent; no `x-request-id` header is required or enforced                                                               |
-| **Rate Limit / Caching**           | Global concurrency (`100`) and fixed-window (`30 req/min`) limiters plus per-user token bucket; invalidates author list cache  |
-| **Contract Version**               | `1.0.0` (`ApiVersions.V1`)                                                                                                     |
+| Property                           | Value                                                                                                                         |
+| :--------------------------------- | :---------------------------------------------------------------------------------------------------------------------------- |
+| **Bounded Context**                | Catalog                                                                                                                       |
+| **Owner Service**                  | [[service\|catalog-api]]                                                                                                      |
+| **Protocol / Format**              | HTTP `POST`, `application/json` request and JSON string response                                                              |
+| **Gateway Endpoint**               | `POST /catalog/api/v1/authors` (service path `/api/v1/authors`)                                                               |
+| **Authentication & Authorization** | Microsoft Entra ID JWT — `business_user` policy (role `business_user` or `admin` and scopes `catalog_read`, `catalog_write`)  |
+| **Idempotency / Concurrency**      | Not idempotent; no `x-request-id` header is required or enforced                                                              |
+| **Rate Limit / Caching**           | Global concurrency (`100`) and fixed-window (`30 req/min`) limiters plus per-user token bucket; invalidates author list cache |
+| **Contract Version**               | `1.0.0` (`ApiVersions.V1`)                                                                                                    |
 
 ## Request & Response Contract
 
@@ -69,11 +69,11 @@ Returns `200 OK` without a `Location` header.
 
 ## Related Documentation
 
-- [[service|catalog-api]] â€” Service overview, routing, and authorization policies.
-- [[entity|author]] â€” Author entity model.
-- [[command|UpdateAuthor]] â€” Rename an existing author.
-- [[command|DeleteAuthor]] â€” Remove an author with no linked books.
-- [[command|CreateBook]] â€” Link created authors to a new book listing.
+- [[service|catalog-api]] — Service overview, routing, and authorization policies.
+- [[entity|author]] — Author entity model.
+- [[command|UpdateAuthor]] — Rename an existing author.
+- [[command|DeleteAuthor]] — Remove an author with no linked books.
+- [[command|CreateBook]] — Link created authors to a new book listing.
 
 <NodeGraph />
 

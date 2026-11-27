@@ -1,4 +1,4 @@
-﻿---
+---
 id: adr-002-publish-feedback-events-for-catalog-projection
 name: "ADR-002: Publish feedback events for Catalog's rating projection"
 version: 1.0.0
@@ -39,7 +39,7 @@ The two domains therefore need an integration mechanism that communicates just e
 ## 2. Business Value
 
 - **Uninterrupted product discovery:** Storefront browsing stays fast and available even if Reviews experiences heavy load or temporary maintenance.
-- **Minimal data exposure:** Only the book reference, feedback reference, and numeric rating are sharedâ€”keeping reviewer details and comments private to Reviews.
+- **Minimal data exposure:** Only the book reference, feedback reference, and numeric rating are shared—keeping reviewer details and comments private to Reviews.
 - **Independent evolution:** Reviews and Catalog can each manage and scale their own data stores independently.
 - **Clear accountability:** Reviews remains responsible for individual feedback accuracy, while Catalog owns its product-facing rating projection.
 

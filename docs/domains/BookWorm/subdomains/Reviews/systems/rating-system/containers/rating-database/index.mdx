@@ -1,4 +1,4 @@
-﻿---
+---
 id: rating-database
 name: Rating Database
 version: 1.0.0
@@ -27,7 +27,7 @@ Rating Database (`ratingdb`) is the authoritative Azure Cosmos DB system of reco
 
 | Property                            | Value                                                                            |
 | :---------------------------------- | :------------------------------------------------------------------------------- |
-| **Bounded Context / Owner**         | Reviews â€” [[team\|catalog-experience-team]]                                    |
+| **Bounded Context / Owner**         | Reviews — [[team\|catalog-experience-team]]                                      |
 | **Engine / Technology**             | Azure Cosmos DB (NoSQL API; Cosmos DB Emulator locally)                          |
 | **Store Type**                      | Database                                                                         |
 | **Primary Writer(s)**               | [[service\|rating-api]]                                                          |
@@ -38,17 +38,17 @@ Rating Database (`ratingdb`) is the authoritative Azure Cosmos DB system of reco
 
 ## Logical Data Layout & Key Patterns
 
-| Container             | Owned Entity         | Partition / Primary Key                                        | Purpose & Concurrency                                                                                                                                                                |
-| :-------------------- | :------------------- | :------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `feedbacks`           | [[entity\|feedback]] | Partition key: `/bookId` (`uuid`); Document key: `id` (`uuid`) | Stores `bookId`, `firstName` (max 50), `lastName` (max 50), optional `comment` (max 1,000), `rating` (`0`â€“`5`), `createdAt`, `lastModifiedAt`; optimistic concurrency via `_etag`. |
-| Wolverine persistence | â€”                  | Envelope ID                                                    | Durable integration message state in `ratingdb` for [[event\|FeedbackCreatedIntegrationEvent]] and [[event\|FeedbackDeletedIntegrationEvent]].                                       |
+| Container             | Owned Entity         | Partition / Primary Key                                        | Purpose & Concurrency                                                                                                                                                              |
+| :-------------------- | :------------------- | :------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `feedbacks`           | [[entity\|feedback]] | Partition key: `/bookId` (`uuid`); Document key: `id` (`uuid`) | Stores `bookId`, `firstName` (max 50), `lastName` (max 50), optional `comment` (max 1,000), `rating` (`0`–`5`), `createdAt`, `lastModifiedAt`; optimistic concurrency via `_etag`. |
+| Wolverine persistence | —                    | Envelope ID                                                    | Durable integration message state in `ratingdb` for [[event\|FeedbackCreatedIntegrationEvent]] and [[event\|FeedbackDeletedIntegrationEvent]].                                     |
 
 ## Consistency, Isolation & Security Guardrails
 
 - **ETag optimistic concurrency & conflicts:** Concurrent modifications raise ETag concurrency failures, and duplicate/conflict responses (`409 Conflict`) are surfaced cleanly at the API boundary. Note that the provisioned `feedbacks` container declares `/bookId` as its partition key without a Cosmos unique-key policy.
 - **Governed read-only agent access:** [[agent|rating-agent]] reads reviews through its governed review-lookup tool (`default_action: deny`, rate-limited at `30/minute`). Generated AI summaries and classifications are never written back to `ratingdb`.
 - **Eventual consistency with Catalog:** [[service|catalog-api]] never queries Cosmos DB directly; it consumes [[event|FeedbackCreatedIntegrationEvent]] and [[event|FeedbackDeletedIntegrationEvent]] to update derived `average_rating` and `total_reviews` projections in [[container|catalog-database]].
-- **PII & validation:** Reviewer `firstName` and `lastName` are annotated for PII redaction in command logs, and rating bounds (`0`â€“`5`) are enforced at the [[service|rating-api]] boundary.
+- **PII & validation:** Reviewer `firstName` and `lastName` are annotated for PII redaction in command logs, and rating bounds (`0`–`5`) are enforced at the [[service|rating-api]] boundary.
 
 :::warning
 **Database-per-Service Isolation:** Only [[service|rating-api]] may write to `ratingdb`, and [[agent|rating-agent]] is restricted to governed read-only queries. Never run PostgreSQL DDL scripts against Rating in live environments (the attached `schema.sql` is a legacy/reference relational DDL only; the active store is Azure Cosmos DB).
@@ -72,16 +72,16 @@ Rating Database (`ratingdb`) is the authoritative Azure Cosmos DB system of reco
 <MermaidFileLoader file="mermaids/rating-database-diagram-1.mmd" />
 
 <AccordionGroup>
-	<Accordion title="Reference relational DDL (legacy/reference only â€” live store is Cosmos DB)">
+	<Accordion title="Reference relational DDL (legacy/reference only — live store is Cosmos DB)">
 		<Schema file="schema.sql" lang="sql" title="Reference SQL DDL" />
 	</Accordion>
 </AccordionGroup>
 
 ## Related Documentation
 
-- [[service|rating-api]] â€” Owning service REST endpoints, Cosmos DB wiring, and A2A gRPC server.
-- [[container|rating-cache]] â€” FusionCache L1 + Redis L2 cache for AI feedback summaries.
-- [[agent|rating-agent]] â€” Read-only review summarization and quality assessment agent.
-- [[container|catalog-database]] â€” Downstream PostgreSQL store maintaining derived book rating summaries.
-- [[adr|adr-001-postgresql-feedback-system-of-record]] â€” Decision record for feedback persistence and boundaries.
-- [[doc|operational/005-backup-restore-and-dr]] â€” Platform backup, restore, and disaster recovery runbook.
+- [[service|rating-api]] — Owning service REST endpoints, Cosmos DB wiring, and A2A gRPC server.
+- [[container|rating-cache]] — FusionCache L1 + Redis L2 cache for AI feedback summaries.
+- [[agent|rating-agent]] — Read-only review summarization and quality assessment agent.
+- [[container|catalog-database]] — Downstream PostgreSQL store maintaining derived book rating summaries.
+- [[adr|adr-001-postgresql-feedback-system-of-record]] — Decision record for feedback persistence and boundaries.
+- [[doc|operational/005-backup-restore-and-dr]] — Platform backup, restore, and disaster recovery runbook.

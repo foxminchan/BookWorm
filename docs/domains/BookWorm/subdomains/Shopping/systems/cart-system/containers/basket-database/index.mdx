@@ -1,4 +1,4 @@
-﻿---
+---
 id: basket-database
 name: Basket Database
 version: 1.0.0
@@ -29,7 +29,7 @@ Basket Database is the authoritative Redis key-value store owned exclusively by 
 
 | Property                            | Value                                                                               |
 | :---------------------------------- | :---------------------------------------------------------------------------------- |
-| **Bounded Context / Owner**         | Shopping â€” [[team\|commerce-fulfillment-team]]                                    |
+| **Bounded Context / Owner**         | Shopping — [[team\|commerce-fulfillment-team]]                                      |
 | **Engine / Technology**             | Redis (Azure Managed Redis in cloud; Redis container locally)                       |
 | **Store Type**                      | Database (Key-Value)                                                                |
 | **Primary Writer(s)**               | [[service\|basket-api]]                                                             |
@@ -77,9 +77,9 @@ Note: Neither the Aspire Redis configuration nor the generated Azure Redis templ
 
 ## Related Documentation
 
-- [[service|basket-api]] â€” Owning service REST/gRPC endpoints, authorization, and Kafka handlers.
-- [[container|order-database]] â€” Authoritative PostgreSQL store for confirmed purchases after checkout.
-- [[container|order-cache]] â€” Sibling logical workload on the shared Redis resource.
-- [[adr|adr-001-redis-authoritative-basket-store]] â€” Decision adopting Redis as the authoritative basket store.
-- [[adr|adr-004-catalog-enrichment-at-read-time]] â€” Decision to enrich basket items at read time instead of caching prices.
-- [[doc|operational/005-backup-restore-and-dr]] â€” Platform backup, restore, and disaster recovery runbook.
+- [[service|basket-api]] — Owning service REST/gRPC endpoints, authorization, and Kafka handlers.
+- [[container|order-database]] — Authoritative PostgreSQL store for confirmed purchases after checkout.
+- [[container|order-cache]] — Sibling logical workload on the shared Redis resource.
+- [[adr|adr-001-redis-authoritative-basket-store]] — Decision adopting Redis as the authoritative basket store.
+- [[adr|adr-004-catalog-enrichment-at-read-time]] — Decision to enrich basket items at read time instead of caching prices.
+- [[doc|operational/005-backup-restore-and-dr]] — Platform backup, restore, and disaster recovery runbook.

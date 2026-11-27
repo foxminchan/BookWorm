@@ -1,4 +1,4 @@
-﻿---
+---
 id: FeedbackCreatedIntegrationEvent
 name: Feedback created
 version: 1.0.0
@@ -60,13 +60,13 @@ badges:
 
 ## Related Documentation
 
-- [[service|rating-api]] â€” Producer service owning feedback records.
-- [[service|catalog-api]] â€” Consumer service maintaining denormalized book ratings.
-- [[channel|bookworm.&#123;env&#125;.rating.feedback-create]] â€” Kafka channel specification.
-- [[channel|bookworm.&#123;env&#125;.catalog.dead-letter-queue]] â€” Dead-letter channel for failed Catalog consumers.
-- [[event|BookUpdatedRatingFailedIntegrationEvent]] â€” Compensating event emitted when the referenced book does not exist.
-- [[event|FeedbackDeletedIntegrationEvent]] â€” Companion event for removing a deleted rating.
-- [[entity|feedback]] â€” Feedback document schema.
+- [[service|rating-api]] — Producer service owning feedback records.
+- [[service|catalog-api]] — Consumer service maintaining denormalized book ratings.
+- [[channel|bookworm.&#123;env&#125;.rating.feedback-create]] — Kafka channel specification.
+- [[channel|bookworm.&#123;env&#125;.catalog.dead-letter-queue]] — Dead-letter channel for failed Catalog consumers.
+- [[event|BookUpdatedRatingFailedIntegrationEvent]] — Compensating event emitted when the referenced book does not exist.
+- [[event|FeedbackDeletedIntegrationEvent]] — Companion event for removing a deleted rating.
+- [[entity|feedback]] — Feedback document schema.
 
 <NodeGraph />
 

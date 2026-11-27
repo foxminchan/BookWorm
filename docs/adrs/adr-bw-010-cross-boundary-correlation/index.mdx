@@ -1,4 +1,4 @@
-﻿---
+---
 id: adr-bw-010-cross-boundary-correlation
 name: "ADR-BW-010: Preserve message identity and cross-boundary correlation"
 version: 1.0.0
@@ -56,5 +56,5 @@ Customer journeys such as checkout and review projection span microfrontends, HT
 ### Compliance Criteria
 
 - Integration events must carry stable message IDs and domain correlation keys (e.g., `OrderId`, `FeedbackId`).
-- Handlers and endpoints must derive caller identity exclusively from validated Entra ID tokensâ€”never from correlation headers or payload fields.
+- Handlers and endpoints must derive caller identity exclusively from validated Entra ID tokens—never from correlation headers or payload fields.
 - Incident logs and traces must correlate via opaque IDs rather than customer emails or names.

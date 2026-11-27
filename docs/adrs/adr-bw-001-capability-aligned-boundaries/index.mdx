@@ -1,4 +1,4 @@
-﻿---
+---
 id: adr-bw-001-capability-aligned-boundaries
 name: "ADR-BW-001: Decompose BookWorm by business capability"
 version: 1.0.0
@@ -57,4 +57,4 @@ Book discovery, shopping, ordering, reviews, conversations, and platform operati
 
 - New features must map to an existing bounded context or justify a new capability boundary.
 - Shared libraries must not reference domain entities, business rules, or capability-specific state.
-- Cross-capability communication must use documented HTTP, gRPC, or Kafka contractsâ€”never direct database or internal handler calls.
+- Cross-capability communication must use documented HTTP, gRPC, or Kafka contracts—never direct database or internal handler calls.

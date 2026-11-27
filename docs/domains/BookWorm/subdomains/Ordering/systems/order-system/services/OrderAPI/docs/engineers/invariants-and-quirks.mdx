@@ -1,0 +1,28 @@
+---
+title: Engineering Invariants and Quirks
+summary: Transactional outbox guarantees, idempotency locks, Marten event-store rules, and known runtime contract quirks for Order API.
+version: 1.0.0
+---
+
+Engineering invariants and known contract quirks for [[service|order-api]].
+
+## Persistence & Messaging Invariants
+
+- **Transactional outbox:** Order state mutations in PostgreSQL and outgoing integration events ([[event|UserCheckedOutIntegrationEvent]], [[event|OrderStatusChangedToCompleteIntegrationEvent]], [[event|OrderStatusChangedToCancelIntegrationEvent]]) commit atomically via the Marten + Wolverine transactional outbox.
+- **Idempotency & distributed locking:** Mutating order endpoints require an `x-request-id` header tracked in Redis (`3600s` TTL, returning `409 Conflict` on replay and cleared on `5xx`). [[command|CreateOrder]] additionally acquires a `1`-minute per-buyer Redis lock (`order-create:{userId}`).
+- **Optimistic concurrency:** Status transitions ([[command|CompleteOrder]], [[command|CancelOrder]]) enforce event-stream concurrency and return `412 Precondition Failed` on conflicting concurrent writes.
+- **Buyer-linked basket mapping:** [[event|UserCheckedOutIntegrationEvent]] populates `basketId` with the order's `BuyerId`; downstream consumers must not treat `basketId` as an independently resolved [[service|basket-api]] record.
+
+## Known Contract & Runtime Quirks
+
+:::warning
+The following runtime behaviors diverge from idealized OpenAPI expectations and are tracked in [[doc|arc42/11-risks-and-technical-debt]].
+:::
+
+| Area                      | Command / Operation                                  | Observed Behavior                                                                                                                                                                                 |
+| :------------------------ | :--------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Empty basket checkout** | [[command\|CreateOrder]]                             | [[query\|GetBasketGrpc]] returns an empty response rather than `NotFound` when no basket exists; `CreateOrder` does not reject an empty item list and can persist an empty order (`201 Created`). |
+| **Duplicate buyer**       | [[command\|CreateBuyer]]                             | Creating a buyer with an existing identifier surfaces a database duplicate-key violation as `500 Internal Server Error` instead of `409 Conflict`.                                                |
+| **Buyer deletion FK**     | [[command\|DeleteBuyer]]                             | Deleting a buyer that still owns orders triggers an `ON DELETE SET NULL` foreign-key constraint conflict against non-nullable `buyer_id`, failing at runtime.                                     |
+| **Non-`New` transition**  | [[command\|CancelOrder]], [[command\|CompleteOrder]] | Customers targeting their own already-`Cancelled` or `Completed` order receive `500 Internal Server Error`, whereas administrators receive `404 Not Found`.                                       |
+| **`404` content-type**    | Resource-not-found responses                         | OpenAPI metadata declares `application/problem+json`, while runtime `404 Not Found` responses return `application/json` with `{ "detail": "..." }`.                                               |

@@ -1,0 +1,28 @@
+---
+title: Durable Orchestration Inspection and Termination
+summary: CLI-first runbook to inspect, diagnose, or terminate stuck checkout saga instances in Order Orchestration.
+version: 1.0.0
+---
+
+Operational runbook for [[service|order-orchestration]] when a checkout saga stalls or enters a failed state.
+
+<Steps>
+  <Step title="Query orchestration instance status by OrderId">
+    Use the Azure Functions Durable Task status endpoint (instance ID equals `OrderId`):
+
+    ```bash
+    curl -sS -H "x-functions-key: $FUNCTIONS_MASTER_KEY" \
+      "$ORDER_ORCHESTRATION_URL/runtime/webhooks/durabletask/instances/$ORDER_ID?showHistory=true" | jq '{runtimeStatus, customStatus, createdTime, lastUpdatedTime}'
+    ```
+
+  </Step>
+  <Step title="Terminate a stuck instance">
+    If an instance is permanently stuck after manual remediation of [[service|order-api]] and [[service|basket-api]], terminate it cleanly:
+
+    ```bash
+    curl -sS -X POST -H "x-functions-key: $FUNCTIONS_MASTER_KEY" \
+      "$ORDER_ORCHESTRATION_URL/runtime/webhooks/durabletask/instances/$ORDER_ID/terminate?reason=ManualOperatorIntervention"
+    ```
+
+  </Step>
+</Steps>

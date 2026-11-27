@@ -1,4 +1,4 @@
-﻿---
+---
 id: order-lifecycle
 name: Order Lifecycle
 version: 1.0.0
@@ -31,14 +31,14 @@ _Authoritative Order Status Transitions_
 :::warning
 **Do not conflate orchestration timeouts, email delivery, or soft deletion with a Cancelled order.**
 
-- When [[service|order-orchestration]] exhausts its bounded retry budget, it cancels its own coordination workflow and may request a cancellation email via [[command|CancelOrderCommand]]â€”without cancelling the [[entity|order]] in [[service|order-api]].
+- When [[service|order-orchestration]] exhausts its bounded retry budget, it cancels its own coordination workflow and may request a cancellation email via [[command|CancelOrderCommand]]—without cancelling the [[entity|order]] in [[service|order-api]].
 - When [[service|order-api]] handles [[command|DeleteBasketFailedCommand]], it soft-deletes the order record while preserving its existing **New** business status.
   :::
 
 ## Related Resources
 
-- [[domain|ordering]] â€” Ordering bounded context
-- [[service|order-api]] â€” Authoritative owner of the [[entity|order]] lifecycle
-- [[service|order-orchestration]] â€” Post-checkout coordination workflow
-- [[flow|order-lifecycle]], [[diagram|checkout-interaction]] â€” End-to-end order lifecycle and checkout interactions
-- [[adr|adr-003-separate-order-status-from-finance-saga]], [[adr|adr-005-finance-separate-workflow-and-order-status]] â€” Architectural decisions separating order status from orchestration
+- [[domain|ordering]] — Ordering bounded context
+- [[service|order-api]] — Authoritative owner of the [[entity|order]] lifecycle
+- [[service|order-orchestration]] — Post-checkout coordination workflow
+- [[flow|order-lifecycle]], [[diagram|checkout-interaction]] — End-to-end order lifecycle and checkout interactions
+- [[adr|adr-003-separate-order-status-from-finance-saga]], [[adr|adr-005-finance-separate-workflow-and-order-status]] — Architectural decisions separating order status from orchestration

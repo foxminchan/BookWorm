@@ -1,4 +1,4 @@
-﻿---
+---
 id: adr-002-customer-scoped-basket-ownership
 name: "ADR-002: Scope each basket to the authenticated customer"
 version: 1.0.0
@@ -38,9 +38,9 @@ A customer's [[entity|basket]] represents their personal, pre-order purchase int
 
 ## 3. How It Works
 
-Each authenticated customer is automatically matched to their own personal [[entity|basket]] containing their selected [[entity|basket-item]] references and quantities. Callers never choose a basket identifier on their ownâ€”the system derives the basket's location strictly from the verified customer identity on the request.
+Each authenticated customer is automatically matched to their own personal [[entity|basket]] containing their selected [[entity|basket-item]] references and quantities. Callers never choose a basket identifier on their own—the system derives the basket's location strictly from the verified customer identity on the request.
 
-This rule applies uniformly to every operationâ€”reading, creating, updating, and deletingâ€”whether the request comes directly from a customer's browser or from an internal service acting on the customer's behalf. Any attempt to access another customer's basket is rejected explicitly rather than returning an empty cart. After checkout completes, ownership of the resulting purchase transfers to [[domain|ordering]].
+This rule applies uniformly to every operation—reading, creating, updating, and deleting—whether the request comes directly from a customer's browser or from an internal service acting on the customer's behalf. Any attempt to access another customer's basket is rejected explicitly rather than returning an empty cart. After checkout completes, ownership of the resulting purchase transfers to [[domain|ordering]].
 
 ## 4. Trade-offs & Lessons Learned
 

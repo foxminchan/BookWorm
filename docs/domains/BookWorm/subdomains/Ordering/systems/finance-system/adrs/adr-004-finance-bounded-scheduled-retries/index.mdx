@@ -1,4 +1,4 @@
-﻿---
+---
 id: adr-004-finance-bounded-scheduled-retries
 name: "ADR-004: Bound placement retries with scheduled saga timeouts"
 version: 1.0.0
@@ -58,7 +58,7 @@ This retrospective ADR documents the timeout behavior actually implemented, incl
 
 ### Operational Realities & Caveats
 
-- **Repeated downstream work:** Because reissuing the placement request targets a shared contract consumed by both Basket and Notificationâ€”and because cleanup success does not cancel pending timeoutsâ€”retries can trigger duplicate basket cleanup attempts and additional emails. Downstream consumers and operations teams must account for repeated processing.
+- **Repeated downstream work:** Because reissuing the placement request targets a shared contract consumed by both Basket and Notification—and because cleanup success does not cancel pending timeouts—retries can trigger duplicate basket cleanup attempts and additional emails. Downstream consumers and operations teams must account for repeated processing.
 - **Intervals, not strict SLAs:** The 30-minute delay governs the gap between scheduled checks; scheduling delays, queue backlogs, or downstream latency mean it is not a guaranteed wall-clock completion deadline.
 - **Workflow retries vs. transport retries:** These scheduled workflow reissues operate at the coordination level and are distinct from lower-level message-broker delivery retries.
 - **Internal closure only:** A Finance timeout exhaustion updates only Finance's workflow state; it does not prove that Ordering cancelled the Order or that a cancellation email reached the customer.
@@ -74,10 +74,10 @@ This retrospective ADR documents the timeout behavior actually implemented, incl
 
 ### Contracts & Messaging Notes
 
-| Item                             | Detail                                                                                                                                           |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Scheduled timeout mechanism      | Local Wolverine `TimeoutMessage` (`PlaceOrderTimeout`) â€” **not** the documented-but-unused `PlaceOrderTimeoutIntegrationEvent` Kafka contract. |
-| Reissued command                 | [[command\|PlaceOrderCommand]] (consumed by both Basket and Notification).                                                                       |
-| Saga persistence                 | Retry count (`TimeoutRetryCount`) and saga state persist across process restarts.                                                                |
-| Basket-success side effect       | Does not cancel outstanding timeouts or complete the saga; later timeouts can still reissue [[command\|PlaceOrderCommand]].                      |
-| Explicit basket-failure behavior | Ends the saga immediately rather than consuming remaining timeout attempts.                                                                      |
+| Item                             | Detail                                                                                                                                         |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Scheduled timeout mechanism      | Local Wolverine `TimeoutMessage` (`PlaceOrderTimeout`) — **not** the documented-but-unused `PlaceOrderTimeoutIntegrationEvent` Kafka contract. |
+| Reissued command                 | [[command\|PlaceOrderCommand]] (consumed by both Basket and Notification).                                                                     |
+| Saga persistence                 | Retry count (`TimeoutRetryCount`) and saga state persist across process restarts.                                                              |
+| Basket-success side effect       | Does not cancel outstanding timeouts or complete the saga; later timeouts can still reissue [[command\|PlaceOrderCommand]].                    |
+| Explicit basket-failure behavior | Ends the saga immediately rather than consuming remaining timeout attempts.                                                                    |

@@ -1,0 +1,20 @@
+---
+title: Engineering Invariants and Quirks
+summary: Cosmos DB partitioning, ETag concurrency, Presidio PII redaction, AI summary caching, and compensating rollback for Rating API.
+version: 1.0.0
+---
+
+Engineering invariants and known contract quirks for [[service|rating-api]].
+
+## Storage, Privacy & Caching Invariants
+
+- **Cosmos DB partitioning & ETag concurrency:** Feedback documents are stored in [[container|rating-database]] (`ratingdb`/`feedbacks`) partitioned by `/bookId`. Deletions ([[command|DeleteFeedback]]) enforce Cosmos DB ETag concurrency (`409 Conflict` on mismatch).
+- **PII log redaction & Presidio governance:** Reviewer `firstName` and `lastName` are redacted in structured logs, and [[query|SummarizeFeedback]] uses [[service|presidio-api]] to scrub PII before/after AI summarization.
+- **AI summary cache invalidation:** Mutations clear cached feedback lists tagged by `bookId` and evict cached AI rating summaries when `reviewCount` is `0` or feedback is deleted.
+- **Compensating rollback:** If [[service|catalog-api]] emits [[event|BookUpdatedRatingFailedIntegrationEvent]] because the target book does not exist, [[service|rating-api]] deletes the orphaned feedback document and invalidates caches.
+
+## Known Contract & Runtime Quirks
+
+:::note
+OpenAPI metadata for [[command|DeleteFeedback]] declares `404 Not Found` as `application/problem+json`, whereas runtime responses return `application/json` with `{ "detail": "The requested resource was not found." }`.
+:::

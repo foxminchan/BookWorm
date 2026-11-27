@@ -1,4 +1,4 @@
-﻿---
+---
 id: chat-system
 name: Chat System
 version: 1.0.0
@@ -47,7 +47,7 @@ badges:
 
 ## System Purpose & Boundary
 
-The Chat System delivers BookWorm's interactive conversational assistant and multi-agent orchestration within the [[domain|conversational]] domain. It serves **Customers** seeking store-policy answers, catalog-backed book discovery, personalized recommendations, and review insights. Modifying shopping baskets ([[domain|shopping]]), placing or mutating orders ([[domain|ordering]]), and persisting customer reviews ([[domain|reviews]]) are explicitly out of scopeâ€”the system operates strictly as a read-only advisor.
+The Chat System delivers BookWorm's interactive conversational assistant and multi-agent orchestration within the [[domain|conversational]] domain. It serves **Customers** seeking store-policy answers, catalog-backed book discovery, personalized recommendations, and review insights. Modifying shopping baskets ([[domain|shopping]]), placing or mutating orders ([[domain|ordering]]), and persisting customer reviews ([[domain|reviews]]) are explicitly out of scope—the system operates strictly as a read-only advisor.
 
 :::warning
 All conversational inputs and outputs pass through fail-closed PII detection and anonymization in [[system|data-privacy]]. Streaming replies are buffered until privacy screening succeeds; if privacy screening is unavailable, the turn fails rather than bypassing redaction.
@@ -93,7 +93,7 @@ All conversational inputs and outputs pass through fail-closed PII detection and
 
 ## Related Documentation
 
-- [[flow|agent-orchestration]] â€” End-to-end conversational routing and specialist handoff flow.
-- [[doc|domains/bookworm/subdomains/conversational/engineering/01-conversation-architecture]] â€” Conversational workflow architecture and governance boundaries.
-- [[doc|domains/bookworm/subdomains/conversational/guides/01-route-customer-requests]] â€” Request routing and scope enforcement guide.
-- [[doc|domains/bookworm/subdomains/conversational/guides/02-handle-book-discovery]] â€” Catalog-backed book discovery guide.
+- [[flow|agent-orchestration]] — End-to-end conversational routing and specialist handoff flow.
+- [[doc|domains/bookworm/subdomains/conversational/engineering/01-conversation-architecture]] — Conversational workflow architecture and governance boundaries.
+- [[doc|domains/bookworm/subdomains/conversational/guides/01-route-customer-requests]] — Request routing and scope enforcement guide.
+- [[doc|domains/bookworm/subdomains/conversational/guides/02-handle-book-discovery]] — Catalog-backed book discovery guide.

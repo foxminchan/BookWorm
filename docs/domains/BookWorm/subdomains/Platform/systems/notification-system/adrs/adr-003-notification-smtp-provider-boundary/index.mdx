@@ -1,4 +1,4 @@
-﻿---
+---
 id: adr-003-notification-smtp-provider-boundary
 name: "ADR-003: Keep email delivery behind a MailKit SMTP provider boundary"
 version: 1.0.0
@@ -24,7 +24,7 @@ badges:
 
 ## 1. Context & Problem
 
-BookWorm needs a practical way to send emails across different environmentsâ€”allowing developers to test email formatting and flows locally without sending real messages to customers, while using a production mail service in live environments. Coupling order workflows directly to a specific vendor's proprietary web API would make switching providers harder and complicate local testing. In addition, external mail submission can time out or fail independently of BookWorm's internal saved notification state.
+BookWorm needs a practical way to send emails across different environments—allowing developers to test email formatting and flows locally without sending real messages to customers, while using a production mail service in live environments. Coupling order workflows directly to a specific vendor's proprietary web API would make switching providers harder and complicate local testing. In addition, external mail submission can time out or fail independently of BookWorm's internal saved notification state.
 
 ## 2. Business Value
 

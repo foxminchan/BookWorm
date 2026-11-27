@@ -1,4 +1,4 @@
-﻿---
+---
 id: DeleteFeedback
 name: Delete feedback
 version: 1.0.0
@@ -28,7 +28,7 @@ sidebar:
 | **Owner Service**                  | [[service\|rating-api]]                                                                                                                                                              |
 | **Protocol / Format**              | HTTP `DELETE`, path parameter only, empty response (`204 No Content`)                                                                                                                |
 | **Gateway Endpoint**               | `DELETE /rating/api/v1/feedbacks/{id}` (service path `/api/v1/feedbacks/{id}`)                                                                                                       |
-| **Authentication & Authorization** | Microsoft Entra ID JWT â€” `admin` policy (role `admin` and scopes `rating_read`, `rating_write`)                                                                                    |
+| **Authentication & Authorization** | Microsoft Entra ID JWT — `admin` policy (role `admin` and scopes `rating_read`, `rating_write`)                                                                                      |
 | **Idempotency / Concurrency**      | Not idempotent across retries; repeat calls return `404 Not Found`; Cosmos DB ETag optimistic concurrency                                                                            |
 | **Rate Limit / Caching**           | Global concurrency (`100`), per-IP fixed-window (`30 req/min`), and per-user token bucket (`30` tokens, `+20` per `10s`, queue `5`); invalidates feedback list and AI summary caches |
 | **Contract Version**               | `1.0.0` (`ApiVersions.V1`)                                                                                                                                                           |
@@ -71,11 +71,11 @@ OpenAPI metadata declares `404 Not Found` as `application/problem+json`, whereas
 
 ## Related Documentation
 
-- [[service|rating-api]] â€” Service overview, Azure Cosmos DB storage, and authorization policies.
-- [[entity|feedback]] â€” Feedback document model.
-- [[command|CreateFeedback]] â€” Submit a new book feedback record.
-- [[event|FeedbackDeletedIntegrationEvent]] â€” Kafka event published on deletion.
-- [[query|ListFeedbacks]] â€” Retrieve feedback records to locate IDs.
+- [[service|rating-api]] — Service overview, Azure Cosmos DB storage, and authorization policies.
+- [[entity|feedback]] — Feedback document model.
+- [[command|CreateFeedback]] — Submit a new book feedback record.
+- [[event|FeedbackDeletedIntegrationEvent]] — Kafka event published on deletion.
+- [[query|ListFeedbacks]] — Retrieve feedback records to locate IDs.
 
 <NodeGraph />
 

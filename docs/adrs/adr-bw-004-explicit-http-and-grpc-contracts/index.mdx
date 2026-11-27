@@ -1,4 +1,4 @@
-﻿---
+---
 id: adr-bw-004-explicit-http-and-grpc-contracts
 name: "ADR-BW-004: Integrate request-response operations through owned HTTP and gRPC contracts"
 version: 1.0.0
@@ -29,7 +29,7 @@ x-scope: "Whole system"
 
 ## Context & Problem Statement
 
-Synchronous interactionsâ€”such as checkout price validation between [[service|order-api]] and [[service|catalog-api]], basket reads, and [[service|mcp-server]] tool callsâ€”require immediate responses. Reading another service's database or invoking internal handlers directly couples callers to private implementation details and bypasses authorization.
+Synchronous interactions—such as checkout price validation between [[service|order-api]] and [[service|catalog-api]], basket reads, and [[service|mcp-server]] tool calls—require immediate responses. Reading another service's database or invoking internal handlers directly couples callers to private implementation details and bypasses authorization.
 
 ## Decision Drivers
 

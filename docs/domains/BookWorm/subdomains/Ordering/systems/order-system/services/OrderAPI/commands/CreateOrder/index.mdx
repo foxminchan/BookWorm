@@ -1,4 +1,4 @@
-﻿---
+---
 id: CreateOrder
 name: Create order
 version: 1.0.0
@@ -28,7 +28,7 @@ sidebar:
 | **Owner Service**                  | [[service\|order-api]]                                                                                                                                                 |
 | **Protocol / Format**              | HTTP `POST`, `application/json` UUID response                                                                                                                          |
 | **Gateway Endpoint**               | `POST /ordering/api/v1/orders` (service path `/api/v1/orders`)                                                                                                         |
-| **Authentication & Authorization** | Microsoft Entra ID JWT â€” `customer` or `admin` role plus scopes `ordering_read`, `ordering_write`                                                                    |
+| **Authentication & Authorization** | Microsoft Entra ID JWT — `customer` or `admin` role plus scopes `ordering_read`, `ordering_write`                                                                      |
 | **Idempotency / Concurrency**      | Required `x-request-id` header (Redis-backed 3600s TTL; returns `409 Conflict` on duplicate); per-buyer Redis distributed lock (`order-create:{userId}`, 1-minute TTL) |
 | **Rate Limit / Caching**           | Global concurrency (`100`), per-IP fixed-window (`30 req/min`), and per-user token bucket (`30` burst, `20` per `10s`, queue `5`)                                      |
 | **Contract Version**               | `1.0.0` (`ApiVersions.V1`)                                                                                                                                             |
@@ -58,7 +58,7 @@ Accepts no request body; basket items and unit prices are resolved server-side.
 - **Idempotency key lifecycle:** Claims `x-request-id` in Redis for 3600 seconds (`409 Conflict` on replay) and deletes the key if the operation fails with `5xx`.
 
 :::note
-[[query|GetBasketGrpc]] returns an empty response when no basket exists rather than `NotFound`, and `CreateOrder` does not reject an empty item listâ€”an empty basket proceeds to persistence and returns `201 Created` if saved.
+[[query|GetBasketGrpc]] returns an empty response when no basket exists rather than `NotFound`, and `CreateOrder` does not reject an empty item list—an empty basket proceeds to persistence and returns `201 Created` if saved.
 :::
 
 ## Error Responses
@@ -75,12 +75,12 @@ Accepts no request body; basket items and unit prices are resolved server-side.
 
 ## Related Documentation
 
-- [[service|order-api]] â€” Service architecture, persistence, and endpoints.
-- [[entity|order]] â€” Order aggregate invariants and lifecycle statuses.
-- [[event|UserCheckedOutIntegrationEvent]] â€” Kafka event published after order creation.
-- [[channel|bookworm.&#123;env&#125;.ordering.user-checked-out]] â€” Kafka topic specification.
-- [[service|basket-api]] â€” Upstream gRPC source for customer baskets.
-- [[service|catalog-api]] â€” Upstream gRPC source for authoritative book pricing.
+- [[service|order-api]] — Service architecture, persistence, and endpoints.
+- [[entity|order]] — Order aggregate invariants and lifecycle statuses.
+- [[event|UserCheckedOutIntegrationEvent]] — Kafka event published after order creation.
+- [[channel|bookworm.&#123;env&#125;.ordering.user-checked-out]] — Kafka topic specification.
+- [[service|basket-api]] — Upstream gRPC source for customer baskets.
+- [[service|catalog-api]] — Upstream gRPC source for authoritative book pricing.
 
 <NodeGraph />
 

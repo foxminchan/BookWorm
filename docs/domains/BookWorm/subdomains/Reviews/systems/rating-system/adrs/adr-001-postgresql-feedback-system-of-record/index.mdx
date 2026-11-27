@@ -1,4 +1,4 @@
-﻿---
+---
 id: adr-001-postgresql-feedback-system-of-record
 name: "ADR-001: Use PostgreSQL as the feedback system of record"
 version: 1.0.0
@@ -28,7 +28,7 @@ badges:
 
 Individual customer [[entity|feedback]] carries its own lifecycle rules, reviewer details, a rating, and an optional comment. [[domain|catalog]] needs rating summaries to support product discovery, but storing or querying individual feedback records inside Catalog would shift [[domain|reviews]] ownership into the wrong domain and tightly couple the two areas.
 
-To keep creation, browsing, and deletion consistent, BookWorm needs a single authoritative home for feedback identity, reviewer constraints, and review contentâ€”preventing duplicate copies from drifting out of sync across domains.
+To keep creation, browsing, and deletion consistent, BookWorm needs a single authoritative home for feedback identity, reviewer constraints, and review content—preventing duplicate copies from drifting out of sync across domains.
 
 ## 2. Business Value
 
@@ -43,7 +43,7 @@ To keep creation, browsing, and deletion consistent, BookWorm needs a single aut
 
 - When a customer submits feedback, the service checks that the rating is between 0 and 5 and saves the rating, book reference, reviewer information, and optional comment in one place.
 - The store enforces uniqueness for each combination of book and reviewer name so duplicate submissions with the same details are prevented.
-- Other domains interact only through published integration notices or supported service queriesâ€”never by reading the Rating store directly.
+- Other domains interact only through published integration notices or supported service queries—never by reading the Rating store directly.
 - Catalog receives only the identifiers and rating needed to maintain its own derived summary, without receiving review comments or reviewer details.
 - Both AI-generated summaries and Catalog's aggregate rating view are treated as separate, rebuildable derived views rather than replacements for the authoritative feedback store.
 
@@ -68,5 +68,5 @@ To keep creation, browsing, and deletion consistent, BookWorm needs a single aut
 - **Validation & constraints:**
   - `rating-api` validates ratings in the inclusive `0`-`5` range at the API boundary before persistence.
   - PostgreSQL enforces a uniqueness constraint on the book and reviewer name combination alongside relational integrity for feedback IDs, book IDs, reviewer details, and optional comments.
-- **Downstream contract boundary:** Projection events emitted to [[domain|catalog]] carry only identifiers and the rating valueâ€”omitting comment text and reviewer details.
+- **Downstream contract boundary:** Projection events emitted to [[domain|catalog]] carry only identifiers and the rating value—omitting comment text and reviewer details.
 - **Dependencies:** Feedback listing, `rating-api` writes, and [[agent|rating-agent]] reads rely on PostgreSQL availability; missing-book references are handled asynchronously via the Catalog rejection compensation flow rather than cross-database foreign keys.

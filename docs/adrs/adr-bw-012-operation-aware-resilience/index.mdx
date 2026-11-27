@@ -1,4 +1,4 @@
-﻿---
+---
 id: adr-bw-012-operation-aware-resilience
 name: "ADR-BW-012: Select resilience according to operation semantics"
 version: 1.0.0
@@ -49,7 +49,7 @@ Transient network or provider faults affect read queries, checkout writes, sched
 
 ## Decision & Consequences
 
-**Chosen Option:** Apply shared outbound resilience defaults (timeouts, jittered retries, circuit breakers) tailored to operation semanticsâ€”combining idempotency keys, bounded saga retries ([[service|order-orchestration]]), misfire policies ([[service|scheduler-service]]), and DLQs ([[service|notification-api]]) without claiming exactly-once external side effects.
+**Chosen Option:** Apply shared outbound resilience defaults (timeouts, jittered retries, circuit breakers) tailored to operation semantics—combining idempotency keys, bounded saga retries ([[service|order-orchestration]]), misfire policies ([[service|scheduler-service]]), and DLQs ([[service|notification-api]]) without claiming exactly-once external side effects.
 
 - **Positive:** Read paths recover transparently while stateful and external integrations remain protected against amplification and silent loss.
 - **Negative:** Every new outbound client or consumer must explicitly configure and document its retry/timeout bounds.

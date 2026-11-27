@@ -1,0 +1,25 @@
+---
+title: Engineering Invariants and Quirks
+summary: Hybrid cache invalidation, rating projection concurrency, image pre-processing, and known validation quirks for Catalog API.
+version: 1.0.0
+---
+
+Engineering invariants and known contract quirks for [[service|catalog-api]].
+
+## Caching, Persistence & Projection Invariants
+
+- **Hybrid cache invalidation:** Read queries use FusionCache backed by Redis (`catalog-cache`). Catalog mutations and rating projection updates invalidate tagged entries across instances via the Redis backplane.
+- **Derived rating projection:** [[service|catalog-api]] consumes [[event|FeedbackCreatedIntegrationEvent]] and [[event|FeedbackDeletedIntegrationEvent]] to recalculate book average ratings and review counts. If the target book does not exist, it publishes [[event|BookUpdatedRatingFailedIntegrationEvent]] so [[service|rating-api]] compensates.
+- **Vector index handoff:** Book writes mark rows pending for asynchronous embedding by [[service|catalog-ingestion]] rather than calling Qdrant synchronously on the write path.
+
+## Known Contract & Runtime Quirks
+
+:::warning
+The following contract and validation mismatches are tracked in [[doc|arc42/11-risks-and-technical-debt]].
+:::
+
+| Area                      | Command / Operation                                        | Observed Behavior                                                                                                                                                       |
+| :------------------------ | :--------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Image pre-processor**   | [[command\|CreateBook]]                                    | The image upload pre-processor expects a different multipart/form field shape than the endpoint validator under certain client payloads, causing validation mismatches. |
+| **Publisher name length** | [[command\|CreatePublisher]], [[command\|UpdatePublisher]] | `CreatePublisher` and `UpdatePublisher` enforce inconsistent maximum name lengths, allowing names accepted on creation to be rejected on update (or vice versa).        |
+| **`404` content-type**    | Resource-not-found responses                               | OpenAPI metadata declares `application/problem+json`, while runtime `404 Not Found` responses return `application/json`.                                                |

@@ -1,4 +1,4 @@
-﻿---
+---
 id: CreateBook
 name: Create book
 version: 1.0.0
@@ -28,7 +28,7 @@ sidebar:
 | **Owner Service**                  | [[service\|catalog-api]]                                                                                                                |
 | **Protocol / Format**              | HTTP `POST`, `multipart/form-data` request, JSON string response                                                                        |
 | **Gateway Endpoint**               | `POST /catalog/api/v1/books` (service path `/api/v1/books`)                                                                             |
-| **Authentication & Authorization** | Microsoft Entra ID JWT â€” `business_user` policy (role `business_user` or `admin` and scopes `catalog_read`, `catalog_write`)          |
+| **Authentication & Authorization** | Microsoft Entra ID JWT — `business_user` policy (role `business_user` or `admin` and scopes `catalog_read`, `catalog_write`)            |
 | **Idempotency / Concurrency**      | Not idempotent; no `x-request-id` header is required or enforced                                                                        |
 | **Rate Limit / Caching**           | Global concurrency (`100`) and fixed-window (`30 req/min`) limiters plus per-user token bucket; invalidates book list and search caches |
 | **Contract Version**               | `1.0.0` (`ApiVersions.V1`)                                                                                                              |
@@ -77,13 +77,13 @@ sidebar:
 
 ## Related Documentation
 
-- [[service|catalog-api]] â€” Service overview, routing, and authorization policies.
-- [[entity|book]] â€” Book entity model.
-- [[command|UpdateBook]] â€” Replace an existing book listing and manage cover images.
-- [[command|DeleteBook]] â€” Soft-delete an existing book listing.
-- [[command|CreateAuthor]] â€” Create author records before linking them to books.
-- [[command|CreateCategory]] â€” Create category records before linking them to books.
-- [[command|CreatePublisher]] â€” Create publisher records before linking them to books.
+- [[service|catalog-api]] — Service overview, routing, and authorization policies.
+- [[entity|book]] — Book entity model.
+- [[command|UpdateBook]] — Replace an existing book listing and manage cover images.
+- [[command|DeleteBook]] — Soft-delete an existing book listing.
+- [[command|CreateAuthor]] — Create author records before linking them to books.
+- [[command|CreateCategory]] — Create category records before linking them to books.
+- [[command|CreatePublisher]] — Create publisher records before linking them to books.
 
 <NodeGraph />
 

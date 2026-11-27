@@ -1,4 +1,4 @@
-﻿---
+---
 id: adr-001-mcp-read-only-domain-adapter
 name: "ADR-001: Expose domain data through a read-only MCP adapter"
 version: 1.0.0
@@ -26,7 +26,7 @@ badges:
 
 ## 1. Context & Problem
 
-BookWorm's AI assistants and external AI clients need up-to-date information from [[domain|catalog]] and [[domain|reviews]], along with reusable guidance for analyzing that information. However, allowing AI clients to read domain databases directlyâ€”or allowing AI-driven workflows to modify business recordsâ€”would create serious architectural risks:
+BookWorm's AI assistants and external AI clients need up-to-date information from [[domain|catalog]] and [[domain|reviews]], along with reusable guidance for analyzing that information. However, allowing AI clients to read domain databases directly—or allowing AI-driven workflows to modify business records—would create serious architectural risks:
 
 - It would tightly couple AI integrations to internal storage details of Catalog and Reviews.
 - It would blur which system owns business rules and data integrity.

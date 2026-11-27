@@ -1,0 +1,26 @@
+---
+title: Manual Vector Batch Trigger and Quartz Inspection
+summary: CLI-first runbook to inspect Quartz scheduler state and manually trigger a vector batch event.
+version: 1.0.0
+---
+
+Operational runbook for [[service|scheduler-service]] when scheduled jobs stall or an out-of-band vector index catch-up is required.
+
+<Steps>
+  <Step title="Check Quartz trigger state in PostgreSQL">
+    Inspect `qrtz_triggers` to verify whether the vector batch trigger is `WAITING`, `ACQUIRED`, `PAUSED`, or `ERROR`:
+
+    ```bash
+    psql "$SCHEDULER_DB_URL" -c "SELECT trigger_name, trigger_state, next_fire_time, prev_fire_time FROM qrtz_triggers ORDER BY trigger_name;"
+    ```
+
+  </Step>
+  <Step title="Publish an on-demand batch trigger">
+    If immediate indexing is needed without waiting for the next cron tick, publish [[event|ProcessVectorBatchIntegrationEvent]] to [[channel|scheduler.process-vector-batch]]:
+
+    ```bash
+    echo '{"id":"'"$(uuidgen)"'","creationDate":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"}' | kcat -P -b "$KAFKA_BOOTSTRAP" -t "scheduler.process-vector-batch"
+    ```
+
+  </Step>
+</Steps>

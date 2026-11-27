@@ -1,4 +1,4 @@
-﻿---
+---
 id: BasketDeletedFailedIntegrationEvent
 name: Basket deletion failed
 version: 1.0.0
@@ -18,16 +18,16 @@ badges:
 
 ## Overview
 
-| Property                             | Value                                                                                                             |
-| :----------------------------------- | :---------------------------------------------------------------------------------------------------------------- |
-| **Bounded Context**                  | Shopping                                                                                                          |
-| **Producer**                         | [[service\|basket-api]]                                                                                           |
-| **Consumer(s)**                      | [[service\|order-orchestration]]                                                                                  |
-| **Protocol / Format**                | Kafka + CloudEvents JSON (camelCase payload)                                                                      |
-| **Channel / Topic**                  | [[channel\|bookworm.&#123;env&#125;.basket.delete-failed]]                                                        |
-| **Dead-Letter Channel**              | [[channel\|bookworm.&#123;env&#125;.basket.dead-letter-queue]]                                                    |
-| **Partition Key**                    | `OrderId`                                                                                                         |
-| **Delivery / Idempotency Guarantee** | At-least-once delivery; emitted when Redis deletion returns `false` while handling [[command\|PlaceOrderCommand]] |
+| Property                             | Value                                                                                                                                                                                                                                           |
+| :----------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Bounded Context**                  | Shopping                                                                                                                                                                                                                                        |
+| **Producer**                         | [[service\|basket-api]]                                                                                                                                                                                                                         |
+| **Consumer(s)**                      | [[service\|order-orchestration]]                                                                                                                                                                                                                |
+| **Protocol / Format**                | Kafka + CloudEvents JSON (camelCase payload)                                                                                                                                                                                                    |
+| **Channel / Topic**                  | [[channel\|bookworm.&#123;env&#125;.basket.delete-failed]]                                                                                                                                                                                      |
+| **Dead-Letter Channel**              | None on consumer ([[service\|order-orchestration]] uses Azure Functions Kafka trigger retries and Durable Task Hub diagnostics; [[channel\|bookworm.&#123;env&#125;.basket.dead-letter-queue]] is for [[service\|basket-api]] inbound failures) |
+| **Partition Key**                    | `OrderId`                                                                                                                                                                                                                                       |
+| **Delivery / Idempotency Guarantee** | At-least-once delivery; emitted when Redis deletion returns `false` while handling [[command\|PlaceOrderCommand]]                                                                                                                               |
 
 ## Payload Fields & Envelope
 
@@ -64,12 +64,12 @@ Consumers must handle `email` when it is `null` or omitted and must never interp
 
 ## Related Documentation
 
-- [[service|basket-api]] â€” Producer service contract and Redis storage details.
-- [[service|order-orchestration]] â€” Consumer orchestration service.
-- [[channel|bookworm.&#123;env&#125;.basket.delete-failed]] â€” Kafka channel specification.
-- [[channel|bookworm.&#123;env&#125;.basket.dead-letter-queue]] â€” Dead-letter channel for failed Basket consumers.
-- [[event|BasketDeletedCompleteIntegrationEvent]] â€” Companion success event for checkout basket cleanup.
-- [[entity|basket]] â€” Redis basket data model.
+- [[service|basket-api]] — Producer service contract and Redis storage details.
+- [[service|order-orchestration]] — Consumer orchestration service.
+- [[channel|bookworm.&#123;env&#125;.basket.delete-failed]] — Kafka channel specification.
+- [[channel|bookworm.&#123;env&#125;.basket.dead-letter-queue]] — Dead-letter channel for failed Basket consumers.
+- [[event|BasketDeletedCompleteIntegrationEvent]] — Companion success event for checkout basket cleanup.
+- [[entity|basket]] — Redis basket data model.
 
 <NodeGraph />
 

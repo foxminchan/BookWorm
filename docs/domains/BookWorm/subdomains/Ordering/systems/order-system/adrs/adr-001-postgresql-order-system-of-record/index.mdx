@@ -1,4 +1,4 @@
-﻿---
+---
 id: adr-001-postgresql-order-system-of-record
 name: "ADR-001: Use PostgreSQL as the Order system of record"
 version: 1.0.0
@@ -37,7 +37,7 @@ Without an explicit boundary between permanent records and temporary or derived 
 
 ## 3. How It Works
 
-BookWorm designates [[container|order-database]] as the single authoritative system of record for buyer profiles, accepted orders, purchase-time item snapshots, order lifecycle history, and reliable outbound messaging records. Whenever the business needs to confirm an order's true status or retrieve a customer's purchase record, the authoritative order recordâ€”not a derived summaryâ€”is the final authority.
+BookWorm designates [[container|order-database]] as the single authoritative system of record for buyer profiles, accepted orders, purchase-time item snapshots, order lifecycle history, and reliable outbound messaging records. Whenever the business needs to confirm an order's true status or retrieve a customer's purchase record, the authoritative order record—not a derived summary—is the final authority.
 
 Meanwhile, [[container|order-cache]] serves strictly as non-authoritative support infrastructure. It holds temporary buyer-level locks during order creation, short-lived markers to spot duplicate requests, and cached responses to speed up reads. Losing or clearing the cache never deletes a persisted order or buyer profile.
 
@@ -55,7 +55,7 @@ Read-optimized summaries are likewise treated as secondary views derived from th
 
 - **Database availability dependency:** Ordering cannot create or read authoritative buyer and order data if the primary relational database is unavailable or its schema is incompatible.
 - **Cache is still operationally important:** Even though [[container|order-cache]] does not own order data, an outage there disrupts concurrency locks and repeat-request detection.
-- **Non-atomic duplicate detection:** Repeat-request markers are temporary safeguards rather than an exact-once guaranteeâ€”a marker can outlive a failed attempt, and a cache loss removes duplicate detection for that expiration window.
+- **Non-atomic duplicate detection:** Repeat-request markers are temporary safeguards rather than an exact-once guarantee—a marker can outlive a failed attempt, and a cache loss removes duplicate detection for that expiration window.
 - **Projection freshness discipline:** Consumers and dashboards must remember that derived read summaries can lag behind the authoritative order record.
 
 ## 5. Technical Reference

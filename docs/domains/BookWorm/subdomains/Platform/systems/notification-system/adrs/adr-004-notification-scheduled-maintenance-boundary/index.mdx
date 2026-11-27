@@ -1,4 +1,4 @@
-﻿---
+---
 id: adr-004-notification-scheduled-maintenance-boundary
 name: "ADR-004: Let Scheduler trigger Notification-owned maintenance batches"
 version: 1.0.0
@@ -38,7 +38,7 @@ Two routine maintenance tasks keep BookWorm's notification system healthy: givin
 
 ## 3. How It Works
 
-1. **Hourly maintenance triggers:** Every hour, the scheduler publishes two lightweight maintenance requestsâ€”one to retry unsent emails and one to clean up sent records. These requests carry only timing and identity metadata, with no recipient data, batch sizes, or retention rules.
+1. **Hourly maintenance triggers:** Every hour, the scheduler publishes two lightweight maintenance requests—one to retry unsent emails and one to clean up sent records. These requests carry only timing and identity metadata, with no recipient data, batch sizes, or retention rules.
 2. **Bounded retry batch:** When Notification receives a resend request, it picks up to 100 unsent records in oldest-first order.
    - Eligibility checks only whether the record is unsent (it does not require a prior recorded error).
    - Notification attempts delivery for each item, logs individual send failures while continuing through the batch, and marks successful original records as sent.
@@ -59,8 +59,8 @@ Two routine maintenance tasks keep BookWorm's notification system healthy: givin
 ## 5. Technical Reference
 
 - **Status & Context:** `superseded` (`2026-11-01`). Complements [[adr|adr-002-scheduler-invocation-boundary]]; does not add a terminal-failure policy or lifetime attempt cap.
-- **Scheduler Triggers:** [[system|scheduler-system]] uses Quartz jobs firing **hourly (UTC)** to publish [[event|ResendErrorEmailIntegrationEvent]] and [[event|CleanUpSentEmailIntegrationEvent]] over Kafka with inherited identity and creation time only.
-- **Notification Processing ([[service|notification-api]] / [[container|notification-database]]):**
+- **Scheduler Triggers:** [[system|scheduler-system]] uses Quartz jobs firing **hourly (UTC)** to publish `ResendErrorEmailIntegrationEvent` and `CleanUpSentEmailIntegrationEvent` over Kafka with inherited identity and creation time only.
+- **Notification Processing ([[service|notification-api]] / Notification PostgreSQL):**
   - Batch size is bounded to at most **100 records** per request, ordered by `sequence_number`.
   - **Resend:** Selects all unsent records with tracking enabled (does not require a recorded error despite the event name). Individual delivery failures are logged and the batch continues; successful originals are marked sent (while the shared `ISender` outbox wrapper creates a new outbox row per attempt). Handler-token cancellation, selection failures, and final save failures propagate.
   - **Cleanup:** Selects sent records without a minimum age, retention duration, or audit-hold check, removes the batch, and saves; failures are logged and rethrown.

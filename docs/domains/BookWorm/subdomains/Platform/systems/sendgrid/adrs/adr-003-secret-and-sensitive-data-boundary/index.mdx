@@ -1,4 +1,4 @@
-﻿---
+---
 id: adr-003-secret-and-sensitive-data-boundary
 name: "ADR-003: Keep SendGrid credentials and message data within the delivery boundary"
 version: 1.0.0
@@ -58,7 +58,7 @@ BookWorm enforces a strict boundary around both authentication secrets and custo
 ### Security & Access Surfaces
 
 - **Applies to**: [[system|sendgrid]], [[system|notification-system]], [[service|sendgrid-api]].
-- **Secret injection**: Provider credentials must be supplied via runtime secret configurationâ€”never in source control, EventCatalog documentation, logs, or durable **Quartz** job metadata.
+- **Secret injection**: Provider credentials must be supplied via runtime secret configuration—never in source control, EventCatalog documentation, logs, or durable **Quartz** job metadata.
 - **Distinct least-privilege surfaces**:
   1. Provider API credentials
   2. Database credentials

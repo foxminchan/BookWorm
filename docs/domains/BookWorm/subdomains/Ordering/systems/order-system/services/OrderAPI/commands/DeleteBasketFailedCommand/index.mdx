@@ -1,4 +1,4 @@
-﻿---
+---
 id: DeleteBasketFailedCommand
 name: Handle basket deletion failed
 version: 1.0.0
@@ -56,12 +56,12 @@ schemaPath: schema.json
 
 ## Related Documentation
 
-- [[service|order-api]] â€” Consuming service, soft-delete filter, and Kafka setup.
-- [[service|order-orchestration]] â€” Producing orchestration service.
-- [[channel|bookworm.&#123;env&#125;.finance.delete-basket-failed]] â€” Kafka topic specification.
-- [[channel|bookworm.&#123;env&#125;.ordering.dead-letter-queue]] â€” Dead-letter queue for failed Ordering consumers.
-- [[command|DeleteBasketCompleteCommand]] â€” Companion command for successful basket cleanup.
-- [[event|BasketDeletedFailedIntegrationEvent]] â€” Upstream failure event from [[service|basket-api]].
+- [[service|order-api]] — Consuming service, soft-delete filter, and Kafka setup.
+- [[service|order-orchestration]] — Producing orchestration service.
+- [[channel|bookworm.&#123;env&#125;.finance.delete-basket-failed]] — Kafka topic specification.
+- [[channel|bookworm.&#123;env&#125;.ordering.dead-letter-queue]] — Dead-letter queue for failed Ordering consumers.
+- [[command|DeleteBasketCompleteCommand]] — Companion command for successful basket cleanup.
+- [[event|BasketDeletedFailedIntegrationEvent]] — Upstream failure event from [[service|basket-api]].
 
 <NodeGraph />
 

@@ -1,4 +1,4 @@
-﻿---
+---
 id: adr-004-stripe-hosted-checkout-pci-dss
 name: "ADR-004: Use Stripe-hosted Checkout with PCI DSS controls"
 version: 1.0.0
@@ -27,7 +27,7 @@ badges:
 
 ## 1. Context & Problem
 
-Currently, [[system|order-system]] records accepted purchases and manages their business status, while [[system|finance-system]] coordinates basket cleanup and customer notifications. Neither system authorizes, captures, or settles real paymentsâ€”meaning an accepted order, cleared basket, or completed status does not prove money was collected.
+Currently, [[system|order-system]] records accepted purchases and manages their business status, while [[system|finance-system]] coordinates basket cleanup and customer notifications. Neither system authorizes, captures, or settles real payments—meaning an accepted order, cleared basket, or completed status does not prove money was collected.
 
 To support real online payments safely, BookWorm needs a payment gateway solution that keeps sensitive card numbers and security codes completely out of BookWorm's applications, databases, logs, and messages. At the same time, outsourcing card entry does not eliminate BookWorm's legal and security obligations as the merchant to meet Payment Card Industry Data Security Standard (PCI DSS) requirements.
 
@@ -44,7 +44,7 @@ To support real online payments safely, BookWorm needs a payment gateway solutio
 
 ### Payment Flow
 
-1. **Server-verified checkout creation:** An authenticated customer requests payment for an order they own. BookWorm creates a payment session with Stripe using the locked purchase snapshot and a validated currencyâ€”never trusting prices or totals sent from the customer's browser.
+1. **Server-verified checkout creation:** An authenticated customer requests payment for an order they own. BookWorm creates a payment session with Stripe using the locked purchase snapshot and a validated currency—never trusting prices or totals sent from the customer's browser.
 2. **Duplicate protection:** Each payment session and underlying payment record is tied to an opaque order identifier and a persisted payment-attempt identifier. Retries reuse the same protection key, concurrent payment attempts on the same order are blocked, and uncertain outcomes are resolved before starting a new attempt.
 3. **Hosted card entry:** BookWorm redirects the customer to Stripe's hosted checkout page, where card entry and customer authentication happen entirely on Stripe's infrastructure. BookWorm never collects, stores, forwards, or logs card numbers or security codes.
 4. **Verified payment notifications:** Stripe sends payment outcome notifications back to BookWorm over encrypted channels. BookWorm cryptographically verifies every notification before trusting it, rejects unverified messages, and never disables signature checks even if configuration is missing.
@@ -67,7 +67,7 @@ Before accepting this proposal or enabling live payments, the team must:
 
 - Assign the payment integration's service owner and database boundary (without turning the existing Finance workflow into a payment processor).
 - Define payment outcome contracts, currency rules, authorization checks, refund/cancellation handling, reconciliation jobs, operational alerts, and race-condition fixes between payment and basket-cleanup soft deletion.
-- Test happy paths, declines, authentication challenges, abandoned sessions, duplicate requests/notifications, invalid signatures, delayed or out-of-order events, timeouts, amount mismatches, and cancellation racesâ€”verifying card data never enters BookWorm storage or telemetry.
+- Test happy paths, declines, authentication challenges, abandoned sessions, duplicate requests/notifications, invalid signatures, delayed or out-of-order events, timeouts, amount mismatches, and cancellation races—verifying card data never enters BookWorm storage or telemetry.
 - Obtain formal sign-off on compliance scope and roll out behind a disabled-by-default feature toggle alongside a reconciliation and incident-response runbook.
 
 ## 4. Trade-offs & Lessons Learned

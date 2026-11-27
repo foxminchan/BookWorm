@@ -1,4 +1,4 @@
-﻿---
+---
 id: sendgrid-api
 name: SendGrid API
 version: 1.0.0
@@ -24,7 +24,7 @@ owners:
 SendGrid is BookWorm's external email delivery provider in publish environments, offloading internet mail routing, sender reputation, and downstream delivery. At runtime, only [[service|notification-api]] integrates with SendGrid to transmit rendered order lifecycle emails.
 
 :::note
-Although SendGrid's platform exposes a REST v3 HTTP API, BookWorm does **not** invoke SendGrid HTTP endpoints at runtimeâ€”[[service|notification-api]] submits rendered MIME messages exclusively over **authenticated SMTP** (using a local test inbox during development).
+Although SendGrid's platform exposes a REST v3 HTTP API, BookWorm does **not** invoke SendGrid HTTP endpoints at runtime—[[service|notification-api]] submits rendered MIME messages exclusively over **authenticated SMTP** (using a local test inbox during development).
 :::
 
 ## Integration Profile
@@ -35,7 +35,7 @@ Although SendGrid's platform exposes a REST v3 HTTP API, BookWorm does **not** i
 | **BookWorm Consumers**           | [[service\|notification-api]] only                                                                                                                                                       |
 | **Runtime Transport & Protocol** | SMTP over TLS (port 587)                                                                                                                                                                 |
 | **Auth / Credential Boundary**   | API key injected via runtime secret configuration (`apikey` username); domain-authenticated sender identity recommended for production                                                   |
-| **Data / PII Sensitivity**       | High â€” carries customer recipient email addresses and order notification content; redact recipient metadata in logs and never log rendered email bodies                                |
+| **Data / PII Sensitivity**       | High — carries customer recipient email addresses and order notification content; redact recipient metadata in logs and never log rendered email bodies                                  |
 | **Failure / Fallback Behavior**  | Bounded client retries followed by Kafka listener backoff and dead-letter routing on [[channel\|bookworm.&#123;env&#125;.notification.dead-letter-queue]]; no delivery webhooks ingested |
 
 ## Visualizations & Specifications
@@ -57,7 +57,7 @@ Although SendGrid's platform exposes a REST v3 HTTP API, BookWorm does **not** i
 
 ## Related Documentation
 
-- [[doc|platform/006-api-and-contracts]] â€” Consolidated service, HTTP, gRPC, and Kafka directory.
-- [[service|notification-api]] â€” Consuming Kafka email worker.
-- [[system|sendgrid]] â€” External SendGrid system boundary.
-- [[doc|domains/bookworm/subdomains/platform/engineering/platform-integration-boundaries]] â€” Platform service and external provider boundaries.
+- [[doc|platform/006-api-and-contracts]] — Consolidated service, HTTP, gRPC, and Kafka directory.
+- [[service|notification-api]] — Consuming Kafka email worker.
+- [[system|sendgrid]] — External SendGrid system boundary.
+- [[doc|domains/bookworm/subdomains/platform/engineering/platform-integration-boundaries]] — Platform service and external provider boundaries.

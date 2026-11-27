@@ -1,4 +1,4 @@
-﻿---
+---
 id: bookworm.{env}.basket.dead-letter-queue
 name: Basket Dead Letter Queue
 version: 1.0.0
@@ -56,7 +56,7 @@ Before replaying any record from this DLQ:
 1. Verify that the corresponding order still exists and check whether the checkout saga in [[service|order-orchestration]] has already completed or compensated.
 2. Confirm that Redis basket storage is healthy and whether the target basket has already been removed.
 3. Isolate permanent schema or deserialization errors rather than replaying poison records.
-4. **Replay only to [[service|basket-api]]** â€” never replay to the shared [[channel|bookworm.&#123;env&#125;.finance.place-order]] topic, as [[service|notification-api]] also consumes it and would send duplicate order emails.
+4. **Replay only to [[service|basket-api]]** — never replay to the shared [[channel|bookworm.&#123;env&#125;.finance.place-order]] topic, as [[service|notification-api]] also consumes it and would send duplicate order emails.
 
 Follow the operational triage procedures in [[doc|operational/003-incident-response-and-runbooks]].
 :::

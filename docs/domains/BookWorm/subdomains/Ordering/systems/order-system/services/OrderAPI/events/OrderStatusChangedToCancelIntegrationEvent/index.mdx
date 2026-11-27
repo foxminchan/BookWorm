@@ -1,4 +1,4 @@
-﻿---
+---
 id: OrderStatusChangedToCancelIntegrationEvent
 name: Order cancelled
 version: 1.0.0
@@ -63,13 +63,13 @@ The current producer populates `basketId` with the order's `BuyerId`. Downstream
 
 ## Related Documentation
 
-- [[service|order-api]] â€” Producer service.
-- [[service|order-orchestration]] â€” Consumer orchestration service.
-- [[channel|bookworm.&#123;env&#125;.ordering.order-status-change-to-cancel]] â€” Kafka channel specification.
-- [[channel|bookworm.&#123;env&#125;.ordering.dead-letter-queue]] â€” Dead-letter queue for failed Ordering consumers.
-- [[event|OrderStatusChangedToCompleteIntegrationEvent]] â€” Companion event for `New` to `Completed` transitions.
-- [[event|UserCheckedOutIntegrationEvent]] â€” Initial order placement event.
-- [[entity|order]] â€” Ordering aggregate schema and status lifecycle.
+- [[service|order-api]] — Producer service.
+- [[service|order-orchestration]] — Consumer orchestration service.
+- [[channel|bookworm.&#123;env&#125;.ordering.order-status-change-to-cancel]] — Kafka channel specification.
+- [[channel|bookworm.&#123;env&#125;.ordering.dead-letter-queue]] — Dead-letter queue for failed Ordering consumers.
+- [[event|OrderStatusChangedToCompleteIntegrationEvent]] — Companion event for `New` to `Completed` transitions.
+- [[event|UserCheckedOutIntegrationEvent]] — Initial order placement event.
+- [[entity|order]] — Ordering aggregate schema and status lifecycle.
 
 <NodeGraph />
 

@@ -1,4 +1,4 @@
-﻿---
+---
 title: Stale cache or Redis outage
 summary: Handle stale book data and Redis unavailability affecting Catalog reads.
 version: 1.0.0
@@ -12,7 +12,7 @@ badges:
 
 ## Trigger / Symptom & Blast Radius
 
-[[service|catalog-api]] returns outdated book details after a database update, Backoffice dashboard totals lag, or Redis connectivity errors increase read latency. [[container|catalog-cache]] is disposableâ€”[[container|catalog-database]] is always the source of truthâ€”and [[service|catalog-api]] falls back to PostgreSQL or its 2-hour fail-safe during Redis outages.
+[[service|catalog-api]] returns outdated book details after a database update, Backoffice dashboard totals lag, or Redis connectivity errors increase read latency. [[container|catalog-cache]] is disposable—[[container|catalog-database]] is always the source of truth—and [[service|catalog-api]] falls back to PostgreSQL or its 2-hour fail-safe during Redis outages.
 
 <Admonition type="danger">
 	Never run `FLUSHDB` or `FLUSHALL` on BookWorm's shared Redis instance. The same Redis cluster
@@ -108,5 +108,5 @@ Expected output:
 
 ## Related documentation
 
-- [[adr|adr-004-fusioncache-redis-for-catalog-reads]] â€” Cache architecture and fail-safe design.
-- [[adr|adr-001-postgresql-system-of-record]] â€” Authoritative role of [[container|catalog-database]].
+- [[adr|adr-004-fusioncache-redis-for-catalog-reads]] — Cache architecture and fail-safe design.
+- [[adr|adr-001-postgresql-system-of-record]] — Authoritative role of [[container|catalog-database]].

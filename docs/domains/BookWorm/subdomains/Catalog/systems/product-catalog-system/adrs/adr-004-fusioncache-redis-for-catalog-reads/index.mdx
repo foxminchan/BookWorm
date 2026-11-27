@@ -1,4 +1,4 @@
-﻿---
+---
 id: adr-004-fusioncache-redis-for-catalog-reads
 name: "ADR-004: Use FusionCache with Redis for selected catalog reads"
 version: 1.0.0
@@ -41,7 +41,7 @@ However, caching introduces a secondary copy of data that can briefly lag behind
 [[service|catalog-api]] uses a two-layer caching strategy designed strictly as a disposable performance helper:
 
 - **Fast local + shared layers:** Each service instance keeps a small in-memory cache for instant repeat reads, backed by a shared distributed cache in [[container|catalog-cache]] across all instances.
-- **Selective coverage:** Only two high-volume read paths are cachedâ€”individual [[entity|book]] lookups by identifier, and the administrative dashboard summary. Other queries go directly to the database.
+- **Selective coverage:** Only two high-volume read paths are cached—individual [[entity|book]] lookups by identifier, and the administrative dashboard summary. Other queries go directly to the database.
 - **Clear refresh rules:** Whenever a book is updated, its individual cached entry is immediately cleared so the next lookup reloads fresh details from the database. The dashboard summary refreshes automatically after a short 15-second expiration window.
 - **Authoritative checkout safety:** Neither cache layer is ever treated as a source of truth; purchase-time price and availability decisions must rely on current authoritative data rather than cached copies.
 

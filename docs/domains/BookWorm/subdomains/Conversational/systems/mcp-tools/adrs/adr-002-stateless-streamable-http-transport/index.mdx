@@ -1,4 +1,4 @@
-﻿---
+---
 id: adr-002-stateless-streamable-http-transport
 name: "ADR-002: Use stateless Streamable HTTP for MCP transport"
 version: 1.0.0
@@ -26,7 +26,7 @@ badges:
 
 ## 1. Context & Problem
 
-BookWorm's shared AI integration server serves multiple independent consumersâ€”including the Chat and Rating systemsâ€”each with its own conversation lifecycles, workflows, and scaling patterns. If the shared integration server had to track connection-level session state for every consumer, it would become coupled to each client's workflow lifetime and complicate routing and scaling.
+BookWorm's shared AI integration server serves multiple independent consumers—including the Chat and Rating systems—each with its own conversation lifecycles, workflows, and scaling patterns. If the shared integration server had to track connection-level session state for every consumer, it would become coupled to each client's workflow lifetime and complicate routing and scaling.
 
 The team needed a standard network communication approach that lets any authorized consumer fetch tools, context, or prompts without making the integration server responsible for storing conversational or workflow state.
 
@@ -41,7 +41,7 @@ The team needed a standard network communication approach that lets any authoriz
 
 Instead of keeping long-lived server sessions open for each client, every request to the shared AI integration server is self-contained:
 
-1. A consuming applicationâ€”such as Chat or Ratingâ€”discovers the integration service and sends a request carrying its authorization credentials and any context needed for that specific lookup.
+1. A consuming application—such as Chat or Rating—discovers the integration service and sends a request carrying its authorization credentials and any context needed for that specific lookup.
 2. The integration server verifies the caller's identity and permissions, handles the request, and returns the response immediately (supporting streamed delivery where needed).
 3. Any ongoing conversation history or multi-step workflow state stays with the consuming application (for example, Chat manages interactive customer sessions, while Rating manages its own review workflows).
 
