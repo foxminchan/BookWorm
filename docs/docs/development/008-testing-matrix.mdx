@@ -1,106 +1,41 @@
 ---
-title: "Testing matrix reference"
-summary: "Authoritative inventory of BookWorm backend, contract, architecture, frontend, E2E, and documentation test frameworks, projects, and commands."
+title: Testing Matrix
+summary: Reference tables for test scope, dependencies, local and CI execution triggers, and passing criteria.
 owners:
   - contributor-team
+badges:
+  - content: Reference
+    backgroundColor: blue
+    textColor: blue
 ---
 
-This reference catalogs every automated test layer, framework version, project inventory, coverage target, and verification command across BookWorm's backend (`src/Services/`, `tests/`), frontend (`src/Clients/`), and documentation (`docs/`) workspaces. For step-by-step execution instructions, see [[doc|development/005-testing]] and [[doc|frontend/004-testing-and-quality-gates]].
+For commands, filters, and troubleshooting, see [[doc|development/005-testing]]. Frontend-specific guidance is in [[doc|frontend/004-testing-and-quality-gates]].
 
-## Overview
+## Test layers
 
-| Layer                            | Framework / Runner                                                                 | Workspace     | Primary Command                                             | Requires Docker?  |
-| :------------------------------- | :--------------------------------------------------------------------------------- | :------------ | :---------------------------------------------------------- | :---------------: |
-| **Backend unit tests**           | TUnit `1.87.12` on Microsoft.Testing.Platform (MTP)                                | Repo root     | `mise run test:unit`                                        |        No         |
-| **Architecture tests**           | `TngTech.ArchUnitNET.TUnit` `0.13.5`                                               | Repo root     | `mise run test:unit`                                        |        No         |
-| **Async message contract tests** | `PactNet` `5.0.1` (consumer → provider)                                            | Repo root     | `mise run test:contracts`                                   |        No         |
-| **Backend code coverage**        | `Microsoft.Testing.Extensions.CodeCoverage` (XML)                                  | Repo root     | `mise run test:coverage`                                    |        No         |
-| **Frontend static checks**       | Turborepo `boundaries`, `@typescript/native` `7.0.2`, ESLint `10.15.0`             | `src/Clients` | `bun run boundaries && bun run check-types && bun run lint` |        No         |
-| **Frontend unit & component**    | Vitest `5.1.2`, Testing Library, Happy DOM, MSW v2                                 | `src/Clients` | `bun run test`                                              |        No         |
-| **Frontend BDD E2E & a11y**      | Playwright `1.65.1`, `playwright-bdd` `9.2.1`, `@axe-core/playwright` `4.14.1`     | `src/Clients` | `bun run e2e`                                               | Depends on target |
-| **Documentation checks**         | `@eventcatalog/linter` `1.4.0`, Prettier `3.10.1`, `@eventcatalog/fitness` `0.1.4` | `docs`        | `bun run check && bun run fitness`                          |        No         |
+| Layer                       | Scope                                                                                        | Dependencies                                              | Local trigger                                                                      | Pull request trigger                          | Nightly trigger | Pass criteria                                                            |
+| :-------------------------- | :------------------------------------------------------------------------------------------- | :-------------------------------------------------------- | :--------------------------------------------------------------------------------- | :-------------------------------------------- | :-------------- | :----------------------------------------------------------------------- |
+| Backend unit                | Nine service unit-test projects; domain and application behavior                             | In-memory doubles; no containers                          | `mise run test:unit`                                                               | Backend changes: Sonar analysis test job      | None scheduled  | All selected tests pass; no unexpected skips                             |
+| Architecture                | Service boundaries, dependency direction, and structural conventions                         | In-memory reflection checks; no containers                | `mise run test:unit`                                                               | Backend changes: Sonar analysis test job      | None scheduled  | No architecture rules violated                                           |
+| Message contracts           | Consumer message expectations and provider compatibility across seven contract-test projects | Generated Pact files and test doubles; no containers      | `mise run test:contracts`                                                          | Backend changes: Sonar analysis test job      | None scheduled  | Consumer contracts generate and all selected provider verifications pass |
+| Backend integration         | Dedicated service tests against a composed backend and real dependencies                     | No dedicated `.IntegrationTests` projects currently exist | Not available                                                                      | Not configured                                | Not configured  | Not applicable until this layer is added                                 |
+| Frontend unit and component | UI and client logic across the frontend applications                                         | Happy DOM, Testing Library, and MSW; no containers        | `bun run test` in the frontend workspace                                           | Frontend changes: affected test tasks         | None scheduled  | All affected tests pass                                                  |
+| Frontend end-to-end         | Browser user journeys and accessibility assertions                                           | Playwright browser and an available target application    | `bun run e2e` when a journey changes                                               | Not run by the shared PR test job             | None scheduled  | Every selected journey and accessibility assertion passes                |
+| Documentation               | MDX/frontmatter lint, formatting, fitness rules, and static build                            | Bun dependencies; no containers                           | `bun run check`, `bun run fitness`, `bun run build` in the documentation workspace | Documentation changes: documentation workflow | None scheduled  | All checks pass and the site builds                                      |
 
-## Backend testing stack and conventions
+## Backend inventory
 
-| Concern                    | Verified Package / Standard                                                                                                  | Source                           |
-| :------------------------- | :--------------------------------------------------------------------------------------------------------------------------- | :------------------------------- |
-| **Test framework**         | TUnit `1.87.12` (never xUnit, NUnit, or MSTest)                                                                              | `Directory.Packages.props`       |
-| **Test runner**            | `Microsoft.Testing.Platform` (use `--treenode-filter`, not VSTest `--filter`)                                                | `global.json`, `mise.toml`       |
-| **Assertions & mocking**   | `Shouldly` `4.3.0`, `Moq` `4.21.0`, `Bogus` `35.6.5`                                                                         | `tests/BookWorm.Testing/`        |
-| **Reporting**              | `Allure.TestingPlatform` `3.0.0-preview.1` (auto-attached to all `*Tests` projects)                                          | `Directory.Build.props`          |
-| **Naming convention**      | `Given<Condition>_When<Action>_Then<ExpectedResult>` (for example, `GivenValidBook_WhenAddingToLibrary_ThenSuccessReturned`) | Engineering convention           |
-| **Domain coverage target** | >=80% on core domain logic; coverage exclusions configured in `coverage.settings`                                            | `coverage.settings`, `sonar.yml` |
-| **Class modifiers**        | All test classes must be `sealed`                                                                                            | `tests/BookWorm.ArchTests/`      |
+| Suite                  | Current scope                                             | Docker required |
+| :--------------------- | :-------------------------------------------------------- | :-------------- |
+| Unit tests             | Nine service test projects                                | No              |
+| Architecture tests     | One repository-wide architecture suite                    | No              |
+| Message contract tests | Seven contract-test projects; consumer and provider cases | No              |
+| Integration tests      | No dedicated backend integration-test projects            | Not applicable  |
 
-### Backend test project inventory
+## Trigger notes
 
-BookWorm's `BookWorm.slnx` contains **9 unit test projects**, **7 Pact contract test projects**, **1 architecture test project**, and **1 shared test helper library (`tests/BookWorm.Testing`)**.
-
-:::note
-**Backend `.IntegrationTests` status:** No `.IntegrationTests` projects currently exist in `BookWorm.slnx`. If added in the future, follow the `BookWorm.<Service>.IntegrationTests` naming convention defined in `AGENTS.md`.
-:::
-
-| Service / Target                                     | `.UnitTests` |  `.ContractTests` (Pact)  | Notes                                                                               |
-| :--------------------------------------------------- | :----------: | :-----------------------: | :---------------------------------------------------------------------------------- |
-| **Basket** (`BookWorm.Basket`)                       |     Yes      | Yes (Consumer + Provider) | —                                                                                   |
-| **Catalog** (`BookWorm.Catalog`)                     |     Yes      | Yes (Consumer + Provider) | —                                                                                   |
-| **Catalog Ingestion** (`BookWorm.Catalog.Ingestion`) |      No      |            No             | Kafka-triggered Azure Function; no dedicated test project yet                       |
-| **Chat** (`BookWorm.Chat`)                           |     Yes      |            No             | No Kafka integration events                                                         |
-| **Finance** (`BookWorm.Finance`)                     |     Yes      | Yes (Consumer + Provider) | Durable Functions saga tests                                                        |
-| **McpTools** (`BookWorm.McpTools`)                   |     Yes      |            No             | Stateless MCP server; no Kafka events                                               |
-| **Notification** (`BookWorm.Notification`)           |     Yes      |    Yes (Consumer only)    | Consumes Finance commands; publishes no integration events                          |
-| **Ordering** (`BookWorm.Ordering`)                   |     Yes      | Yes (Consumer + Provider) | —                                                                                   |
-| **Rating** (`BookWorm.Rating`)                       |     Yes      | Yes (Consumer + Provider) | —                                                                                   |
-| **Scheduler** (`BookWorm.Scheduler`)                 |     Yes      |    Yes (Provider only)    | Publishes `ProcessVectorBatchIntegrationEvent`                                      |
-| **Whole system (`tests/BookWorm.ArchTests`)**        | ArchUnitNET  |             —             | Enforces dependencies, DDD primitives, sealing, endpoints, handlers, and saga rules |
-
-### Committed Pact contract pairs (`tests/pacts/`)
-
-Consumer tests (`[Category("PactConsumer")]`) generate 8 asynchronous message contract files under `tests/pacts/`, which provider tests (`[Category("PactProvider")]`) verify:
-
-- `Basket-Finance` · `Finance-Basket`
-- `Catalog-Rating` · `Rating-Catalog`
-- `Catalog-Scheduler`
-- `Finance-Ordering` · `Ordering-Finance`
-- `Notification-Finance`
-
-## Frontend testing matrix (`src/Clients`)
-
-Frontend test configuration is centralized in `@workspace/app-config` (deterministic Faker seeds, isolated MSW v2 mock handlers, router stubs). Declarative files (`page.tsx`, `layout.tsx`, `env.mjs`, `instrumentation.ts`, `proxy.ts`, `config/`) are excluded from V8 coverage metrics so percentages measure executable logic in `features/`, `components/`, and `hooks/`.
-
-### Frontend verification commands
-
-| Check              | Working Directory | Command                        | Tooling / Scope                                                  |
-| :----------------- | :---------------- | :----------------------------- | :--------------------------------------------------------------- |
-| Format frontend    | Repo root         | `mise run format:fe`           | Prettier `3.10.1` (`*.{ts,tsx,md,feature}`)                      |
-| Check boundaries   | `src/Clients`     | `bun run boundaries`           | Turborepo `config` → `foundation` → `domain` → `app` rules       |
-| Type check         | `src/Clients`     | `bun run check-types`          | `@typescript/native` (`tsgo`) across all apps and 16 packages    |
-| Lint & a11y static | `src/Clients`     | `bun run lint`                 | ESLint `10.15.0` (`--max-warnings 0`) + `eslint-plugin-jsx-a11y` |
-| Unit & component   | `src/Clients`     | `bun run test`                 | Vitest `5.1.2` + Happy DOM + MSW v2 (`fast-check` in Storefront) |
-| Coverage           | `src/Clients`     | `bunx turbo run test:coverage` | `@vitest/coverage-v8` (`lcov`, `json-summary`, `html`)           |
-| Production build   | `src/Clients`     | `bun run build`                | Next.js `16.4.6` production build with Turbopack                 |
-| BDD E2E & a11y     | `src/Clients`     | `bun run e2e`                  | `bddgen` + Playwright `1.65.1` + `@axe-core/playwright` `4.14.1` |
-| Allure report      | `src/Clients`     | `bun run allure:report`        | Merges Vitest and Playwright results across all 3 apps           |
-
-### Frontend E2E BDD coverage by application
-
-| Application                             |     Dev Port     |   Unit / Component Tests    | E2E BDD Feature Suites (`e2e/features/*.feature`)                                                                                                                                                                                                      |
-| :-------------------------------------- | :--------------: | :-------------------------: | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Storefront** (`@bookworm/storefront`) |      `3000`      | Yes (Vitest + `fast-check`) | 9 suites: `accessibility`, `account-management`, `ai-chatbot`, `authentication`, `checkout`, `content-pages`, `order-management`, `product-details`, `product-discovery` (exercises customer journeys across Storefront + Commerce behind API Gateway) |
-| **Commerce** (`@bookworm/commerce`)     |      `3001`      |        Yes (Vitest)         | None in repo (customer checkout/basket E2E flows are covered via Storefront gateway suites)                                                                                                                                                            |
-| **Backoffice** (`@bookworm/backoffice`) | Dynamic (`PORT`) |        Yes (Vitest)         | 6 suites: `authentication`, `catalog-management`, `customer-management`, `navigation`, `order-management`, `review-management`                                                                                                                         |
-
-## Documentation verification matrix (`docs/`)
-
-| Command (from `docs/`) | Purpose                                                              | CI Workflow                  |
-| :--------------------- | :------------------------------------------------------------------- | :--------------------------- |
-| `bun run check`        | Runs `@eventcatalog/linter` and `prettier --check .`                 | `.github/workflows/docs.yml` |
-| `bun run fitness`      | Runs `@eventcatalog/fitness` architecture rules                      | `.github/workflows/docs.yml` |
-| `bun run build`        | Static EventCatalog build (with merged Allure + TUnit reports in CI) | `.github/workflows/docs.yml` |
-
-## Related documentation
-
-- [[doc|development/005-testing]] — Step-by-step backend and Pact execution.
-- [[doc|frontend/004-testing-and-quality-gates]] — Step-by-step frontend verification workflow.
-- [[doc|frontend/005-accessibility]] — WCAG 2.1 AA testing workflow.
-- [[doc|development/006-pull-request-process]] — CI workflow triggers and merge gates.
+| Trigger      | What runs                                                                                                                                                 |
+| :----------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Local        | Choose the task matching the changed layer; use targeted project or tree-node filters during iteration.                                                   |
+| Pull request | Path-filtered CI runs applicable backend, frontend, or documentation checks. Backend test execution is part of the analysis workflow for backend changes. |
+| Nightly      | No scheduled nightly run is configured for these test layers.                                                                                             |

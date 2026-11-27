@@ -1,22 +1,25 @@
 ---
-title: Pull request process
+title: Pull Request Lifecycle
 ---
 %%{init: {'theme': 'base', 'themeVariables': {'background': '#f5f5f5', 'primaryColor': '#ffffff', 'primaryTextColor': '#2d3142', 'primaryBorderColor': '#2d3142', 'secondaryColor': '#ececec', 'secondaryBorderColor': '#4f5d75', 'tertiaryColor': '#fdf2ee', 'tertiaryBorderColor': '#bf4520', 'lineColor': '#4f5d75', 'textColor': '#2d3142', 'clusterBkg': '#f8f9fa', 'clusterBorder': '#bfc0c0', 'fontFamily': 'Geist, system-ui, sans-serif'}}}%%
-flowchart LR
-	pr["Open PR<br/>title + description"] --> checks{"Required checks<br/>pass?"}
-	checks -->|Yes| review{"Maintainer<br/>approves?"}
-	checks -->|No| update["Fix issues<br/>and update PR"]
-	review -->|Changes requested| update
-	review -->|Approved| merge["Merge PR"]
-	update --> checks
+flowchart TD
+	draft["Open as draft<br/>summary, scope, and test evidence"] --> ready["Complete the change<br/>and mark ready"]
+	ready --> checks{"Required checks pass?"}
+	checks --> |"No: fix and push"| update["Resolve failures or review feedback"]
+	update --> ready
+	checks -->|"Yes"| review{"Maintainer approves?"}
+	review -->|"Changes requested"| update
+	review -->|"Approved"| conflicts{"Branch is conflict-free?"}
+	conflicts --> |"No: resolve and update"| update
+	conflicts -->|"Yes"| merge["Merge to main"]
 
 	classDef focal fill:#fdf2ee,stroke:#bf4520,stroke-width:2px,color:#2d3142
 	classDef service fill:#ffffff,stroke:#2d3142,stroke-width:1.2px,color:#2d3142
 	classDef store fill:#ececec,stroke:#4f5d75,stroke-width:1.2px,color:#2d3142
 	classDef input fill:#eef1f6,stroke:#5a6580,stroke-width:1.2px,color:#2d3142
 	classDef ext fill:#f5f5f5,stroke:#949eb2,stroke-width:1px,stroke-dasharray:4 3,color:#4f5d75
-	class checks focal
+	class checks,conflicts focal
 	class review,update,merge service
-	class pr input
+	class draft,ready input
 	linkStyle 0 stroke:#bf4520,stroke-width:2px
 	linkStyle 1 stroke:#bf4520,stroke-width:2px

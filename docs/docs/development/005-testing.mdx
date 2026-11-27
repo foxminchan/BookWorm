@@ -1,168 +1,98 @@
 ---
 title: Testing Execution
-summary: BookWorm testing principles, frameworks, and commands for backend and contract tests.
+summary: How to run backend, frontend, contract, browser, and documentation checks locally and interpret their results.
 owners:
   - contributor-team
 badges:
-  - content: Onboarding
-    backgroundColor: teal
-    textColor: teal
+  - content: How-to Guide
+    backgroundColor: green
+    textColor: green
 ---
 
-Use this guide to run BookWorm's automated backend unit tests, architecture tests, Pact asynchronous-message contract tests, code coverage collection, and documentation quality gates. For frontend quality gates, see [[doc|frontend/004-testing-and-quality-gates]]; for framework versions and the full project inventory, see [[doc|development/008-testing-matrix]].
+Use this guide to execute checks and diagnose their results. For the test-layer inventory, dependencies, and CI triggers, see [[doc|development/008-testing-matrix]].
 
-## Prerequisites
-
-- Local workspace restored via `mise run prepare` (see [[doc|development/002-getting-started]])
-- Docker is **not** required for unit, architecture, contract, or documentation checks
-
-## Steps
+## Run backend tests
 
 <Steps>
-<Step title="Run a single backend unit test project during rapid iteration">
+<Step title="Run unit and architecture tests">
 
-Target only the service you changed (using the Microsoft.Testing.Platform runner configured in `global.json`):
-
-<CodeGroup>
-
-```bash
-dotnet test src/Services/<ServiceName>/BookWorm.<ServiceName>.UnitTests/BookWorm.<ServiceName>.UnitTests.csproj
-```
-
-</CodeGroup>
-
-Where:
-
-- `<ServiceName>`: One of `Basket`, `Catalog`, `Chat`, `Finance`, `McpTools`, `Notification`, `Ordering`, `Rating`, or `Scheduler`.
-
-</Step>
-<Step title="Run all backend unit and architecture tests">
-
-From the repository root, run all 9 service `.UnitTests` projects plus `tests/BookWorm.ArchTests`:
-
-<CodeGroup>
+Run the unit and architecture suites during backend iteration:
 
 ```bash
 mise run test:unit
 ```
 
-</CodeGroup>
+To run one project directly, replace `<test-project>` with the relevant test project in `dotnet test <test-project>`. Backend tests use TUnit on Microsoft.Testing.Platform.
 
 </Step>
-<Step title="Run Pact consumer-driven contract tests">
+<Step title="Run message contract tests">
 
-Run consumer pact generation followed by provider message verification in the required order:
-
-<CodeGroup>
+Run consumer generation followed by provider verification:
 
 ```bash
 mise run test:contracts
 ```
 
-</CodeGroup>
-
-`mise run test:contracts` executes `test:contracts:consumer` first (generating JSON pact files in `tests/pacts/`) and then `test:contracts:provider` (verifying producers against those files).
-
-To run a single contract project manually, pass the Microsoft.Testing.Platform `--treenode-filter` used in `mise.toml`:
-
-<CodeGroup>
-
-```bash
-# Consumer stage first
-dotnet test src/Services/Finance/BookWorm.Finance.ContractTests/BookWorm.Finance.ContractTests.csproj \
-  --treenode-filter '/*/*/*/*[Category=PactConsumer]'
-
-# Provider stage second
-dotnet test src/Services/Ordering/BookWorm.Ordering.ContractTests/BookWorm.Ordering.ContractTests.csproj \
-  --treenode-filter '/*/*/*/*[Category=PactProvider]'
-```
-
-</CodeGroup>
+The task runs the consumer phase before the provider phase. Do not run provider verification against stale or missing consumer contracts.
 
 </Step>
-<Step title="Run the full backend test suite or collect SonarCloud-matching coverage">
+<Step title="Run the backend suite">
 
-Run unit, architecture, and contract suites together:
-
-<CodeGroup>
+Run unit, architecture, and contract tasks together:
 
 ```bash
 mise run test
 ```
 
-</CodeGroup>
-
-To generate XML coverage files under `./test-results` matching SonarCloud (`coverage.settings`):
-
-<CodeGroup>
-
-```bash
-mise run test:coverage
-```
-
-</CodeGroup>
-
-<Admonition type="note">
-	BookWorm currently has **no** backend `.IntegrationTests` projects in `BookWorm.slnx`. Backend
-	verification relies on `.UnitTests`, `.ContractTests`, and `BookWorm.ArchTests`.
-</Admonition>
+For coverage, run `mise run test:coverage`.
 
 </Step>
-<Step title="Run EventCatalog documentation checks">
+<Step title="Filter a test run">
 
-When you modify files under `docs/`, validate EventCatalog linting, Prettier formatting, and architecture fitness rules from `docs/`:
-
-<CodeGroup>
+Use the Microsoft.Testing.Platform tree-node filter rather than VSTest's `--filter`:
 
 ```bash
-cd docs
-bun run check
-bun run fitness
+dotnet test <test-project> --treenode-filter '<filter-expression>'
 ```
 
-</CodeGroup>
+Replace the placeholders with the relevant test project and filter. For Pact tests, category filters look like `/*/*/*/*[Category=PactConsumer]` or `/*/*/*/*[Category=PactProvider]`. Select a test by its test-tree path when iterating on a single case.
 
 </Step>
 </Steps>
 
-## Verification
+## Frontend, browser, and documentation checks
 
-Confirm your targeted or full suite exits with zero failures:
-
-<CodeGroup>
+Run Bun commands from the frontend workspace:
 
 ```bash
-mise run test
+bun run boundaries
+bun run check-types
+bun run lint
+bun run test
 ```
 
-</CodeGroup>
+For browser journeys, install the Playwright browser once with `bunx turbo run playwright:install`, ensure the target application is already available, then run `bun run e2e`. The browser suite is not part of the shared pull-request test job; see [[doc|development/008-testing-matrix]].
 
-Expected output (summary per test project):
+Run documentation checks from the documentation workspace:
 
-<CodeGroup>
-
-```text
-Test run summary: Passed!
-  total: <count>
-  failed: 0
-  succeeded: <count>
-  skipped: 0
+```bash
+bun run check
+bun run fitness
+bun run build
 ```
 
-</CodeGroup>
+## Understand results
 
-## Troubleshooting
+- A passing run exits successfully with **zero failed tests**. Review skipped tests and ensure they were intentionally skipped.
+- TUnit reports the discovered, passed, failed, and skipped test counts. Use the failed test name and assertion output to locate the first failure.
+- If provider verification reports a missing or outdated contract, rerun `mise run test:contracts` so consumer contracts are generated first.
+- CI publishes test and coverage reports as artifacts when the corresponding workflow produces them.
+- No backend `.IntegrationTests` projects currently exist. Do not treat the absence of that layer as a failed or skipped suite.
 
-| Symptom                                                                | Cause                                                                                                        | Fix                                                                                                                                          |
-| :--------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------- |
-| Provider contract test fails with missing pact file or outdated schema | `test:contracts:provider` ran before `test:contracts:consumer` regenerated `tests/pacts/*.json`              | Run `mise run test:contracts` (never run provider verification before consumer generation)                                                   |
-| `dotnet test --filter` fails or is ignored                             | BookWorm uses Microsoft.Testing.Platform (MTP) + TUnit, not VSTest                                           | Use `--treenode-filter '/*/*/*/*[Category=<Category>]'` instead of VSTest `--filter`                                                         |
-| `BookWorm.ArchTests` fails on a new class                              | New endpoint, handler, DbContext, or test class is not `sealed` or violates bounded-context dependency rules | Mark the class `sealed`, remove direct cross-service references, and re-run `dotnet test tests/BookWorm.ArchTests/BookWorm.ArchTests.csproj` |
-| `bun run check` fails in `docs/`                                       | EventCatalog frontmatter lint violation or Prettier formatting drift                                         | Run `mise run format:docs` and re-run `bun run check` from `docs/`                                                                           |
+<Admonition type="info" title="Container requirement">
+	Backend unit, architecture, and message contract suites do not require Docker. Browser end-to-end
+	checks require an available application environment; choose the appropriate test layer in
+	[[doc|development/008-testing-matrix]].
+</Admonition>
 
-## Related documentation
-
-- [[doc|development/008-testing-matrix]] — Complete framework versions, 9 unit / 7 contract test projects, and frontend E2E coverage.
-- [[doc|frontend/004-testing-and-quality-gates]] — Vitest, Playwright BDD, type checks, and boundary checks.
-- [[doc|development/004-engineering-standards]] — Naming, sealing, and contract conventions enforced by `BookWorm.ArchTests`.
-- [[doc|development/006-pull-request-process]] — Which test suites run automatically in CI.
+For frontend test scope and user-journey details, see [[doc|frontend/004-testing-and-quality-gates]]. For required pull-request checks, see [[doc|development/006-pull-request-process]].

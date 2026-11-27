@@ -1,123 +1,123 @@
 ---
-title: "How to troubleshoot local development issues"
-summary: "Diagnose and fix local BookWorm startup errors across Docker, Aspire AppHost, Microsoft Entra ID, Kafka, Qdrant, Redis, and Bun."
+title: How to troubleshoot local development
+summary: Symptom-first fixes for local container, port, HTTPS, toolchain, and authentication failures.
 owners:
   - contributor-team
+badges:
+  - content: Troubleshooting
+    backgroundColor: orange
+    textColor: orange
 ---
 
-Use this guide to diagnose and recover from common local setup and runtime failures when running BookWorm with `mise`, Aspire 17, Docker, and Bun. For production Azure Container Apps incidents, see [[doc|operational/003-incident-response-and-runbooks]].
+Use the symptom that matches the failure. Apply the exact fix, then repeat the command that originally failed. For initial setup, see [[doc|development/002-getting-started]].
 
-## Prerequisites
+## Docker and containers
 
-- Local toolchain installed via [[doc|development/002-getting-started]]
-- Access to the Aspire Dashboard (`https://localhost:17290` or `http://localhost:15061`) when diagnosing running services
+<Accordion title="The application cannot start because the container runtime is unavailable">
 
-## Steps
+**Symptom:** `mise run run` or `docker info` reports that Docker cannot connect.
 
-<Steps>
-<Step title="Confirm Docker and pinned tool versions first">
+**Likely Cause:** Docker Desktop is stopped, still starting, or its engine is unhealthy.
 
-Verify that Docker is running and `mise` exposes the expected versions before inspecting individual services:
+**Exact Fix:** Start Docker Desktop and wait for its engine to become ready. Run `docker info`; if it succeeds, retry `mise run run`. If a dependency remains unhealthy, inspect its Aspire console logs before changing local data.
 
-<CodeGroup>
+</Accordion>
+
+<Accordion title="A service stays in Starting or exits after its container starts">
+
+**Symptom:** The dashboard shows a dependency or service as unhealthy, starting, or exited.
+
+**Likely Cause:** A dependency is still initializing, the local container lacks resources, or the service reports a configuration error.
+
+**Exact Fix:** In the dashboard, inspect the failing resource's console and structured logs. Confirm its dependency is healthy first, wait for first-boot initialization to finish, then retry. If Docker is resource constrained, close unrelated containers and allocate more memory to Docker Desktop.
+
+</Accordion>
+
+## Ports
+
+<Accordion title="Startup reports that a port is already in use">
+
+**Symptom:** Aspire or a development server fails to bind to a local port.
+
+**Likely Cause:** Another application, an old development process, or a stale container owns that port.
+
+**Exact Fix:** In PowerShell, identify the process listening on the reported port:
+
+```powershell
+Get-NetTCPConnection -LocalPort <port> -State Listen |
+  Select-Object LocalAddress, LocalPort, OwningProcess
+Get-Process -Id <process-id>
+```
+
+Replace `<port>` with the reported port and `<process-id>` with the `OwningProcess` value. Stop only the confirmed conflicting process or container, then retry. Do not terminate an unknown process.
+
+</Accordion>
+
+## HTTPS development certificates
+
+<Accordion title="The browser reports an untrusted local HTTPS certificate">
+
+**Symptom:** The browser shows a certificate warning or HTTPS requests fail certificate validation.
+
+**Likely Cause:** The .NET development certificate is missing, expired, or not trusted by the operating system.
+
+**Exact Fix:** Run `dotnet dev-certs https --trust`, accept the operating-system trust prompt, restart the browser, and retry. If the certificate still fails validation, run `dotnet dev-certs https --check` and follow its diagnostic output.
+
+</Accordion>
+
+## Toolchain and PATH
+
+<Accordion title="A command is missing or resolves to the wrong version">
+
+**Symptom:** `dotnet`, `bun`, `node`, or `aspire` is not found, or its version differs from the project requirement.
+
+**Likely Cause:** The project tool version is not installed or mise is not active in the current shell.
+
+**Exact Fix:** Run `mise install`, reopen the terminal, then verify with `mise which dotnet`, `mise which bun`, and the relevant `--version` command. In PowerShell, activate mise for the current session with:
+
+```powershell
+mise activate pwsh | Out-String | Invoke-Expression
+```
+
+</Accordion>
+
+<Accordion title="Dependency installation fails after changing the tool version">
+
+**Symptom:** `bun install` or `mise run prepare` fails with a runtime or package-manager version error.
+
+**Likely Cause:** The shell is using a global tool version instead of the version selected for this workspace.
+
+**Exact Fix:** Run `mise install`, open a new shell, confirm `bun --version` or `dotnet --version`, then retry the failed install command. Use Bun for JavaScript workspaces; do not mix package managers.
+
+</Accordion>
+
+## Authentication and secrets
+
+<Accordion title="Sign-in returns invalid client or callback URL errors">
+
+**Symptom:** An authenticated page returns `invalid_client`, a redirect mismatch, or an OAuth callback error.
+
+**Likely Cause:** The local Entra application registration, client credentials, or callback URL does not match the application configuration.
+
+**Exact Fix:** Confirm that the configured tenant and client identify the intended Entra application, that its credential is current, and that the registered redirect URL exactly matches the URL reported by the running application. Store local credentials in user secrets or environment variables; never commit them.
+
+</Accordion>
+
+<Accordion title="A local service reports a missing parameter or secret">
+
+**Symptom:** A service exits with a missing-configuration error or Aspire prompts for an unset parameter.
+
+**Likely Cause:** A required local parameter has not been supplied, or a credential was stored under a different setting name.
+
+**Exact Fix:** Use the parameter name in the startup error and inspect the AppHost's stored values:
 
 ```bash
-docker info --format '{{.ServerVersion}}'
-dotnet --version
-aspire --version
-bun --version
+dotnet user-secrets list --project <AppHost-project>
+dotnet user-secrets set "<setting-name>" "<secret-value>" --project <AppHost-project>
 ```
 
-</CodeGroup>
+Replace placeholders with the exact project and setting from the error. Keep secrets out of source control and do not clear unrelated user secrets.
 
-</Step>
-<Step title="Inspect container and service logs in the Aspire Dashboard">
+</Accordion>
 
-Open `https://localhost:17290`, filter to the failing resource (`Console` or `Structured` logs), and verify whether its upstream backing container (`postgres`, `redis`, `broker`, `vectordb`, `cosmos`, `storage`, `presidio-analyzer`, `presidio-anonymizer`) reached the **Running** state first.
-
-</Step>
-<Step title="Reset persistent local container volumes when state is corrupted">
-
-BookWorm configures `ContainerLifetime.Persistent` and data volumes on `postgres`, `redis`, `vectordb`, `broker`, `cosmos`, `storage`, `durable-task-scheduler`, `presidio-analyzer`, and `presidio-anonymizer`. Stop Aspire, then remove stuck containers or volumes for the affected dependency:
-
-<CodeGroup>
-
-```bash
-docker ps -a --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
-```
-
-```bash
-docker rm -f <container-name>
-```
-
-</CodeGroup>
-
-Where:
-
-- `<container-name>`: The Docker container name shown by `docker ps -a`.
-
-</Step>
-<Step title="Re-run isolated checks without Docker when debugging code">
-
-Isolate code failures from container failures by running unit tests or frontend checks directly:
-
-<CodeGroup>
-
-```bash
-mise run test:unit
-```
-
-```bash
-cd src/Clients && bun run check-types && bun run test
-```
-
-</CodeGroup>
-
-</Step>
-</Steps>
-
-## Verification
-
-Restart the Aspire AppHost and confirm all required resources (excluding explicit-start `scheduler`) reach **Running** in the Aspire Dashboard:
-
-<CodeGroup>
-
-```bash
-mise run run
-```
-
-</CodeGroup>
-
-Expected output:
-
-<CodeGroup>
-
-```text
-Login to the dashboard at https://localhost:17290/login?t=<one-time-token>
-```
-
-</CodeGroup>
-
-## Troubleshooting
-
-| Symptom                                                                                              | Cause                                                                                                                                       | Fix                                                                                                                                                                                                                                         |
-| :--------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `aspire start` fails immediately with container runtime error                                        | Docker Desktop is stopped or unreachable                                                                                                    | Start Docker Desktop, verify `docker info` succeeds, and re-run `mise run run`                                                                                                                                                              |
-| Port conflict on `17290`, `15061`, `3000`, `3001`, `5026`-`5278`, `7071`, or `7072`                  | Another local process or leftover BookWorm container holds the port                                                                         | Run `docker ps` to stop stale containers or stop conflicting local dev servers; check `launchSettings.json` ports in `_ground-truth`                                                                                                        |
-| `storefront` or `backoffice` login redirects fail with `400` / `invalid_client` or callback mismatch | Local Microsoft Entra ID app registration or `BETTER_AUTH_SECRET` / dev HTTPS cert is missing or mismatched                                 | Trust the local dev certificate (`dotnet dev-certs https --trust`), verify Entra ID redirect URIs include `/api/auth/oauth2/callback/microsoft-entra-id` and `/backoffice/api/auth/oauth2/callback/microsoft-entra-id`, and restart AppHost |
-| `catalog`, `ordering`, `basket`, or `finance` fails to connect to `broker` (Kafka)                   | Kafka container is still initializing or persistent Kafka state is stale after an unclean shutdown                                          | Wait for `broker` health in Aspire Dashboard; if stuck, remove the `broker` container via `docker rm -f <container-name>` and restart `mise run run`                                                                                        |
-| Semantic search returns empty results or `catalog-ingestion` logs Qdrant errors                      | `vectordb` (Qdrant) is not healthy, Microsoft Foundry `embedding` (`EmbedV40`) credentials are missing, or `scheduler` has not been started | Confirm `vectordb` is Running, verify Microsoft Foundry parameters, and manually click **Start** on `scheduler` in Aspire Dashboard (it uses `.WithExplicitStart()`)                                                                        |
-| `basket`, `catalog`, `ordering`, `rating`, or `notification` logs Redis connection errors            | Local `redis` container failed to bind or ran out of memory                                                                                 | Inspect `redis` logs in Aspire Dashboard, check Docker memory allocation (16+ GB RAM recommended), and recreate the container if needed                                                                                                     |
-| `rating` fails on startup with Cosmos DB emulator TLS or timeout error                               | Azure Cosmos DB Linux/Windows emulator takes longer to initialize on first boot or lacks trusted dev cert                                   | Wait 60-90 seconds for the `cosmos` container to finish booting, ensure Docker has sufficient RAM, and verify `cosmos` Data Explorer responds before restarting `rating`                                                                    |
-| `chatting` or `rating` returns `502`/`503` on AI calls                                               | `presidio-analyzer` / `presidio-anonymizer` containers are unhealthy or Microsoft Foundry credentials/quotas are invalid                    | Check `presidio-analyzer` and `presidio-anonymizer` `/health` endpoints (port `3000`) in Aspire Dashboard and verify Foundry `chat` (`ModelRouter`) and `decision` (`MicrosoftDecision1`) parameters                                        |
-| `bun install` or `bun run dev` fails in `src/Clients` or `docs`                                      | Wrong Bun version, corrupted `node_modules`, or accidental `package-lock.json` / `pnpm-lock.yaml`                                           | Confirm `bun --version` is `1.4.4` via `mise install`, delete any non-Bun lockfile, and re-run `bun install`                                                                                                                                |
-| `finance` or `catalog-ingestion` fails to start on port `7071` / `7072`                              | Azurite (`storage`) emulator is unavailable or `Azure.Functions.Sdk` host storage failed                                                    | Confirm `storage` (Azurite) is Running in Aspire Dashboard and `durable-task-scheduler` is healthy for `finance`                                                                                                                            |
-
-Clear the AppHost's stored parameters with `dotnet user-secrets clear --project src/Aspire/BookWorm.AppHost`, then start it again to be prompted for values. The AppHost project declares a `UserSecretsId`; do not use an undocumented `aspire secret` command.
-
-## Related documentation
-
-- [[doc|development/000-local-quickstart]] — Step-by-step local startup walkthrough.
-- [[doc|development/002-getting-started]] — Toolchain installation and `mise` setup.
-- [[doc|development/005-testing]] — Offline unit, architecture, and Pact verification.
-- [[doc|operational/003-incident-response-and-runbooks]] — Azure Container Apps production triage.
+For the shortest clean startup, return to [[doc|development/000-local-quickstart]]. For broader environment choices, see [[doc|development/002-getting-started]].

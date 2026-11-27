@@ -6,15 +6,18 @@ BookWorm is a cloud-native microservices application showcasing Aspire, Domain-D
 
 ## Developer Onboarding & Guidelines
 
-All environment setup, development workflow, engineering standards, testing, and pull request guidelines live in our documentation:
+All quickstart, onboarding, environment setup, development workflow, engineering standards, testing, troubleshooting, and pull request guidelines live in our documentation:
 
-👉 **[Developer Onboarding Guide](https://foxminchan.github.io/BookWorm/docs/custom/development/001-developer-onboarding)**
+👉 **[Developer Onboarding](https://foxminchan.github.io/BookWorm/docs/custom/development/001-developer-onboarding)** — Day 1 and Week 1 roadmap for understanding BookWorm, verifying a workspace, and making a first contribution
 
-1. **[Getting Started](https://foxminchan.github.io/BookWorm/docs/custom/development/002-getting-started)** — Prerequisites, cloning, and local environment setup
-2. **[Development Workflow](https://foxminchan.github.io/BookWorm/docs/custom/development/003-development-workflow)** — Branching, `mise` tasks, and making changes
-3. **[Engineering Standards](https://foxminchan.github.io/BookWorm/docs/custom/development/004-engineering-standards)** — Architecture, C#, frontend, event, and Protobuf conventions
-4. **[Testing](https://foxminchan.github.io/BookWorm/docs/custom/development/005-testing)** — Unit, architecture, contract, and frontend test practices
-5. **[Pull Request Process](https://foxminchan.github.io/BookWorm/docs/custom/development/006-pull-request-process)** — Preparing, submitting, and reviewing PRs
+1. **[Run BookWorm locally](https://foxminchan.github.io/BookWorm/docs/custom/development/000-local-quickstart)** — The shortest path from a prepared machine to a responding local BookWorm application
+2. **[Getting Started](https://foxminchan.github.io/BookWorm/docs/custom/development/002-getting-started)** — Tool requirements, editor options, local configuration, and common commands
+3. **[Development Workflow](https://foxminchan.github.io/BookWorm/docs/custom/development/003-development-workflow)** — The daily branch, implementation, verification, formatting, and synchronization loop
+4. **[Engineering Standards](https://foxminchan.github.io/BookWorm/docs/custom/development/004-engineering-standards)** — Practical coding, API, contract, naming, formatting, and analysis rules and automated checks
+5. **[Testing Execution](https://foxminchan.github.io/BookWorm/docs/custom/development/005-testing)** — How to run backend, frontend, contract, browser, and documentation checks locally and interpret results
+6. **[Testing Matrix](https://foxminchan.github.io/BookWorm/docs/custom/development/008-testing-matrix)** — Reference tables for test scope, dependencies, local and CI execution triggers, and passing criteria
+7. **[Pull Request Process](https://foxminchan.github.io/BookWorm/docs/custom/development/006-pull-request-process)** — Preparing a focused draft, satisfying automated checks and review, and merging safely
+8. **[How to troubleshoot local development](https://foxminchan.github.io/BookWorm/docs/custom/development/007-troubleshoot-local-dev)** — Symptom-first fixes for local container, port, HTTPS, toolchain, and authentication failures
 
 Please follow the onboarding guide above before opening a pull request so your changes pass pre-commit hooks and CI validation smoothly.
 

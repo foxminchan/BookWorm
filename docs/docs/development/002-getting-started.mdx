@@ -1,175 +1,89 @@
 ---
 title: Getting Started
-summary: Fork BookWorm, install the repository tools, and prepare your development environment.
+summary: Tool requirements, editor options, local configuration, and common commands for contributing to BookWorm.
 owners:
   - contributor-team
 badges:
-  - content: Onboarding
+  - content: Setup Reference
     backgroundColor: teal
     textColor: teal
 ---
 
-Use this guide to prepare a local fork of BookWorm for contributing backend, frontend, or documentation changes. If you want a guided first-time run of the full application stack instead, follow [[doc|development/000-local-quickstart]].
+Use this guide to configure the tools needed for your kind of work. For the shortest first run, follow [[doc|development/000-local-quickstart]]; this page covers the broader setup choices.
 
-## Prerequisites
+## Tool requirements
 
-- A GitHub account with SSH or HTTPS Git access configured
-- [mise](https://mise.jdx.dev/) installed and activated in your shell
-- [Docker Desktop](https://www.docker.com/get-started/) installed (required only when running the Aspire AppHost; not required for unit tests, architecture tests, frontend-only work, or documentation edits)
+| Requirement                                    | Minimum or project version                                                    | Needed for                                                         | Verify                             |
+| :--------------------------------------------- | :---------------------------------------------------------------------------- | :----------------------------------------------------------------- | :--------------------------------- |
+| Git                                            | Current supported release; no project-specific minimum                        | All changes                                                        | `git --version`                    |
+| mise                                           | Current release                                                               | Installing pinned tools and running workspace tasks                | `mise --version`                   |
+| .NET SDK                                       | `11.0.100`                                                                    | Backend development, backend tests, and the full local application | `dotnet --version`                 |
+| Node.js                                        | `26` selected by the project toolchain; package engine requires `24` or newer | JavaScript workspaces and documentation                            | `node --version`                   |
+| Bun                                            | `1.4.4`                                                                       | Frontend and documentation workspaces                              | `bun --version`                    |
+| Aspire CLI                                     | `17`                                                                          | Starting and inspecting the full local application                 | `aspire --version`                 |
+| Docker Desktop or compatible container runtime | Current supported release; no project-specific minimum                        | Full local application and container-backed services               | `docker version` and `docker info` |
 
-## Steps
+Git, mise, and the relevant language runtime are enough for most focused changes. Docker and the Aspire CLI are only needed when you run the distributed application locally.
 
-<Steps>
-<Step title="Fork and clone the repository">
+## Optional tools
 
-Fork [foxminchan/BookWorm](https://github.com/foxminchan/BookWorm) on GitHub, then clone your fork and add `upstream`:
+| Tool or access                                  | Minimum or project version                  | Use it when                                           | Verify                                         |
+| :---------------------------------------------- | :------------------------------------------ | :---------------------------------------------------- | :--------------------------------------------- |
+| Buf                                             | Current release                             | Editing Protocol Buffer contracts                     | `buf --version`                                |
+| GitHub CLI                                      | Version `2` or newer                        | Creating or checking pull requests from a terminal    | `gh --version`                                 |
+| Azure CLI                                       | Version `2` or newer                        | Working directly with Azure resources                 | `az version`                                   |
+| `uv`                                            | Managed by mise                             | A task explicitly requires Python tooling             | `uv --version`                                 |
+| Microsoft Entra ID and Microsoft Foundry access | Project and tenant access; no local version | Testing authenticated flows or hosted AI capabilities | Confirm access in the relevant provider portal |
 
-<CodeGroup>
+## Editor and shell
 
-```bash
-git clone https://github.com/<github-username>/BookWorm.git
-cd BookWorm
-git remote add upstream https://github.com/foxminchan/BookWorm.git
-```
+- **VS Code** is a practical choice for mixed .NET, TypeScript, and documentation work. Install the C# tooling and the repository's recommended extensions when prompted.
+- **Visual Studio** or **JetBrains Rider** are good options for .NET debugging and test navigation.
+- Use a shell where mise is activated so commands resolve the selected tool versions. Restart the shell after installing or changing tool versions.
 
-</CodeGroup>
+## Fork remotes
 
-Where:
-
-- `<github-username>`: Your GitHub handle that owns the fork.
-
-</Step>
-<Step title="Install the pinned toolchain">
-
-Install the repository tools managed in `mise.toml` (Node `26`, Aspire `17`, `uv`, Azure CLI `2`, GitHub CLI `2`), plus idiomatic tool versions from `global.json` (.NET `11.0.100`) and `.bun-version` (Bun `1.4.4`):
-
-<CodeGroup>
-
-```bash
-mise install
-```
-
-</CodeGroup>
-
-</Step>
-<Step title="Install optional tools when your task requires them">
-
-Run these tasks only if you edit `.proto` files (`BookWorm.Catalog` or `BookWorm.Basket`) or use the GitHub Copilot CLI extension:
-
-<CodeGroup>
+For pull-request contributions, set `origin` to your fork and add the main project as `upstream`. Replace the placeholder with the project's repository URL:
 
 ```bash
-mise run setup:buf
-mise run setup:copilot
-```
-
-</CodeGroup>
-
-</Step>
-<Step title="Restore .NET dependencies and configure Git hooks">
-
-Restore NuGet packages, local .NET tools (`husky`, `csharpier`, `dotnet-ef`, `dotnet-outdated-tool`), and register `.husky` as `core.hooksPath`:
-
-<CodeGroup>
-
-```bash
-mise run prepare
-```
-
-</CodeGroup>
-
-</Step>
-<Step title="Install frontend or documentation Bun dependencies">
-
-Install dependencies only for the JavaScript workspaces you plan to touch:
-
-<CodeGroup>
-
-```bash
-# Frontend monorepo (Storefront, Commerce, Backoffice, 16 @workspace/* packages)
-bun install --cwd src/Clients
-
-# EventCatalog documentation site
-bun install --cwd docs
-```
-
-</CodeGroup>
-
-:::danger
-Never run `npm install`, `pnpm install`, or `yarn` in `src/Clients` or `docs`. Both workspaces use Bun-managed `bun.lock` lockfiles.
-:::
-
-</Step>
-<Step title="Inspect available `mise` tasks and optionally preview docs">
-
-List all workspace tasks defined in `mise.toml`:
-
-<CodeGroup>
-
-```bash
-mise tasks ls
-```
-
-</CodeGroup>
-
-To preview the EventCatalog documentation site locally without Docker, run from `docs/`:
-
-<CodeGroup>
-
-```bash
-bun run dev
-```
-
-</CodeGroup>
-
-Open `http://localhost:3000` in your browser.
-
-</Step>
-</Steps>
-
-## Verification
-
-Confirm your Git remotes, toolchain versions, and build health:
-
-<CodeGroup>
-
-```bash
+git remote add upstream <repository-url>
 git remote -v
-git config core.hooksPath
-mise run build
 ```
 
-</CodeGroup>
+Keep your feature branches on `origin`; use `upstream` to synchronize with the shared `main` branch.
 
-Expected output:
+## Local services, credentials, and cloud access
 
-<CodeGroup>
+For local application runs, Aspire starts the configured backing services as containers. This keeps local database, cache, messaging, storage, and privacy dependencies separate from hosted cloud resources. Unit and contract tests do not require Docker; see [[doc|development/008-testing-matrix]].
 
-```text
-origin    https://github.com/<github-username>/BookWorm.git (fetch)
-origin    https://github.com/<github-username>/BookWorm.git (push)
-upstream  https://github.com/foxminchan/BookWorm.git (fetch)
-upstream  https://github.com/foxminchan/BookWorm.git (push)
-.husky
-Build succeeded.
-    0 Warning(s)
-    0 Error(s)
+Microsoft Entra ID and Microsoft Foundry are optional for basic local startup. Authenticated user journeys and hosted AI features require valid access and application configuration. Keep credentials in user secrets or environment variables, never in source control.
+
+Useful user-secret commands:
+
+```bash
+dotnet user-secrets list --project <AppHost-project>
+dotnet user-secrets set "<setting-name>" "<secret-value>" --project <AppHost-project>
 ```
 
-</CodeGroup>
+Replace the placeholders with the AppHost project and setting supplied by your local configuration. Do not clear all secrets to fix a single missing value.
 
-## Troubleshooting
+## Common workspace commands
 
-| Symptom                                                               | Cause                                                            | Fix                                                                                                       |
-| :-------------------------------------------------------------------- | :--------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------- |
-| `dotnet: command not found` or wrong SDK version after `mise install` | `mise` shims are not activated in the current shell              | Run `eval "$(mise activate bash)"` (or add `mise activate` to your shell profile) and open a new terminal |
-| `mise run prepare` succeeds but pre-commit hook does not trigger      | Local Git hook path was overridden or `.husky` is not executable | Run `mise run hook` and confirm `git config core.hooksPath` returns `.husky`                              |
-| `bun install` fails with version mismatch in `src/Clients`            | Global Bun version differs from `.bun-version` (`1.4.4`)         | Run `mise install` from repo root and confirm `bun --version` prints `1.4.4`                              |
-| `mise run build` fails with warnings treated as errors                | `Directory.Build.props` sets `TreatWarningsAsErrors: true`       | Resolve compiler or analyzer warnings before building; do not suppress warnings globally                  |
+Run repository tasks from the repository root. Run Bun commands from the relevant frontend or documentation workspace.
 
-## Related documentation
+| Command                             | Purpose                                                         |
+| :---------------------------------- | :-------------------------------------------------------------- |
+| `mise tasks ls`                     | List available repository tasks.                                |
+| `mise run prepare`                  | Restore dependencies and configure Git hooks.                   |
+| `mise run build`                    | Build the .NET solution.                                        |
+| `mise run test:unit`                | Run backend unit and architecture tests.                        |
+| `mise run test:contracts`           | Generate consumer contracts, then verify providers.             |
+| `mise run test`                     | Run the backend test tasks.                                     |
+| `mise run format`                   | Format all supported workspaces.                                |
+| `mise run run`                      | Start the local application with Aspire.                        |
+| `bun install`                       | Install dependencies in the current Bun workspace.              |
+| `bun run dev`                       | Start the current frontend or documentation development server. |
+| `bun run test`                      | Run frontend tests from the frontend workspace.                 |
+| `bun run check` / `bun run fitness` | Check documentation formatting and architecture rules.          |
 
-- [[doc|development/000-local-quickstart]] — Guided tutorial to run the full Aspire stack.
-- [[doc|development/003-development-workflow]] — Branching, formatting, and committing changes.
-- [[doc|development/007-troubleshoot-local-dev]] — Fix Docker, Aspire, Entra ID, and container startup errors.
-- [[doc|development/004-engineering-standards]] — C#, DDD, integration events, Protobuf, and frontend rules.
+For the execution sequence, filters, and result interpretation, see [[doc|development/005-testing]]. For startup failures, see [[doc|development/007-troubleshoot-local-dev]].
