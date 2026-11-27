@@ -3,8 +3,8 @@ id: catalog-api
 name: Catalog API
 version: 1.0.0
 summary: |
-  Internal HTTP and gRPC service for Catalog product management, discovery,
-  and book metadata.
+  Internal HTTP and gRPC service for Catalog product management, hybrid
+  discovery, and authoritative book metadata.
 writesTo:
   - id: catalog-database
   - id: catalog-cache
@@ -19,14 +19,12 @@ entities:
     version: 1.0.0
   - id: author
     version: 1.0.0
-  - id: book-author
-    version: 1.0.0
   - id: category
     version: 1.0.0
   - id: publisher
     version: 1.0.0
 owners:
-  - contributor-team
+  - catalog-experience-team
 badges:
   - content: Internal
     backgroundColor: gray
@@ -142,95 +140,63 @@ repository:
   url: "https://github.com/foxminchan/BookWorm"
 ---
 
-Catalog API (`catalog`) is the system of record in the Catalog bounded context for books, authors, categories, publishers, pricing, cover image references, and derived rating summaries. It exposes HTTP `v1` endpoints for Storefront and Backoffice, serves 7 gRPC read methods to internal services, executes hybrid search over Qdrant with Microsoft Foundry embeddings, and consumes Reviews events via Kafka.
+## Service Responsibility & Boundary
 
-## Overview
+Catalog API is the system of record within the [[domain|catalog]] domain for [[entity|book]], [[entity|author]], [[entity|category]], and [[entity|publisher]] records, pricing, cover image references, and derived rating summaries. It serves versioned HTTP endpoints for storefront and backoffice workflows, exposes internal gRPC read contracts to peer services, and executes hybrid keyword-and-semantic search. Asynchronous vector index synchronization is delegated to [[service|catalog-ingestion]], while individual customer reviews remain owned by [[service|rating-api]].
 
-| Property                       | Value                                                                                                                                                                                            |
-| :----------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**                      | Catalog bounded context (`BookWorm.Catalog`)                                                                                                                                                     |
-| **Aspire resource ID**         | `catalog`                                                                                                                                                                                        |
-| **Source**                     | `src/Services/Catalog/BookWorm.Catalog`                                                                                                                                                          |
-| **Gateway path & local ports** | Gateway `/catalog/api/v1/*`; local HTTP `5100`, HTTPS `7187`                                                                                                                                     |
-| **Protocols**                  | HTTP REST (`ApiVersions.V1`), gRPC server (`book.v1.BookGrpcService`), Kafka + Wolverine                                                                                                         |
-| **Persistence & AI**           | PostgreSQL (`catalogdb`, EF Core snake_case + Wolverine outbox), Redis (FusionCache + idempotency), Azure Blob (`catalog-blob`), Qdrant (`vectordb`), Microsoft Foundry (`Cohere.EmbedV40`)      |
-| **Authentication**             | Microsoft Entra ID JWT — default `catalog_read`; `business_user` policy (`business_user` or `admin` + `catalog_read`/`catalog_write`); `admin` policy (`admin` + `catalog_read`/`catalog_write`) |
+## Service Profile
 
-## Runtime architecture
+| Property                                  | Value                                                                                                                                                                                         |
+| :---------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Bounded Context / Domain**              | [[domain\|catalog]]                                                                                                                                                                           |
+| **Owner Team**                            | [[team\|catalog-experience-team]]                                                                                                                                                             |
+| **Runtime Style**                         | REST API, gRPC Server, and Async Kafka Consumer/Producer                                                                                                                                      |
+| **Public / Gateway Exposure**             | Yes via API Gateway (HTTP) and Internal Only (gRPC)                                                                                                                                           |
+| **Authentication & Authorization Policy** | Microsoft Entra ID JWT via [[system\|identity-provider]]; public catalog reads, `business_user` policy for catalog writes, and `admin` policy for dashboard gRPC                              |
+| **Owned Data Store(s)**                   | [[container\|catalog-database]] (authoritative), [[container\|catalog-blob]] (cover media), [[container\|catalog-cache]] (read cache), [[container\|catalog-vector]] (read-only search index) |
+| **Key Resilience / Idempotency Pattern**  | Transactional outbox/inbox, soft-delete filtering, rate limiting, and dead-letter routing on [[channel\|bookworm.&#123;env&#125;.catalog.dead-letter-queue]]                                  |
 
-Catalog API serves HTTP traffic via the API Gateway and internal gRPC calls from Basket API, Ordering API, and MCP Tools, persisting authoritative records in PostgreSQL while synchronizing search vectors asynchronously through Catalog Ingestion.
+## Contracts & Data Ownership
+
+Catalog API owns [[entity|book]], [[entity|author]], [[entity|category]], and [[entity|publisher]] in [[container|catalog-database]], stores cover image bytes in [[container|catalog-blob]], caches selected reads in [[container|catalog-cache]], and queries candidate book IDs from [[container|catalog-vector]] during semantic search.
+
+:::note
+Catalog writes trigger database-queued vector updates for [[service|catalog-ingestion]] rather than writing embeddings synchronously. Semantic search always resolves final book details and filters from [[container|catalog-database]] so stale index entries never expose outdated prices or deleted books.
+:::
+
+:::warning
+When [[service|catalog-api]] consumes [[event|FeedbackCreatedIntegrationEvent]] for a missing book, it publishes [[event|BookUpdatedRatingFailedIntegrationEvent]] so [[service|rating-api]] can execute a compensating delete on the orphaned review.
+:::
+
+<MessageTable format="all" limit={20} showChannels={true} />
+
+<Accordion title="Sync & Async Integration Boundaries">
+	- **Internal gRPC consumers:** [[service|basket-api]], [[service|order-api]], and
+	[[service|mcp-server]] query book pricing, details, categories, authors, and dashboard counts over
+	gRPC. - **Kafka feedback projections:** Consumes [[event|FeedbackCreatedIntegrationEvent]] and
+	[[event|FeedbackDeletedIntegrationEvent]] from [[service|rating-api]] to maintain derived average
+	rating and review count projections.
+</Accordion>
+
+## Architecture Visualizations & Specifications
+
+### Catalog API Context
 
 <MermaidFileLoader file="mermaids/CatalogAPI-diagram-1.mmd" />
 
-## HTTP API (`ApiVersions.V1`)
+### Service Interactions
 
-All endpoints run under `/api/v1` (gateway prefix `/catalog/api/v1`) with `Mediator.SourceGenerator`, `FluentValidation`, `TransactionBehavior`, and global rate limiting.
+<NodeGraph />
 
-| Resource       | Methods                        | Route (direct)                                  | Notes                                                                                                                                                                             |
-| :------------- | :----------------------------- | :---------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Books**      | `GET`, `POST`, `PUT`           | `/api/v1/books`                                 | List supports pagination, sorting, text/hybrid search, price bounds, and category/publisher/author filters; create and update accept `multipart/form-data` for cover image upload |
-| **Book by ID** | `GET`, `DELETE`                | `/api/v1/books/{id}`                            | Retrieves book details or deletes the book and its associated blob cover image                                                                                                    |
-| **Authors**    | `GET`, `POST`, `PUT`, `DELETE` | `/api/v1/authors`, `/api/v1/authors/{id}`       | Manage [[entity\|author]] records                                                                                                                                                 |
-| **Categories** | `GET`, `POST`, `PUT`, `DELETE` | `/api/v1/categories`, `/api/v1/categories/{id}` | Manage [[entity\|category]] records                                                                                                                                               |
-| **Publishers** | `GET`, `POST`, `PUT`, `DELETE` | `/api/v1/publishers`, `/api/v1/publishers/{id}` | Manage [[entity\|publisher]] records                                                                                                                                              |
+### Owned Entities
 
-### Authorization policies
+<EntityMap />
 
-| Policy              | Required Entra ID roles    | Required scopes                 | Typical usage                                     |
-| :------------------ | :------------------------- | :------------------------------ | :------------------------------------------------ |
-| **Default**         | Authenticated user         | `catalog_read`                  | Protected read operations                         |
-| **`business_user`** | `business_user` or `admin` | `catalog_read`, `catalog_write` | Catalog write and management endpoints            |
-| **`admin`**         | `admin`                    | `catalog_read`, `catalog_write` | Administrative operations and gRPC `GetDashboard` |
-
-The public GET feature endpoints do not attach `catalog_read` authorization; the Catalog gRPC read methods (`GetBook`, `GetBooks`, `ListBooks`, `GetBookDetails`, `ListCategories`, and `ListAuthors`) are explicitly `[AllowAnonymous]`. Catalog create/update/delete endpoints instead require the `BusinessUser` policy.
-
-### Error responses
-
-| Status                  | Condition                                                                             | Recovery behavior                          |
-| :---------------------- | :------------------------------------------------------------------------------------ | :----------------------------------------- |
-| `400 Bad Request`       | Validation failure (`FluentValidation` `ProblemDetails`) or invalid multipart payload | Fix request fields; do not retry unchanged |
-| `401 Unauthorized`      | Missing or invalid Entra ID JWT on protected route                                    | Re-authenticate and retry                  |
-| `403 Forbidden`         | Caller lacks required role (`business_user` / `admin`) or write scopes                | Request appropriate role and scopes        |
-| `404 Not Found`         | Referenced book, author, category, or publisher does not exist                        | Verify resource ID                         |
-| `429 Too Many Requests` | Rate limit exceeded (`Retry-After` header returned)                                   | Wait for `Retry-After` interval and retry  |
-
-## gRPC API (`book.v1.BookGrpcService`)
-
-Catalog API implements `book.v1.BookGrpcService` (`edition = "2023"`, `src/Services/Catalog/BookWorm.Catalog/Grpc/Protos/book/v1/book.proto`) and gRPC health checks.
-
-| Method                                           | Access               | Consumers                                       | Purpose                                                                                    |
-| :----------------------------------------------- | :------------------- | :---------------------------------------------- | :----------------------------------------------------------------------------------------- |
-| `GetBook` ([[query\|GetBookGrpc]])               | Anonymous (internal) | Basket, Ordering (registered helpers)           | Compact book identity, price, and availability                                             |
-| `GetBooks` ([[query\|GetBooksGrpc]])             | Anonymous (internal) | [[service\|basket-api]], [[service\|order-api]] | Batch book identity, regular price, and sale price lookup                                  |
-| `GetBookDetails` ([[query\|GetBookDetailsGrpc]]) | Anonymous (internal) | [[service\|mcp-server]]                         | Full book metadata including description, authors, category, publisher, and rating summary |
-| `ListBooks` ([[query\|ListBooksGrpc]])           | Anonymous (internal) | [[service\|mcp-server]]                         | Filtered and semantic catalog search                                                       |
-| `ListCategories` ([[query\|ListCategoriesGrpc]]) | Anonymous (internal) | [[service\|mcp-server]]                         | Lists all catalog categories                                                               |
-| `ListAuthors` ([[query\|ListAuthorsGrpc]])       | Anonymous (internal) | [[service\|mcp-server]]                         | Lists all catalog authors                                                                  |
-| `GetDashboard` ([[query\|GetDashboardGrpc]])     | `admin` policy       | [[service\|order-api]]                          | Total book count and per-category counts for Backoffice dashboard                          |
-
-## Kafka messaging and derived projections
-
-Catalog API uses Wolverine with a PostgreSQL outbox and inbox (`wolverine` schema in `catalogdb`), partitioning messages by `BookId` and `FeedbackId`. Exhausted retries route to [[channel|bookworm.&#123;env&#125;.catalog.dead-letter-queue]].
-
-| Direction     | Event                                              | Kafka topic                                        | Peer                    | Behavior                                                                                         |
-| :------------ | :------------------------------------------------- | :------------------------------------------------- | :---------------------- | :----------------------------------------------------------------------------------------------- |
-| **Consumes**  | [[event\|FeedbackCreatedIntegrationEvent]]         | `bookworm.{env}.rating.feedback-create`            | [[service\|rating-api]] | Updates derived `average_rating` and `total_reviews` on the target book                          |
-| **Consumes**  | [[event\|FeedbackDeletedIntegrationEvent]]         | `bookworm.{env}.rating.feedback-delete`            | [[service\|rating-api]] | Subtracts the deleted rating from the target book's summary                                      |
-| **Publishes** | [[event\|BookUpdatedRatingFailedIntegrationEvent]] | `bookworm.{env}.catalog.book-update-rating-failed` | [[service\|rating-api]] | Emitted when created feedback targets a missing book so Rating API deletes the orphaned feedback |
-
-Book mutations also trigger PostgreSQL queueing into `pending_vector_updates` inside [[container|catalog-database]] for asynchronous Qdrant synchronization by [[service|catalog-ingestion]].
-
-## Messages
-
-<MessageTable format="all" limit={10} />
-
-## Related documentation
+## Attached Resources & Related Docs
 
 - [[doc|platform/006-api-and-contracts]] — Consolidated service, HTTP, gRPC, and Kafka directory.
 - [[service|catalog-ingestion]] — Asynchronous vector-indexing worker.
 - [[container|catalog-database]] — PostgreSQL schema, outbox, and vector queue triggers.
-- [[container|catalog-cache]] — Redis FusionCache strategy.
-- [[container|catalog-vector]] — Qdrant vector collection details.
-- [[container|catalog-blob]] — Azure Blob Storage for book cover images.
-
-<NodeGraph />
+- [[container|catalog-cache]] — Redis read-caching strategy.
+- [[container|catalog-vector]] — Vector search collection details.
+- [[container|catalog-blob]] — Blob storage for book cover images.

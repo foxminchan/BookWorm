@@ -8,7 +8,7 @@ badges:
     textColor: red
 summary: Returns the names of the built-in anonymization operators supported by Presidio Anonymizer.
 owners:
-  - contributor-team
+  - platform-engineering-team
 schemaPath: schema.json
 operation:
   method: GET
@@ -18,53 +18,54 @@ sidebar:
   badge: "GET"
 ---
 
-`GetAnonymizers` queries the upstream Presidio Anonymizer HTTP service (`GET /anonymizers`) to list its built-in anonymization operator names. This endpoint is an upstream capability discovery query; BookWorm's runtime PII middleware calls only `POST /anonymize` with the `replace` operator and does not call `GET /anonymizers`.
+`GetAnonymizers` queries the internal [[service|presidio-api]] Anonymizer sidecar (`GET /anonymizers`) to list its built-in anonymization operator names. This endpoint is an upstream capability discovery query; BookWorm's runtime PII middleware calls only `POST /anonymize` with the `replace` operator.
 
 ## Overview
 
-| Property              | Value                                                                                                                                                   |
-| :-------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Owner**             | Data privacy external integration (**Presidio**, Aspire resource `presidio-anonymizer`)                                                                 |
-| **Source**            | `src/Integrations/BookWorm.Hosting.Presidio/PresidioResourceBuilderExtensions.cs`, `src/BuildingBlocks/BookWorm.Chassis/AI/Presidio/PresidioService.cs` |
-| **Protocol / format** | HTTP `GET /anonymizers`, JSON response (`application/json`)                                                                                             |
-| **Network & TLS**     | Internal sidecar on container port `3000` (HTTPS with developer certificate in local Aspire run mode; internal HTTP in Azure Container Apps)            |
-| **Authentication**    | None (internal service-to-service network boundary; not exposed through API Gateway)                                                                    |
-| **Contract version**  | `1.0.0`                                                                                                                                                 |
+| Property                           | Value                                                             |
+| :--------------------------------- | :---------------------------------------------------------------- |
+| **Bounded Context**                | Data Privacy (External Integration)                               |
+| **Owner Service**                  | [[service\|presidio-api]] (`presidio-anonymizer`)                 |
+| **Protocol / Format**              | HTTP `GET /anonymizers`, `application/json` response              |
+| **Gateway Endpoint**               | Internal sidecar `GET /anonymizers` (not exposed via API Gateway) |
+| **Authentication & Authorization** | None (internal service-to-service network boundary)               |
+| **Idempotency / Concurrency**      | Read-only and naturally idempotent                                |
+| **Rate Limit / Caching**           | None (sidecar)                                                    |
+| **Contract Version**               | `1.0.0`                                                           |
 
 :::note
-BookWorm's `PresidioService` (`IPresidioAnonymizer`) sends only `POST /anonymize` using the built-in `replace` operator with `"new_value": "<PII>"`. Use `GET /anonymizers` for diagnostics or when evaluating additional operators during development.
+**Capability discovery only:** BookWorm's runtime privacy middleware does not call `GET /anonymizers`; it uses the built-in `replace` operator (`"<PII>"`) via [[command|AnonymizeText]].
 :::
 
-## Parameters and fields
+## Request & Response Contract
 
-### Request parameters
+### Request Parameters
 
-`GET /anonymizers` accepts no path, query, or body parameters.
+Accepts no path parameters, query parameters, or request body.
 
-### Response schema
+### Success Response (`200 OK`)
 
-The `200 OK` response body is a JSON array of strings (`GetAnonymizersResponse`).
+| Name       | Type       | Required | Constraints                   | Description                                                                                      |
+| :--------- | :--------- | :------- | :---------------------------- | :----------------------------------------------------------------------------------------------- |
+| Root value | `string[]` | Yes      | Array of operator identifiers | Names of built-in anonymization operators (e.g., `hash`, `mask`, `redact`, `replace`, `encrypt`) |
 
-| Field      | Type       | Required | Constraints                   | Description                                                                                                                            |
-| :--------- | :--------- | :------- | :---------------------------- | :------------------------------------------------------------------------------------------------------------------------------------- |
-| Root value | `string[]` | Yes      | Array of operator identifiers | Names of built-in anonymization operators supported by Presidio Anonymizer, such as `hash`, `mask`, `redact`, `replace`, and `encrypt` |
+## Behavior & Side Effects
 
-## Error responses
+- **Read-only discovery:** Returns supported operator names from the sidecar without mutating state.
 
-The upstream [Presidio OpenAPI document](https://raw.githubusercontent.com/data-privacy-stack/presidio/refs/heads/main/docs/api-docs/api-docs.yml) lists only `200 OK` for `GET /anonymizers` and defines no non-200 response schema. The exact error statuses and payloads from the mutable `latest` image are not established by that specification.
+## Error Responses
 
-## Related documentation
+| Status / Code               | Condition                             | Client Recovery Action                                   |
+| :-------------------------- | :------------------------------------ | :------------------------------------------------------- |
+| `500 Internal Server Error` | Sidecar unreachable or internal error | Verify the `presidio-anonymizer` sidecar health endpoint |
 
-- [[service|PresidioAPI]] — Service overview and privacy middleware integration.
-- [[command|AnonymizeText]] — Runtime `POST /anonymize` command used by Chat API and Rating API.
+## Related Documentation
+
+- [[service|presidio-api]] — Service overview and privacy middleware integration.
+- [[command|AnonymizeText]] — Runtime `POST /anonymize` command used by [[service|chat-api]] and [[service|rating-api]].
 - [[query|GetRecognizers]] — List available PII recognizers in Presidio Analyzer.
 - [[query|GetSupportedEntities]] — List detectable PII entity types in Presidio Analyzer.
 
 <NodeGraph />
 
-<SchemaViewer
-	file="schema.json"
-	title="GetAnonymizers response JSON Schema"
-	maxHeight="500"
-	search="true"
-/>
+<SchemaViewer file="schema.json" title="Get anonymizers schema" maxHeight="500" search="true" />

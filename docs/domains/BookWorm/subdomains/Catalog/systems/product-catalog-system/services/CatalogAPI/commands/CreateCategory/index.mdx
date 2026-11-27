@@ -8,7 +8,7 @@ badges:
     textColor: green
 summary: Creates a category in the Catalog.
 owners:
-  - contributor-team
+  - catalog-experience-team
 schemaPath: schema.json
 operation:
   method: POST
@@ -18,62 +18,63 @@ sidebar:
   badge: "POST"
 ---
 
-`CreateCategory` creates a new book category in **Catalog API** (`POST /api/v1/categories`) and returns its generated UUIDv7 identifier as a JSON string. Callers use the returned identifier when assigning categories in [[command|CreateBook]] and [[command|UpdateBook]].
+`CreateCategory` creates a new book category in [[service|catalog-api]] (`POST /catalog/api/v1/categories`) and returns its generated UUIDv7 identifier as a JSON string. Callers use the returned identifier when assigning categories in [[command|CreateBook]] and [[command|UpdateBook]].
 
 ## Overview
 
-| Property              | Value                                                                                                                        |
-| :-------------------- | :--------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**             | Catalog bounded context (**Catalog API**, Aspire resource `catalog`)                                                         |
-| **Source**            | `src/Services/Catalog/BookWorm.Catalog/Features/Categories/Create/`                                                          |
-| **Protocol / format** | HTTP `POST`, JSON request (`application/json`), JSON string response                                                         |
-| **Endpoint**          | Direct: `POST /api/v1/categories` (local HTTP `5100`, HTTPS `7187`); API Gateway: `POST /catalog/api/v1/categories`          |
-| **Authentication**    | Microsoft Entra ID JWT — `business_user` policy (role `business_user` or `admin` and scopes `catalog_read`, `catalog_write`) |
-| **Rate limiting**     | Global concurrency (`100`) and fixed-window (`30 req/min`) limiters plus `PerUserRateLimit` token bucket                     |
-| **Idempotency**       | Not idempotent; duplicate names fail the PostgreSQL unique index, and no `x-request-id` header is enforced                   |
-| **Contract version**  | `1.0.0` (`ApiVersions.V1`)                                                                                                   |
+| Property                           | Value                                                                                                                           |
+| :--------------------------------- | :------------------------------------------------------------------------------------------------------------------------------ |
+| **Bounded Context**                | Catalog                                                                                                                         |
+| **Owner Service**                  | [[service\|catalog-api]]                                                                                                        |
+| **Protocol / Format**              | HTTP `POST`, `application/json` request and JSON string response                                                                |
+| **Gateway Endpoint**               | `POST /catalog/api/v1/categories` (service path `/api/v1/categories`)                                                           |
+| **Authentication & Authorization** | Microsoft Entra ID JWT — `business_user` policy (role `business_user` or `admin` and scopes `catalog_read`, `catalog_write`)    |
+| **Idempotency / Concurrency**      | Not idempotent; duplicate names violate the unique name constraint, and no `x-request-id` header is enforced                    |
+| **Rate Limit / Caching**           | Global concurrency (`100`) and fixed-window (`30 req/min`) limiters plus per-user token bucket; invalidates category list cache |
+| **Contract Version**               | `1.0.0` (`ApiVersions.V1`)                                                                                                      |
 
-## Parameters and fields
+## Request & Response Contract
 
-### Request body (`application/json`)
+### Request Body (`application/json`)
 
-`StringTrimmerJsonConverter` trims leading and trailing whitespace from string properties during deserialization.
+Leading and trailing whitespace is trimmed from string properties during deserialization.
 
-| Name   | Type     | Required | Default | Constraints                                                                        | Description                  |
-| :----- | :------- | :------- | :------ | :--------------------------------------------------------------------------------- | :--------------------------- |
-| `name` | `string` | Yes      | —       | Non-empty, max `50` chars (`DataSchemaLength.Medium`), unique in `categories.name` | Display name of the category |
+| Name   | Type     | Required | Constraints                            | Description                  |
+| :----- | :------- | :------- | :------------------------------------- | :--------------------------- |
+| `name` | `string` | Yes      | Non-empty, max `50` characters, unique | Display name of the category |
 
-### Response body (`200 OK`)
+### Success Response (`200 OK`)
 
-`CreateCategoryEndpoint` returns `200 OK` (not `201 Created`) without a `Location` header.
+Returns `200 OK` without a `Location` header.
 
-| Name       | Type     | Required | Default | Constraints           | Description                                         |
-| :--------- | :------- | :------- | :------ | :-------------------- | :-------------------------------------------------- |
-| Root value | `string` | Yes      | —       | UUIDv7 (`CategoryId`) | Generated unique identifier of the created category |
+| Name       | Type     | Required | Constraints | Description                                         |
+| :--------- | :------- | :------- | :---------- | :-------------------------------------------------- |
+| Root value | `string` | Yes      | UUIDv7      | Generated unique identifier of the created category |
 
-## Behavior and side effects
+## Behavior & Side Effects
 
-- **Persistence and uniqueness:** Inserts a new row into the `categories` table in PostgreSQL (`catalogdb`) with a database-generated UUIDv7 primary key. `CategoryConfiguration.cs` enforces a unique index on `categories.name`; submitting an existing category name raises an unhandled database exception mapped to `500 Internal Server Error` by `GlobalExceptionHandler`.
-- **Cache invalidation:** Dispatches `CategoryCreatedEvent` on save; `CategoryChangedEventHandler` removes the FusionCache key `catalog:categories:v1`.
-- **Search vectors:** No vector-index trigger runs on `categories` insert; `categories_vector_update` fires only on `UPDATE` or `DELETE`.
+- **Persistence & uniqueness:** Inserts a new [[entity|category]] record with a generated UUIDv7 primary key; category names are unique-indexed, so submitting an existing name fails with `500 Internal Server Error`.
+- **Cache invalidation:** Clears the cached category list (`catalog:categories:v1`) upon successful creation.
+- **Vector indexing:** No vector-index refresh is queued on category creation; vector updates are triggered only when an existing category is updated or deleted.
 
-## Error responses
+## Error Responses
 
-| Code / status               | Condition                                                                                                                         | Recovery behavior                                                               |
-| :-------------------------- | :-------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------ |
-| `400 Bad Request`           | `name` is missing, empty, whitespace-only, exceeds `50` characters, or JSON payload is malformed (`HttpValidationProblemDetails`) | Fix the request body; do not retry unchanged input                              |
-| `401 Unauthorized`          | Missing, expired, or invalid Entra ID JWT                                                                                         | Acquire a valid Entra ID access token and retry                                 |
-| `403 Forbidden`             | Token lacks role `business_user` or `admin`, or lacks scopes `catalog_read` and `catalog_write`                                   | Request the required Entra ID app role and scopes                               |
-| `429 Too Many Requests`     | Global or `PerUserRateLimit` quota exceeded (`ProblemDetails` with `Retry-After` header)                                          | Wait for the `Retry-After` interval before retrying                             |
-| `500 Internal Server Error` | Duplicate `name` violating the `categories.name` unique index or unhandled server error (`ProblemDetails` with `traceId`)         | Check existing categories for a duplicate name and inspect logs using `traceId` |
+| Status / Code               | Condition                                                                                       | Client Recovery Action                                                          |
+| :-------------------------- | :---------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------ |
+| `400 Bad Request`           | `name` is missing, empty, whitespace-only, exceeds `50` characters, or payload is malformed     | Fix the request body; do not retry unchanged input                              |
+| `401 Unauthorized`          | Missing, expired, or invalid Entra ID JWT                                                       | Acquire a valid Entra ID access token and retry                                 |
+| `403 Forbidden`             | Token lacks role `business_user` or `admin`, or lacks scopes `catalog_read` and `catalog_write` | Request the required Entra ID app role and scopes                               |
+| `429 Too Many Requests`     | Rate limit quota exceeded (`Retry-After` header included)                                       | Wait for the `Retry-After` interval before retrying                             |
+| `500 Internal Server Error` | Duplicate `name` violating the unique constraint or unhandled server error (`traceId` included) | Check existing categories for a duplicate name and inspect logs using `traceId` |
 
-## Related documentation
+## Related Documentation
 
 - [[service|catalog-api]] — Service overview, routing, and authorization policies.
+- [[entity|category]] — Category entity model.
 - [[command|UpdateCategory]] — Rename an existing category.
 - [[command|DeleteCategory]] — Remove a category with no active books.
 - [[command|CreateBook]] — Assign a category to a new book listing.
 
 <NodeGraph />
 
-<SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />
+<SchemaViewer file="schema.json" title="Create category schema" maxHeight="500" search="true" />

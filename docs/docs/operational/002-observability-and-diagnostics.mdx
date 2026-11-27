@@ -1,181 +1,168 @@
 ---
-title: Observability, Aspire Dashboard & Log Analytics
-summary: How to access the managed Aspire Dashboard, query Azure Log Analytics, and trace message flows across BookWorm services.
+title: Observability & Alert Response
+summary: Operator playbook for inspecting live Aspire Dashboard telemetry, running Log Analytics KQL queries, checking resource saturation, and responding to alerts.
 owners:
-  - platform-team
+  - platform-engineering-team
 badges:
-  - content: Observability
+  - content: SRE / Incident
     backgroundColor: teal
     textColor: teal
 ---
 
-Inspect live OpenTelemetry traces, stream container logs, run Kusto Query Language (KQL) searches in Azure Log Analytics, and diagnose AI pipelines in Application Insights across BookWorm's Azure Container Apps environment. For local telemetry, open the local Aspire Dashboard at `https://localhost:17290` (OTLP endpoint `https://localhost:21066`).
+## When to Use & Blast Radius
 
-BookWorm layers three Azure observability surfaces across all 16 application Container Apps, PostgreSQL, Redis, Cosmos DB, Storage, and Microsoft Foundry:
+Use this guide when an Azure Monitor alert fires, latency degrades, or you need to correlate distributed traces and logs across **API Gateway**, backend services, **Message Broker** consumers, and AI pipelines. All commands in this runbook are read-only and safe to run against `Production`.
+
+### Telemetry and Alerting Surface
 
 <MermaidFileLoader file="mermaids/002-observability-and-diagnostics-diagram-1.mmd" />
 
-## Prerequisites
+## Pre-Flight Check
 
-- **Azure CLI (`az` 2.x):** Signed in to the target subscription (`az login`).
-- **Azure RBAC permissions:**
-  - `Container Apps Contributor` or `Reader` on the resource group to open the managed Aspire Dashboard and stream container logs.
-  - `Log Analytics Reader` on the Log Analytics workspace (`law-<token>`) to run KQL queries.
-  - `Monitoring Reader` on the Application Insights workspace linked to `Foundry-project`.
-- **Target identifiers:** Your `<resource-group>` and Log Analytics `<workspace-id>` (`az monitor log-analytics workspace list -g <resource-group> -o table`).
-
-## Steps
-
-### 1. Inspect live telemetry in the managed Aspire Dashboard
-
-The Azure Container Apps environment (`cae-<token>`) enables the managed Aspire Dashboard via `.WithDashboard()` (`src/Aspire/BookWorm.AppHost/Extensions/Infrastructure/AzureExtensions.ContainerApp.cs`).
-
-1. **Open the dashboard in the Azure Portal**
-
-   Navigate to **Resource groups** → `<resource-group>` → **Container Apps Environment** (`cae-<token>`) → **Monitoring** (or **Settings**) → **Aspire Dashboard**.
-
-2. **Trace a request end-to-end**
-
-   Open **Traces** and filter by service (`gateway`, `catalog`, `ordering`, `basket`, `rating`, `chatting`, `finance`, `notification`, `storefront`, `commerce`, or `backoffice`). All .NET services propagate W3C `ActivityIdFormat` trace context and emit spans under the `BookWorm` activity source (`src/Aspire/BookWorm.ServiceDefaults/Extensions.cs`), while all three Next.js microfrontends (MFEs) export traces through `@workspace/otel`.
-
-3. **Check service metrics and structured logs**
-
-   Open **Metrics** to view ASP.NET Core, `HttpClient`, .NET Runtime, and `BookWorm` meter instruments (including CQRS command/query metrics). Open **Structured Logs** to filter live logs by trace ID or log level.
-
-:::note
-Outside `Development`, `BookWorm.ServiceDefaults` switches structured log sampling from trace-based sampling to random probabilistic sampling, and omits `/health` and `/alive` endpoints entirely (`src/Aspire/BookWorm.ServiceDefaults/Extensions.cs`). Expect fewer informational log lines in `Staging` and `Production`; warning and error logs remain captured.
-:::
-
-### 2. Stream live container logs with Azure CLI
-
-When triaging an active outage, stream real-time stdout/stderr from a specific Container App without waiting for Log Analytics ingestion.
-
-<CodeGroup>
+Verify your Azure CLI context and retrieve the Log Analytics workspace ID before running queries:
 
 ```bash
-az containerapp logs show \
-  --name "<container-app-name>" \
-  --resource-group "<resource-group>" \
-  --type console \
-  --follow
+az account set --subscription "<SUBSCRIPTION_ID>"
+WORKSPACE_ID=$(az monitor log-analytics workspace list --resource-group "<RESOURCE_GROUP>" --query "[0].customerId" -o tsv)
+echo "Workspace ID: ${WORKSPACE_ID}"
 ```
 
-</CodeGroup>
+## Procedure
 
-Where:
+<Steps>
+<Step title="Stream live container logs for immediate triage">
 
-- `<container-app-name>`: Aspire resource ID of the target app (for example, `gateway`, `ordering`, `finance`, `catalog-ingestion`, `chatting`, `commerce`).
-- `<resource-group>`: Target Azure resource group name.
+Stream real-time stdout/stderr or platform lifecycle events without waiting for Log Analytics ingestion lag:
 
-To inspect Container Apps platform lifecycle events (image pulls, probe failures, scaling) instead of application stdout, set `--type system`.
+```bash
+# Application stdout/stderr
+az containerapp logs show --name "<APP_NAME>" --resource-group "<RESOURCE_GROUP>" --type console --follow
 
-### 3. Query historical logs in Azure Log Analytics
+# Platform events (image pulls, probe failures, scaling)
+az containerapp logs show --name "<APP_NAME>" --resource-group "<RESOURCE_GROUP>" --type system --tail 100
+```
 
-All Container App console output and platform system logs stream to `law-<token>`. Retention is **90 days** in `Production` and **30 days** in `Development` and `Staging` (`AzureExtensions.ContainerApp.cs`).
+</Step>
 
-1. **Find recent application errors across all Container Apps**
+<Step title="Query application errors and trace IDs in Log Analytics">
 
-   Run this KQL query in Azure Portal **Logs** on `law-<token>`:
+Run KQL queries across all Container Apps to surface recent exceptions or correlate a single request by `<TRACE_ID>`:
 
-   ```kusto
-   ContainerAppConsoleLogs_CL
-   | where TimeGenerated > ago(1h)
-   | where Log_s has_any ("Error", "Exception", "Unhandled", "Failed")
-   | project TimeGenerated, ContainerAppName_s, RevisionName_s, Log_s
-   | order by TimeGenerated desc
-   | take 100
-   ```
+```bash
+# Recent application errors across all services
+az monitor log-analytics query --workspace "${WORKSPACE_ID}" \
+  --analytics-query "ContainerAppConsoleLogs_CL | where TimeGenerated > ago(1h) | where Log_s has_any ('Error','Exception','Unhandled','Failed') | summarize ErrorCount=count() by ContainerAppName_s | order by ErrorCount desc" \
+  -o table
 
-2. **Inspect Container Apps system events and revision scaling**
+# Correlate a specific trace or request ID end-to-end
+az monitor log-analytics query --workspace "${WORKSPACE_ID}" \
+  --analytics-query "ContainerAppConsoleLogs_CL | where TimeGenerated > ago(2h) | where Log_s contains '<TRACE_ID>' | project TimeGenerated, ContainerAppName_s, Log_s | order by TimeGenerated asc" \
+  -o table
+```
 
-   ```kusto
-   ContainerAppSystemLogs_CL
-   | where TimeGenerated > ago(2h)
-   | where Reason_s in ("ContainerTerminated", "ImagePullFailed", "UnhealthyProbe", "ReplicaScaledUp")
-   | project TimeGenerated, ContainerAppName_s, RevisionName_s, Reason_s, Log_s
-   | order by TimeGenerated desc
-   ```
+</Step>
 
-3. **Correlate a single request across services by trace ID or `x-request-id`**
+<Step title="Inspect asynchronous Message Broker and dead-letter queue logs">
 
-   ```kusto
-   ContainerAppConsoleLogs_CL
-   | where TimeGenerated > ago(2h)
-   | where Log_s contains "<trace-or-request-id>"
-   | project TimeGenerated, ContainerAppName_s, Log_s
-   | order by TimeGenerated asc
-   ```
+Check consumer failures and dead-letter routing across **Ordering Service**, **Finance Orchestrator**, **Basket Service**, **Notification Service**, **Catalog Service**, **Catalog Ingestion**, **Rating Service**, and **Scheduler Service**:
 
-   Where:
-   - `<trace-or-request-id>`: W3C trace ID from the Aspire Dashboard or `x-request-id` header returned to the client.
+```bash
+az monitor log-analytics query --workspace "${WORKSPACE_ID}" \
+  --analytics-query "ContainerAppConsoleLogs_CL | where TimeGenerated > ago(1h) | where ContainerAppName_s in ('ordering','finance','basket','notification','catalog','catalog-ingestion','rating','scheduler') | where Log_s has_any ('dead-letter','Wolverine','Kafka','ConsumeException') | project TimeGenerated, ContainerAppName_s, Log_s | order by TimeGenerated desc | take 50" \
+  -o table
+```
 
-4. **Run a KQL query from the CLI**
+</Step>
 
+<Step title="Check compute and datastore saturation">
+
+Inspect Container App replica counts, PostgreSQL CPU/storage, and Redis memory pressure:
+
+```bash
+# Container App active replicas and provisioning state
+az containerapp revision list --name "<APP_NAME>" --resource-group "<RESOURCE_GROUP>" \
+  --query "[?properties.active==\`true\`].{Revision:name, Replicas:properties.replicas, Health:properties.healthState}" -o table
+
+# PostgreSQL CPU and storage utilization (last 30 minutes)
+PG_ID=$(az postgres flexible-server show --name "<POSTGRES_SERVER>" --resource-group "<RESOURCE_GROUP>" --query id -o tsv)
+az monitor metrics list --resource "${PG_ID}" --metric cpu_percent storage_percent --interval PT5M --output table
+
+# Azure Managed Redis memory usage
+REDIS_ID=$(az redisenterprise show --name "<REDIS_NAME>" --resource-group "<RESOURCE_GROUP>" --query id -o tsv)
+az monitor metrics list --resource "${REDIS_ID}" --metric usedmemorypercentage --interval PT5M --output table
+```
+
+</Step>
+
+<Step title="Inspect live traces in the managed Aspire Dashboard">
+
+In the Azure Portal, open **Resource groups** → `<RESOURCE_GROUP>` → **Container Apps Environment** → **Aspire Dashboard** to view end-to-end W3C traces, ASP.NET Core / HTTP metrics, and structured logs. For local troubleshooting, open `https://localhost:17290`.
+
+</Step>
+
+</Steps>
+
+## Common Alert Playbooks
+
+<Accordion title="Alert: Gateway or Service 5xx Spike">
+
+1. Run the KQL error summary query in Step 2 to identify which `<APP_NAME>` is throwing exceptions.
+2. Check `ContainerAppSystemLogs_CL` for `ContainerTerminated` or `UnhealthyProbe` events:
+
+```bash
+az monitor log-analytics query --workspace "${WORKSPACE_ID}" \
+ --analytics-query "ContainerAppSystemLogs_CL | where TimeGenerated > ago(1h) | where Reason_s in ('ContainerTerminated','ImagePullFailed','UnhealthyProbe') | project TimeGenerated, ContainerAppName_s, Reason_s, Log_s | order by TimeGenerated desc" -o table
+```
+
+3. If correlated with a recent deployment, follow [[doc|operational/001-azure-deployment-guide]] to roll back the revision immediately.
+
+</Accordion>
+
+<Accordion title="Alert: Microsoft Foundry HTTP 429 Throttling or AI Latency">
+
+1. Open **Application Insights** linked to the AI project and filter **Failures** for HTTP `429`
+   on `chat`, `decision`, or `embedding` deployments. 2. Check **Privacy Analyzer** and **Privacy
+   Anonymizer** Container Apps (`presidio-analyzer`, `presidio-anonymizer`) for CPU/replica
+   saturation. 3. Increase model RPM/TPM capacity in Microsoft Foundry or scale up the privacy
+   sidecars using [[doc|operational/007-scaling-and-cost-guardrails]].
+
+</Accordion>
+
+<Accordion title="Alert: PostgreSQL or Redis Saturation">
+
+1. Verify `cpu_percent` and `storage_percent` on `<POSTGRES_SERVER>` and `usedmemorypercentage` on `<REDIS_NAME>` using Step 4.
+2. Check for runaway batch jobs in **Quartz Dashboard** (`https://quartz-dashboard.<DOMAIN>/quartz`) or stuck sagas in **Finance Orchestrator**.
+3. Scale compute/storage SKUs temporarily or pause non-critical batch ingestion until saturation subsides.
+
+</Accordion>
+
+<Accordion title="AI-Assisted Correlation with Azure SRE Agent">
+
+When an Azure Monitor alert triggers an **Azure SRE Agent** incident workflow, the agent automatically correlates Application Insights failures, Log Analytics exceptions, and recent deployment history.
+
+1. Verify the `sre` Azure CLI extension is available (`az sre --help`) or query the agent's threads endpoint:
    ```bash
-   az monitor log-analytics query \
-     --workspace "<workspace-customer-id>" \
-     --analytics-query "ContainerAppConsoleLogs_CL | where TimeGenerated > ago(1h) | where Log_s has 'Exception' | summarize ErrorCount=count() by ContainerAppName_s" \
-     -o table
+   SRE_ENDPOINT=$(az rest -m GET \
+     --url "https://management.azure.com/subscriptions/<SUBSCRIPTION_ID>/resourceGroups/<RESOURCE_GROUP>/providers/Microsoft.App/agents/<SRE_AGENT_NAME>?api-version=2025-05-01-preview" \
+     --query properties.agentEndpoint -o tsv)
+   SRE_TOKEN=$(az account get-access-token --resource https://azuresre.dev --query accessToken -o tsv)
+   curl -s -H "Authorization: Bearer ${SRE_TOKEN}" "${SRE_ENDPOINT}/api/v1/threads"
    ```
+2. Approve or reject proposed mitigations in the Azure Portal (**Review** mode) before any automated scaling or restart action runs against `Production`.
 
-   Where:
-   - `<workspace-customer-id>`: Log Analytics workspace GUID (`az monitor log-analytics workspace show -g <resource-group> -n <workspace-name> --query customerId -o tsv`).
-
-### 4. Trace asynchronous Kafka messaging and dead-letter queues
-
-Wolverine propagates W3C trace context, `requestid`, and `UserId` in CloudEvents JSON headers over Kafka, retrying failed handlers at `50ms`, `250ms`, and `1s` (with full jitter) before routing poison messages to a per-service native dead-letter queue (`src/BuildingBlocks/BookWorm.Chassis/EventBus/Wolverine/WolverineHostExtensions.cs`).
-
-1. **Locate the topic and dead-letter queue names**
-
-   - **Standard topic pattern:** `bookworm.{env}.{owner-service}.{topic-name}` (exception: `scheduler.process-vector-batch` is unprefixed).
-   - **Per-service dead-letter queue:** `bookworm.{env}.{service-kebab}.dead-letter-queue`.
-
-2. **Check Kafka consumer failures in Log Analytics**
-
-   ```kusto
-   ContainerAppConsoleLogs_CL
-   | where TimeGenerated > ago(1h)
-   | where ContainerAppName_s in ("ordering", "finance", "basket", "notification", "catalog", "catalog-ingestion", "rating", "scheduler")
-   | where Log_s has_any ("dead-letter", "Wolverine", "Kafka", "ConsumeException")
-   | project TimeGenerated, ContainerAppName_s, Log_s
-   | order by TimeGenerated desc
-   | take 50
-   ```
-
-### 5. Diagnose AI models, PII redaction, and Agent Identity calls in Application Insights
-
-`Foundry-project` provisions a linked Application Insights workspace consumed by **Catalog API** (`catalog`), **Catalog Ingestion** (`catalog-ingestion`), **Chat API** (`chatting`), and **Rating API** (`rating`).
-
-1. **Open Application Insights**
-
-   In the Azure Portal, open the Application Insights resource associated with `Foundry-project`, then select **Transaction search** or **Failures**.
-
-2. **Filter for AI failure signals**
-
-   - **Microsoft Foundry throttling:** Filter dependency calls by HTTP `429` against deployments `chat` (`model-router`), `decision` (`Microsoft-Decision-1`), and `embedding` (`embed-v-4-0`).
-   - **Presidio PII latency:** Filter HTTP dependency calls from `chatting` and `rating` to `presidio-analyzer` and `presidio-anonymizer` on port `3000`.
-   - **Entra Agent Identity OBO failures:** Filter exceptions referencing `AgentIdentities`, `Microsoft.Identity.Web`, or HTTP `401`/`403` when `chatting` calls `mcptools` or `rating` over Agent-to-Agent (A2A) gRPC.
-
-The generated template names the Application Insights component `Foundry-project-ai`. It exposes `APPLICATION_INSIGHTS_CONNECTION_STRING` from the `Foundry-project` module and the root deployment output is named `Foundry_project_APPLICATION_INSIGHTS_CONNECTION_STRING`; the snapshot does not inject either name as a container environment variable.
+</Accordion>
 
 ## Verification
 
-Confirm log ingestion is healthy by checking that Container Apps reported log entries within the last 15 minutes:
-
-<CodeGroup>
+Confirm log ingestion is active across all Container Apps within the last 15 minutes:
 
 ```bash
-az monitor log-analytics query \
-  --workspace "<workspace-customer-id>" \
+az monitor log-analytics query --workspace "${WORKSPACE_ID}" \
   --analytics-query "ContainerAppConsoleLogs_CL | where TimeGenerated > ago(15m) | summarize Logs=count() by ContainerAppName_s | order by ContainerAppName_s asc" \
   -o table
 ```
 
-</CodeGroup>
-
 Expected output:
-
-<CodeGroup>
 
 ```text
 ContainerAppName_s    Logs
@@ -188,22 +175,6 @@ gateway               105
 ...
 ```
 
-</CodeGroup>
+## Rollback / Escape Hatch
 
-## Troubleshooting
-
-| Symptom                                                                       | Cause                                                                                           | Fix                                                                                                                             |
-| :---------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------ |
-| Aspire Dashboard shows no spans for `storefront`, `commerce`, or `backoffice` | `OTEL_EXPORTER_OTLP_ENDPOINT` is missing or `@workspace/otel` failed to initialize              | Verify OTLP environment variables on the frontend Container App via `az containerapp show` and inspect console logs             |
-| `ContainerAppConsoleLogs_CL` returns zero rows for a new deployment           | Log Analytics ingestion typically lags 2-5 minutes after container startup                      | Stream logs directly with `az containerapp logs show --follow`, then re-run the KQL query after 5 minutes                       |
-| Informational logs are missing in `Staging` or `Production`                   | Non-Development environments use random probabilistic log sampling (`BookWorm.ServiceDefaults`) | Filter on `Warning`/`Error` logs, or reproduce in `Development` where `AlwaysOnSampler` and trace-based log sampling are active |
-| `/health` or `/alive` returns `404 Not Found` in Azure                        | `MapDefaultEndpoints()` maps `/health` and `/alive` only when `IsDevelopment()` is true         | Check ACA container health via `az containerapp revision list` and `ContainerAppSystemLogs_CL` instead                          |
-| Logs older than 30 days are missing in `Staging` or `Development`             | `AzureExtensions.ContainerApp.cs` sets Log Analytics retention to 30 days outside `Production`  | Export logs to long-term storage if non-Production audits require >30 days                                                      |
-
-## Related documentation
-
-- [[doc|operational/003-incident-response-and-runbooks]] — Step-by-step remediation playbooks for the five primary failure domains.
-- [[doc|platform/001-platform-overview]] — Shared platform backbone and YARP ingress routes.
-- [[doc|platform/003-data-ai-and-messaging-resources]] — Kafka topic naming, Microsoft Foundry deployments, and storage tiers.
-
-<ArchitectureGraph lens="messages" lensPicker={true} maxHeight="32" />
+All diagnostic queries in this runbook are read-only. If you adjusted log sampling, diagnostic settings, or alert thresholds during an incident, revert them to baseline via `aspire deploy --environment "<ENV>"`.

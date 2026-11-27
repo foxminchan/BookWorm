@@ -6,75 +6,55 @@ summary: Use service-owned HTTP APIs and defined Protocol Buffer interfaces rath
 status: proposed
 date: 2026-11-07
 owners:
-  - contributor-team
+  - architecture-enabling-team
 appliesTo:
   - type: domain
-    id: BookWorm
+    id: bookworm
 related:
   - id: adr-bw-005-kafka-integration-backbone
   - id: adr-bw-017-compatible-contract-evolution
   - id: adr-004-use-domain-apis-as-mcp-backends
 decisionMakers:
-  - contributor-team
+  - architecture-enabling-team
 x-scope: "Whole system"
 ---
 
-## Context and problem statement
+| Field                  | Value                                                                                                                                               |
+| :--------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Status**             | Proposed                                                                                                                                            |
+| **Date**               | 2026-11-07                                                                                                                                          |
+| **Owners**             | [[team\|architecture-enabling-team]]                                                                                                                |
+| **Affected Resources** | [[domain\|bookworm]]                                                                                                                                |
+| **Related ADRs**       | [[adr\|adr-bw-005-kafka-integration-backbone]], [[adr\|adr-bw-017-compatible-contract-evolution]], [[adr\|adr-004-use-domain-apis-as-mcp-backends]] |
 
-Checkout validation, basket enrichment, and AI tool adapters require synchronous reads from another bounded context. Allowing a consumer to query another service's database or invoke its internal handlers couples services to private implementation details and bypasses domain validation and authorization.
+## Context & Problem Statement
 
-BookWorm needs a clear boundary rule governing synchronous request-response integration across services.
+Synchronous interactions—such as checkout price validation between [[service|order-api]] and [[service|catalog-api]], basket reads, and [[service|mcp-server]] tool calls—require immediate responses. Reading another service's database or invoking internal handlers directly couples callers to private implementation details and bypasses authorization.
 
-## Decision drivers
+## Decision Drivers
 
-- **Ownership:** Keep public interface semantics strictly separated from internal persistence models and handlers.
-- **Interoperability:** Provide typed, reviewable contracts suited to both external web clients and internal service-to-service calls.
-- **Boundary clarity:** Match the transport protocol to the interaction pattern without forcing asynchronous workflows into synchronous chains.
+- **Encapsulation:** Separate public contracts from private persistence and internal handlers.
+- **Protocol fit:** Serve external clients via RESTful HTTP and internal service-to-service queries via typed gRPC.
+- **Synchronous restraint:** Reserve request-response calls for operations that genuinely require an immediate answer.
 
-## Considered options
+## Options Considered
 
-1. Use service-owned versioned HTTP APIs and Protocol Buffer gRPC contracts
-2. Read another service's database directly for synchronous lookups
-3. Standardize every synchronous interaction on HTTP JSON only
-4. Standardize every synchronous interaction on gRPC only
+| Option                                              | Pros                                                                        | Cons                                                                      |
+| :-------------------------------------------------- | :-------------------------------------------------------------------------- | :------------------------------------------------------------------------ |
+| **Owned HTTP APIs + typed internal gRPC contracts** | Strong encapsulation, authorization at boundaries, and typed internal calls | Requires maintaining both OpenAPI and Protocol Buffer definitions         |
+| **Direct cross-service database reads**             | Zero network hop                                                            | Exposes private schemas and bypasses domain validation and auth           |
+| **HTTP/JSON only for all calls**                    | Uniform tooling everywhere                                                  | Higher serialization overhead and weaker schema typing for internal calls |
+| **gRPC only for all calls**                         | Single typed contract format                                                | Browsers and external clients still require an HTTP/REST gateway          |
 
-## Decision outcome
+## Decision & Consequences
 
-Chosen option: **Use service-owned versioned HTTP APIs and Protocol Buffer gRPC contracts**, because it protects internal models while choosing the right protocol for each consumer boundary.
+**Chosen Option:** Integrate synchronous operations exclusively through service-owned HTTP APIs (for frontend and external consumers) and typed gRPC contracts (for internal service-to-service reads such as [[service|catalog-api]] and [[service|basket-api]]). Work that does not require an immediate response must use asynchronous messaging instead.
 
-External clients and the YARP API Gateway call versioned HTTP Minimal APIs (`ApiVersions.V1`, `/api/v1/...`) documented with OpenAPI schemas. Internal service-to-service lookups use explicit Protocol Buffer (`edition = "2023"`) gRPC contracts: `book.v1.BookGrpcService` (served by Catalog API for Basket API, Ordering API, and MCP Tools), `basket.v1.BasketGrpcService` (served by Basket API for Ordering API), and A2A gRPC (served by Rating API for Chat API). Multi-step workflows that do not require an immediate synchronous response continue to use asynchronous Kafka messaging under ADR-BW-005.
+- **Positive:** Callers depend only on versioned public contracts; owning services enforce all validation and authorization.
+- **Negative:** Synchronous calls remain sensitive to downstream availability and require explicit timeouts and fallbacks.
 
-### Consequences
+### Compliance Criteria
 
-- **Positive:** Consumers depend solely on explicit, versioned contracts rather than private schemas or handler classes.
-- **Negative:** Synchronous calls introduce runtime latency and availability coupling, and teams must maintain separate linting and evolution workflows for OpenAPI and `.proto` contracts.
-- **Follow-up:** Run Protocol Buffer linting and breaking-change checks alongside API contract reviews per ADR-BW-017.
-
-## Pros and cons of the options
-
-### Use service-owned versioned HTTP APIs and Protocol Buffer gRPC contracts
-
-- **Good**, because HTTP APIs serve browser microfrontends and gateway callers cleanly while gRPC gives internal services strongly typed, low-overhead calls.
-- **Good**, because owning services enforce authentication, authorization, and validation at the boundary.
-- **Bad**, because maintaining both HTTP and gRPC endpoints adds serialization and contract-governance surface area.
-
-### Read another service's database directly for synchronous lookups
-
-- **Good**, because it avoids network serialization overhead.
-- **Bad**, because it breaks bounded-context encapsulation, leaks internal table schemas, and bypasses domain authorization rules.
-
-### Standardize every synchronous interaction on HTTP JSON only
-
-- **Good**, because every client and server shares one HTTP tooling stack.
-- **Bad**, because it replaces established typed gRPC contracts (`BookGrpcService`, `BasketGrpcService`, A2A gRPC) and loses compile-time Protobuf schema guarantees.
-
-### Standardize every synchronous interaction on gRPC only
-
-- **Good**, because all synchronous contracts use one binary schema language.
-- **Bad**, because browser clients, webhooks, and external HTTP callers require HTTP/JSON or gateway transcoding anyway.
-
-## Verification and links
-
-- **Verified against:** `src/Services/Catalog/BookWorm.Catalog/Grpc/Protos/book/v1/book.proto`, `src/Services/Basket/BookWorm.Basket/Grpc/Protos/basket/v1/basket.proto`, `src/Aspire/BookWorm.AppHost/Extensions/Proxy/ApiGatewayProxyBuilder.cs`
-- **Related architecture:** [[doc|arc42/08-crosscutting-concepts/002-contracts-and-messaging]], [[doc|arc42/05-building-block-view]], [[doc|platform/006-api-and-contracts]]
-- **Related ADRs:** ADR-BW-005, ADR-BW-017, [[doc|arc42/09-architecture-decisions]]
+- Services must never query another service's database, cache, or internal mediator handlers.
+- External and frontend endpoints must expose documented HTTP/OpenAPI contracts; internal synchronous reads should prefer typed gRPC contracts.
+- Long-running or post-commit side effects must be offloaded to asynchronous events rather than blocking HTTP/gRPC calls.

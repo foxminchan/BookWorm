@@ -2,9 +2,9 @@
 id: chat-session-blob
 name: Chat Session Blob Storage
 version: 1.0.0
-summary: Azure Blob Storage container for Chat conversation session state and Microsoft Foundry memory.
+summary: Authoritative Azure Blob Storage container owned by the Conversational bounded context for durable AG-UI multi-turn chat session state.
 owners:
-  - contributor-team
+  - ai-capabilities-team
 container_type: objectStore
 badges:
   - content: Object Storage
@@ -13,68 +13,70 @@ badges:
 technology: azure-storage-account
 authoritative: true
 access_mode: readWrite
-purpose: Stores durable Chat conversation session state and Microsoft Foundry memory blobs.
+purpose: Stores durable Chat conversation session state across container restarts.
 classification: confidential
+retention: indefinite
+residency: eastasia
 styles:
   icon: /icons/database/blob.svg
 ---
 
-Chat session blob storage (`chatting-blob`) is the authoritative Azure Blob Storage container owned exclusively by [[service|chat-api]] in the Conversational bounded context. It persists durable AG-UI workflow conversation sessions under the `ag-ui/` blob prefix so multi-turn chat state survives container restarts without introducing a relational database or cache into Chat API.
+## Purpose & Ownership Boundary
 
-## Overview
+Chat Session Blob Storage (`chatting-blob`) is the authoritative Azure Blob Storage container owned exclusively by [[service|chat-api]] in the Conversational bounded context. Object storage persists durable AG-UI multi-turn conversation sessions under the `ag-ui/` prefix so chat continuity survives container restarts without introducing a relational database or Redis dependency into [[service|chat-api]].
 
-| Property                          | Value                                                                                                                      |
-| :-------------------------------- | :------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**                         | Conversational bounded context — [[service\|chat-api]] (`chatting`)                                                        |
-| **Aspire / Azure container name** | `chatting-blob` (provisioned via `Components.Azure.Storage.BlobContainer(Services.Chatting)` on shared `storage` resource) |
-| **Source**                        | `src/Services/Chat/BookWorm.Chat/Orchestration/WorkflowRegistration.cs`, `src/Aspire/BookWorm.AppHost/AppHost.cs`          |
-| **Engine**                        | Azure Blob Storage (Azurite emulator locally; Azure Storage Account in cloud)                                              |
-| **Blob prefix**                   | `ag-ui/` (`WithAzureBlobSessionStore`)                                                                                     |
-| **Authentication**                | Managed Identity RBAC (`StorageBlobDataContributor`); public blob access disabled (`AllowBlobPublicAccess = false`)        |
-| **Authoritative**                 | Yes (`readWrite`) for AG-UI conversation sessions                                                                          |
-| **Classification**                | `confidential`                                                                                                             |
+## Data Store Profile
 
-## Architecture and storage boundaries
+| Property                            | Value                                                                          |
+| :---------------------------------- | :----------------------------------------------------------------------------- |
+| **Bounded Context / Owner**         | Conversational — [[team\|ai-capabilities-team]]                                |
+| **Engine / Technology**             | Azure Blob Storage (Azure Storage Account in cloud; Azurite emulator locally)  |
+| **Store Type**                      | Object Storage                                                                 |
+| **Primary Writer(s)**               | [[service\|chat-api]]                                                          |
+| **Primary Reader(s)**               | [[service\|chat-api]]                                                          |
+| **Authoritative / Source of Truth** | Yes                                                                            |
+| **Data Classification**             | Confidential                                                                   |
+| **Retention / TTL Policy**          | Indefinite (no automatic lifecycle TTL configured in infrastructure templates) |
 
-Chat API is the sole service granted access to `chatting-blob`. Chat API uses **no PostgreSQL database, no Redis cache, and no Kafka broker**; durable conversational session storage is handled entirely by `WithAzureBlobSessionStore` (`Microsoft.Agents.AI.Hosting.AzureStorage`).
+## Logical Data Layout & Key Patterns
 
-The diagram shows how Chat API stores AG-UI session state in `chatting-blob` while keeping AI memory and domain data in separate systems.
+| Container / Prefix          | Stored Data                                          | TTL / Eviction                                                    | Invalidation / Update Trigger                           |
+| :-------------------------- | :--------------------------------------------------- | :---------------------------------------------------------------- | :------------------------------------------------------ |
+| `chatting-blob` / `ag-ui/*` | Serialized AG-UI workflow conversation session state | Indefinite (verify any externally managed Azure lifecycle policy) | Updated per conversation turn by [[service\|chat-api]]. |
+
+Conversational state is intentionally split by concern: AG-UI workflow sessions live in `chatting-blob`, long-term user reading preferences live in Microsoft Foundry memory, agent scratchpads live on local ephemeral filesystem storage, and business domain records remain in their owning service stores.
+
+## Consistency, Isolation & Security Guardrails
+
+- **Confidential data & PII masking:** Conversation transcripts can contain customer preferences and session context even though Presidio PII middleware masks detected PII before model calls and outputs. Public blob access is disabled (`AllowBlobPublicAccess = false`), and access is restricted to [[service|chat-api]] via Managed Identity RBAC (`StorageBlobDataContributor`).
+- **Startup readiness:** [[service|chat-api]] waits for `chatting-blob` health before accepting `/ag-ui` traffic.
+- **No domain state leakage:** Business entities (books, baskets, orders, reviews) are never persisted in `chatting-blob`.
+
+:::warning
+**Strict Single-Service & Shared Account Isolation:** `chatting-blob` shares the Azure Storage Account with [[container|catalog-blob]] and Azure Functions host storage. No other BookWorm service or agent may read or write `chatting-blob` directly; all conversational interactions must flow through [[service|chat-api]].
+:::
+
+## Operational & Resilience Notes
+
+<AccordionGroup>
+	<Accordion title="Hosting, redundancy, and environment parity">
+		- **Local vs. Cloud:** Local development uses a persistent Azurite emulator with Azure Storage
+		Explorer; cloud environments use Azure Storage Account with TLS 1.2 minimum (`StandardLrs` in
+		Dev, `StandardZrs` in Staging, `StandardGzrs` in Production). - **Retention governance:**
+		Because no automatic blob lifecycle policy is declared in repository infrastructure templates,
+		coordinate any GDPR/retention purge policies directly at the Azure Storage Account level.
+	</Accordion>
+</AccordionGroup>
+
+## Architecture Visualizations
+
+<NodeGraph />
 
 <MermaidFileLoader file="mermaids/chat-session-blob-diagram-1.mmd" />
 
-### Separation of conversational state stores
-
-| State type                         | Storage location                                                                 | Owner & registration                                                           |
-| :--------------------------------- | :------------------------------------------------------------------------------- | :----------------------------------------------------------------------------- |
-| **AG-UI workflow sessions**        | `chatting-blob` container, prefix `ag-ui/`                                       | `WorkflowRegistration.AddChatWorkflow()` via `.WithAzureBlobSessionStore(...)` |
-| **User reading preference memory** | Microsoft Foundry memory service                                                 | `BookAgentRegistration.AddBookAgent()` via `FoundryMemoryProvider`             |
-| **Agent scratchpad / plan files**  | Local filesystem (`Chat:Harness:FileMemory:Root`, default `agent-files`)         | `BookAgentRegistration.AddBookAgent()` via `FileMemoryProvider`                |
-| **Business domain records**        | Dedicated service stores (`catalogdb`, `basket` Redis, `orderingdb`, `ratingdb`) | Respective owning services — never stored in `chatting-blob`                   |
-
-## Hosting and environment provisioning
-
-AppHost provisions `chatting-blob` on the shared `storage` resource alongside `catalog-blob` and Azure Functions host storage (`src/Aspire/BookWorm.AppHost/Extensions/Infrastructure/AzureExtensions.Storage.cs`).
-
-| Environment           | Hosting & redundancy                                                  | Security & tooling                                                             |
-| :-------------------- | :-------------------------------------------------------------------- | :----------------------------------------------------------------------------- |
-| **Local development** | Azurite emulator (`--disableProductStyleUrl`, persistent data volume) | Azure Storage Explorer attached in AppHost                                     |
-| **Azure Development** | Azure Storage Account (`StandardLrs`, Hot tier)                       | `AllowBlobPublicAccess = false`, TLS 1.2 minimum, `StorageBlobDataContributor` |
-| **Azure Staging**     | Azure Storage Account (`StandardZrs`, Hot tier)                       | `AllowBlobPublicAccess = false`, TLS 1.2 minimum, `StorageBlobDataContributor` |
-| **Azure Production**  | Azure Storage Account (`StandardGzrs`, Hot tier)                      | `AllowBlobPublicAccess = false`, TLS 1.2 minimum, `StorageBlobDataContributor` |
-
-The generated Storage template and AppHost source do not declare a lifecycle management policy for `ag-ui/` blobs. No TTL/auto-deletion is established by the repository artifacts; check for any separately managed Azure policy before relying on retention.
-
-## Security and operational rules
-
-- **Confidential classification:** Conversation transcripts can contain customer preferences and session context (even though Presidio PII middleware masks detected PII before model calls and outputs). Preserve `AllowBlobPublicAccess = false` and least-privilege `StorageBlobDataContributor` RBAC on `chatting` only.
-- **No cross-service blob reads:** No other BookWorm service may read `chatting-blob` directly. Any cross-service interaction must flow through Chat API or agent protocols.
-- **Wait-for startup order:** AppHost configures `chatApi.WithReference(chatSessionContainer).WaitFor(chatSessionContainer)`, ensuring the blob container is ready before Chat API accepts `/ag-ui` traffic.
-
-## Related documentation
+## Related Documentation
 
 - [[service|chat-api]] — Owning AG-UI server, multi-agent workflow, and Microsoft Entra ID policies.
-- [[agent|book-agent]] — Primary conversational agent using AG-UI sessions, Foundry memory, and file memory.
-- [[container|catalog-blob]] — Sibling blob container on the shared Azure Storage account.
-- [[doc|platform/006-api-and-contracts]] — Overview of all BookWorm services, agents, and data containers.
-
-<NodeGraph />
+- [[agent|book-agent]] — Primary conversational agent operating over AG-UI sessions.
+- [[container|catalog-blob]] — Sibling container on the shared Azure Storage Account.
+- [[doc|operational/005-backup-restore-and-dr]] — Platform backup, restore, and disaster recovery runbook.

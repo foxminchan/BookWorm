@@ -2,110 +2,68 @@
 id: scheduler.process-vector-batch
 name: Process Vector Batch Channel
 version: 1.0.0
+type: topic
 summary: |
-  Kafka channel used by Scheduler to trigger Catalog Ingestion vector batch
-  processing every five minutes.
+  Unprefixed Kafka trigger topic owned by the platform team used by Scheduler
+  Service every five minutes to initiate Catalog Ingestion vector indexing.
 owners:
-  - contributor-team
+  - ai-capabilities-team
+badges:
+  - content: Kafka
+    backgroundColor: blue
+    textColor: blue
+  - content: Scheduled Trigger
+    backgroundColor: yellow
+    textColor: yellow
 address: scheduler.process-vector-batch
 deliveryGuarantee: at-least-once
-type: stream
 protocols:
   - kafka
 ---
 
-`scheduler.process-vector-batch` (v1.0.0) is the unprefixed Kafka topic owned by Scheduler that triggers periodic vector-embedding synchronization in Catalog Ingestion. Unlike all other BookWorm Kafka topics, `ProcessVectorBatchIntegrationEvent` sets `AppendPrefix = false` in `IntegrationMessageOwnerAttribute`, so the topic name omits `bookworm.{env}.` across all environments.
+## Purpose & Scope
 
-## Channel information
+This platform trigger topic carries periodic five-minute signals published by [[service|scheduler-service]] to instruct [[service|catalog-ingestion]] to synchronize pending book-search embeddings into the vector store. The payload contains only an event identifier and timestamp, with no book or customer data.
+
+:::note
+**Intentional Naming Exception:** This topic is unprefixed (`scheduler.process-vector-batch`) across all environments and omits the `{env}` parameter so static serverless Kafka triggers can bind to a constant topic name.
+:::
+
+## Channel Specification
+
+| Property                               | Value                                                                                   |
+| :------------------------------------- | :-------------------------------------------------------------------------------------- |
+| **Bounded Context / Owner**            | [[domain\|platform]] / [[team\|platform-engineering-team]]                              |
+| **Channel Type**                       | Topic                                                                                   |
+| **Address Pattern**                    | `scheduler.process-vector-batch`                                                        |
+| **Parameters**                         | None (static topic name across all environments)                                        |
+| **Protocol & Envelope Format**         | Kafka + CloudEvents JSON (`application/json`)                                           |
+| **Partition Key & Ordering Guarantee** | Unkeyed; no strict partition ordering required (work is coalesced in the catalog queue) |
+| **Delivery Semantics**                 | At-least-once                                                                           |
+| **Dead-Letter Channel**                | None (unacknowledged work remains queued for the next 5-minute trigger)                 |
+
+## Messages & Participants
+
+| Message                                       | Type  | Producer                       | Consumer(s)                    | Consumer Group           |
+| :-------------------------------------------- | :---- | :----------------------------- | :----------------------------- | :----------------------- |
+| [[event\|ProcessVectorBatchIntegrationEvent]] | Event | [[service\|scheduler-service]] | [[service\|catalog-ingestion]] | Catalog ingestion worker |
+
+## Ordering, Retries & Failure Handling
+
+- **Single-writer exclusivity:** [[service|catalog-ingestion]] acquires an exclusive database advisory lock; overlapping triggers exit immediately without duplicate indexing.
+- **Transient retries:** If embedding generation or vector store writes fail, unacknowledged rows remain in the pending catalog queue rather than being discarded.
+- **No DLQ required:** Because the five-minute schedule re-triggers batch processing automatically, failed batches self-heal on the next cycle once dependencies recover.
+- **Consumer idempotency:** Queue revision checks prevent stale embeddings from overwriting newer book edits made while a batch is in flight.
+
+## Channel Details & Visualization
 
 <ChannelInformation />
 
-## Overview
-
-| Property                | Value                                                                                                                                                                                                                                                                                                                                      |
-| :---------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**               | Platform bounded context (**Scheduler**, Aspire resource `scheduler`)                                                                                                                                                                                                                                                                      |
-| **Topic pattern**       | `scheduler.process-vector-batch` (`AppendPrefix = false`; no `{env}` prefix)                                                                                                                                                                                                                                                               |
-| **Producer**            | [[service\|scheduler-dashboard]] (`ProcessVectorBatchJob` via Quartz.NET + Wolverine PostgreSQL outbox in `schedulerdb`)                                                                                                                                                                                                                   |
-| **Consumer**            | [[service\|catalog-ingestion]] (`ProcessVectorBatchFunction`, Azure Functions `[KafkaTrigger]`, consumer group `catalog-ingestion`)                                                                                                                                                                                                        |
-| **Message contract**    | [[event\|ProcessVectorBatchIntegrationEvent]] (`BookWorm.Contracts.ProcessVectorBatchIntegrationEvent`)                                                                                                                                                                                                                                    |
-| **Protocol / format**   | Kafka stream, CloudEvents JSON (`application/json`, camelCase via `JsonSerializerDefaults.Web`)                                                                                                                                                                                                                                            |
-| **Partition key**       | None configured (trigger signal carries no entity key)                                                                                                                                                                                                                                                                                     |
-| **Delivery guarantee**  | At-least-once                                                                                                                                                                                                                                                                                                                              |
-| **Dead-letter channel** | None (Catalog Ingestion consumes via Azure Functions `KafkaTrigger`, not a Wolverine native DLQ listener)                                                                                                                                                                                                                                  |
-| **Source**              | `src/Services/Scheduler/BookWorm.Scheduler/IntegrationEvents/ProcessVectorBatchIntegrationEvent.cs`, `src/Services/Scheduler/BookWorm.Scheduler/Jobs/ProcessVectorBatchJob.cs`, `src/Services/Catalog/BookWorm.Catalog.Ingestion/ProcessVectorBatchFunction.cs`, `src/Services/Catalog/BookWorm.Catalog.Ingestion/VectorBatchProcessor.cs` |
-
-## Parameters and fields
-
-### Topic parameters
-
-This channel accepts no topic parameters. `KafkaTopicRouter.CreateTopicName` returns `scheduler.process-vector-batch` verbatim because `ProcessVectorBatchIntegrationEvent` declares `AppendPrefix = false`.
-
-### Payload fields
-
-The CloudEvents `data` object carries only the two base fields inherited from `IntegrationEvent`.
-
-| Name           | Type                 | Required | Default                 | Constraints                               | Description                                                             |
-| :------------- | :------------------- | :------- | :---------------------- | :---------------------------------------- | :---------------------------------------------------------------------- |
-| `id`           | `string` (UUID)      | Yes      | `Guid.CreateVersion7()` | UUID v7 inherited from `IntegrationEvent` | Unique trigger event identifier logged by `ProcessVectorBatchFunction`. |
-| `creationDate` | `string` (date-time) | Yes      | `DateTime.UtcNow`       | ISO 8601 UTC timestamp                    | UTC timestamp when Scheduler created the trigger event.                 |
-
-### Headers and envelope metadata
-
-| Header / attribute     | Location            | Value / source                                          | Description                                                                      |
-| :--------------------- | :------------------ | :------------------------------------------------------ | :------------------------------------------------------------------------------- |
-| `specversion`          | CloudEvents JSON    | `"1.0"`                                                 | CloudEvents specification version written by Wolverine's `CloudEventsMapper`.    |
-| `type` / `messagetype` | CloudEvents JSON    | `BookWorm.Contracts.ProcessVectorBatchIntegrationEvent` | Explicit `[MessageIdentity]` alias for cross-service deserialization.            |
-| `source`               | CloudEvents JSON    | `urn:bookworm:book-worm.scheduler`                      | Producer URN formatted as `urn:bookworm:{applicationName.ToKebabCase()}`.        |
-| `traceparent`          | Kafka header & JSON | W3C Trace Context                                       | Propagates OpenTelemetry distributed traces from Scheduler to Catalog Ingestion. |
-
-## Delivery, partitioning, and consumer behavior
-
-- **Quartz.NET schedule:** `ProcessVectorBatchJob` (decorated with `[DisallowConcurrentExecution]`) runs on cron `0 0/5 * * * ?` UTC (every five minutes) with `MisfireInstruction: FireOnceNow` (`src/Services/Scheduler/BookWorm.Scheduler/jobs.json`). Scheduler publishes `ProcessVectorBatchIntegrationEvent` through Wolverine's PostgreSQL outbox (`schedulerdb`, `wolverine` schema).
-- **Azure Functions trigger:** `ProcessVectorBatchFunction` subscribes to `scheduler.process-vector-batch` on `%BrokerList%` with `ConsumerGroup = "catalog-ingestion"`, unwraps the CloudEvents `data` object with `CloudEventsMessageParser.Deserialize`, and invokes `IVectorBatchProcessor.ProcessAsync`.
-- **Idempotent batch synchronization:** `VectorBatchProcessor` acquires a PostgreSQL session advisory lock (`pg_try_advisory_lock(740031001)`) in `catalogdb` so overlapping or duplicate triggers return immediately (`0` processed). While holding the lock, it reads up to `200` rows from `pending_vector_updates` ordered by `updated_at, book_id`, generates embeddings via Microsoft Foundry (`Cohere.EmbedV40`), upserts or deletes points in Qdrant (`vectordb`), and deletes only rows whose `(book_id, revision)` still match so concurrent book edits survive.
-
-## Error responses and dead-letter behavior
-
-| Condition                                                                | Handling behavior                                                                                                                           | Recovery behavior                                                                                                                                     |
-| :----------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------ | :---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Another worker holds advisory lock `740031001`                           | `pg_try_advisory_lock` returns `false`; `ProcessAsync` exits cleanly with `0` rows processed.                                               | Expected concurrency guard; pending rows are picked up on the next five-minute trigger.                                                               |
-| Embedding service returns an incomplete batch or Qdrant/PostgreSQL fails | `VectorBatchProcessor` throws and releases advisory lock `740031001` in its `finally` block without acknowledging `pending_vector_updates`. | Unacknowledged rows remain in `pending_vector_updates` and are retried on the next trigger.                                                           |
-| Invalid JSON or malformed CloudEvents payload                            | `CloudEventsMessageParser.Deserialize` throws inside `ProcessVectorBatchFunction`.                                                          | Inspect `catalog-ingestion` Azure Functions logs and consumer group `catalog-ingestion` offsets; no Wolverine native DLQ is attached to this trigger. |
-| Quartz publish failure in Scheduler                                      | `ProcessVectorBatchJob` logs the error and throws `JobExecutionException`.                                                                  | Check `scheduler` logs, `schedulerdb` connectivity, and Kafka broker health.                                                                          |
-
-The Finance and Catalog Ingestion `host.json` files contain no Kafka retry or commit overrides. With `Microsoft.Azure.Functions.Worker.Extensions.Kafka` 4.3.3 defaults, `CommitOnFailure` is `true`: a failed invocation's offset is stored for auto-commit and the message is not retried. If disabled, the extension retries the message in place up to five times, then force-commits and skips it. See the versioned [`KafkaOptions`](https://github.com/Azure/azure-functions-kafka-extension/blob/4.3.3/src/Microsoft.Azure.WebJobs.Extensions.Kafka/Config/KafkaOptions.cs), [`SingleItemFunctionExecutor`](https://github.com/Azure/azure-functions-kafka-extension/blob/4.3.3/src/Microsoft.Azure.WebJobs.Extensions.Kafka/Trigger/SingleItemFunctionExecutor.cs), and [`AsyncCommitStrategy`](https://github.com/Azure/azure-functions-kafka-extension/blob/4.3.3/src/Microsoft.Azure.WebJobs.Extensions.Kafka/Trigger/AsyncCommitStrategy.cs) sources.
-
-## Examples
-
-### CloudEvents Kafka message
-
-Kafka header: `traceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01`
-
-<CodeGroup>
-
-```json
-{
-	"specversion": "1.0",
-	"id": "0193f1c0-5a01-7d8e-9f01-23456789abcd",
-	"type": "BookWorm.Contracts.ProcessVectorBatchIntegrationEvent",
-	"source": "urn:bookworm:book-worm.scheduler",
-	"time": "2026-11-25T16:40:00Z",
-	"datacontenttype": "application/json",
-	"messagetype": "BookWorm.Contracts.ProcessVectorBatchIntegrationEvent",
-	"data": {
-		"id": "0193f1c0-5a01-7d8e-9f01-23456789abcd",
-		"creationDate": "2026-11-25T16:40:00Z"
-	}
-}
-```
-
-</CodeGroup>
-
-## Related documentation
-
-- [[event|ProcessVectorBatchIntegrationEvent]] — Event contract specification.
-- [[service|scheduler-dashboard]] — Quartz.NET job definitions and `schedulerdb` persistence.
-- [[service|catalog-ingestion]] — Azure Functions worker updating Qdrant vector embeddings.
-
 <NodeGraph />
+
+## Related Documentation
+
+- [[service|scheduler-service]] — Periodic trigger producer
+- [[service|catalog-ingestion]] — Vector indexing worker consumer
+- [[flow|product-ingestion]] — End-to-end catalog vector ingestion flow
+- [[doc|arc42/08-crosscutting-concepts/002-contracts-and-messaging]] — Messaging standards and idempotency rules

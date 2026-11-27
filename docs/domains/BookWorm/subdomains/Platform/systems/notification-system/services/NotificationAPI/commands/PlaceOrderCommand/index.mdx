@@ -11,71 +11,62 @@ summary: |
   and submit a new-order email.
 schemaPath: schema.json
 owners:
-  - contributor-team
+  - platform-engineering-team
 ---
 
-`PlaceOrderCommand` (`BookWorm.Contracts.PlaceOrderCommand`) is an asynchronous Kafka integration command published by **Finance** after checkout and consumed independently by **Basket API** (to delete the customer's Redis basket) and **Notification** (to send a new-order confirmation email). Neither consumer creates or modifies orders in **Ordering API**.
+`PlaceOrderCommand` is an asynchronous Kafka integration command published by [[service|order-orchestration]] after checkout and consumed independently by [[service|basket-api]] (to delete the customer's Redis basket) and [[service|notification-api]] (to send a new-order confirmation email). Neither consumer creates or modifies orders in [[service|order-api]].
 
 ## Overview
 
-| Property               | Value                                                                                                                                                                                                                                                                                                             |
-| :--------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**              | **Finance** (`finance`) produces; **Basket API** (`basket`) and **Notification** (`notification`) consume                                                                                                                                                                                                         |
-| **Source**             | `src/Services/Finance/BookWorm.Finance/Features/Orders/PlaceOrder/PublishPlaceOrderActivity.cs`, `src/Services/Basket/BookWorm.Basket/IntegrationEvents/EventHandlers/PlaceOrderCommandHandler.cs`, `src/Services/Notification/BookWorm.Notification/IntegrationEvents/EventHandlers/PlaceOrderCommandHandler.cs` |
-| **Protocol / format**  | Kafka + **Wolverine**, CloudEvents JSON (`CloudEventsOnlyKafkaMapper`), camelCase payload                                                                                                                                                                                                                         |
-| **Kafka topic**        | `bookworm.{env}.finance.place-order` (`[IntegrationMessageOwner(ServiceName = Services.Finance, TopicName = "place-order")]`)                                                                                                                                                                                     |
-| **Partition key**      | `OrderId` (`opts.MessagePartitioning.ByPropertyNamed(nameof(OrderId))`)                                                                                                                                                                                                                                           |
-| **Dead-letter queues** | `bookworm.{env}.basket.dead-letter-queue` (**Basket API**), `bookworm.{env}.notification.dead-letter-queue` (**Notification**)                                                                                                                                                                                    |
-| **Authentication**     | Internal Kafka broker transport (Confluent Cloud in publish mode; local Kafka container in development)                                                                                                                                                                                                           |
+| Property                             | Value                                                                                                                                                |
+| :----------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Bounded Context**                  | Platform / Notifications & Shopping                                                                                                                  |
+| **Producer**                         | [[service\|order-orchestration]]                                                                                                                     |
+| **Consumer(s)**                      | [[service\|basket-api]], [[service\|notification-api]]                                                                                               |
+| **Protocol / Format**                | Kafka + CloudEvents JSON (camelCase payload)                                                                                                         |
+| **Channel / Topic**                  | [[channel\|bookworm.&#123;env&#125;.finance.place-order]]                                                                                            |
+| **Dead-Letter Channel**              | [[channel\|bookworm.&#123;env&#125;.basket.dead-letter-queue]], [[channel\|bookworm.&#123;env&#125;.notification.dead-letter-queue]]                 |
+| **Partition Key**                    | `OrderId`                                                                                                                                            |
+| **Delivery / Idempotency Guarantee** | At-least-once delivery; [[service\|basket-api]] deduplicates by `OrderId` (24h TTL) and [[service\|notification-api]] deduplicates by `id` (24h TTL) |
 
 :::note
-`PlaceOrderCommand` initiates post-checkout cleanup and confirmation email delivery only. To submit a new order over HTTP, see [[command|CreateOrder]].
+`PlaceOrderCommand` initiates post-checkout basket cleanup and confirmation email delivery only. To submit a new order over HTTP, see [[command|CreateOrder]].
 :::
 
-## Parameters and fields
+## Payload Fields & Envelope
 
-| Name           | Type                    | Required | Default                               | Constraints                     | Description                                                                                                                               |
-| :------------- | :---------------------- | :------- | :------------------------------------ | :------------------------------ | :---------------------------------------------------------------------------------------------------------------------------------------- |
-| `id`           | `string` (UUID v7)      | Yes      | Generated (`IntegrationEvent`)        | Valid UUID                      | Unique integration message identifier used for 24-hour Redis deduplication in **Notification**.                                           |
-| `creationDate` | `string` (ISO 8601 UTC) | Yes      | Generated (`IntegrationEvent`)        | Valid `date-time`               | UTC timestamp when the command record was instantiated.                                                                                   |
-| `basketId`     | `string` (UUID)         | Yes      | —                                     | Valid UUID                      | Buyer/basket identifier deleted from Redis by **Basket API**. Ignored by **Notification**.                                                |
-| `orderId`      | `string` (UUID)         | Yes      | —                                     | Valid UUID; Kafka partition key | Identifier of the placed order; used as the deduplication key by **Basket API**.                                                          |
-| `fullName`     | `string` or `null`      | No       | `"Customer"` (in Notification mapper) | Nullable                        | Customer display name; **Notification** maps `null` to `"Customer"`. Ignored by **Basket API**.                                           |
-| `email`        | `string` or `null`      | No       | —                                     | Nullable                        | Recipient email address; forwarded by **Basket API** on deletion failure and used by **Notification** (null/whitespace skips email work). |
-| `totalMoney`   | `number` (`decimal`)    | Yes      | —                                     | C# `decimal`                    | Order total displayed in the new-order email and echoed in **Basket API** result events.                                                  |
+### Command Payload
 
-`additionalProperties` is `false` in the command JSON Schema.
+| Name           | Type                   | Required | Constraints                                         | Description                                                                                                                                          |
+| :------------- | :--------------------- | :------- | :-------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`           | `string` (`uuid`)      | Yes      | UUIDv7                                              | Unique message identifier used for 24-hour Redis deduplication in [[service\|notification-api]]                                                      |
+| `creationDate` | `string` (`date-time`) | Yes      | ISO 8601 UTC timestamp                              | UTC timestamp when the command was created                                                                                                           |
+| `basketId`     | `string` (`uuid`)      | Yes      | Valid UUID                                          | Buyer/basket identifier deleted from Redis by [[service\|basket-api]] (ignored by [[service\|notification-api]])                                     |
+| `orderId`      | `string` (`uuid`)      | Yes      | Valid UUID; Kafka partition key                     | Identifier of the placed order; used as the 24-hour deduplication key by [[service\|basket-api]]                                                     |
+| `fullName`     | `string \| null`       | No       | Nullable (defaults to `"Customer"` in Notification) | Customer display name (ignored by [[service\|basket-api]])                                                                                           |
+| `email`        | `string \| null`       | No       | Nullable                                            | Recipient email address; forwarded by [[service\|basket-api]] on deletion failure and used by [[service\|notification-api]] (blank/null skips email) |
+| `totalMoney`   | `number`               | Yes      | Non-negative monetary amount                        | Order total displayed in the new-order email and echoed in basket cleanup events                                                                     |
 
-## Behavior and side effects
+## Delivery Guarantees & Error Handling
 
-- **Finance publishing and timeout retries:** After **Ordering API** emits `UserCheckedOutIntegrationEvent`, **Finance**'s Azure Durable Functions `OrderOrchestrator` publishes `PlaceOrderCommand` via `PublishPlaceOrderActivity`. If post-checkout basket cleanup times out before `MaxAttempts` is reached, `PlaceOrderTimeoutStep` invokes `PublishPlaceOrderActivity` again with a newly constructed `PlaceOrderCommand` (carrying a new `id`).
-- **Basket API consumer (`BookWorm.Basket`):**
-  - Deduplicates by `command.OrderId` via `IIntegrationEventIdempotencyGuard.TryAcquireAsync(command.OrderId, nameof(PlaceOrderCommandHandler), ...)` (24-hour Redis/FusionCache TTL). Because the key is `OrderId`, even a reissued timeout-retry command with a new `id` does not delete the basket twice and immediately returns `BasketDeletedCompleteIntegrationEvent`.
-  - Deletes `command.BasketId.ToString()` from Redis via `IBasketRepository.DeleteBasketAsync`.
-  - Emits `BasketDeletedCompleteIntegrationEvent` when deletion succeeds or `BasketDeletedFailedIntegrationEvent` when deletion returns `false`. If an exception occurs, the handler releases the idempotency lock and rethrows for retry.
-- **Notification consumer (`BookWorm.Notification`):**
-  - Deduplicates by `message.Id` via `IIntegrationEventIdempotencyGuard.ExecuteAsync(message.Id, nameof(PlaceOrderCommandHandler), ...)` (24-hour Redis/FusionCache TTL). Redeliveries of the same Kafka message `id` are skipped, whereas a Finance timeout retry minting a new `id` triggers another email send.
-  - Has no SQL database and writes no email outbox table. Maps the command to Notification's internal `Status.New` model, skips null/whitespace `email`, renders `Orders/OrderEmail` via `MjmlTemplateRenderer`, builds a `MimeMessage` with `OrderMimeMessageBuilder`, and sends via `MailKitSender` (**Mailpit** locally, **SendGrid** SMTP in publish mode).
-  - Emits no return event; SMTP acceptance confirms provider handoff, not inbox arrival.
+| Condition                                                  | System Behavior                                                                                                   | Recovery / Compensation                                                                                                    |
+| :--------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------- |
+| Basket deletion returns `false` in [[service\|basket-api]] | Publishes [[event\|BasketDeletedFailedIntegrationEvent]]                                                          | [[service\|order-orchestration]] instructs [[service\|order-api]] to compensate via [[command\|DeleteBasketFailedCommand]] |
+| Transient Redis failure in [[service\|basket-api]]         | Releases the `OrderId` idempotency lock and retries (`50ms`, `250ms`, `1s` with jitter)                           | Exhausted retries route to [[channel\|bookworm.&#123;env&#125;.basket.dead-letter-queue]]                                  |
+| Transient SMTP failure in [[service\|notification-api]]    | Retried by the notification resilience pipeline (circuit breaker, exponential backoff with jitter, `30s` timeout) | Exhausted retries route to [[channel\|bookworm.&#123;env&#125;.notification.dead-letter-queue]]                            |
+| Blank or `null` `email` in [[service\|notification-api]]   | Consumer returns without error and skips template rendering and SMTP submission                                   | No action required                                                                                                         |
 
-## Error responses
+## Related Documentation
 
-| Code / status                                  | Condition                                                                                                                                                    | Recovery behavior                                                                                                                                                                      |
-| :--------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Basket deletion returns `false`                | Redis basket key is missing or could not be deleted cleanly                                                                                                  | **Basket API** publishes `BasketDeletedFailedIntegrationEvent` so **Finance** can instruct **Ordering API** to compensate (`DeleteBasketFailedCommand`).                               |
-| Redis or transport exception in **Basket API** | Transient Redis failure during `DeleteBasketAsync`                                                                                                           | Handler releases its `OrderId` idempotency lock and rethrows; **Wolverine** retries (`50ms` / `250ms` / `1s` with jitter) before routing to `bookworm.{env}.basket.dead-letter-queue`. |
-| Transient SMTP failure in **Notification**     | Temporary SMTP or network error (`CommandException` where `IsTransient`, `ProtocolException`, `IOException`, `TimeoutException`, `TimeoutRejectedException`) | Retried by **Notification**'s Polly pipeline (circuit breaker + exponential backoff with jitter + 30-second default timeout).                                                          |
-| `NotificationException`                        | Permanent SMTP failure or exhausted Polly pipeline                                                                                                           | **Wolverine** retries (`50ms` / `250ms` / `1s` with jitter) before routing to `bookworm.{env}.notification.dead-letter-queue`.                                                         |
-| Blank or null `email` in **Notification**      | Command arrives without a recipient email address                                                                                                            | **Notification** returns without error and skips template rendering and SMTP submission.                                                                                               |
-
-## Related documentation
-
-- [[command|CreateOrder]] — Ordering API HTTP command that creates the order and emits `UserCheckedOutIntegrationEvent`.
-- [[channel|bookworm.&#123;env&#125;.finance.place-order]] — Kafka channel configuration for `bookworm.{env}.finance.place-order`.
-- [[event|UserCheckedOutIntegrationEvent]] — Upstream Ordering event that starts `OrderOrchestrator`.
-- [[event|BasketDeletedCompleteIntegrationEvent]] — Success event published by **Basket API**.
-- [[event|BasketDeletedFailedIntegrationEvent]] — Failure event published by **Basket API**.
 - [[service|notification-api]] — Stateless email worker architecture and SMTP configuration.
 - [[service|basket-api]] — Redis basket storage and checkout cleanup behavior.
+- [[service|order-orchestration]] — Producing orchestration service.
+- [[channel|bookworm.&#123;env&#125;.finance.place-order]] — Kafka channel specification.
+- [[command|CreateOrder]] — Ordering API HTTP command that creates the order.
+- [[event|UserCheckedOutIntegrationEvent]] — Upstream Ordering event that starts checkout orchestration.
+- [[event|BasketDeletedCompleteIntegrationEvent]] — Success event published by [[service|basket-api]].
+- [[event|BasketDeletedFailedIntegrationEvent]] — Failure event published by [[service|basket-api]].
 
 <NodeGraph />
+
+<SchemaViewer file="schema.json" title="Place order schema" maxHeight="500" search="true" />

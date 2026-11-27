@@ -1,6 +1,6 @@
 ---
 id: GetBuyer
-name: Get Buyer
+name: Get buyer
 version: 1.0.0
 badges:
   - content: Customer Management
@@ -8,7 +8,7 @@ badges:
     textColor: orange
 summary: Returns the Buyer profile selected by identifier, subject to the caller's authorization.
 owners:
-  - contributor-team
+  - commerce-fulfillment-team
 schemaPath: schema.json
 operation:
   method: GET
@@ -18,60 +18,64 @@ sidebar:
   badge: "GET"
 ---
 
-`GetBuyer` queries **Ordering API** (`GET /api/v1/buyers/me`) to retrieve a buyer's profile (`id`, `name`, and `address`). Callers with the `admin` role retrieve the profile specified by the `Id` query parameter; all other authenticated callers are resolved to the buyer linked to their Microsoft Entra ID `NameIdentifier` claim.
+`GetBuyer` queries [[service|order-api]] (`GET /ordering/api/v1/buyers/me`) to retrieve a buyer's profile (`id`, `name`, and `address`). Callers with the `admin` role retrieve the profile specified by the `Id` query parameter; all other authenticated callers are resolved to the buyer linked to their Microsoft Entra ID `NameIdentifier` claim.
 
 ## Overview
 
-| Property              | Value                                                                                                                         |
-| :-------------------- | :---------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**             | Ordering bounded context (**Ordering API**, Aspire resource `ordering`)                                                       |
-| **Source**            | `src/Services/Ordering/BookWorm.Ordering/Features/Buyers/Get/GetBuyerEndpoint.cs`, `GetBuyerQuery.cs`                         |
-| **Protocol / format** | HTTP `GET /api/v1/buyers/me` (via API Gateway: `GET /ordering/api/v1/buyers/me`), `ApiVersions.V1`, JSON (`application/json`) |
-| **Authentication**    | Microsoft Entra ID JWT required (`customer` or `admin` role; scopes `ordering_read`, `ordering_write`)                        |
-| **Rate limiting**     | `PerUserRateLimit` token bucket (30 token limit, 20 tokens per 10 seconds, queue limit 5) plus global IP/concurrency limiters |
-| **Backing store**     | PostgreSQL (`orderingdb`, EF Core)                                                                                            |
-| **Contract version**  | `1.0.0`                                                                                                                       |
+| Property                           | Value                                                                                                                             |
+| :--------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------- |
+| **Bounded Context**                | Ordering                                                                                                                          |
+| **Owner Service**                  | [[service\|order-api]]                                                                                                            |
+| **Protocol / Format**              | HTTP `GET`, `application/json` response                                                                                           |
+| **Gateway Endpoint**               | `GET /ordering/api/v1/buyers/me` (service path `/api/v1/buyers/me`)                                                               |
+| **Authentication & Authorization** | Microsoft Entra ID JWT — `customer` or `admin` role plus scopes `ordering_read`, `ordering_write`                                 |
+| **Idempotency / Concurrency**      | Read-only and naturally idempotent                                                                                                |
+| **Rate Limit / Caching**           | Global concurrency (`100`), per-IP fixed-window (`30 req/min`), and per-user token bucket (`30` limit, `20` per `10s`, queue `5`) |
+| **Contract Version**               | `1.0.0` (`ApiVersions.V1`)                                                                                                        |
 
-## Parameters and fields
+## Request & Response Contract
 
-### Query parameters
+### Query Parameters
 
-| Name | Type            | Required | Default | Constraints         | Description                                                                                                                              |
-| :--- | :-------------- | :------- | :------ | :------------------ | :--------------------------------------------------------------------------------------------------------------------------------------- |
-| `Id` | `string` (UUID) | Yes      | —       | Valid UUID (`Guid`) | Buyer identifier requested by `admin` callers; ignored for non-admin callers whose buyer ID is resolved from `ClaimTypes.NameIdentifier` |
+| Name | Type              | Required | Constraints | Description                                                                                                                   |
+| :--- | :---------------- | :------- | :---------- | :---------------------------------------------------------------------------------------------------------------------------- |
+| `Id` | `string` (`uuid`) | Yes      | Valid UUID  | Buyer identifier requested by `admin` callers; ignored for non-admin callers whose buyer ID is resolved from `NameIdentifier` |
 
 :::note
-Because `GetBuyerQuery` binds `Id` as a non-nullable `Guid`, non-admin clients must still supply a valid UUID query parameter even though Ordering API resolves their own authenticated buyer ID.
+Because `Id` binds as a non-nullable UUID, non-admin clients must still supply a valid UUID query parameter even though the service resolves their own authenticated buyer ID.
 :::
 
-### Response schema (`BuyerDto`)
+### Success Response (`200 OK`)
 
-A `200 OK` response returns a `BuyerDto` JSON object.
+| Name      | Type              | Required | Constraints | Description                                    |
+| :-------- | :---------------- | :------- | :---------- | :--------------------------------------------- |
+| `id`      | `string` (`uuid`) | Yes      | Valid UUID  | Unique identifier of the buyer profile         |
+| `name`    | `string \| null`  | Yes      | Nullable    | Buyer display name (`null` when unset)         |
+| `address` | `string \| null`  | Yes      | Nullable    | Formatted shipping address (`null` when unset) |
 
-| Field     | Type             | Required | Constraints | Description                                    |
-| :-------- | :--------------- | :------- | :---------- | :--------------------------------------------- |
-| `id`      | `string`         | Yes      | UUID        | Unique identifier of the buyer profile         |
-| `name`    | `string \| null` | Yes      | Nullable    | Buyer display name (`null` when unset)         |
-| `address` | `string \| null` | Yes      | Nullable    | Formatted shipping address (`null` when unset) |
+## Behavior & Side Effects
 
-## Error responses
+- **Role-scoped resolution:** Administrators query by the supplied `Id` parameter; standard customers always resolve their own profile from their token's `NameIdentifier` claim.
+- **No state mutation:** Pure read query with no database writes or integration events.
 
-| Code / status           | Condition                                                                                                   | Recovery behavior                                                       |
-| :---------------------- | :---------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------- |
-| `400 Bad Request`       | Missing or malformed `Id` UUID query parameter (`application/problem+json`)                                 | Supply a valid UUID in the `Id` query parameter; do not retry unchanged |
-| `401 Unauthorized`      | Missing, expired, or invalid Entra ID bearer token                                                          | Re-authenticate and retry                                               |
-| `403 Forbidden`         | Authenticated principal lacks Ordering API roles or scopes                                                  | Request a token with `customer` or `admin` role and Ordering scopes     |
-| `404 Not Found`         | No buyer profile exists for the resolved buyer ID (`application/problem+json`)                              | Prompt the user to create a buyer profile via `CreateBuyer`             |
-| `429 Too Many Requests` | Caller exceeded `PerUserRateLimit` or global rate limit (`application/problem+json` + `Retry-After` header) | Wait for the `Retry-After` duration before retrying                     |
+## Error Responses
 
-## Related documentation
+| Status / Code           | Condition                                                 | Client Recovery Action                                                  |
+| :---------------------- | :-------------------------------------------------------- | :---------------------------------------------------------------------- |
+| `400 Bad Request`       | Missing or malformed `Id` UUID query parameter            | Supply a valid UUID in the `Id` query parameter; do not retry unchanged |
+| `401 Unauthorized`      | Missing, expired, or invalid Entra ID bearer token        | Re-authenticate and retry                                               |
+| `403 Forbidden`         | Caller lacks Ordering API roles or scopes                 | Request a token with `customer` or `admin` role and Ordering scopes     |
+| `404 Not Found`         | No buyer profile exists for the resolved buyer ID         | Prompt the user to create a buyer profile via [[command\|CreateBuyer]]  |
+| `429 Too Many Requests` | Rate limit quota exceeded (`Retry-After` header included) | Wait for the `Retry-After` duration before retrying                     |
 
-- [[service|order-api]] — Service overview, PostgreSQL persistence, and endpoints.
+## Related Documentation
+
+- [[service|order-api]] — Service overview, persistence, and endpoints.
+- [[entity|buyer]] — Buyer entity model.
 - [[query|ListBuyers]] — Admin-only paginated listing of all buyer profiles.
 - [[command|CreateBuyer]] — Create a new buyer profile.
 - [[command|UpdateAddress]] — Update a buyer's shipping address.
-- [[entity|buyer]] — Domain model for buyer profiles.
 
 <NodeGraph />
 
-<SchemaViewer file="schema.json" title="BuyerDto JSON Schema" maxHeight="500" search="true" />
+<SchemaViewer file="schema.json" title="Get buyer schema" maxHeight="500" search="true" />

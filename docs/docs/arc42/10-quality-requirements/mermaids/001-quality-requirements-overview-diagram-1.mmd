@@ -1,33 +1,45 @@
-%%{init: {'theme': 'base', 'themeVariables': {'background': '#f5f5f5', 'primaryColor': '#ffffff', 'primaryTextColor': '#2d3142', 'primaryBorderColor': '#2d3142', 'secondaryColor': '#ececec', 'secondaryBorderColor': '#4f5d75', 'tertiaryColor': '#fdf2ee', 'tertiaryBorderColor': '#bf4520', 'lineColor': '#4f5d75', 'textColor': '#2d3142', 'clusterBkg': '#f8f9fa', 'clusterBorder': '#bfc0c0', 'fontFamily': 'Geist, system-ui, sans-serif'}}}%%
-flowchart TD
-	root["BookWorm Quality\n(arc42 Q42 Tree)"]
-
-	c1["Correctness (P1)\nQR-01, QR-02"]
-	c2["Interoperability (P2)\nQR-03"]
-	c3["Deployability (P2)\nQR-04"]
-	c4["Modifiability (P2-P3)\nQR-05, QR-17"]
-	c5["Operability (P2)\nQR-06"]
-	c6["Reliability & Recovery (P1-P2)\nQR-07, QR-08, QR-13, QR-14"]
-	c7["Security & Privacy (P1)\nQR-09, QR-10, QR-15"]
-	c8["Performance Efficiency (P2)\nQR-12"]
-	c9["Usability & Accessibility (P2)\nQR-11, QR-16"]
-
-	root -->|"Checkout & order integrity"| c1
-	root -->|"Owned contracts"| c2
-	root -->|"Independent releases"| c3
-	root -->|"Bounded autonomy"| c4
-	root -->|"Incident attribution"| c5
-	root -->|"Durable work & restore"| c6
-	root -->|"AuthZ, PII & AI policy"| c7
-	root -->|"Interactive latency"| c8
-	root -->|"Clear UX & WCAG"| c9
-
-	classDef focal fill:#fdf2ee,stroke:#bf4520,stroke-width:2px,color:#2d3142
-	classDef service fill:#ffffff,stroke:#2d3142,stroke-width:1.2px,color:#2d3142
-	classDef store fill:#ececec,stroke:#4f5d75,stroke-width:1.2px,color:#2d3142
-	classDef input fill:#eef1f6,stroke:#5a6580,stroke-width:1.2px,color:#2d3142
-	classDef ext fill:#f5f5f5,stroke:#949eb2,stroke-width:1px,stroke-dasharray:4 3,color:#4f5d75
-	class root focal
-	class c1,c2,c3,c4,c5,c6,c7,c8,c9 service
-	linkStyle 0 stroke:#bf4520,stroke-width:2px
-	linkStyle 1 stroke:#bf4520,stroke-width:2px
+mindmap
+  root((BookWorm Quality Requirements))
+    Correctness
+      Purchase integrity
+        QS-01 Authoritative purchase
+      Order lifecycle integrity
+        QS-02 Truthful coordination outcomes
+    Interoperability
+      Contract compatibility
+        QS-03 Compatible contracts
+    Deployability
+      Independent release
+        QS-04 Independent compatible release
+    Maintainability
+      Localized change
+        QS-05 Local business-rule change
+      Contributor onboarding
+        QS-17 New-contributor onboarding
+    Operability
+      Incident diagnosis
+        QS-06 Incident diagnosis
+    Reliability
+      Search freshness and recovery
+        QS-07 Recoverable search freshness
+      Notification delivery integrity
+        QS-08 Honest notification delivery
+      Customer-path availability
+        QS-13 Customer-path availability
+      State restoration
+        QS-14 Restore authoritative state
+    Security and privacy
+      Access control
+        QS-09 Enforced access boundaries
+      Sensitive-data protection
+        QS-10 Sensitive-data minimization
+      AI governance
+        QS-15 Govern model and tool execution
+    Performance
+      Interactive response time
+        QS-12 Interactive performance under load
+    Usability and accessibility
+      Interaction feedback
+        QS-11 Actionable interaction feedback
+      Accessible journey
+        QS-16 Accessible core journey

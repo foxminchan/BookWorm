@@ -1,19 +1,19 @@
 %%{init: {'theme': 'base', 'themeVariables': {'background': '#f5f5f5', 'primaryColor': '#ffffff', 'primaryTextColor': '#2d3142', 'primaryBorderColor': '#2d3142', 'secondaryColor': '#ececec', 'secondaryBorderColor': '#4f5d75', 'tertiaryColor': '#fdf2ee', 'tertiaryBorderColor': '#bf4520', 'lineColor': '#4f5d75', 'textColor': '#2d3142', 'clusterBkg': '#f8f9fa', 'clusterBorder': '#bfc0c0', 'fontFamily': 'Geist, system-ui, sans-serif'}}}%%
 flowchart LR
 	chat["Chat API\n(A2A gRPC Client)"]
-	summarizer["RatingSummarizer Workflow\n(Partition -> Map -> Reduce -> Assess -> Classify)"]
-	agent["Rating Agent\n(rating / Agent Framework)"]
-	reviewTool["ReviewTool\n(GetCustomerReviews, 30/min)"]
-	mcp["MCP Tools\n(get_book + Prompts)"]
-	presidio["Presidio\n(Analyzer + Anonymizer)"]
-	cosmos[("Rating database\n(Cosmos DB: ratingdb/feedbacks)")]
+	summarizer["Feedback Summarizer Pipeline\n(Partition -> Map -> Reduce -> Assess -> Classify)"]
+	agent["Rating Agent\n(Review Intelligence Specialist)"]
+	reviewTool["Feedback Lookup Tool\n(30/min Rate Limit)"]
+	mcp["MCP Server\n(Catalog Metadata & Prompts)"]
+	presidio["Presidio PII Sidecars\n(Analyze & Anonymize)"]
+	cosmos[("Rating Database\n(Customer Feedback Store)")]
 
-	chat --> |"A2A gRPC: rating_read"| agent
-	summarizer --> |"In-process: StructuredRatingResponseRunner"| agent
-	agent --> |"Function: GetCustomerReviews"| reviewTool
-	reviewTool --> |"Mediator: ListFeedbacksQuery"| cosmos
-	agent --> |"MCP: get_book"| mcp
-	agent --> |"HTTP Middleware: PII"| presidio
+	chat --> |"A2A gRPC: Read-Only Review Query"| agent
+	summarizer --> |"In-Process Batch Summarization"| agent
+	agent --> |"Read-Only Review Fetch"| reviewTool
+	reviewTool --> |"Read Feedback Partition"| cosmos
+	agent --> |"MCP: Book Metadata"| mcp
+	agent --> |"Fail-Closed PII Screening"| presidio
 
 	classDef focal fill:#fdf2ee,stroke:#bf4520,stroke-width:2px,color:#2d3142
 	classDef service fill:#ffffff,stroke:#2d3142,stroke-width:1.2px,color:#2d3142

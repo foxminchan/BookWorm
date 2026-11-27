@@ -8,7 +8,7 @@ badges:
     textColor: blue
 summary: Creates a basket containing the supplied item identifiers and quantities.
 owners:
-  - contributor-team
+  - commerce-fulfillment-team
 schemaPath: schema.json
 operation:
   method: POST
@@ -18,74 +18,63 @@ sidebar:
   badge: "POST"
 ---
 
-`CreateBasket` (`POST /api/v1/baskets`) creates a customer-scoped **Basket** in **Basket API** with an initial non-empty list of book items and quantities, returning the authenticated customer's identifier. It persists the basket directly in Redis and overwrites any existing basket for the same customer.
+`CreateBasket` creates a customer-scoped [[entity|basket]] in [[service|basket-api]] (`POST /basket/api/v1/baskets`) with an initial non-empty list of book items and quantities, returning the authenticated customer's identifier. It persists the basket directly in Redis and overwrites any existing basket for the same customer.
 
 ## Overview
 
-| Property                 | Value                                                                                                                                                                                                                      |
-| :----------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**                | Shopping bounded context (**Basket API**, Aspire resource `basket`)                                                                                                                                                        |
-| **Source**               | `src/Services/Basket/BookWorm.Basket/Features/Create/CreateBasketEndpoint.cs`, `CreateBasketCommand.cs`, `CreateBasketValidator.cs`, `src/Services/Basket/BookWorm.Basket/Infrastructure/Repositories/BasketRepository.cs` |
-| **Protocol / format**    | HTTP `POST`, `application/json` request and response                                                                                                                                                                       |
-| **Direct endpoint**      | `POST /api/v1/baskets` (local ports: HTTP `5052`, HTTPS `7155`)                                                                                                                                                            |
-| **API Gateway endpoint** | `POST /basket/api/v1/baskets` (YARP strips `/basket`)                                                                                                                                                                      |
-| **Authentication**       | Microsoft Entra ID JWT bearer token; default policy requires role `customer` and scopes `basket_read` and `basket_write`                                                                                                   |
-| **Rate limit**           | `PerUserRateLimit` token bucket (30 tokens, +20 per 10 s, queue 5) plus global concurrency (100) and per-IP fixed-window (30 req/min) limiters                                                                             |
-| **Contract version**     | `1.0.0` (`ApiVersions.V1`)                                                                                                                                                                                                 |
+| Property                           | Value                                                                                                                                                            |
+| :--------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Bounded Context**                | Shopping                                                                                                                                                         |
+| **Owner Service**                  | [[service\|basket-api]]                                                                                                                                          |
+| **Protocol / Format**              | HTTP `POST`, `application/json` request and response                                                                                                             |
+| **Gateway Endpoint**               | `POST /basket/api/v1/baskets` (service path `/api/v1/baskets`)                                                                                                   |
+| **Authentication & Authorization** | Microsoft Entra ID JWT — `customer` role plus scopes `basket_read`, `basket_write`                                                                               |
+| **Idempotency / Concurrency**      | Overwrites any existing basket for the authenticated customer; no `x-request-id` header is enforced                                                              |
+| **Rate Limit / Caching**           | Global concurrency (`100`), per-IP fixed-window (`30 req/min`), and per-user token bucket (`30` tokens, `+20` per `10s`, queue `5`); stored in Redis with no TTL |
+| **Contract Version**               | `1.0.0` (`ApiVersions.V1`)                                                                                                                                       |
 
-## Parameters and fields
+## Request & Response Contract
 
-### Request headers
+### Request Body (`application/json`)
 
-| Name            | Type     | Required | Default | Constraints             | Description                                                                                                                             |
-| :-------------- | :------- | :------- | :------ | :---------------------- | :-------------------------------------------------------------------------------------------------------------------------------------- |
-| `Authorization` | `string` | Yes      | —       | `Bearer <access-token>` | Microsoft Entra ID JWT with role `customer`, scopes `basket_read` and `basket_write`, and a non-empty `ClaimTypes.NameIdentifier` claim |
-| `Content-Type`  | `string` | Yes      | —       | `application/json`      | JSON request media type                                                                                                                 |
+| Name               | Type       | Required | Constraints      | Description                                                   |
+| :----------------- | :--------- | :------- | :--------------- | :------------------------------------------------------------ |
+| `items`            | `object[]` | Yes      | Non-empty array  | Initial collection of books to store in the customer's basket |
+| `items[].id`       | `string`   | Yes      | Non-empty string | Identifier of the Catalog book                                |
+| `items[].quantity` | `integer`  | Yes      | `>= 1`           | Requested unit quantity for the book                          |
 
-### Request body (`CreateBasketCommand`)
+### Success Response (`201 Created`)
 
-| Name               | Type                  | Required | Default | Constraints                                                                                                                                           | Description                                                   |
-| :----------------- | :-------------------- | :------- | :------ | :---------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------ |
-| `items`            | `BasketItemRequest[]` | Yes      | —       | Non-empty array (`NotEmpty`)                                                                                                                          | Initial collection of books to store in the customer's basket |
-| `items[].id`       | `string`              | Yes      | —       | Non-empty string (`NotEmpty`); annotated with GUID syntax hint (`[StringSyntax(GuidFormat)]`), though UUID format is not enforced by FluentValidation | Identifier of the Catalog book                                |
-| `items[].quantity` | `integer` (`int32`)   | Yes      | —       | Greater than `0` (`>= 1`)                                                                                                                             | Requested unit quantity for the book                          |
+| Name              | Type     | Required | Constraints                                      | Description                                 |
+| :---------------- | :------- | :------- | :----------------------------------------------- | :------------------------------------------ |
+| `Location` header | `string` | Yes      | Relative path `/api/v1/baskets?id=<customer-id>` | URI to retrieve the created basket          |
+| Root body         | `string` | Yes      | Derived from caller's `NameIdentifier` claim     | Authenticated customer ID owning the basket |
 
-### Success response (`201 Created`)
+## Behavior & Side Effects
 
-| Name                           | Type     | Required | Default | Constraints                                                                                 | Description                                                                                                                                                                                     |
-| :----------------------------- | :------- | :------- | :------ | :------------------------------------------------------------------------------------------ | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Location` (header)            | `string` | Yes      | —       | Generated via `LinkGenerator.GetPathByName(nameof(GetBasketEndpoint), new { id = result })` | Path to retrieve the created basket (resolves to `/api/v1/baskets?id=<customer-id>`)                                                                                                            |
-| Root JSON value (`CustomerId`) | `string` | Yes      | —       | Non-null customer identifier derived from `ClaimTypes.NameIdentifier`                       | Authenticated customer ID owning the basket (note: generated `openapi.yaml` marks `CustomerId` nullable, but `CreateBasketHandler` throws `BasketCreatedException` instead of returning `null`) |
+- **Customer scoping:** Resolves the basket owner exclusively from the JWT `NameIdentifier` claim; callers cannot supply a customer ID in the request body or route.
+- **Redis storage & overwrite semantics:** Persists the basket as camelCase JSON in Redis (`basket:{userId}`) with no expiration (TTL), overwriting any existing basket for the same customer.
+- **Deferred catalog enrichment:** Stores only book IDs and quantities; book titles and prices are resolved on read via [[query|GetBasket]].
+- **No integration events:** HTTP basket creation does not publish any Kafka integration events.
 
-## Behavior and side effects
+## Error Responses
 
-- **Customer scoping:** `CreateBasketHandler` resolves the basket owner exclusively from the JWT `ClaimTypes.NameIdentifier` claim via `claimsPrincipal.GetAuthenticatedUserId()`. Callers cannot supply a customer ID in the request body or route.
-- **Redis storage and overwrite semantics:** `BasketRepository.CreateOrUpdateBasketAsync` serializes `CustomerBasket` as camelCase JSON and writes it to Redis under key `basket:{userId}` with `StringSetAsync`. No expiration (TTL) is configured, and calling `POST /api/v1/baskets` when a basket already exists overwrites the stored basket.
-- **No synchronous Catalog lookup:** Basket creation stores only book IDs and quantities. Book titles and prices are resolved later when reading the basket via `GetBasket`.
-- **No Kafka integration events:** HTTP basket creation does not publish any Kafka or Wolverine integration events.
+| Status / Code               | Condition                                                                                            | Client Recovery Action                                               |
+| :-------------------------- | :--------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------- |
+| `400 Bad Request`           | Missing `items`, empty `items` array, empty `items[].id`, `items[].quantity <= 0`, or malformed JSON | Fix the failing fields and resubmit                                  |
+| `401 Unauthorized`          | Missing, expired, or invalid Entra ID bearer token                                                   | Acquire a valid Entra ID access token and retry                      |
+| `403 Forbidden`             | Valid token missing the `customer` role or `basket_read`/`basket_write` scopes                       | Request a token with the required role and scopes                    |
+| `429 Too Many Requests`     | Rate limit quota exceeded (`Retry-After` header included)                                            | Wait for the `Retry-After` interval before retrying                  |
+| `500 Internal Server Error` | Redis write failed or unexpected server error (`traceId` included)                                   | Retry with exponential backoff; inspect service logs using `traceId` |
 
-## Error responses
+## Related Documentation
 
-| Code / status               | Condition                                                                                                                                                                                      | Recovery behavior                                                                 |
-| :-------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------- |
-| `400 Bad Request`           | Missing `items`, empty `items` array, empty `items[].id`, `items[].quantity <= 0`, or malformed JSON (`ValidationExceptionHandler`, `application/problem+json` `HttpValidationProblemDetails`) | Fix the failing fields reported in `errors` and resubmit                          |
-| `401 Unauthorized`          | Missing, expired, or invalid Entra ID bearer token                                                                                                                                             | Acquire a valid Entra ID access token and retry                                   |
-| `403 Forbidden`             | Valid token missing the `customer` role or the `basket_read`/`basket_write` scopes                                                                                                             | Request a token with the required role and scopes                                 |
-| `429 Too Many Requests`     | `PerUserRateLimit` or global rate limiter exceeded (`ProblemDetails` with `Retry-After` header in seconds)                                                                                     | Wait for the `Retry-After` interval before retrying                               |
-| `500 Internal Server Error` | Redis write failed (`BasketCreatedException`) or unexpected unhandled server error (`GlobalExceptionHandler`, `ProblemDetails` with `traceId`)                                                 | Retry with exponential backoff; inspect Basket API and Redis logs using `traceId` |
-
-## Related documentation
-
-- [[service|basket-api]] — Service overview, Redis storage, gRPC server, and authorization policy.
-- [[command|UpdateBasket]] — Replace all items in an existing basket (`PUT /api/v1/baskets`).
-- [[command|DeleteBasket]] — Remove the authenticated customer's basket (`DELETE /api/v1/baskets`).
-- [[query|GetBasket]] — Retrieve the current basket enriched with Catalog titles and prices (`GET /api/v1/baskets`).
+- [[service|basket-api]] — Service overview, Redis storage, and authorization policy.
+- [[entity|basket]] — Basket entity model.
+- [[command|UpdateBasket]] — Replace all items in an existing basket.
+- [[command|DeleteBasket]] — Remove the authenticated customer's basket.
+- [[query|GetBasket]] — Retrieve the current basket enriched with Catalog titles and prices.
 
 <NodeGraph />
 
-<SchemaViewer
-	file="schema.json"
-	title="CreateBasketCommand JSON Schema"
-	maxHeight="500"
-	search="true"
-/>
+<SchemaViewer file="schema.json" title="Create basket schema" maxHeight="500" search="true" />

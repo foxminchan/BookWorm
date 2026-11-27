@@ -1,67 +1,60 @@
 ---
-title: "Frontend accessibility principles"
-summary: "Explain BookWorm's WCAG 2.1 Level AA target, four-layer accessibility defense, streaming AI chat announcements, and barrier reporting process."
+title: Accessibility & Inclusive UX
+summary: WCAG 2.1 Level AA target, four-layer accessibility defense, streaming AI chat announcements, and barrier reporting governance.
 owners:
-  - contributor-team
+  - catalog-experience-team
+badges:
+  - content: Architecture
+    backgroundColor: purple
+    textColor: purple
+  - content: Reference
+    backgroundColor: blue
+    textColor: blue
 ---
 
-BookWorm targets the **Web Content Accessibility Guidelines (WCAG) 2.1 Level AA** across all three Next.js applications (**Storefront**, **Commerce**, and **Backoffice**). Because automated scanners catch only a subset of real-world barriers—especially around keyboard focus and streaming AI responses—BookWorm layers static linting, accessible headless primitives, browser `axe-core` tests, and live screen-reader announcements together.
+## Purpose & Scope
 
-## Context and motivation
+This reference defines BookWorm's accessibility architecture across **Storefront**, **Commerce**, and **Backoffice**, targeting **WCAG 2.1 Level AA**. Because automated scanners detect only a fraction of real-world barriers—particularly around keyboard focus management and streaming AI responses—BookWorm enforces a four-layer defense from authoring time through runtime assistive-technology behavior.
 
-BookWorm is a reference e-commerce and AI-assisted application with distinct accessibility challenges across its three zones:
+## Four-Layer Accessibility Defense
 
-- **Storefront** combines catalog discovery with a streaming conversational AI assistant (`CopilotKit` + Agent-User Interaction (AG-UI)). Unthrottled token streams can overwhelm screen readers, while dynamic generative UI cards need semantic landmarks and keyboard reachability.
-- **Commerce** handles authenticated basket updates, confirmation dialogs, and multi-step checkout flows where broken focus management or missing error associations block keyboard-only shoppers from completing purchases.
-- **Backoffice** presents data-dense tables, charts, and CRUD dialogs where keyboard navigation, non-color status indicators, and accessible form labels are essential for staff productivity.
-
-Because BookWorm is a demonstration project, WCAG 2.1 Level AA is maintained as an ongoing engineering practice rather than a formal third-party conformance claim across every external dependency.
-
-## How it works
-
-BookWorm defends accessibility across four complementary layers from authoring time through runtime assistive-technology behavior.
-
-This diagram shows how BookWorm's four accessibility layers reinforce each other across development, CI, and runtime browser interactions.
+The visual below illustrates how static linting, browser audits, keyboard focus management, and paced live announcements reinforce each other across development and runtime.
 
 <MermaidFileLoader file="mermaids/008-accessibility-principles-diagram-1.mmd" />
 
-- **Accessible UI primitives and static linting:** Shared components in `@workspace/ui` wrap `@base-ui/react` headless primitives and semantic HTML. Every lint run (`bun run lint`, enforced in `.github/workflows/frontend-shared.yml` with `--max-warnings 0`) executes `eslint-plugin-jsx-a11y` across all three apps and shared packages.
-- **Automated browser audits:** Storefront's Playwright BDD suite (`e2e/features/accessibility.feature`) runs `@axe-core/playwright` color-contrast and landmark checks alongside 10 end-to-end keyboard and focus scenarios spanning Storefront and Commerce.
-- **Keyboard and focus management:** Every interactive page provides a **Skip to main content** link on first `Tab`, visible focus indicators, and logical focus order. Modal dialogs and drawers trap focus while open, dismiss on `Escape`, and restore focus to the triggering control.
-- **Paced screen-reader announcements:** Dynamic state indicators (offline banners, rate-limit notices, syncing states, basket updates) use `aria-live` regions. In **Storefront**, `@generative-a11y/react` and `@generative-a11y/ag-ui` connect the AI chat stream to assistive technologies so streaming text, tool calls, and prompts announce at a readable pace.
+## Architectural Principles & Rules
 
-### Core accessibility priorities
+- **Full keyboard operability:** Every interactive workflow—including catalog filtering, modal dialogs, and end-to-end checkout across **Storefront** and **Commerce**—must be operable without a mouse, with a visible skip-to-main-content link and predictable focus order.
+- **Focus trapping & restoration:** Modal dialogs, drawers, and popovers must trap focus while open, dismiss on `Escape`, and restore focus to the triggering control upon closure.
+- **Semantic landmarks & headings:** Every page must expose proper landmark regions (`main`, `navigation`, `contentinfo`), a single top-level heading, and non-skipped heading levels.
+- **Non-color cues & contrast:** Text and interactive borders must meet WCAG 2.1 Level AA contrast ratios (4.5:1 normal text, 3:1 large text and UI components), and status or validation errors must never rely on color alone.
+- **Paced live announcements:** Dynamic status updates (offline notices, rate-limit alerts, basket updates, and **Storefront**'s streaming AI assistant) must announce through `aria-live` regions without flooding screen readers during token streaming.
 
-- Full keyboard access to every interactive workflow (including end-to-end checkout)
-- Clear focus indicators and predictable focus order
-- Semantic HTML landmarks (`main`, `navigation`, `contentinfo`) and single `<h1>` heading hierarchies
-- WCAG 2.1 Level AA color contrast paired with non-color status, required-field, and error cues
-- Meaningful text alternatives (`alt` text and accessible names) for images and icon controls
-- Explicit labels, instructions, and error messages on every form input
-- Responsive layouts that remain readable under zoom and increased text sizes
+<Admonition type="info" title="Streaming AI Accessibility">
+	Unthrottled conversational AI token streams can overwhelm screen readers. **Storefront**
+	integrates generative accessibility adapters with the AG-UI stream so assistant responses, tool
+	calls, and interactive cards announce at a readable pace.
+</Admonition>
 
-## Design trade-offs
+## Patterns & Boundaries
 
-| Decision                                                     | Benefits                                                                                | Costs and limits                                                                                                    |
-| :----------------------------------------------------------- | :-------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------ |
-| Headless primitives (`@base-ui/react`) in `@workspace/ui`    | Built-in ARIA roles, keyboard navigation, and focus restoration across all 3 apps       | Custom styling must preserve visible focus rings and contrast tokens                                                |
-| Static `jsx-a11y` as a blocking CI gate (`--max-warnings 0`) | Catches missing labels, alt text, and invalid ARIA before merge with fast feedback      | Cannot detect runtime contrast, focus traps, or screen-reader pacing issues                                         |
-| Playwright BDD + `axe-core` scenarios in Storefront          | Verifies real keyboard journeys (including Storefront-to-Commerce checkout) in Chromium | Requires a running browser stack; Backoffice and Commerce do not yet have standalone `accessibility.feature` suites |
-| Dedicated streaming announcements (`@generative-a11y/*`)     | Prevents screen-reader announcement flooding during AI token streaming                  | Adds Storefront-specific integration surface tied to AG-UI events                                                   |
+| Concern / Surface                     | Architectural Approach                                                                  | Responsibility Boundary                                                                 | Key Trade-off                                                                         |
+| :------------------------------------ | :-------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------ |
+| **Layer 1: Primitives & Static Lint** | Headless accessible UI primitives paired with zero-warning static accessibility linting | Shared UI and lint config enforce baseline ARIA and semantic rules at authoring time    | Cannot detect runtime contrast, focus traps, or screen-reader pacing                  |
+| **Layer 2: Browser Audits**           | Automated `axe-core` contrast and landmark checks inside end-to-end browser suites      | **Storefront** suite verifies customer discovery and **Commerce** checkout journeys     | Requires running browser stack; **Backoffice** relies on static lint and unit queries |
+| **Layer 3: Keyboard & Focus**         | Skip links, logical tab order, focus traps, and `Escape` restoration                    | Shared UI primitives provide focus mechanics; feature slices verify page-level tab flow | Requires manual keyboard verification on complex custom layouts                       |
+| **Layer 4: Live Announcements**       | `aria-live` regions and generative accessibility adapters for AI streams                | Feature slices own status regions; **Storefront** AI integration owns stream pacing     | Adds integration surface tied to conversational UI events                             |
 
-## Alternatives considered
+<Accordion title="Barrier Reporting & Security Boundary">
 
-- **Automated scanners alone (`axe-core` / linting only):** Misses roughly half of real accessibility defects, including focus-return regressions, confusing tab order, and unreadable AI streaming announcements.
-- **Custom hand-rolled dialogs and menus:** Eliminates `@base-ui/react` dependency, but repeatedly reintroduces subtle ARIA, focus-trap, and `Escape`-handling bugs across three applications.
+- **Supported Environments:** Modern desktop and mobile browsers, keyboard-only navigation, and standard screen-reader workflows.
+- **Barrier Reporting:** Accessibility barriers are tracked via dedicated issue templates capturing affected surface, reproduction steps, assistive technology, and severity.
+- **Security Boundary:** Contributors and users must never include passwords, tokens, or private data in public accessibility reports.
 
-## Supported environments and reporting barriers
+</Accordion>
 
-- **Supported environments:** Modern desktop and mobile browsers, keyboard-only navigation, and common screen-reader workflows. Behavior can vary across browser, operating system, and assistive-technology combinations; third-party embeds are supported on a best-effort basis.
-- **Reporting a barrier:** Open a GitHub issue with the [accessibility issue template](https://github.com/foxminchan/BookWorm/issues/new?template=accessibility.yml) (including affected page, reproduction steps, browser/assistive technology, and severity), or email [nguyenxuannhan407@gmail.com](mailto:nguyenxuannhan407@gmail.com) without disclosing personal or medical data.
-- **Security boundary:** Never post passwords, private data, or security-sensitive details in public accessibility issues; follow [SECURITY.md](https://github.com/foxminchan/BookWorm/blob/main/.github/SECURITY.md) for security disclosures. See [ACCESSIBILITY.md](https://github.com/foxminchan/BookWorm/blob/main/.github/ACCESSIBILITY.md) for the repository entrypoint.
+## Quality & Operational Impact
 
-## Related documentation
-
-- [[doc|frontend/005-accessibility]] — Concrete linting, Playwright `@accessibility`, keyboard, and screen-reader PR checklist.
-- [[doc|frontend/004-testing-and-quality-gates]] — Full pre-PR frontend verification workflow.
-- [[doc|frontend/001-monorepo-architecture]] — Where `@workspace/ui` and `@workspace/eslint-config` live in the monorepo.
+- **Inclusivity:** Keyboard-only and screen-reader users can complete discovery, AI-assisted search, basket management, and checkout independently.
+- **Early Defect Prevention:** Catching missing labels and invalid ARIA at lint time is significantly faster and cheaper than fixing them after UI release.
+- **AI Usability:** Paced live announcements make conversational AI genuinely usable for assistive-technology users rather than noisy or disorienting.

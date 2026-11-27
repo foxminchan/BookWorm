@@ -8,7 +8,7 @@ badges:
     textColor: red
 summary: Replaces or transforms detected PII in text using the supplied analysis results and configured anonymization operators.
 owners:
-  - contributor-team
+  - platform-engineering-team
 schemaPath: schema.json
 operation:
   method: POST
@@ -18,87 +18,61 @@ sidebar:
   badge: "POST"
 ---
 
-The `AnonymizeText` command (`POST /anonymize`) requests PII transformation from the internal **Presidio** Anonymizer sidecar (`presidio-anonymizer`) using entity spans produced by [[command|AnalyzeText]]. In BookWorm, **Chat API** and **Rating API** call this endpoint through `BookWorm.Chassis` to replace detected PII spans with `<PII>`.
+`AnonymizeText` requests PII transformation from the internal [[service|presidio-api]] Anonymizer sidecar (`POST /anonymize`) using entity spans produced by [[command|AnalyzeText]]. In BookWorm, [[service|chat-api]] and [[service|rating-api]] call this endpoint to replace detected PII spans with `<PII>`.
 
 ## Overview
 
-| Property                  | Value                                                                                                                                                                                                                                       |
-| :------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Owner**                 | Data privacy sidecar (`presidio-anonymizer`, image `ghcr.io/data-privacy-stack/presidio-anonymizer:latest`)                                                                                                                                 |
-| **Source**                | `src/BuildingBlocks/BookWorm.Chassis/AI/Presidio/Clients/IPresidioAnonymizer.cs`, `src/BuildingBlocks/BookWorm.Chassis/AI/Presidio/PresidioContracts.cs`, `src/Integrations/BookWorm.Hosting.Presidio/PresidioResourceBuilderExtensions.cs` |
-| **Protocol / format**     | HTTP `POST /anonymize`, `application/json` (container port `3000`; HTTPS with developer certificate locally, HTTP in publish mode)                                                                                                          |
-| **Authentication**        | Internal sidecar only (no Microsoft Entra ID token; not routed through the YARP API Gateway)                                                                                                                                                |
-| **Consumers in BookWorm** | **Chat API** (`chatting`), **Rating API** (`rating`) via `AddPresidio()` and `IPresidioService`                                                                                                                                             |
-| **Health check**          | `GET /health` on the `presidio-anonymizer` endpoint                                                                                                                                                                                         |
+| Property                           | Value                                                            |
+| :--------------------------------- | :--------------------------------------------------------------- |
+| **Bounded Context**                | Data Privacy (External Integration)                              |
+| **Owner Service**                  | [[service\|presidio-api]] (`presidio-anonymizer`)                |
+| **Protocol / Format**              | HTTP `POST /anonymize`, `application/json` request and response  |
+| **Gateway Endpoint**               | Internal sidecar `POST /anonymize` (not exposed via API Gateway) |
+| **Authentication & Authorization** | None (internal service-to-service network boundary)              |
+| **Idempotency / Concurrency**      | Stateless and naturally idempotent                               |
+| **Rate Limit / Caching**           | None (sidecar)                                                   |
+| **Contract Version**               | `1.0.0`                                                          |
 
 :::warning
 Pass `analyzer_results` computed against the exact same `text` string. Stale character offsets cause Presidio Anonymizer to corrupt unrelated substrings or reject the request.
 :::
 
-## Parameters and fields
+## Request & Response Contract
 
-### Request body (`application/json`)
+### Request Body (`application/json`)
 
-| Name               | Type                  | Required | Default           | Constraints                                                  | Description                                        |
-| :----------------- | :-------------------- | :------- | :---------------- | :----------------------------------------------------------- | :------------------------------------------------- |
-| `text`             | `string`              | Yes      | —                 | Exact string analyzed by `AnalyzeText`                       | Original text containing PII spans to transform.   |
-| `analyzer_results` | `object[]`            | Yes      | —                 | Each item requires `start`, `end`, `score`, `entity_type`    | PII detections returned by `POST /analyze`.        |
-| `anonymizers`      | `map<string, object>` | No       | `DEFAULT` replace | Keys are `DEFAULT` or an entity type (for example, `PERSON`) | Per-entity or fallback operator configuration map. |
+| Name               | Type       | Required | Constraints                                                                                  | Description                                                                                   |
+| :----------------- | :--------- | :------- | :------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------- |
+| `text`             | `string`   | Yes      | Exact string analyzed by [[command\|AnalyzeText]]                                            | Original text containing PII spans to transform                                               |
+| `analyzer_results` | `object[]` | Yes      | Each item requires `start` (`>= 0`), `end` (`> start`), `score` (`0.0`-`1.0`), `entity_type` | PII detections returned by `POST /analyze`                                                    |
+| `anonymizers`      | `object`   | No       | Map of `DEFAULT` or entity type to operator (`replace`, `redact`, `mask`, `hash`, `encrypt`) | Per-entity or fallback operator configuration (BookWorm defaults to `replace` with `"<PII>"`) |
 
-### `analyzer_results` item fields
+### Success Response (`200 OK`)
 
-| Name          | Type      | Required | Default | Constraints                     | Description                                                          |
-| :------------ | :-------- | :------- | :------ | :------------------------------ | :------------------------------------------------------------------- |
-| `start`       | `integer` | Yes      | —       | `>= 0`                          | Zero-based inclusive start character offset in `text`.               |
-| `end`         | `integer` | Yes      | —       | `> start`                       | Zero-based exclusive end character offset in `text`.                 |
-| `score`       | `number`  | Yes      | —       | `0.0`-`1.0`                     | Confidence score returned by Presidio Analyzer.                      |
-| `entity_type` | `string`  | Yes      | —       | Non-empty Presidio entity label | Entity type used to select the matching operator from `anonymizers`. |
+| Name    | Type       | Required | Constraints                                                                        | Description                                          |
+| :------ | :--------- | :------- | :--------------------------------------------------------------------------------- | :--------------------------------------------------- |
+| `text`  | `string`   | Yes      | —                                                                                  | Transformed text after applying configured operators |
+| `items` | `object[]` | No       | Each item includes `start`, `end`, `entity_type`, and optional `operator` / `text` | Applied operator metadata                            |
 
-### Supported `anonymizers` operator schemas
+## Behavior & Side Effects
 
-| `type` value | Required fields                                                | Optional fields                                            | Description                                                                                                                             |
-| :----------- | :------------------------------------------------------------- | :--------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------- |
-| `"replace"`  | `type`, `new_value` (`string`)                                 | —                                                          | Replaces the detected span with `new_value`. BookWorm's `PresidioService` sends `DEFAULT: { "type": "replace", "new_value": "<PII>" }`. |
-| `"redact"`   | `type`                                                         | —                                                          | Removes the detected span completely.                                                                                                   |
-| `"mask"`     | `type`, `masking_char` (`string`), `chars_to_mask` (`integer`) | `from_end` (`boolean`)                                     | Replaces `chars_to_mask` characters with `masking_char`, starting from the beginning or from the end when `from_end` is `true`.         |
-| `"hash"`     | `type`                                                         | `hash_type` (`"sha256"` or `"sha512"`; default `"sha256"`) | Replaces the detected span with its cryptographic digest.                                                                               |
-| `"encrypt"`  | `type`, `key` (`string`)                                       | —                                                          | Encrypts the detected span with the supplied cryptographic key.                                                                         |
+- **Stateless transformation:** Transforms the supplied string in memory and stores no data.
+- **Default replacement:** BookWorm configures the `DEFAULT` operator as `{"type": "replace", "new_value": "<PII>"}` for all detected entities.
+- **PII logging restriction:** Raw `text` request bodies must never be logged.
 
-### Response body (`200 OK`, `application/json`)
+## Error Responses
 
-| Name    | Type       | Required | Default | Constraints                                                                              | Description                                                                                                     |
-| :------ | :--------- | :------- | :------ | :--------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------- |
-| `text`  | `string`   | Yes      | —       | —                                                                                        | Transformed text after applying configured operators. Deserialized by BookWorm's `AnonymizerResponse`.          |
-| `items` | `object[]` | No       | —       | Each item requires `start`, `end`, and `entity_type`; `operator` and `text` are optional | Applied operator metadata returned by Presidio Anonymizer; not deserialized by BookWorm's `AnonymizerResponse`. |
+| Status / Code              | Condition                                                          | Client Recovery Action                       |
+| :------------------------- | :----------------------------------------------------------------- | :------------------------------------------- |
+| `400 Bad Request`          | Invalid request JSON payload                                       | Fix the request body; do not retry unchanged |
+| `422 Unprocessable Entity` | Invalid input (e.g., empty text or invalid operator configuration) | Correct the input fields and retry           |
 
-The [upstream Presidio OpenAPI schema](https://raw.githubusercontent.com/data-privacy-stack/presidio/refs/heads/main/docs/api-docs/api-docs.yml) defines the `items` fields and declares `sha256` as the default `hash_type`. This is the published upstream contract; BookWorm's `latest` image tag is mutable and is not pinned to a specific Presidio release.
+## Related Documentation
 
-## Behavior and side effects
-
-- **Stateless transformation:** `POST /anonymize` transforms the supplied string in memory and stores no data.
-- **BookWorm default operator:** `PresidioService` (`src/BuildingBlocks/BookWorm.Chassis/AI/Presidio/PresidioService.cs`) defines a frozen dictionary containing `"DEFAULT": { "type": "replace", "new_value": "<PII>" }` (`ReplaceAnonymizer`) and sends all `analyzer_results` returned by `IPresidioAnalyzer.AnalyzeAsync`. If the deserialized response is null, `PresidioService` throws `JsonException`.
-- **PII logging restriction:** Do not log raw `text` request bodies when they may contain customer PII.
-
-## Error responses
-
-| Code / status              | Condition                                                   | Recovery behavior                                                                            |
-| :------------------------- | :---------------------------------------------------------- | :------------------------------------------------------------------------------------------- |
-| `400 Bad Request`          | Upstream OpenAPI example: invalid request JSON              | Correct the request body; the specification does not define an exhaustive condition mapping. |
-| `422 Unprocessable Entity` | Upstream OpenAPI example: invalid input, such as empty text | Correct the input; the specification does not define an exhaustive condition mapping.        |
-
-The [upstream Presidio OpenAPI contract](https://raw.githubusercontent.com/data-privacy-stack/presidio/refs/heads/main/docs/api-docs/api-docs.yml) explicitly declares both `400` and `422` for `POST /anonymize`, with examples of invalid JSON and invalid input respectively. It does not specify every condition-to-status mapping or a stable contract for the mutable `latest` image.
-
-## Related documentation
-
+- [[service|presidio-api]] — Overview of the Presidio Analyzer and Anonymizer sidecars.
 - [[command|AnalyzeText]] — Generate `analyzer_results` spans before calling `AnonymizeText`.
-- [[service|PresidioAPI]] — Overview of the Presidio Analyzer and Anonymizer sidecars.
 - [[query|GetAnonymizers]] — List supported anonymization operators.
 
 <NodeGraph />
 
-<SchemaViewer
-	file="schema.json"
-	title="AnonymizeText request JSON Schema"
-	maxHeight="500"
-	search="true"
-/>
+<SchemaViewer file="schema.json" title="Anonymize text schema" maxHeight="500" search="true" />

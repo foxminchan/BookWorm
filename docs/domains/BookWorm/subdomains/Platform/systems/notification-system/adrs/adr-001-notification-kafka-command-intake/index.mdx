@@ -6,9 +6,9 @@ summary: Notification consumes Finance order commands through Wolverine and Kafk
 status: accepted
 date: 2026-11-01
 owners:
-  - contributor-team
+  - platform-engineering-team
 decisionMakers:
-  - contributor-team
+  - platform-engineering-team
 appliesTo:
   - type: system
     id: notification-system
@@ -66,6 +66,6 @@ At the same time, the Notification capability needs recipient and order details 
 - **Recording Note:** Status `accepted` (`2026-11-01`). The date reflects when this current architecture was recorded, not when the implementation was first introduced.
 - **Service & Contract:** [[service|notification-api]] exposes only service-default HTTP endpoints (no business email-submission or delivery-status HTTP endpoints); its business contract is the AsyncAPI receive operations.
 - **Consumed Commands:** [[command|PlaceOrderCommand]], [[command|CancelOrderCommand]], and [[command|CompleteOrderCommand]] consumed via Wolverine on separate environment-scoped Kafka topics, partitioned by `OrderId`.
-- **Rendering & Outbox Hand-off:** Maps order status, skips blank recipient addresses, renders the `Orders/OrderEmail` template, and invokes the application email [[entity|outbox]] sender.
+- **Rendering & Outbox Hand-off:** Maps order status, skips blank recipient addresses, renders the `Orders/OrderEmail` template, and invokes the application email outbox sender.
 - **Infrastructure Persistence:** Wolverine uses PostgreSQL envelope persistence and EF Core transaction integration when the database connection is configured. These infrastructure envelopes are separate from the application email outbox and do not provide command-level deduplication.
 - **Failure Propagation:** Rendering, initial persistence, and sender failures propagate to messaging failure handling; SMTP failures leave work for Notification's scheduled maintenance path. No application-level result event is published.

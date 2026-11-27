@@ -1,0 +1,44 @@
+---
+id: adr-bw-021-presidio-sidecar-pii-redaction
+name: "ADR-BW-021: Enforce fail-closed PII redaction via Presidio sidecar"
+version: 1.0.0
+summary: Route AI prompts, responses, and review summaries through the Presidio API sidecar to scrub PII fail-closed.
+status: accepted
+date: 2026-11-28
+owners:
+  - ai-capabilities-team
+appliesTo:
+  - type: service
+    id: presidio-api
+  - type: service
+    id: chat-api
+  - type: service
+    id: rating-api
+  - type: system
+    id: data-privacy
+related:
+  - id: adr-bw-014-composable-ai-governance
+decisionMakers:
+  - ai-capabilities-team
+  - platform-engineering-team
+x-scope: "AI & Privacy boundary"
+---
+
+| Field                  | Value                                                                                               |
+| :--------------------- | :-------------------------------------------------------------------------------------------------- |
+| **Status**             | Accepted                                                                                            |
+| **Date**               | 2026-11-28                                                                                          |
+| **Owners**             | [[team\|ai-capabilities-team]]                                                                      |
+| **Affected Resources** | [[service\|presidio-api]], [[service\|chat-api]], [[service\|rating-api]], [[system\|data-privacy]] |
+| **Related ADRs**       | [[adr\|adr-bw-014-composable-ai-governance]]                                                        |
+
+## Context & Problem Statement
+
+Conversational discovery ([[service|chat-api]]) and AI review summarization ([[service|rating-api]]) process free-form user text that may contain names, emails, or other personal identifiers before or after LLM invocation.
+
+## Decision & Consequences
+
+**Chosen Option:** Deploy [[service|presidio-api]] as a dedicated privacy boundary and enforce fail-closed PII detection and anonymization on inbound prompts, outbound AI responses, and feedback summaries.
+
+- **Positive:** Centralizes NLP-based PII detection without embedding Python NER models inside .NET services.
+- **Negative:** Adds an internal network hop on AI paths and requires fail-closed degradation if [[service|presidio-api]] is unavailable.

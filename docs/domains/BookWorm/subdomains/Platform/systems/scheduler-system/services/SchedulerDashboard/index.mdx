@@ -1,14 +1,14 @@
 ---
-id: scheduler-dashboard
-name: Scheduler Dashboard
+id: scheduler-service
+name: Scheduler Service
 version: 1.0.0
 summary: |
-  Operator-facing Quartz dashboard and HTTP management surface for inspecting
-  Scheduler System jobs, triggers, executions, and runtime health.
+  Single-host Quartz.NET job execution engine and operational dashboard UI
+  for scheduling recurring platform jobs and inspecting execution history.
 styles:
   icon: /icons/languages/dotnet.svg
 owners:
-  - contributor-team
+  - platform-engineering-team
 badges:
   - content: Internal
     backgroundColor: gray
@@ -38,90 +38,49 @@ repository:
   url: "https://github.com/foxminchan/BookWorm"
 ---
 
-Scheduler (`scheduler`) is the internal Quartz.NET job host in the Platform bounded context that triggers recurring catalog vector ingestion and emits liveness heartbeats. Quartz Dashboard (`quartz-dashboard`) is a separate Aspire-provisioned container that exposes the administrative UI at `/quartz` over Microsoft Entra ID OIDC authentication.
+## Service Responsibility & Boundary
+
+Scheduler Service is the Quartz.NET job host and paired administrative dashboard within the [[domain|platform]] domain that manages durable UTC cron schedules, emits liveness heartbeats, and dispatches recurring catalog vector ingestion triggers over Kafka. It persists schedules and 30-day execution history in [[container|scheduler-database]], while delegating actual vector indexing to [[service|catalog-ingestion]].
+
+## Service Profile
+
+| Property                                  | Value                                                                                                                |
+| :---------------------------------------- | :------------------------------------------------------------------------------------------------------------------- |
+| **Bounded Context / Domain**              | [[domain\|platform]]                                                                                                 |
+| **Owner Team**                            | [[team\|platform-engineering-team]]                                                                                  |
+| **Runtime Style**                         | Scheduled Job Host & Administrative Dashboard UI                                                                     |
+| **Public / Gateway Exposure**             | Admin UI exposed via OIDC; job host is Internal Only (not routed via API Gateway)                                    |
+| **Authentication & Authorization Policy** | Microsoft Entra ID OIDC requiring the `admin` app role for the operator dashboard; internal worker for job execution |
+| **Owned Data Store(s)**                   | [[container\|scheduler-database]] (Quartz schedule state, 30-day execution history, and transactional outbox)        |
+| **Key Resilience / Idempotency Pattern**  | Non-concurrent job execution, durable misfire recovery (`FireOnceNow`), and transactional outbox publishing          |
+
+## Contracts & Data Ownership
+
+Scheduler Service owns schedule definitions, trigger state, and execution history in [[container|scheduler-database]]. Every five minutes UTC, it publishes [[event|ProcessVectorBatchIntegrationEvent]] to [[channel|scheduler.process-vector-batch]] via its transactional outbox for [[service|catalog-ingestion]] to consume.
 
 :::note
-The legacy EventCatalog source catalog used the misspelled slug `sheduler-dashboard` (missing `c`). This page standardizes all names and links on **Scheduler** and **Scheduler database**.
+A successful job firing proves only that the trigger event was dispatched—not that downstream indexing completed. Operators should inspect pending vector update counts in [[container|catalog-database]] alongside [[service|catalog-ingestion]] logs when diagnosing search lag.
 :::
 
-## Overview
-
-| Property                | Value                                                                                                                                               |
-| :---------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**               | Platform bounded context (`BookWorm.Scheduler`)                                                                                                     |
-| **Aspire resource IDs** | `scheduler` (job host, `.WithExplicitStart()` locally) and `quartz-dashboard` (operator UI container)                                               |
-| **Source**              | `src/Services/Scheduler/BookWorm.Scheduler`                                                                                                         |
-| **Host & ports**        | `scheduler`: HTTP `5062`, HTTPS `7062` (local); `quartz-dashboard`: external HTTP endpoint at `/quartz`; neither is routed through YARP API Gateway |
-| **Protocol / format**   | Kafka + Wolverine (CloudEvents JSON), Quartz Dashboard Agent (`Quartz:DashboardAgent:Endpoint`)                                                     |
-| **Persistence**         | PostgreSQL (`schedulerdb`) storing Quartz tables (`qrtz_*`), 30-day execution history, and Wolverine outbox/inbox (`wolverine` schema)              |
-| **Authentication**      | `quartz-dashboard`: Microsoft Entra ID OIDC requiring the `admin` app role; `scheduler`: internal worker (no public business API)                   |
-
-## Runtime architecture
-
-Quartz Dashboard connects to the `scheduler` host via the Quartz Dashboard Agent, while `scheduler` persists schedules in PostgreSQL and publishes vector-batch triggers to Kafka through the Wolverine outbox.
-
-<MermaidFileLoader file="mermaids/SchedulerDashboard-diagram-1.mmd" />
-
-## Scheduled jobs (`jobs.json`)
-
-`BookWorm.Scheduler` loads job definitions from `~/jobs.json`, rescans the file every 1 minute (`OverwriteExistingData: true`, `FailOnFileNotFound: true`, `FailOnSchedulingError: true`), and registers all jobs in the `Scheduler` group as `Durable: true`, `Recover: false` with the `FireOnceNow` misfire policy in UTC.
-
-| Job name                | Cron expression (UTC) | Cadence          | Behavior                                                                                                                     | Downstream owner                                                                 |
-| :---------------------- | :-------------------- | :--------------- | :--------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------- |
-| `ProcessVectorBatchJob` | `0 0/5 * * * ?`       | Every 5 minutes  | Publishes [[event\|ProcessVectorBatchIntegrationEvent]] to `scheduler.process-vector-batch`; disallows concurrent executions | [[service\|catalog-ingestion]] owns `pending_vector_updates` and Qdrant indexing |
-| `HeartbeatJob`          | `0/30 * * * * ?`      | Every 30 seconds | Emits a scheduler liveness signal to logs and OpenTelemetry; publishes no Kafka message                                      | Operators and platform observability                                             |
-
-## Published Kafka events
-
-| Event                                         | Kafka topic                      | Prefixed                    | Consumer                                                            |
-| :-------------------------------------------- | :------------------------------- | :-------------------------- | :------------------------------------------------------------------ |
-| [[event\|ProcessVectorBatchIntegrationEvent]] | `scheduler.process-vector-batch` | No (`AppendPrefix = false`) | [[service\|catalog-ingestion]] (consumer group `catalog-ingestion`) |
-
-`ProcessVectorBatchIntegrationEvent` carries only `Id` and `CreationDate` inherited from `IntegrationEvent`. Publishing uses the Wolverine PostgreSQL outbox in [[container|scheduler-database]] (`wolverine` schema).
-
-## Quartz host configuration
-
-| Setting                       | Verified value                                     | Source                                        |
-| :---------------------------- | :------------------------------------------------- | :-------------------------------------------- |
-| Thread pool concurrency       | `Environment.ProcessorCount`                       | `BookWorm.Scheduler/Extensions/Extensions.cs` |
-| Execution history retention   | `30` days (`TimeSpan.FromDays(30)`)                | `BookWorm.Scheduler/Extensions/Extensions.cs` |
-| Max execution history entries | `100,000` per scheduler                            | `BookWorm.Scheduler/Extensions/Extensions.cs` |
-| Dashboard agent job allowlist | `BookWorm.Scheduler.Jobs.*` prefix only            | `BookWorm.Scheduler/Extensions/Extensions.cs` |
-| Graceful shutdown             | `WaitForJobsToComplete = true`                     | `BookWorm.Scheduler/Extensions/Extensions.cs` |
-| Local startup mode            | Explicit start (`.WithExplicitStart()` in AppHost) | `BookWorm.AppHost/AppHost.cs`                 |
-| Health endpoints              | `/health` and `/alive` mapped in Development only  | `BookWorm.Scheduler/Program.cs`               |
-
-## Operator capabilities in Quartz Dashboard
-
-Authorized administrators using `/quartz` can perform these actions without querying `schedulerdb` directly:
-
-- **Inspect jobs and triggers:** Review job types, groups, durability, UTC cron expressions, next fire times, and `FireOnceNow` misfire state.
-- **Monitor runtime execution:** Inspect active firings, scheduler instance check-ins, execution durations, and failure details.
-- **Control schedules:** Pause or resume triggers according to Entra ID `admin` role permissions.
-- **Correlate failures:** Match fire instances with OpenTelemetry traces and structured logs.
-
-:::danger
+:::warning
 Never store credentials, authorization headers, notification bodies, or personal data in Quartz job metadata or trigger data maps.
 :::
 
-## Failure semantics
+<MessageTable format="all" limit={10} showChannels={true} />
 
-| Condition                                      | Behavior                                                                                                | Recovery behavior                                                                                               |
-| :--------------------------------------------- | :------------------------------------------------------------------------------------------------------ | :-------------------------------------------------------------------------------------------------------------- |
-| Missed fire window during downtime             | `FireOnceNow` triggers a single immediate catch-up execution instead of replaying every missed interval | Downstream batch worker catches up using durable `pending_vector_updates`                                       |
-| Publication failure in `ProcessVectorBatchJob` | Exception propagates back to Quartz and is recorded in execution history                                | Inspect Quartz execution history and scheduled job failure runbook                                              |
-| Green job run but stale catalog search         | Scheduler only proves trigger dispatch, not downstream indexing completion                              | Check `pending_vector_updates` depth in [[container\|catalog-database]] and [[service\|catalog-ingestion]] logs |
+## Architecture Visualizations & Specifications
 
-## Messages
+### Scheduler Host Context
 
-<MessageTable format="all" limit={10} />
+<MermaidFileLoader file="mermaids/SchedulerDashboard-diagram-1.mmd" />
 
-## Related documentation
-
-- [[doc|platform/006-api-and-contracts]] — Consolidated service and messaging index.
-- [[container|scheduler-database]] — PostgreSQL persistence for Quartz and Wolverine outbox.
-- [[doc|platform/005-quartz-schema]] — All 15 PostgreSQL `qrtz_*` table definitions.
-- [[service|catalog-ingestion]] — Downstream Azure Functions worker consuming `scheduler.process-vector-batch`.
-- How to resolve a scheduled job failure — Triage and remediation runbook.
+### Service Interactions
 
 <NodeGraph />
+
+## Attached Resources & Related Docs
+
+- [[doc|platform/006-api-and-contracts]] — Consolidated service and messaging index.
+- [[container|scheduler-database]] — Persistent storage for Quartz schedules and outbox.
+- [[doc|platform/005-quartz-schema]] — Persistent Quartz table definitions.
+- [[service|catalog-ingestion]] — Downstream worker consuming scheduled batch triggers.

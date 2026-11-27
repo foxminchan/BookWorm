@@ -4,124 +4,98 @@ name: Feedback
 version: 1.0.0
 identifier: id
 aggregateRoot: true
-summary: A customer's persisted rating and optional comment about a Catalog book.
+summary: Represents an individual customer's rating and optional written review for a Catalog book.
 owners:
-  - business-strategy
+  - catalog-experience-team
+badges:
+  - content: Aggregate Root
+    backgroundColor: blue
+    textColor: blue
+  - content: Contains PII
+    backgroundColor: yellow
+    textColor: yellow
 properties:
   - name: id
     type: UUID
     required: true
-    description: UUID v7 identifier generated when the feedback is created.
+    description: Globally unique UUIDv7 identifier generated when the feedback is created.
   - name: bookId
     type: UUID
     required: true
-    description: Identifier of the Catalog book the feedback concerns.
+    description: Cross-context identifier of the Catalog Book being reviewed (also the partition key).
     references: book
     referencesIdentifier: id
     relationType: references
   - name: firstName
     type: string
     required: true
-    description: Reviewer's first name.
+    description: Reviewer's first name (non-empty, up to 50 characters).
   - name: lastName
     type: string
     required: true
-    description: Reviewer's last name.
+    description: Reviewer's last name (non-empty, up to 50 characters).
   - name: comment
     type: string
     required: false
-    description: Optional written feedback about the book.
+    description: Optional written review text (up to 1,000 characters).
   - name: rating
     type: integer
     required: true
-    description: Integer score from 0 through 5, inclusive.
+    description: Integer satisfaction score from 0 through 5, inclusive.
   - name: createdAt
-    type: DateTime
+    type: datetime
     required: true
-    description: UTC timestamp at which the feedback was created.
+    description: UTC timestamp when the feedback was submitted.
   - name: lastModifiedAt
-    type: DateTime
+    type: datetime
     required: false
-    description: UTC timestamp of the most recent change.
-  - name: rowVersion
-    type: uint
-    required: true
-    description: Optimistic-concurrency token managed by the persistence layer.
-repository:
-  language: C#
-  url: "https://github.com/foxminchan/BookWorm"
+    description: UTC timestamp of the most recent modification.
 ---
 
-`Feedback` is the Reviews aggregate root for one customer's rating and optional comment about a book. Rating API owns it and persists it in Azure Cosmos DB, not PostgreSQL.
+## Domain Role & Boundary
 
-## Overview
+**Feedback** is the Aggregate Root in the [[domain|reviews]] bounded context representing one customer's numeric rating and optional written review for a book. Owned by [[service|rating-api]], it serves as the authoritative source for individual customer sentiment and AI-assisted review summarization via [[agent|rating-agent]]. It explicitly does **not** own canonical book metadata or the aggregate rating summary displayed on product listings (both owned by [[domain|catalog]]).
 
-| Property                  | Value                                                                                                         |
-| :------------------------ | :------------------------------------------------------------------------------------------------------------ |
-| **Owner**                 | Reviews bounded context / **Rating API** (`rating`)                                                           |
-| **Source**                | `src/Services/Rating/BookWorm.Rating/Domain/FeedbackAggregator/Feedback.cs`                                   |
-| **EF Core configuration** | `src/Services/Rating/BookWorm.Rating/Infrastructure/EntityConfigurations/FeedbackConfiguration.cs`            |
-| **Backing store**         | Azure Cosmos DB database `ratingdb`, container `feedbacks`, partition key `/bookId` (EF Core Cosmos provider) |
-| **Base type**             | `AuditableEntity<FeedbackId>`, `IAggregateRoot`                                                               |
-| **Identifier**            | `FeedbackId` (Vogen value object wrapping `Guid`); generated as UUID v7 in the constructor                    |
-| **Concurrency**           | Cosmos DB `_etag` (`UseETagConcurrency()`); `RowVersion` is ignored                                           |
+## Entity Profile
 
-## Parameters and fields
+| Property                      | Value                                                                                     |
+| :---------------------------- | :---------------------------------------------------------------------------------------- |
+| **Bounded Context / Domain**  | [[domain\|reviews]]                                                                       |
+| **Owning Service**            | [[service\|rating-api]]                                                                   |
+| **DDD Role**                  | Aggregate Root                                                                            |
+| **Identifier Strategy**       | UUIDv7 generated at creation                                                              |
+| **Persistence Store**         | Reviews document store (`feedbacks`, partitioned by `bookId`)                             |
+| **Deletion Semantics**        | Hard-delete (explicit admin removal or automated compensation)                            |
+| **Concurrency Control**       | Optimistic concurrency via document ETag                                                  |
+| **PII / Data Classification** | Confidential PII (`firstName`, `lastName`) — screened fail-closed before AI summarization |
 
-| Name (JSON)      | Type                  | Required  | Default                 | Constraints                          | Description                        |
-| :--------------- | :-------------------- | :-------- | :---------------------- | :----------------------------------- | :--------------------------------- |
-| `id`             | `FeedbackId` (`Guid`) | Yes       | `Guid.CreateVersion7()` | Document ID                          | Unique feedback identifier         |
-| `bookId`         | `Guid`                | Yes       | —                       | Partition key; non-empty             | Catalog book the feedback concerns |
-| `firstName`      | `string`              | Yes (API) | —                       | Non-empty; max 50 chars; `[PIIData]` | Reviewer first name                |
-| `lastName`       | `string`              | Yes (API) | —                       | Non-empty; max 50 chars; `[PIIData]` | Reviewer last name                 |
-| `comment`        | `string`              | No        | —                       | Max 1,000 chars                      | Optional written review            |
-| `rating`         | `int`                 | Yes       | —                       | `0`-`5` inclusive                    | Score                              |
-| `createdAt`      | `DateTime`            | Yes       | `DateTime.UtcNow`       | UTC                                  | Creation timestamp                 |
-| `lastModifiedAt` | `DateTime`            | No        | —                       | UTC                                  | Last modification timestamp        |
+## Attributes & Constraints
 
-`FirstName` and `LastName` are nullable in `Feedback.cs`. `CreateFeedbackValidator` enforces the API-level required and length rules.
+<EntityPropertiesTable />
 
-## Invariants and behavior
+| Attribute               | Business Rule / Constraint                                                                           | Sensitivity / Notes                   |
+| :---------------------- | :--------------------------------------------------------------------------------------------------- | :------------------------------------ |
+| `bookId`                | Required non-empty UUID; serves as both the cross-context book reference and document partition key. | Cross-context ID reference            |
+| `firstName`, `lastName` | Required at API boundary; non-empty, max 50 characters each.                                         | PII — redacted in logs and AI prompts |
+| `comment`               | Optional free text, max 1,000 characters.                                                            | Screened for PII during summarization |
+| `rating`                | Required integer from `0` through `5`, inclusive.                                                    | Domain invariant                      |
 
-- **Rating range:** The constructor throws `RatingDomainException("Rating must be between 0 and 5.")` outside `0`-`5`.
-- **No discriminator:** `HasNoDiscriminator()` stores documents without an EF Core type discriminator.
-- **Conflict handling:** `RatingDbContext.SaveEntitiesAsync` maps a Cosmos DB `409 Conflict` to `"A feedback from this author already exists for this book."` and a concurrency failure to `"The feedback was modified or deleted by another request."`.
-- **Domain events:** The constructor raises `FeedbackCreatedEvent(bookId, rating, id)`. `Remove()` raises `FeedbackDeletedEvent(bookId, rating, id)`. `Revert()` raises `FeedbackRevertedEvent(bookId)` after a downstream failure.
-- **Rating summary:** Rating API publishes `FeedbackCreatedIntegrationEvent` and `FeedbackDeletedIntegrationEvent`. Catalog API updates `Book.averageRating` and `Book.totalReviews` from them.
+## Domain Invariants & Lifecycle
 
-No Cosmos DB unique-key policy for `(bookId, firstName, lastName)` is declared in `AppHost.cs` or `FeedbackConfiguration`. Duplicate-review prevention is not guaranteed by database constraints.
+- **Bounded rating score:** Ratings outside `0`–`5` (inclusive) are rejected by the domain model.
+- **Asynchronous rating projection:** Creating or deleting feedback emits integration events so [[service|catalog-api]] can update [[entity|book]] `averageRating` and `totalReviews` eventually.
+- **Compensating deletion:** If [[service|catalog-api]] rejects a rating delta because the target book does not exist or was soft-deleted, [[service|rating-api]] performs an idempotent compensating delete on the orphaned feedback.
+- **Read-only AI summarization:** [[agent|rating-agent]] reads feedback for a book and screens inputs/outputs fail-closed through [[service|presidio-api]] without mutating persisted records.
 
-Neither `FeedbackConfiguration` nor the generated `cosmos.bicep` declares a unique-key policy. The generated container only sets `/bookId` as its partition key; uniqueness by reviewer name is not guaranteed by the repository deployment artifacts. Separately managed Azure configuration was not inspected.
+:::warning
+Because Reviews references [[entity|book]] strictly by `bookId` without synchronous Catalog validation on write, orphaned feedback is resolved asynchronously via [[event|BookUpdatedRatingFailedIntegrationEvent]]. Additionally, reviewer uniqueness per `(bookId, firstName, lastName)` is enforced at the application/conflict layer rather than via a database unique-key policy.
+:::
 
-## Relationships
+## Relationships & Associated Operations
 
-| Related entity   | Cardinality                       | Mapping                                             |
-| :--------------- | :-------------------------------- | :-------------------------------------------------- |
-| [[entity\|book]] | Many feedback records to one book | `bookId`; cross-service reference and partition key |
-
-## Examples
-
-### Cosmos DB document
-
-<CodeGroup>
-
-```json
-{
-	"id": "0193f1a2-7b4c-7d8e-9f01-0000000d0001",
-	"bookId": "0193f1a2-7b4c-7d8e-9f01-23456789abcd",
-	"firstName": "Linh",
-	"lastName": "Tran",
-	"comment": "Clear explanations of bounded contexts.",
-	"rating": 5,
-	"createdAt": "2026-11-25T11:00:00Z",
-	"lastModifiedAt": null
-}
-```
-
-</CodeGroup>
-
-Cosmos DB adds system properties such as `_etag` and `_ts` to stored documents.
-
-## Related documentation
-
-- [[entity|book]] — Holds the derived rating summary.
+| Category                     | Resource                                                                                                                                   | Role / Interaction                                          |
+| :--------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------- |
+| **Cross-Context References** | [[entity\|book]]                                                                                                                           | Referenced strictly by `bookId` across service boundaries   |
+| **Mutating Commands**        | [[command\|CreateFeedback]], [[command\|DeleteFeedback]]                                                                                   | Submit a new review or remove an existing review            |
+| **Read Queries**             | [[query\|ListFeedbacks]], [[query\|SummarizeFeedback]]                                                                                     | List book reviews or generate a privacy-screened AI summary |
+| **Events**                   | [[event\|FeedbackCreatedIntegrationEvent]], [[event\|FeedbackDeletedIntegrationEvent]], [[event\|BookUpdatedRatingFailedIntegrationEvent]] | Propagate rating deltas to Catalog and handle compensation  |

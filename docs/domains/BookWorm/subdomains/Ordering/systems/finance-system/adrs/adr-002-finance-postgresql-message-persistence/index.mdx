@@ -6,7 +6,7 @@ summary: Finance combines EF Core saga storage with Wolverine PostgreSQL envelop
 status: superseded
 date: 2026-11-03
 owners:
-  - contributor-team
+  - commerce-fulfillment-team
 badges:
   - content: Data
     backgroundColor: blue
@@ -17,6 +17,10 @@ appliesTo:
   - type: service
     id: order-orchestration
 ---
+
+:::warning
+This ADR is **Superseded**. Finance orchestration now uses Azure Durable Task Scheduler as documented in [[adr|adr-001-finance-persisted-order-saga]]. It is preserved for historical context only.
+:::
 
 ## 1. Context & Problem
 
@@ -57,7 +61,7 @@ Finance keeps both its active checkout workflow records and its durable queue of
 _Retrospective note: This ADR (`status: superseded`, dated `2026-11-03`) records the PostgreSQL/EF Core/Wolverine implementation approach, not a new database deployment or an assertion about historical approval._
 
 - **Persistence & transaction configuration:**
-  - Uses [[container|finance-database]] (`financedb` resource provided by AppHost) for EF Core saga storage and Wolverine durable message envelopes.
+  - Uses the Finance PostgreSQL database (`financedb` resource provided by AppHost) for EF Core saga storage and Wolverine durable message envelopes.
   - When the Finance connection string is available, configures `PersistMessagesWithPostgresql` with the `wolverine` schema and enables `UseEntityFrameworkCoreTransactions`.
   - Transaction integration is conditional on the Finance connection string and must remain aligned with the actual EF Core and Wolverine persistence configuration.
 - **Model mapping & concurrency:**

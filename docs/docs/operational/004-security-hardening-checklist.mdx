@@ -1,136 +1,136 @@
 ---
-title: Production Hardening & Operational Gaps Checklist
-summary: Checklist for closing pre-production gaps in networking, autoscaling, backup/restore drills, and external secret management.
+title: Production Hardening & Compliance Checklist
+summary: Pre-production SecOps and reliability checklist for locking down network perimeters, scaling limits, backup drills, and alerting before serving live traffic.
 owners:
-  - platform-team
+  - platform-engineering-team
 badges:
-  - content: Checklist
+  - content: SecOps
     backgroundColor: amber
     textColor: amber
 ---
 
-Complete these four hardening phases before routing live customer traffic to a Production BookWorm deployment. BookWorm's `Production` tier in `AppHost` automatically provisions passwordless Microsoft Entra ID RBAC, zone-redundant PostgreSQL HA (`Standard_D4ds_v5`, 35-day geo-redundant backups), HA Azure Managed Redis (`Balanced_B5`), `Standard_GZRS` Storage (TLS 1.2+, public blob access disabled), and 90-day Log Analytics retention—but leaves network perimeters, upper scaling bounds, secret rotation, and alerting open for environment-specific configuration.
+## When to Use & Blast Radius
 
-## Prerequisites
+Complete this checklist before promoting a BookWorm environment to `Production` or during periodic security posture audits. Network perimeter changes (disabling public access or restricting ingress allowlists) can sever CI/CD runners or **Finance Orchestrator** connectivity if Private Endpoints and outbound static IPs are not configured first.
 
-- A deployed `Staging` or `Production` environment provisioned via [[doc|operational/001-azure-deployment-guide]].
-- `Owner` or `Network Contributor` + `Security Admin` permissions on `<resource-group>`.
-- Azure CLI (`az` 2.x) authenticated against the target subscription.
+<Admonition type="warning" title="Network Perimeter Sequencing">
 
-## Steps
+Configure Virtual Network integration, Private Endpoints, and self-hosted CI/CD runners before disabling public network access on Azure data and AI services.
 
-### 1. Lock down network isolation and edge ingress
+</Admonition>
 
-- [ ] **Attach the Container Apps environment to a dedicated VNet subnet:** Integrate `cae-<token>` with an Azure Virtual Network so outbound traffic uses deterministic NAT/static IPs and internal workloads remain isolated.
-- [ ] **Enable Private Endpoints and disable public access on Azure data/AI services:** Disable public network access and configure Private Endpoints + Private DNS Zones for PostgreSQL (`postgres`), Azure Managed Redis (`redis`), Azure Cosmos DB (`cosmos`), Azure Storage (`storage`), and Microsoft Foundry (`Foundry`).
-- [ ] **Restrict Durable Task Scheduler `ipAllowlist`:** Replace the default `['0.0.0.0/0']` in `src/Aspire/BookWorm.AppHost/Infra/durable-task-scheduler.bicep` with the Container Apps environment's outbound static IPs or private networking.
-- [ ] **Tighten Blob Storage CORS origins:** `AzureExtensions.Storage.cs` sets `AllowedOrigins = ["*"]` for Blob `GET`/`HEAD`/`OPTIONS` requests (`MaxAgeInSeconds = 3600`). Restrict `AllowedOrigins` to your production gateway custom domain.
-- [ ] **Restrict `quartz-dashboard` ingress:** `AppHost.cs` registers `quartz-dashboard` with `.WithExternalHttpEndpoints()` (protected by Entra ID OpenID Connect `admin` role). Restrict its ingress to an internal VNet, VPN/bastion, or IP allowlist in Production so the job scheduler UI is not reachable from the public internet.
-- [ ] **Configure custom DNS, TLS certificates, and Web Application Firewall (WAF):** Bind a custom domain and Key Vault-managed TLS certificate to `gateway`, and place Azure Front Door or Azure Application Gateway WAF in front of it.
+## Pre-Flight Check
 
-### 2. Calibrate compute sizing, probes, and AI quotas
+Authenticate to Azure and inspect current public ingress exposure across all Container Apps:
 
-- [ ] **Define upper autoscaling limits (`maxReplicas`) and scaling rules:** Configure per-app `maxReplicas` alongside HTTP concurrency, CPU, and Kubernetes Event-driven Autoscaling (KEDA) Kafka-lag rules across all 16 application Container Apps so traffic spikes scale safely without runaway spend.
-- [ ] **Configure Production health checks for Container Apps probes:** `BookWorm.ServiceDefaults` maps `/health` and `/alive` only in `Development`. Confirm Container Apps liveness/readiness probes use valid Production endpoints (or enable dedicated internal health probe ports) rather than unmapped `/health` paths.
-- [ ] **Load-test Presidio and Azure Functions workers:** Benchmark `presidio-analyzer`, `presidio-anonymizer`, `catalog-ingestion`, and `finance` under peak concurrent load to right-size CPU and memory allocations.
-- [ ] **Configure Production Cosmos DB throughput:** `AzureExtensions.Cosmos.cs` disables `EnableServerless` in `Production` (unlike `Development` and `Staging`). Set explicit autoscale Request Units (RU/s) on `ratingdb` / `feedbacks` before launch.
-- [ ] **Raise Microsoft Foundry model capacities:** Increase Requests Per Minute (RPM) and Tokens Per Minute (TPM) quotas for `chat` (`model-router`), `decision` (`Microsoft-Decision-1`), and `embedding` (`embed-v-4-0`) above starter baselines.
+```bash
+az account set --subscription "<SUBSCRIPTION_ID>"
+az containerapp list --resource-group "<RESOURCE_GROUP>" \
+  --query "[?properties.configuration.ingress.external==\`true\`].{Name:name, Fqdn:properties.configuration.ingress.fqdn}" -o table
+```
 
-The generated snapshot in `temp/` sets `minReplicas: 1` for all 17 Container Apps (16 application workloads plus `quartz-dashboard`) and does not declare `maxReplicas` or autoscaling rules. Its three Foundry deployments (`chat`, `decision`, and `embedding`) each have SKU `GlobalStandard` and capacity `1`; treat these as generated starter settings, not validated production quotas.
+## Procedure
 
-### 3. Validate backups, restores, and disaster recovery
+<Steps>
+<Step title="Lock down network isolation and edge ingress">
 
-- [ ] **Execute a PostgreSQL point-in-time restore drill:** Perform and time a restore from the 35-day geo-redundant backups covering all three PostgreSQL databases (`catalogdb`, `orderingdb`, `schedulerdb`) into a scratch server, confirming schema and Marten event-store integrity in `orderingdb`.
-- [ ] **Confirm Cosmos DB backup and failover policy:** Verify continuous backup mode and multi-region failover configuration on `ratingdb` (`feedbacks`, partition key `/bookId`) for Rating API.
-- [ ] **Test full Qdrant Cloud vector rebuild:** Document and execute a full re-index drill from PostgreSQL (`catalogdb`) through **Catalog Ingestion** (`catalog-ingestion`) to prove semantic search vectors in Qdrant Cloud (`vectordb`) can be rebuilt from scratch.
-- [ ] **Verify Kafka broker retention and dead-letter recovery:** Confirm topic retention, replication factor, partitioning, and replay procedures for per-service dead-letter queues (`bookworm.{env}.{service}.dead-letter-queue`) with your external Kafka provider (Confluent Cloud).
-- [ ] **Verify Azure Storage recovery for blobs:** Confirm soft-delete and versioning settings on `catalog-blob` and `chatting-blob` (`Standard_GZRS` in Production).
+Attach the Container Apps environment to a dedicated Virtual Network, enable Private Endpoints on all Azure data and AI services, restrict **Durable Task Scheduler** and **Quartz Dashboard** access, tighten Blob Storage CORS to the **API Gateway** domain, and bind a WAF + Key Vault TLS certificate.
 
-### 4. Establish secret rotation, alerting, and service-level objectives
+</Step>
+<Step title="Calibrate compute sizing, probes, and AI quotas">
 
-- [ ] **Back external and generated secrets with Azure Key Vault and rotation schedules:**
-  - External partner credentials: `ConnectionStrings__broker` (Kafka), `ConnectionStrings__vectordb` (Qdrant Cloud), `Parameters__email_smtp_password` (SendGrid SMTP).
-  - Aspire-generated signing/session secrets (`SecretExtensions.cs`, `EntraIdExtensions.Frontend.cs`): `basket-hmac-key`, `ordering-hmac-key`, `notification-hmac-key` (`HMAC__Key`), plus `storefront-better-auth-secret` and `backoffice-better-auth-secret` (`BETTER_AUTH_SECRET`).
-- [ ] **Configure Azure Monitor alert rules:** Create action-group alerts on `law-<token>` (90-day retention in Production) and Application Insights for:
-  - Gateway and API `5xx` error rate spikes.
-  - Repeated `ContainerTerminated` or `UnhealthyProbe` events in `ContainerAppSystemLogs_CL`.
-  - PostgreSQL CPU/storage saturation and Redis memory pressure.
-  - Microsoft Foundry HTTP `429` throttling spikes.
-  - Non-empty Kafka dead-letter queues.
-- [ ] **Publish Service-Level Objectives (SLOs):** Define measurable availability, p95 latency, Recovery Time Objective (RTO), and Recovery Point Objective (RPO) targets per bounded context.
+Configure `maxReplicas` and scaling rules across all 16 application Container Apps, verify production liveness/readiness probes, set Production Cosmos DB autoscale RU/s, and raise Microsoft Foundry RPM/TPM quotas above starter baselines.
+
+</Step>
+<Step title="Validate backups, restores, and disaster recovery">
+
+Execute a PostgreSQL point-in-time restore drill, confirm Cosmos DB continuous backup and multi-region failover, test a full **Qdrant Cloud** vector re-index through **Catalog Ingestion**, and verify **Message Broker** retention and Blob Storage soft-delete.
+
+</Step>
+<Step title="Establish secret rotation, alerting, and SLOs">
+
+Store external partner credentials and signing/session secrets in Azure Key Vault with rotation schedules, configure Azure Monitor alert rules for `5xx`, saturation, throttling, and dead-letter queues, and publish service-level objectives.
+
+</Step>
+</Steps>
+
+## Detailed Hardening Checklists
+
+<Accordion title="1. Network Isolation & Edge Ingress">
+
+- [ ] Attach the Container Apps environment to a dedicated Virtual Network subnet with deterministic outbound static IPs.
+- [ ] Enable Private Endpoints and disable public network access on PostgreSQL, Azure Managed Redis, Azure Cosmos DB, Azure Storage, and Microsoft Foundry.
+- [ ] Restrict **Durable Task Scheduler** IP allowlist to the Container Apps environment outbound static IPs.
+- [ ] Restrict Blob Storage CORS allowed origins to your production **API Gateway** custom domain.
+- [ ] Restrict **Quartz Dashboard** external ingress to an internal VNet, VPN, or operator IP allowlist.
+- [ ] Bind a custom domain, Key Vault-managed TLS certificate, and Web Application Firewall (WAF) in front of **API Gateway**.
+
+</Accordion>
+
+<Accordion title="2. Compute Sizing, Probes & AI Quotas">
+
+- [ ] Define upper autoscaling limits (`maxReplicas`) alongside HTTP concurrency and KEDA message-lag rules across all 16 application Container Apps.
+- [ ] Verify Container Apps liveness/readiness probes target valid production endpoints.
+- [ ] Benchmark **Privacy Analyzer**, **Privacy Anonymizer**, **Catalog Ingestion**, and **Finance Orchestrator** under peak load.
+- [ ] Configure Production Cosmos DB autoscale Request Units (RU/s) on the Rating database.
+- [ ] Raise Microsoft Foundry RPM and TPM quotas for `chat`, `decision`, and `embedding` deployments above starter baselines.
+
+</Accordion>
+
+<Accordion title="3. Backups, Restores & Disaster Recovery">
+
+- [ ] Execute and time a PostgreSQL point-in-time restore drill covering Catalog, Ordering, and Scheduler databases.
+- [ ] Confirm Cosmos DB continuous backup mode and multi-region failover policy.
+- [ ] Execute a full **Qdrant Cloud** vector re-index drill from PostgreSQL through **Catalog Ingestion**.
+- [ ] Verify external **Message Broker** topic retention, replication factor, and dead-letter replay procedures.
+- [ ] Confirm soft-delete and versioning settings on Azure Blob Storage.
+
+</Accordion>
+
+<Accordion title="4. Secret Rotation, Alerting & SLOs">
+
+- [ ] Store external partner credentials (Message Broker, Vector Database, SMTP Relay) and application signing/session secrets in Azure Key Vault with scheduled rotation.
+- [ ] Configure Azure Monitor alert rules for `5xx` spikes, container terminations, probe failures, database/cache saturation, AI HTTP `429` throttling, and non-empty dead-letter queues.
+- [ ] Publish availability, p95 latency, RTO, and RPO targets per service boundary.
+
+</Accordion>
 
 ## Verification
 
-Audit key security controls with Azure CLI before sign-off:
-
-<CodeGroup>
+Audit Storage, Cosmos DB, and Container App ingress posture with Azure CLI before Production sign-off:
 
 ```bash
 # 1. Confirm Storage disables public blob access and shared-key access
-az storage account show \
-  --name "<storage-account-name>" \
-  --resource-group "<resource-group>" \
+az storage account show --name "<STORAGE_ACCOUNT>" --resource-group "<RESOURCE_GROUP>" \
   --query "{PublicBlobAccess:allowBlobPublicAccess, SharedKeyAccess:allowSharedKeyAccess, MinTls:minimumTlsVersion, PublicNetwork:publicNetworkAccess}" \
   -o table
 
 # 2. Confirm Cosmos DB disables local auth and public access
-az cosmosdb show \
-  --name "<cosmos-account-name>" \
-  --resource-group "<resource-group>" \
-  --query "{DisableLocalAuth:disableLocalAuth, PublicNetwork:publicNetworkAccess}" \
-  -o table
+az cosmosdb show --name "<COSMOS_ACCOUNT>" --resource-group "<RESOURCE_GROUP>" \
+  --query "{DisableLocalAuth:disableLocalAuth, PublicNetwork:publicNetworkAccess}" -o table
 
-# 3. Confirm only approved Container Apps have external ingress
-az containerapp list \
-  --resource-group "<resource-group>" \
+# 3. Confirm only API Gateway exposes external ingress
+az containerapp list --resource-group "<RESOURCE_GROUP>" \
   --query "[?properties.configuration.ingress.external==\`true\`].{Name:name, Fqdn:properties.configuration.ingress.fqdn, MaxReplicas:properties.template.scale.maxReplicas}" \
   -o table
 ```
 
-</CodeGroup>
-
-Where:
-
-- `<storage-account-name>`: Provisioned Azure Storage account name.
-- `<cosmos-account-name>`: Provisioned Azure Cosmos DB account name.
-- `<resource-group>`: Target Production resource group name.
-
 Expected output:
-
-<CodeGroup>
 
 ```text
 PublicBlobAccess    SharedKeyAccess    MinTls    PublicNetwork
 ------------------  -----------------  --------  ---------------
 False               False              TLS1_2    Disabled
-```
 
-```text
 DisableLocalAuth    PublicNetwork
 ------------------  ---------------
 True                Disabled
+
+Name     Fqdn                  MaxReplicas
+-------  --------------------  -------------
+gateway  <DOMAIN>              10
 ```
 
-```text
-Name     Fqdn                         MaxReplicas
--------  ---------------------------  -------------
-gateway  gateway.<aca-default-domain> 10
-```
+## Rollback / Escape Hatch
 
-</CodeGroup>
-
-## Troubleshooting
-
-| Symptom                                                                                         | Cause                                                                             | Fix                                                                                                             |
-| :---------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------- |
-| CI/CD migrations or `aspire deploy` fail after enabling Private Endpoints                       | Public GitHub-hosted runners (`ubuntu-26.04`) cannot reach private VNet endpoints | Run deployments from self-hosted runners inside the VNet or configure private VNet peering                      |
-| `finance` sagas stall immediately after restricting Durable Task Scheduler `ipAllowlist`        | Container Apps environment outbound IPs are missing from `ipAllowlist`            | Query `az containerapp env show --query properties.staticIp` and add the address to `ipAllowlist`               |
-| Storefront product images fail CORS in browsers after tightening Blob CORS                      | Allowed origin string omits `https://` or mismatches the custom gateway domain    | Update Blob Storage CORS `AllowedOrigins` to match the exact gateway browser origin (`https://<custom-domain>`) |
-| Customers are logged out across `storefront` and `commerce` after rotating `BETTER_AUTH_SECRET` | `storefront-better-auth-secret` changed without coordinated rollout               | Rotate `BETTER_AUTH_SECRET` during a planned maintenance window; Commerce shares Storefront's session           |
-
-## Related documentation
-
-- [[doc|operational/001-azure-deployment-guide]] — Provisioning workflow and environment-tier defaults.
-- [[doc|platform/003-data-ai-and-messaging-resources]] — Exact Production SKUs, CORS defaults, and datastore boundaries.
-- [[doc|platform/004-identity-and-rbac-matrix]] — Entra ID apps, Managed Identity RBAC, and generated secrets.
-- [[doc|operational/003-incident-response-and-runbooks]] — On-call recovery playbooks.
+If tightening a network perimeter or IP allowlist blocks **Finance Orchestrator** or CI/CD runners, temporarily add the Container Apps outbound static IP (`az containerapp env show --name "<ENV_NAME>" --resource-group "<RESOURCE_GROUP>" --query properties.staticIp -o tsv`) to the blocked resource's allowlist while Private Endpoint DNS is verified.

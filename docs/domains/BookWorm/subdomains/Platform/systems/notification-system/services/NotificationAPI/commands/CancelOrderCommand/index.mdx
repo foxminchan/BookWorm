@@ -1,6 +1,6 @@
 ---
 id: CancelOrderCommand
-name: Cancel order
+name: Send order cancelled notification
 version: 1.0.0
 badges:
   - content: Order Lifecycle
@@ -11,63 +11,64 @@ summary: |
   and submit a canceled-order email.
 schemaPath: schema.json
 owners:
-  - contributor-team
+  - platform-engineering-team
 ---
 
-`CancelOrderCommand` (`BookWorm.Contracts.CancelOrderCommand`) is an asynchronous Kafka integration command published by **Finance** and consumed by **Notification** to render and submit a canceled-order customer email. It never mutates order state in **Ordering API**.
+`CancelOrderCommand` is an asynchronous Kafka integration command published by [[service|order-orchestration]] and consumed by [[service|notification-api]] to render and submit a cancelled-order customer email. It never mutates order state in [[service|order-api]].
 
 ## Overview
 
-| Property              | Value                                                                                                                                                                                                                                                                                                                     |
-| :-------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Owner**             | **Finance** (`finance`) produces; **Notification** (`notification`) consumes                                                                                                                                                                                                                                              |
-| **Source**            | `src/Services/Finance/BookWorm.Finance/Features/Orders/OrderCancellation/PublishCancelOrderActivity.cs`, `src/Services/Notification/BookWorm.Notification/IntegrationEvents/Events/CancelOrderCommand.cs`, `src/Services/Notification/BookWorm.Notification/IntegrationEvents/EventHandlers/CancelOrderCommandHandler.cs` |
-| **Protocol / format** | Kafka + **Wolverine**, CloudEvents JSON (`CloudEventsOnlyKafkaMapper`), camelCase payload                                                                                                                                                                                                                                 |
-| **Kafka topic**       | `bookworm.{env}.finance.cancel-order` (`[IntegrationMessageOwner(ServiceName = Services.Finance, TopicName = "cancel-order")]`)                                                                                                                                                                                           |
-| **Partition key**     | `OrderId` (`opts.MessagePartitioning.ByPropertyNamed(nameof(OrderId))`)                                                                                                                                                                                                                                                   |
-| **Dead-letter queue** | `bookworm.{env}.notification.dead-letter-queue`                                                                                                                                                                                                                                                                           |
-| **Authentication**    | Internal Kafka broker transport (Confluent Cloud in publish mode; local Kafka container in development)                                                                                                                                                                                                                   |
+| Property                             | Value                                                                                |
+| :----------------------------------- | :----------------------------------------------------------------------------------- |
+| **Bounded Context**                  | Platform / Notifications                                                             |
+| **Producer**                         | [[service\|order-orchestration]]                                                     |
+| **Consumer(s)**                      | [[service\|notification-api]]                                                        |
+| **Protocol / Format**                | Kafka + CloudEvents JSON (camelCase payload)                                         |
+| **Channel / Topic**                  | [[channel\|bookworm.&#123;env&#125;.finance.cancel-order]]                           |
+| **Dead-Letter Channel**              | [[channel\|bookworm.&#123;env&#125;.notification.dead-letter-queue]]                 |
+| **Partition Key**                    | `OrderId`                                                                            |
+| **Delivery / Idempotency Guarantee** | At-least-once delivery; consumed with Redis-backed 24-hour idempotency keyed by `id` |
 
 :::note
-`CancelOrderCommand` requests a customer email only. To change an order's authoritative status to `Cancelled`, call the Ordering API HTTP command in [[command|CancelOrder]].
+`CancelOrderCommand` requests a customer email only. To change an order's authoritative status to `Cancelled`, call [[command|CancelOrder]].
 :::
 
-## Parameters and fields
+## Payload Fields & Envelope
 
-| Name           | Type                    | Required | Default                               | Constraints                     | Description                                                                                     |
-| :------------- | :---------------------- | :------- | :------------------------------------ | :------------------------------ | :---------------------------------------------------------------------------------------------- |
-| `id`           | `string` (UUID v7)      | Yes      | Generated (`IntegrationEvent`)        | Valid UUID                      | Unique integration message identifier used for 24-hour Redis deduplication in **Notification**. |
-| `creationDate` | `string` (ISO 8601 UTC) | Yes      | Generated (`IntegrationEvent`)        | Valid `date-time`               | UTC timestamp when the command record was instantiated.                                         |
-| `orderId`      | `string` (UUID)         | Yes      | —                                     | Valid UUID; Kafka partition key | Identifier of the canceled order.                                                               |
-| `fullName`     | `string` or `null`      | No       | `"Customer"` (in Notification mapper) | Nullable                        | Customer display name; **Notification** maps `null` to `"Customer"`.                            |
-| `email`        | `string` or `null`      | No       | —                                     | Nullable                        | Recipient email address; null, empty, or whitespace values skip email rendering and delivery.   |
-| `totalMoney`   | `number` (`decimal`)    | Yes      | —                                     | C# `decimal`                    | Order total displayed in the cancellation email template.                                       |
+### Command Payload
 
-`additionalProperties` is `false` in the command JSON Schema.
+| Name           | Type                   | Required | Constraints                                   | Description                                                                                  |
+| :------------- | :--------------------- | :------- | :-------------------------------------------- | :------------------------------------------------------------------------------------------- |
+| `id`           | `string` (`uuid`)      | Yes      | UUIDv7                                        | Unique message identifier used for 24-hour Redis deduplication                               |
+| `creationDate` | `string` (`date-time`) | Yes      | ISO 8601 UTC timestamp                        | UTC timestamp when the command was created                                                   |
+| `orderId`      | `string` (`uuid`)      | Yes      | Valid UUID; Kafka partition key               | Identifier of the cancelled order                                                            |
+| `fullName`     | `string \| null`       | No       | Nullable (defaults to `"Customer"` when null) | Customer display name                                                                        |
+| `email`        | `string \| null`       | No       | Nullable                                      | Recipient email address; null, empty, or whitespace values skip email rendering and delivery |
+| `totalMoney`   | `number`               | Yes      | Non-negative monetary amount                  | Order total displayed in the cancellation email template                                     |
 
-## Behavior and side effects
+## Delivery Guarantees & Error Handling
 
-- **Finance publishing triggers:** **Finance** (`BookWorm.Finance`, Azure Durable Functions `OrderOrchestrator`) publishes `CancelOrderCommand` via `PublishCancelOrderActivity` in two cases, both gated by `order.CanSendNotification` (requires nonblank customer name and email):
-  1. `OrderCancelledStep` receives `OrderStatusChangedToCancelIntegrationEvent` from **Ordering API** and completes the orchestration.
-  2. `OrderOrchestrator` executes its registered `PublishCancelOrderActivity` compensation when retries exceed `MaxAttempts` (`CancelDueToMaxRetriesAsync`) or when a `TaskFailedException` or `FinanceDomainException` fails the orchestration.
-- **Idempotency (Redis + FusionCache):** `CancelOrderCommandHandler` wraps execution in `IIntegrationEventIdempotencyGuard.ExecuteAsync(message.Id, nameof(CancelOrderCommandHandler), ...)` with a 24-hour TTL keyed by `idempotency:CancelOrderCommandHandler:<id>`. Kafka redeliveries with the same `id` are deduplicated within 24 hours; newly published commands with a different `id` execute again.
-- **Stateless email rendering and delivery:** **Notification** has no SQL database and writes no email outbox table. `ContractToModelMapper.ToOrder()` maps the command to Notification's internal `Status.Canceled` model (`BookWorm.Notification/Domain/Models/Status.cs`), `OrderNotificationHelper.SendAsync` skips null/whitespace `email`, renders `Orders/OrderEmail` with `MjmlTemplateRenderer`, builds a `MimeMessage` via `OrderMimeMessageBuilder`, and submits through `MailKitSender` (SMTP to **Mailpit** locally or **SendGrid** SMTP in publish mode).
-- **No return event:** **Notification** publishes no delivery-status event back to **Finance**. SMTP server acceptance confirms provider handoff, not final inbox delivery.
+| Condition                          | System Behavior                                                                                                   | Recovery / Compensation                                                                         |
+| :--------------------------------- | :---------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------- |
+| Duplicate delivery within 24 hours | Consumer skips reprocessing via Redis-backed 24-hour idempotency keyed by `id`                                    | Safe at-least-once delivery; newly published commands with a different `id` execute again       |
+| Blank or `null` `email`            | Consumer returns without error and skips template rendering and SMTP submission                                   | No action required                                                                              |
+| Transient SMTP or network failure  | Retried by the notification resilience pipeline (circuit breaker, exponential backoff with jitter, `30s` timeout) | Exhausted retries route to [[channel\|bookworm.&#123;env&#125;.notification.dead-letter-queue]] |
+| Permanent SMTP failure             | Retried with cooldown (`50ms`, `250ms`, `1s` with full jitter)                                                    | Routed to [[channel\|bookworm.&#123;env&#125;.notification.dead-letter-queue]]                  |
 
-## Error responses
+## Related Documentation
 
-| Code / status                                                                                                                                       | Condition                                                               | Recovery behavior                                                                                                                                                             |
-| :-------------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Transient SMTP failure (`CommandException` where `IsTransient`, `ProtocolException`, `IOException`, `TimeoutException`, `TimeoutRejectedException`) | Temporary SMTP server or network error during `MailKitSender.SendAsync` | Retried inside **Notification**'s Polly resilience pipeline (circuit breaker + exponential backoff with jitter + 30-second default timeout).                                  |
-| `NotificationException`                                                                                                                             | Permanent SMTP failure or exhausted Polly resilience pipeline           | Propagates to **Wolverine**, which retries with cooldown `50ms` / `250ms` / `1s` (full jitter) before routing the message to `bookworm.{env}.notification.dead-letter-queue`. |
-| Blank or null `email`                                                                                                                               | Command arrives without a recipient email address                       | Handler returns without error and skips template rendering and SMTP submission.                                                                                               |
-
-## Related documentation
-
-- [[command|CancelOrder]] — Ordering API HTTP command that cancels an order and emits `OrderStatusChangedToCancelIntegrationEvent`.
-- [[channel|bookworm.&#123;env&#125;.finance.cancel-order]] — Kafka channel configuration for `bookworm.{env}.finance.cancel-order`.
-- [[event|OrderStatusChangedToCancelIntegrationEvent]] — Upstream Ordering event that triggers `OrderCancelledStep`.
 - [[service|notification-api]] — Stateless email worker architecture and SMTP configuration.
-- [[service|order-orchestration]] — Finance Durable Functions orchestrator and compensations.
+- [[service|order-orchestration]] — Producing orchestration service.
+- [[channel|bookworm.&#123;env&#125;.finance.cancel-order]] — Kafka channel specification.
+- [[channel|bookworm.&#123;env&#125;.notification.dead-letter-queue]] — Dead-letter queue for failed Notification consumers.
+- [[event|OrderStatusChangedToCancelIntegrationEvent]] — Upstream Ordering event that triggers cancellation notification.
+- [[command|CancelOrder]] — Ordering API HTTP command that cancels an order.
 
 <NodeGraph />
+
+<SchemaViewer
+	file="schema.json"
+	title="Send order cancelled notification schema"
+	maxHeight="500"
+	search="true"
+/>

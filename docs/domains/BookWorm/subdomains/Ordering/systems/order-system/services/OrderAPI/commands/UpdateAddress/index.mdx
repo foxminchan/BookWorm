@@ -1,6 +1,6 @@
 ---
 id: UpdateAddress
-name: Update Buyer address
+name: Update buyer address
 version: 1.0.0
 badges:
   - content: Customer Management
@@ -8,7 +8,7 @@ badges:
     textColor: orange
 summary: Updates the authenticated Buyer's address using the supplied street, city, and province.
 owners:
-  - contributor-team
+  - commerce-fulfillment-team
 schemaPath: schema.json
 operation:
   method: PATCH
@@ -18,71 +18,70 @@ sidebar:
   badge: "PATCH"
 ---
 
-The `UpdateAddress` command (`PATCH /api/v1/buyers/address`) replaces the shipping address on the authenticated customer's `Buyer` profile in **Ordering API** (v1.0.0) and returns the updated `BuyerDto`. Access is restricted strictly to the Microsoft Entra ID `customer` role (administrators cannot invoke this endpoint on another user's behalf), and external callers reach it through the YARP **API Gateway** at `/ordering/api/v1/buyers/address`.
+`UpdateAddress` replaces the shipping address on the authenticated customer's [[entity|buyer]] profile in [[service|order-api]] (`PATCH /ordering/api/v1/buyers/address`) and returns the updated buyer profile. Access is restricted strictly to the Microsoft Entra ID `customer` role (administrators cannot invoke this endpoint on another user's behalf).
 
 ## Overview
 
-| Property                    | Value                                                                                                                                                                                                        |
-| :-------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**                   | Ordering bounded context (**Ordering API**, Aspire resource `ordering`)                                                                                                                                      |
-| **Source**                  | `src/Services/Ordering/BookWorm.Ordering/Features/Buyers/UpdateAddress/UpdateAddressEndpoint.cs`, `UpdateAddressCommand.cs`, `UpdateAddressValidator.cs`, `Domain/AggregatesModel/BuyerAggregate/Address.cs` |
-| **Protocol / format**       | HTTP `PATCH`, `application/json` request and response (API version `v1`)                                                                                                                                     |
-| **Gateway endpoint**        | `PATCH /ordering/api/v1/buyers/address`                                                                                                                                                                      |
-| **Direct service endpoint** | `PATCH /api/v1/buyers/address` (local ports: HTTP `5244`, HTTPS `7203`)                                                                                                                                      |
-| **Authentication**          | Microsoft Entra ID JWT — `customer` policy only: role `customer` plus scopes `ordering_read` and `ordering_write`                                                                                            |
-| **Idempotency**             | `IdempotencyEndpointFilter` is not applied (`x-request-id` is not required; replacing the full address value object is naturally idempotent)                                                                 |
-| **ETag**                    | Not used                                                                                                                                                                                                     |
-| **Rate limit**              | `PerUserRateLimit` token bucket (30 burst, 20 tokens / 10s, queue limit 5) plus global concurrency (100) and IP fixed-window (30 req/min) limiters                                                           |
+| Property                           | Value                                                                                                                             |
+| :--------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------- |
+| **Bounded Context**                | Ordering                                                                                                                          |
+| **Owner Service**                  | [[service\|order-api]]                                                                                                            |
+| **Protocol / Format**              | HTTP `PATCH`, `application/json` request and response                                                                             |
+| **Gateway Endpoint**               | `PATCH /ordering/api/v1/buyers/address` (service path `/api/v1/buyers/address`)                                                   |
+| **Authentication & Authorization** | Microsoft Entra ID JWT — `customer` policy only (role `customer` plus scopes `ordering_read`, `ordering_write`)                   |
+| **Idempotency / Concurrency**      | Naturally idempotent full address replacement; no `x-request-id` header is required                                               |
+| **Rate Limit / Caching**           | Global concurrency (`100`), per-IP fixed-window (`30 req/min`), and per-user token bucket (`30` burst, `20` per `10s`, queue `5`) |
+| **Contract Version**               | `1.0.0` (`ApiVersions.V1`)                                                                                                        |
 
-## Parameters and fields
+## Request & Response Contract
 
-### Request body (`application/json`, `UpdateAddressCommand`)
+### Request Body (`application/json`)
 
-All three address fields are required together to replace the `Address` value object.
+All three address fields are required together to replace the address value object.
 
-| Name       | Type     | Required | Default | Constraints                                                                  | Description                |
-| :--------- | :------- | :------- | :------ | :--------------------------------------------------------------------------- | :------------------------- |
-| `street`   | `string` | Yes      | —       | Non-empty, max 50 chars (`DataSchemaLength.Medium`); redacted as `[PIIData]` | Updated street address.    |
-| `city`     | `string` | Yes      | —       | Non-empty, max 50 chars (`DataSchemaLength.Medium`); redacted as `[PIIData]` | Updated city or district.  |
-| `province` | `string` | Yes      | —       | Non-empty, max 50 chars (`DataSchemaLength.Medium`); redacted as `[PIIData]` | Updated province or state. |
+| Name       | Type     | Required | Constraints                                          | Description               |
+| :--------- | :------- | :------- | :--------------------------------------------------- | :------------------------ |
+| `street`   | `string` | Yes      | Non-empty, max `50` characters; PII-redacted in logs | Updated street address    |
+| `city`     | `string` | Yes      | Non-empty, max `50` characters; PII-redacted in logs | Updated city or district  |
+| `province` | `string` | Yes      | Non-empty, max `50` characters; PII-redacted in logs | Updated province or state |
 
-### Response body (`200 OK`, `BuyerDto`)
+### Success Response (`200 OK`)
 
-| Name      | Type             | Required | Default | Constraints                                                            | Description                                              |
-| :-------- | :--------------- | :------- | :------ | :--------------------------------------------------------------------- | :------------------------------------------------------- |
-| `id`      | `string` (UUID)  | Yes      | —       | `BuyerId` UUID                                                         | Identifier of the authenticated buyer.                   |
-| `name`    | `string \| null` | No       | —       | Redacted as `[PIIData]`                                                | Buyer display name stored on the profile.                |
-| `address` | `string \| null` | No       | —       | Formatted as `"{Street}, {City}, {Province}"`; redacted as `[PIIData]` | Formatted full address returned by `Address.ToString()`. |
+| Name      | Type              | Required | Constraints                                                         | Description                              |
+| :-------- | :---------------- | :------- | :------------------------------------------------------------------ | :--------------------------------------- |
+| `id`      | `string` (`uuid`) | Yes      | Valid UUID                                                          | Identifier of the authenticated buyer    |
+| `name`    | `string \| null`  | No       | PII-redacted in logs                                                | Buyer display name stored on the profile |
+| `address` | `string \| null`  | No       | Formatted as `"{Street}, {City}, {Province}"`; PII-redacted in logs | Formatted full address                   |
 
-## Behavior and side effects
+## Behavior & Side Effects
 
-- **Session-bound lookup:** `UpdateAddressHandler` parses `BuyerId` as a GUID from `ClaimTypes.NameIdentifier` (no buyer ID is accepted in the route or body) and loads the buyer via `repository.GetByIdAsync((Guid)userId, cancellationToken)`. If no profile exists yet, it throws `NotFoundException` (`404 Not Found`); callers must first create a profile with [[command|CreateBuyer]].
-- **Atomic address replacement:** `Buyer.UpdateAddress(street, city, province)` constructs a new immutable `Address` value object and persists the change to PostgreSQL (`orderingdb`) inside a `[Transactional]` unit of work.
-- **No events emitted and PII redaction:** Updating an address emits no domain events or Kafka integration events. Both `UpdateAddressCommand` (`Street`, `City`, `Province`) and `BuyerDto` (`Name`, `Address`) carry `[property: PIIData]` for structured log redaction.
+- **Session-bound lookup:** Derives the buyer ID from the authenticated user's `NameIdentifier` claim (no buyer ID is accepted in the route or body). Returns `404 Not Found` if no profile exists yet; callers must first create a profile via [[command|CreateBuyer]].
+- **Atomic address replacement:** Replaces the address value object inside a database transaction; emits no domain or integration events.
+- **PII redaction:** Request address fields and response `name`/`address` fields are automatically redacted in structured logs.
 
-## Error responses
+## Error Responses
 
-| Code / status               | Condition                                                                                                                                            | Recovery behavior                                              |
-| :-------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------- |
-| `400 Bad Request`           | Empty/whitespace address field, field exceeding 50 characters (`ValidationProblemDetails`), or non-GUID `NameIdentifier` claim (`ArgumentException`) | Fix the request body or token claims; do not retry unchanged.  |
-| `401 Unauthorized`          | Missing, expired, or invalid Entra ID bearer token                                                                                                   | Acquire a fresh Entra ID access token and retry.               |
-| `403 Forbidden`             | Authenticated caller lacks the `customer` role (including `admin`-only tokens) or lacks `ordering_read`/`ordering_write` scopes                      | Authenticate as a `customer` with the required scopes.         |
-| `404 Not Found`             | Authenticated caller does not have an existing buyer profile in `orderingdb`                                                                         | Create the profile first using `POST /ordering/api/v1/buyers`. |
-| `429 Too Many Requests`     | Caller exceeded `PerUserRateLimit` or global rate limits                                                                                             | Wait for the `Retry-After` header interval before retrying.    |
-| `500 Internal Server Error` | Unhandled database or server failure                                                                                                                 | Retry with backoff and inspect Ordering API logs.              |
+| Status / Code               | Condition                                                                                                         | Client Recovery Action                                       |
+| :-------------------------- | :---------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------- |
+| `400 Bad Request`           | Empty/whitespace address field, field exceeding `50` characters, or non-UUID `NameIdentifier` claim               | Fix the request body or token claims; do not retry unchanged |
+| `401 Unauthorized`          | Missing, expired, or invalid Entra ID bearer token                                                                | Acquire a fresh Entra ID access token and retry              |
+| `403 Forbidden`             | Caller lacks the `customer` role (including `admin`-only tokens) or lacks `ordering_read`/`ordering_write` scopes | Authenticate as a `customer` with the required scopes        |
+| `404 Not Found`             | Authenticated caller does not have an existing buyer profile                                                      | Create the profile first using [[command\|CreateBuyer]]      |
+| `429 Too Many Requests`     | Rate limit quota exceeded (`Retry-After` header included)                                                         | Wait for the `Retry-After` interval before retrying          |
+| `500 Internal Server Error` | Unhandled database or server failure                                                                              | Retry with backoff and inspect service logs                  |
 
-## Related documentation
+## Related Documentation
 
 - [[service|order-api]] — Service architecture, persistence, and endpoints.
+- [[entity|buyer]] — Buyer aggregate schema and address value object.
 - [[command|CreateBuyer]] — Create a buyer profile before updating its address.
 - [[command|DeleteBuyer]] — Administrative permanent removal of a buyer profile.
-- [[entity|buyer]] — Buyer aggregate schema and `Address` value object.
 
 <NodeGraph />
 
 <SchemaViewer
 	file="schema.json"
-	title="UpdateAddressCommand JSON Schema"
+	title="Update buyer address schema"
 	maxHeight="500"
 	search="true"
 />

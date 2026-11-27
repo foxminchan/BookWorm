@@ -1,34 +1,19 @@
 %%{init: {'theme': 'base', 'themeVariables': {'background': '#f5f5f5', 'primaryColor': '#ffffff', 'primaryTextColor': '#2d3142', 'primaryBorderColor': '#2d3142', 'secondaryColor': '#ececec', 'secondaryBorderColor': '#4f5d75', 'tertiaryColor': '#fdf2ee', 'tertiaryBorderColor': '#bf4520', 'lineColor': '#4f5d75', 'textColor': '#2d3142', 'clusterBkg': '#f8f9fa', 'clusterBorder': '#bfc0c0', 'fontFamily': 'Geist, system-ui, sans-serif'}}}%%
 flowchart LR
-	browser["User Browser\n(Customer / Admin)"]
-	gateway["API Gateway\n(YARP Reverse Proxy)"]
-	mfes["Web Microfrontends\n(Storefront, Commerce, Backoffice)"]
-	apis["Backend APIs\n(Catalog, Basket, Ordering,\nRating, Chat, MCP Tools)"]
-	workers["Async Workers\n(Finance, Notification,\nScheduler, Ingestion)"]
-	kafka["Kafka Broker\n(Local / Confluent Cloud)"]
-	entra["Microsoft Entra ID\n(OAuth2 / OIDC / OBO)"]
-	foundry["Microsoft Foundry\n(HTTPS AI APIs)"]
-	smtp["SendGrid / Mailpit\n(SMTP Port 587)"]
+	browser["Customer and Administrator<br/>Web Browser"]
+	identity["Identity Provider"]
+	ai["AI Service"]
+	email["Email Delivery Provider"]
 
-	browser -->|"HTTPS"| gateway
-	gateway -->|"HTTP (X-Mfe-Zone)"| mfes
-	gateway --> |"HTTP: /catalog, /basket,\n/ordering, /rating, /chatting"| apis
-	gateway --> |"HTTPS: /entra/*"| entra
-	apis <-->|"gRPC (v1, A2A) & MCP HTTP"| apis
-	apis <-->|"CloudEvents JSON"| kafka
-	workers <-->|"CloudEvents JSON"| kafka
-	apis <-->|"JWT / OBO / Agent IDs"| entra
-	apis --> |"HTTPS: LLM, Decision, Embed"| foundry
-	workers -->|"SMTP (587)"| smtp
+	bookworm["BookWorm<br/>Online Bookstore"]
+
+	browser <-->|"HTTPS / HTML and JSON / bidirectional"| bookworm
+	bookworm <-->|"HTTPS / OIDC redirects and tokens / bidirectional"| identity
+	bookworm -->|"HTTPS / JSON request / outbound"| ai
+	ai -->|"HTTPS / JSON response / inbound"| bookworm
+	bookworm -->|"SMTP / MIME email / outbound"| email
 
 	classDef focal fill:#fdf2ee,stroke:#bf4520,stroke-width:2px,color:#2d3142
-	classDef service fill:#ffffff,stroke:#2d3142,stroke-width:1.2px,color:#2d3142
-	classDef store fill:#ececec,stroke:#4f5d75,stroke-width:1.2px,color:#2d3142
-	classDef input fill:#eef1f6,stroke:#5a6580,stroke-width:1.2px,color:#2d3142
-	classDef ext fill:#f5f5f5,stroke:#949eb2,stroke-width:1px,stroke-dasharray:4 3,color:#4f5d75
-	class apis focal
-	class gateway,workers service
-	class browser,mfes input
-	class kafka,entra,foundry,smtp ext
-	linkStyle 2 stroke:#bf4520,stroke-width:2px
-	linkStyle 4 stroke:#bf4520,stroke-width:2px
+	classDef neighbor fill:#ffffff,stroke:#5a6580,stroke-width:1.5px,color:#2d3142
+	class bookworm focal
+	class browser,identity,ai,email neighbor

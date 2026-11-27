@@ -2,7 +2,7 @@
 title: Building Block View
 summary: Static decomposition of BookWorm into owned business capabilities, services, and shared foundations.
 owners:
-  - contributor-team
+  - architecture-enabling-team
 badges:
   - content: Architecture
     backgroundColor: blue
@@ -15,11 +15,11 @@ This chapter documents BookWorm's static structure from the whole platform down 
 
 BookWorm uses three progressive zoom levels so you inspect only the depth required for your task.
 
-This diagram shows how each arc42 Building Block View level zooms into the next level of static structure.
+This diagram shows how each Building Block View level zooms into the next level of static structure.
 
 <MermaidFileLoader file="mermaids/05-building-block-view-diagram-1.mmd" />
 
-| Zoom level  | Document                                                          | C4 equivalent               | Scope                                                                                                                                  |
+| Zoom level  | Document                                                          | Abstraction level           | Scope                                                                                                                                  |
 | :---------- | :---------------------------------------------------------------- | :-------------------------- | :------------------------------------------------------------------------------------------------------------------------------------- |
 | **Level 1** | [[doc\|arc42/05-building-block-view/001-whitebox-overall-system]] | System / Container overview | Edge tier (`API Gateway`, `Storefront`, `Commerce`, `Backoffice`), six backend bounded contexts, shared foundation, and boundary rules |
 | **Level 2** | [[doc\|arc42/05-building-block-view/002-level-2]]                 | Container / Service detail  | Internal services, dedicated data stores (PostgreSQL, Cosmos DB, Redis, Qdrant, Azure Blob, Durable Task Scheduler), and source paths  |
@@ -27,15 +27,15 @@ This diagram shows how each arc42 Building Block View level zooms into the next 
 
 ## Selective refinement rationale
 
-- **Capability-first decomposition:** BookWorm groups code by business ownership (`Catalog`, `Shopping`, `Ordering`, `Reviews`, `Conversational`, `Platform`) rather than technical tiers, preventing a shared business middle layer.
-- **Selective Level 3 zoom:** Only `Finance` (`src/Services/Finance/BookWorm.Finance/`) expands to Level 3 because its Azure Durable Functions `OrderOrchestrator` coordinates multi-step checkout outcomes across `Ordering`, `Shopping`, and `Platform`.
+- **Capability-first decomposition:** BookWorm groups code by business ownership ([[domain|catalog]], [[domain|shopping]], [[domain|ordering]], [[domain|reviews]], [[domain|conversational]], [[domain|platform]]) rather than technical tiers, preventing a shared business middle layer.
+- **Selective Level 3 zoom:** Only [[service|order-orchestration]] expands to Level 3 because it coordinates multi-step checkout outcomes across [[domain|ordering]], [[domain|shopping]], and [[domain|platform]].
 - **Separation of concerns:** External neighbors appear in [[doc|arc42/03-context-and-scope/003-technical-context]], step-by-step message sequences appear in [[doc|arc42/06-runtime-view]], and cloud hosting appears in [[doc|arc42/07-deployment-view]].
 
 ## Related architecture decisions
 
-| ADR                                        | Decision summary                                                                         | Status   |
-| :----------------------------------------- | :--------------------------------------------------------------------------------------- | :------- |
-| ADR-BW-001: Capability-aligned boundaries  | Decompose BookWorm by bounded context and business ownership                             | Proposed |
-| ADR-BW-003: Aspire shared service defaults | Centralize hosting, observability, and resilience in Aspire and BuildingBlocks           | Proposed |
-| ADR-BW-006: Service-owned business state   | Keep authoritative persistence strictly inside the owning service                        | Proposed |
-| ADR-Finance-Durable-Task-Scheduler         | Run Finance checkout orchestration on Azure Durable Functions and Durable Task Scheduler | Accepted |
+| ADR                                                         | Decision summary                                                                    | Status   |
+| :---------------------------------------------------------- | :---------------------------------------------------------------------------------- | :------- |
+| [[adr\|adr-bw-001-capability-aligned-boundaries]]           | Decompose BookWorm by bounded context and business ownership                        | Proposed |
+| [[adr\|adr-bw-003-aspire-shared-service-defaults]]          | Centralize hosting, observability, and resilience in shared platform infrastructure | Proposed |
+| [[adr\|adr-bw-006-service-owned-business-state]]            | Keep authoritative persistence inside the owning capability                         | Proposed |
+| [[adr\|adr-005-finance-separate-workflow-and-order-status]] | Keep Finance workflow outcomes separate from authoritative Ordering status          | Accepted |

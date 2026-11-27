@@ -2,9 +2,9 @@
 id: order-cache
 name: Order Cache and Distributed Locks
 version: 1.0.0
-summary: Redis-backed coordination and caching for Ordering, including Buyer-scoped creation locks, idempotency markers, and cached Catalog and dashboard responses.
+summary: Redis-backed coordination and caching slice owned by the Ordering bounded context for buyer-scoped creation locks, HTTP idempotency markers, and cached order summaries.
 owners:
-  - business-strategy
+  - commerce-fulfillment-team
 container_type: cache
 badges:
   - content: Cache
@@ -15,85 +15,73 @@ authoritative: false
 access_mode: readWrite
 classification: internal
 retention: transient
-purpose: Coordinate concurrent Order creation, detect repeated requests, and share cached responses across Ordering instances.
+residency: eastasia
+purpose: Coordinate concurrent Order creation, detect repeated HTTP/Kafka requests, and share cached responses across Ordering replicas.
 styles:
   icon: /icons/database/redis.svg
 ---
 
-Order cache is [[service|order-api]]'s logical slice of the shared BookWorm Redis resource (`redis`). Ordering API reuses a single `IConnectionMultiplexer` to run four coordination and caching workloads: buyer-scoped order creation locks, atomic HTTP request idempotency markers, FusionCache L2 + backplane caching, and 24-hour Kafka integration event idempotency.
+## Purpose & Ownership Boundary
 
-## Overview
+Order Cache and Distributed Locks is the non-authoritative Redis coordination and caching slice owned exclusively by [[service|order-api]] in the Ordering bounded context. Redis was chosen to provide low-latency distributed locking for concurrent checkout serialization, atomic HTTP `SET NX` idempotency markers, and FusionCache L2 + backplane caching across service replicas.
 
-| Property               | Value                                                                                                                                                                                                                                                                                                                         |
-| :--------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**              | Ordering bounded context — [[service\|order-api]] (`ordering`)                                                                                                                                                                                                                                                                |
-| **Aspire resource ID** | `redis` (shared Azure Managed Redis resource)                                                                                                                                                                                                                                                                                 |
-| **Source**             | `src/Services/Ordering/BookWorm.Ordering/Infrastructure/Extensions.cs`, `src/Services/Ordering/BookWorm.Ordering/Infrastructure/Filters/IdempotencyEndpointFilter.cs`, `src/Services/Ordering/BookWorm.Ordering/Infrastructure/Idempotency/RequestManager.cs`, `src/Services/Ordering/BookWorm.Ordering/OrderingCacheKeys.cs` |
-| **Engine**             | Redis + FusionCache (`2.10.0`) with Redis backplane and distributed locking                                                                                                                                                                                                                                                   |
-| **Authoritative**      | No (`authoritative: false`, `readWrite`) — permanent orders live in [[container\|order-database]]                                                                                                                                                                                                                             |
-| **Classification**     | `internal`                                                                                                                                                                                                                                                                                                                    |
-| **Retention**          | Transient (all entries expire by TTL or explicit release)                                                                                                                                                                                                                                                                     |
+## Data Store Profile
 
-## Architecture and runtime wiring
+| Property                            | Value                                                                       |
+| :---------------------------------- | :-------------------------------------------------------------------------- |
+| **Bounded Context / Owner**         | Ordering — [[team\|commerce-fulfillment-team]]                              |
+| **Engine / Technology**             | Redis + FusionCache (Azure Managed Redis in cloud; Redis container locally) |
+| **Store Type**                      | Cache                                                                       |
+| **Primary Writer(s)**               | [[service\|order-api]]                                                      |
+| **Primary Reader(s)**               | [[service\|order-api]]                                                      |
+| **Authoritative / Source of Truth** | Ephemeral (permanent orders live in [[container\|order-database]])          |
+| **Data Classification**             | Internal                                                                    |
+| **Retention / TTL Policy**          | Transient (all keys expire by TTL or explicit release)                      |
 
-Ordering API connects to the shared `redis` resource with Azure authentication (`WithAzureAuthentication()`) and `DisableAutoActivation = false`. Although Order cache is non-authoritative for purchases, its availability directly governs concurrent checkout serialization and duplicate-request rejection across Ordering API replicas.
+## Logical Data Layout & Key Patterns
 
-The diagram shows how Ordering API combines Redis locking, idempotency, and caching alongside PostgreSQL persistence and upstream gRPC lookups.
+| Key Pattern                                   | Stored Data                                                        | TTL / Eviction                                 | Invalidation / Update Trigger                                                                                        |
+| :-------------------------------------------- | :----------------------------------------------------------------- | :--------------------------------------------- | :------------------------------------------------------------------------------------------------------------------- |
+| `order-create:{BuyerId}` (`ordering` lock)    | Distributed creation lock handle                                   | `1 minute` acquisition timeout                 | Released explicitly in `finally` after committing the order unit of work.                                            |
+| `{HTTP method}:{request path}:{x-request-id}` | Atomic HTTP idempotency marker (`id`, `name`, `time`) via `SET NX` | `1 hour` (`3,600 seconds`)                     | Retained on `2xx`/`4xx` responses; deleted immediately on unhandled exceptions or `5xx` errors so clients can retry. |
+| `books:{sorted book IDs}`                     | Cached Catalog gRPC book/price batch responses                     | `30 minutes` default (`books`, `catalog` tags) | TTL expiration or tag invalidation.                                                                                  |
+| `ordering:dashboard:v1`                       | Aggregated Ordering and Catalog admin dashboard metrics            | `15 seconds`                                   | Time-based TTL expiration.                                                                                           |
+| `ordering:summary:v1:{orderId}:v{version}`    | Versioned order summary projection                                 | `30 minutes` default                           | Immutable per version; expires by TTL.                                                                               |
+| `ordering:summary:v1:{orderId}:terminal`      | Terminal-state order summary view                                  | `1 hour` (L1 & L2)                             | Cached only for terminal orders; expires by TTL.                                                                     |
+| `ordering:history:v1:{orderId}:terminal`      | Terminal-state order event history                                 | `1 hour` (L1 & L2)                             | Cached only for terminal orders; expires by TTL.                                                                     |
+| Integration idempotency keys                  | 24-hour Kafka message deduplication markers                        | `24 hours`                                     | Automatic TTL expiration after consumer processing.                                                                  |
+
+## Consistency, Isolation & Security Guardrails
+
+- **Buyer-scoped lock boundaries:** [[service|order-api]] reads the basket and resolves Catalog prices _before_ acquiring `order-create:{BuyerId}`, keeping the critical section scoped strictly to order creation and persistence. The lock does not replace the PostgreSQL row-version concurrency token.
+- **Atomic HTTP idempotency (`POST` / `PATCH`):** Requests without a non-empty `x-request-id` header are rejected (`400 Bad Request`), and duplicate in-flight or completed requests return `409 Conflict`.
+- **Non-authoritative for purchases:** Accepted orders and checkout-time prices are always committed to [[container|order-database]].
+
+:::warning
+**Shared Redis Key-Prefix & Flush Isolation:** Order Cache shares the `redis` cluster with [[container|basket-database]], [[container|catalog-cache]], [[container|rating-cache]], and Notification idempotency markers. Flushing the shared Redis instance does not delete persisted orders in `orderingdb`, but it drops active HTTP idempotency markers, releases in-flight creation locks, and erases active customer baskets in [[container|basket-database]].
+:::
+
+## Operational & Resilience Notes
+
+<AccordionGroup>
+	<Accordion title="Hosting, scaling, and environment parity">
+		- **Local vs. Cloud:** Local development runs a persistent single-container Redis instance with
+		RedisInsight; cloud environments run Azure Managed Redis (`BalancedB0` in Dev, `BalancedB1` with
+		HA in Staging, `BalancedB5` with HA in Production). - **Availability impact:** While
+		non-authoritative for durable order history, Redis availability directly governs concurrent
+		checkout serialization and duplicate-request protection across Ordering replicas.
+	</Accordion>
+</AccordionGroup>
+
+## Architecture Visualizations
+
+<NodeGraph />
 
 <MermaidFileLoader file="mermaids/order-cache-diagram-1.mmd" />
 
-## Keys, locks, and expiration
-
-| Workload                      | Logical key or scope                                 | TTL / timeout                                  | Behavior                                                                                                                            |
-| :---------------------------- | :--------------------------------------------------- | :--------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------- |
-| **Order creation lock**       | Cache name `ordering`, lock `order-create:{BuyerId}` | `1 minute` acquisition timeout                 | Acquired around adding the `Order` and saving the EF Core unit of work; released in `finally`                                       |
-| **HTTP idempotency marker**   | `{HTTP method}:{request path}:{x-request-id}`        | `3,600 seconds` (`1 hour`)                     | Stored atomically via `SET NX` (`When.NotExists`) as camelCase JSON `ClientRequest` (`id`, `name`, `time`)                          |
-| **Catalog book batch**        | `books:{sorted comma-separated book IDs}`            | `30 minutes` default (`books`, `catalog` tags) | Caches Catalog gRPC book/price batch lookups during checkout; accepted orders still persist unit prices permanently in `orderingdb` |
-| **Admin dashboard summary**   | `ordering:dashboard:v1`                              | `15 seconds`                                   | Caches aggregated Ordering and Catalog dashboard metrics                                                                            |
-| **Order summary (versioned)** | `ordering:summary:v1:{orderId}:v{version}`           | `Caching:Expiration` default                   | Caches versioned Marten `OrderSummary` projections                                                                                  |
-| **Order summary (terminal)**  | `ordering:summary:v1:{orderId}:terminal`             | `Caching:Expiration` default                   | Caches terminal-state order summary views                                                                                           |
-| **Order history (terminal)**  | `ordering:history:v1:{orderId}:terminal`             | `Caching:Expiration` default                   | Caches terminal-state order event history                                                                                           |
-| **Kafka event idempotency**   | `IIntegrationEventIdempotencyGuard` (chassis)        | `24 hours`                                     | Deduplicates re-delivered integration messages across Ordering consumers                                                            |
-
-Terminal order summary and history entries use `Duration` and `DistributedCacheDuration` of one hour. Non-terminal summaries and histories are not cached by the terminal cache keys.
-
-## Lock and idempotency semantics
-
-### Buyer-scoped order creation lock
-
-- **Scope:** Ordering API reads the customer's basket and resolves Catalog book prices _before_ acquiring `order-create:{BuyerId}`. The lock guards only adding the `Order` entity and committing the EF Core unit of work.
-- **Contention failure:** If lock acquisition returns no handle, the handler throws `InvalidOperationException` indicating another process is already creating an order for that buyer.
-- **Release and limits:** Lock release executes in a `finally` block even when persistence fails. The lock does not serialize order completion or cancellation and does not replace the PostgreSQL row-version concurrency token.
-
-### Atomic HTTP idempotency filter (`WithIdempotency()`)
-
-`IdempotencyEndpointFilter` protects non-idempotent HTTP methods (`POST` and `PATCH`; `GET`, `DELETE`, `PUT`, `HEAD`, and `OPTIONS` bypass the filter):
-
-1. **Header validation:** Rejects requests missing a non-empty `x-request-id` header with a `ValidationException` (`400 Bad Request`).
-2. **Atomic claim:** Calls `RequestManager.TryCreateAsync`, which writes the JSON `ClientRequest` with `StringSetAsync(..., TimeSpan.FromSeconds(3600), When.NotExists)`.
-3. **Duplicate rejection:** If the key already exists, returns `409 Conflict` (`ProblemDetails`: `"You have already requested this operation."`).
-4. **Failure rollback:** If the downstream handler throws an exception or returns an HTTP status `>= 500`, the filter deletes the idempotency key immediately (`DeleteAsync`) so the client can safely retry with the same `x-request-id`. Successful (`2xx`) and client-error (`4xx`) responses retain the marker for 1 hour.
-
-## Hosting and environment provisioning
-
-AppHost provisions the shared `redis` resource via `src/Aspire/BookWorm.AppHost/Extensions/Infrastructure/AzureExtensions.Redis.cs`.
-
-| Environment           | Provisioning & SKU                                                      | High availability | Local tooling |
-| :-------------------- | :---------------------------------------------------------------------- | :---------------- | :------------ |
-| **Local development** | Local Redis container (`ContainerLifetime.Persistent`) with data volume | Single container  | RedisInsight  |
-| **Azure Development** | Azure Managed Redis (`BalancedB0`)                                      | Disabled          | —             |
-| **Azure Staging**     | Azure Managed Redis (`BalancedB1`)                                      | Enabled           | —             |
-| **Azure Production**  | Azure Managed Redis (`BalancedB5`)                                      | Enabled           | —             |
-
-:::warning
-Flushing the shared `redis` instance does not delete persisted orders in `orderingdb`, but it drops active HTTP idempotency markers, releases in-flight coordination locks, and clears active customer baskets in [[container|basket-database]].
-:::
-
-## Related documentation
+## Related Documentation
 
 - [[service|order-api]] — Owning service endpoints, gRPC clients, and order creation flow.
-- [[container|order-database]] — Authoritative PostgreSQL store for buyers, orders, Marten streams, and Wolverine outbox.
+- [[container|order-database]] — Authoritative PostgreSQL store for buyers, orders, and event streams.
 - [[container|basket-database]] — Sibling workload on the shared Redis resource.
-- [[doc|platform/006-api-and-contracts]] — Overview of all BookWorm services, agents, and data containers.
-
-<NodeGraph />
+- [[doc|operational/005-backup-restore-and-dr]] — Platform backup, restore, and disaster recovery runbook.

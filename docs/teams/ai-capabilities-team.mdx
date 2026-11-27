@@ -1,0 +1,64 @@
+---
+id: ai-capabilities-team
+name: AI Capabilities Team
+summary: |
+  Complicated-Subsystem team owning BookWorm's multi-agent conversational discovery, MCP/A2A protocols, vector ingestion, and AI governance guardrails.
+members:
+  - nxnhan
+---
+
+## Mission & Topology Boundary
+
+The **AI Capabilities Team** encapsulates specialized AI engineering complexity within [[domain|conversational]] so stream-aligned teams do not have to manage LLM orchestration, embedding pipelines, or agentic protocol details. It owns multi-agent routing, Model Context Protocol (MCP) adapters, Agent-to-Agent (A2A) integration, vector batch scheduling contracts, and composable AI governance. Explicitly **out of scope** are authoritative book inventory, basket mutations, order state transitions, and core PII detection engine hosting (consumed from [[system|data-privacy]]).
+
+## Team Profile & Interaction Modes
+
+| Property                            | Value                                                                                                                                |
+| :---------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------- |
+| **Topology Type**                   | Complicated-Subsystem                                                                                                                |
+| **Primary Mission**                 | Deliver safe, privacy-filtered conversational book discovery and read-only store guidance                                            |
+| **Default Interaction Mode**        | _X-as-a-Service_ (exposes conversational & MCP endpoints); _Collaboration_ (with Catalog & Platform on embeddings and guardrails)    |
+| **Key Partner Teams**               | [[team\|catalog-experience-team]], [[team\|platform-engineering-team]], [[team\|architecture-enabling-team]]                         |
+| **Escalation / Engagement Channel** | [GitHub Discussions](https://github.com/foxminchan/BookWorm/discussions) · [[doc\|arc42/08-crosscutting-concepts/005-ai-governance]] |
+
+## Owned Capabilities & Assets
+
+- **Domain:** [[domain|conversational]]
+- **Systems:** [[system|chat-system]], [[system|mcp-tools]]
+- **Services:** [[service|chat-api]], [[service|mcp-server]]
+- **Agents:** [[agent|book-agent]], [[agent|book-catalog-researcher]], [[agent|book-recommendation-researcher]], [[agent|qa-agent]]
+- **Flows & Channels:** [[flow|agent-orchestration]], [[channel|scheduler.process-vector-batch]]
+- **Governance & Decisions:** [[doc|arc42/08-crosscutting-concepts/005-ai-governance]]
+
+<Accordion title="Interaction Modes with Neighboring Teams">
+
+- **With [[team|catalog-experience-team]] (_Collaboration_):** Consumes read-only book and review summaries via MCP tools and A2A contracts without duplicating authoritative domain state.
+- **With [[team|platform-engineering-team]] (_X-as-a-Service_):** Enforces fail-closed PII filtering via [[service|presidio-api]], agent identities via [[system|identity-provider]], and scheduled batch triggers via [[service|scheduler-service]].
+- **With [[team|architecture-enabling-team]] (_Facilitating_):** Validates AI governance controls, tool-scoping boundaries, and episodic/semantic memory policies against platform ADRs.
+
+</Accordion>
+
+## Working Agreements
+
+- Enforce fail-closed PII detection and anonymization on every inbound prompt and outbound response.
+- Keep [[service|mcp-server]] strictly read-only over domain APIs; conversational agents never bypass domain boundaries to mutate catalog, basket, or order state.
+- Govern tool access per agent and maintain explicit model-routing decisions.
+
+:::warning
+Agents must never fabricate order or inventory state; all factual book and review responses must ground in live read-only lookups from [[domain|catalog]] and [[domain|reviews]].
+:::
+
+<Tiles columns={2}>
+	<Tile
+		icon="ChatBubbleLeftRightIcon"
+		href="/docs/domains/conversational"
+		title="Conversational Domain"
+		description="Multi-agent book discovery, MCP tools, and orchestration."
+	/>
+	<Tile
+		icon="ShieldCheckIcon"
+		href="/docs/custom/arc42/08-crosscutting-concepts/005-ai-governance"
+		title="AI Governance"
+		description="Safety, privacy middleware, and agent tool-scoping rules."
+	/>
+</Tiles>

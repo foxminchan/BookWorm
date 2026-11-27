@@ -1,0 +1,18 @@
+%%{init: {'theme': 'base', 'themeVariables': {'actorBkg': '#ffffff', 'actorBorder': '#2d3142', 'actorTextColor': '#2d3142', 'actorLineColor': '#bfc0c0', 'signalColor': '#4f5d75', 'signalTextColor': '#2d3142', 'labelBoxBkgColor': '#f5f5f5', 'labelBoxBorderColor': '#4f5d75', 'labelTextColor': '#2d3142', 'loopTextColor': '#4f5d75', 'noteBkgColor': '#fdf2ee', 'noteBorderColor': '#bf4520', 'noteTextColor': '#2d3142', 'activationBkgColor': '#ececec', 'activationBorderColor': '#4f5d75', 'fontFamily': 'Geist, system-ui, sans-serif'}}}%%
+sequenceDiagram
+	autonumber
+	participant Browser as User Browser
+	participant Gateway as API Gateway
+	participant AuthOwner as Session Owner (Storefront or Backoffice)
+	participant Entra as Microsoft Entra ID
+	participant API as Capability API
+
+	Browser ->> Gateway: Initiate sign-in
+	Gateway ->> AuthOwner: Route to surface auth handler
+	AuthOwner ->> Entra: OAuth2 / OIDC authorization request
+	Entra -->> AuthOwner: Authorization code & identity claims
+	AuthOwner -->> Browser: Issue origin-scoped session cookie
+	Browser ->> Gateway: Request protected route or API action
+	Gateway ->> AuthOwner: Validate session & supply Bearer token
+	Gateway ->> API: Forward request with Bearer token
+	API -->> Browser: Authorize roles/scopes & return response

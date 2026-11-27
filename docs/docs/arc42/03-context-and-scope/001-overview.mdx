@@ -1,62 +1,35 @@
 ---
 title: Context and Scope Overview
-summary: Whole-platform boundary covered by the BookWorm arc42 architecture.
+summary: High-level system boundary for the BookWorm online bookstore.
 owners:
-  - contributor-team
+  - architecture-enabling-team
 badges:
   - content: Architecture
     backgroundColor: blue
     textColor: blue
 ---
 
-The system under consideration is the complete BookWorm online bookstore platform—its edge gateway, three web applications, ten backend services across six bounded contexts, and internal privacy sidecars. This overview defines what BookWorm owns inside its boundary versus what external cloud and SaaS providers supply outside it.
+## System Boundary Summary
 
-## Whole-platform scope boundary
+BookWorm is the online bookstore system responsible for helping customers discover books and complete and track purchases. It owns the related catalog, basket, order, review, and administrative workflows. Customers and store staff interact with these capabilities through the platform, while external service providers supply supporting capabilities across the boundary. Payment authorization, physical fulfillment, identity assurance, and message transport are therefore separate responsibilities rather than parts of the bookstore platform itself.
 
-The diagram below distinguishes the capabilities owned inside BookWorm from the external providers connected across its boundary.
+## System Context Diagram (Level 1)
 
-<MermaidFileLoader file="mermaids/001-overview-diagram-1.mmd" />
+This System Context diagram illustrates the actors (`Customer`, `Back-office user`) interacting with the BookWorm system and the external cloud and infrastructure providers across its boundary.
 
-## In-scope capabilities
+<LikeC4View viewId="bookwormContext" project="deployment" />
 
-BookWorm builds, versions, and operates the following areas inside its repository and **Aspire** 17 orchestration:
+## In Scope
 
-| Area                          | Bounded context / layer | Key components                                                       | Owned responsibilities and entities                                                                                                                              |
-| :---------------------------- | :---------------------- | :------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Edge and microfrontends**   | Edge                    | **API Gateway** (YARP), **Storefront**, **Commerce**, **Backoffice** | Public ingress routing, customer browsing/AI chat, authenticated checkout/account views, and staff administration                                                |
-| **Product catalog**           | **Catalog**             | **Catalog API**, **Catalog Ingestion**                               | Authoritative `Book`, `Author`, `Category`, and `Publisher` data, pricing, blob cover assets, derived rating summary, and Qdrant hybrid vector search            |
-| **Shopping basket**           | **Shopping**            | **Basket API**                                                       | Customer-scoped mutable pre-order `Basket` stored in Redis                                                                                                       |
-| **Order management**          | **Ordering**            | **Ordering API**, **Finance**                                        | Accepted `Order` and `Buyer` records, purchase-time snapshots, lifecycle statuses (`New`, `Cancelled`, `Completed`), and Durable Task post-checkout coordination |
-| **Customer reviews**          | **Reviews**             | **Rating API**                                                       | Individual customer `Feedback` records in Azure Cosmos DB and AI-generated book review summaries                                                                 |
-| **Conversational assistance** | **Conversational**      | **Chat API**, **MCP Tools**                                          | Multi-agent book discovery and store-policy assistance over AG-UI, A2A gRPC, and Model Context Protocol (MCP)                                                    |
-| **Internal privacy sidecars** | Privacy                 | **Presidio** (`presidio-analyzer`, `presidio-anonymizer`)            | Internal PII detection and anonymization on AI prompt/response paths                                                                                             |
-| **Enabling platform**         | **Platform**            | **Notification**, **Scheduler**, Quartz Dashboard                    | Stateless Kafka transactional email rendering/submission and Quartz.NET scheduled jobs                                                                           |
+- Book discovery, search, product details, and AI-assisted recommendations.
+- Customer baskets, checkout requests, order history, and order status.
+- Customer reviews and store review-management workflows.
+- Catalog and customer-administration workflows for store staff.
+- Transactional order outcomes and business notifications.
 
-## Outside the boundary
+## Out of Scope
 
-### Implemented external neighbors
-
-These external systems are actively wired in `src/Aspire/BookWorm.AppHost/AppHost.cs` and `.github/workflows/apphost-cd.yml`, while their internal operations sit outside BookWorm's ownership:
-
-- **Microsoft Entra ID:** Customer and staff authentication, RBAC (`admin`, `business_user`, `customer`), API scopes, and Entra Agent Identities (`blueprintAppId`, `chatAgentId`, `ratingAgentId`).
-- **Microsoft Foundry:** Hosted AI models (`ModelRouter` for chat, `MicrosoftDecision1` for routing/tool selection, Cohere `EmbedV40` for embeddings).
-- **SendGrid (cloud) / Mailpit (local):** Outbound SMTP email transport (`port 587`) consumed exclusively by **Notification**.
-- **Confluent Cloud (cloud Kafka) and Qdrant Cloud (cloud vector DB):** Managed external backing services used in Azure publish/deploy mode (replaced locally by Aspire-managed Docker containers).
-
-### Conceptual out-of-scope boundaries (not implemented)
-
-- **Payment settlement provider:** Not implemented in the repository. **Finance** coordinates post-checkout basket cleanup and email notifications via Azure Durable Task Scheduler—it does not authorize or settle financial payments.
-- **Physical shipping fulfillment provider:** Not implemented in the repository. **Ordering API** manages logical order statuses (`New`, `Cancelled`, `Completed`) without external warehouse or carrier integration.
-
-## Boundary rules and assumptions
-
-- **Subject system:** All arc42 chapters describe the complete BookWorm platform unless explicitly scoped to a single service.
-- **Strict domain separation:** Business exchanges ([[doc|arc42/03-context-and-scope/002-business-context]]) stay independent of transport protocols ([[doc|arc42/03-context-and-scope/003-technical-context]]) so product stakeholders can validate scope without parsing infrastructure details.
-- **Delegated service contracts:** Exact HTTP schemas, gRPC `.proto` definitions, and Kafka message payloads live in the service and contract references rather than being duplicated at the platform boundary.
-
-## Related architecture documentation
-
-- [[doc|arc42/03-context-and-scope/002-business-context]] — Black-box actors and domain-level information exchanges.
-- [[doc|arc42/03-context-and-scope/003-technical-context]] — Verified protocols, channels, and external technical interfaces.
-- [[doc|arc42/00-c4-overview]] — Full C4 Context and Container diagrams.
-- [[doc|arc42/05-building-block-view]] — Whitebox view of internal containers and components.
+- Payment authorization and settlement are owned by external payment providers.
+- Warehouse operations and physical shipment delivery are owned by fulfillment and shipping providers.
+- User identity verification and account authentication are owned by the external identity provider.
+- Final email delivery is owned by the external email transport provider.

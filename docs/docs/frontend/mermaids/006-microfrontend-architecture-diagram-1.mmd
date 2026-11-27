@@ -1,32 +1,22 @@
-%%{init: {'theme': 'base', 'themeVariables': {'background': '#f5f5f5', 'primaryColor': '#ffffff', 'primaryTextColor': '#2d3142', 'primaryBorderColor': '#2d3142', 'secondaryColor': '#ececec', 'secondaryBorderColor': '#4f5d75', 'tertiaryColor': '#fdf2ee', 'tertiaryBorderColor': '#bf4520', 'lineColor': '#4f5d75', 'textColor': '#2d3142', 'clusterBkg': '#f8f9fa', 'clusterBorder': '#bfc0c0', 'fontFamily': 'Geist, system-ui, sans-serif'}}}%%
-flowchart LR
-    browser["Customer Browser\n(Single HTTPS Origin)"]
-    config["microfrontends.json\n(Shared Route Manifest)"]
-    gateway["API Gateway\n(YARP Reverse Proxy)"]
-    backends["Backend APIs\n(/catalog, /basket, /ordering, /rating, /chatting)"]
-    entra["Microsoft Entra ID\n(/entra/*)"]
-    backoffice["Backoffice\n(Next.js 16, /backoffice/*)"]
-    commerce["Commerce\n(Next.js 16 MFE, /basket, /checkout/*, /account/*)"]
-    storefront["Storefront\n(Next.js 16 MFE, Catch-All Fallback)"]
+architecture-beta
+	group edge(internet)[Edge and Gateway]
+	service browser(internet)[Customer and Staff Browsers] in edge
+	service gateway(server)[API Gateway] in edge
+	service manifest(disk)[Shared Route Manifest] in edge
 
-    browser -->|"HTTPS: Request"| gateway
-    config -.->|"Build & Startup: Load routes"| gateway
-    config -.->|"Next.js Config: Asset & link rules"| commerce
-    config -.->|"Next.js Config: Fallback rules"| storefront
-    gateway -->|"HTTP: Orders 0..4"| backends
-    gateway -->|"HTTPS: Order 5"| entra
-    gateway -->|"HTTP: X-Mfe-Zone=backoffice"| backoffice
-    gateway -->|"HTTP: X-Mfe-Zone=commerce"| commerce
-    gateway -->|"HTTP: X-Mfe-Zone=storefront"| storefront
+	group zones(internet)[Frontend Surfaces]
+	service storefront(server)[Storefront] in zones
+	service commerce(server)[Commerce] in zones
+	service backoffice(server)[Backoffice] in zones
 
-	classDef focal fill:#fdf2ee,stroke:#bf4520,stroke-width:2px,color:#2d3142
-	classDef service fill:#ffffff,stroke:#2d3142,stroke-width:1.2px,color:#2d3142
-	classDef store fill:#ececec,stroke:#4f5d75,stroke-width:1.2px,color:#2d3142
-	classDef input fill:#eef1f6,stroke:#5a6580,stroke-width:1.2px,color:#2d3142
-	classDef ext fill:#f5f5f5,stroke:#949eb2,stroke-width:1px,stroke-dasharray:4 3,color:#4f5d75
-	class gateway focal
-	class backends service
-	class browser,config,backoffice,commerce,storefront input
-	class entra ext
-	linkStyle 0 stroke:#bf4520,stroke-width:2px
-	linkStyle 1 stroke:#bf4520,stroke-width:2px
+	group backends(cloud)[Backend and Identity]
+	service apis(server)[Capability APIs] in backends
+	service entra(cloud)[Microsoft Entra ID] in backends
+
+	browser:R --> L: gateway
+	manifest:T --> B: gateway
+	gateway:R --> L: storefront
+	gateway:R --> L: commerce
+	gateway:R --> L: backoffice
+	gateway:B --> T: apis
+	gateway:B --> T: entra

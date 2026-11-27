@@ -1,74 +1,59 @@
 ---
-title: Microfrontend Architecture
-summary: Why BookWorm splits the customer website into two focused apps behind one gateway, how to add a new page, and which app owns which routes.
+title: Multi-Zone Composition
+summary: Why BookWorm splits customer discovery and authenticated checkout into two zones behind one gateway origin, and how cross-zone navigation works.
 owners:
-  - contributor-team
+  - catalog-experience-team
 badges:
-  - content: Explanation
+  - content: Architecture
     backgroundColor: purple
     textColor: purple
-  - content: How-to Guide
-    backgroundColor: green
-    textColor: green
   - content: Reference
     backgroundColor: blue
     textColor: blue
 ---
 
-BookWorm divides its customer-facing website into two independent Next.js 16 microfrontends (MFEs)—**Storefront** (`@bookworm/storefront`) for public discovery and **Commerce** (`@bookworm/commerce`) for authenticated shopping—served behind a single YARP API Gateway origin. This split isolates public caching and SEO optimization from private, always-fresh checkout and order workflows while preserving one seamless browser experience.
+## Purpose & Scope
 
-## Context and motivation
+This reference explains BookWorm's multi-zone microfrontend architecture for customer-facing experiences: **Storefront** (public discovery) and **Commerce** (authenticated shopping and account management). It defines why these two zones are separated behind a single **API Gateway** origin and how they coordinate routing, assets, and authentication.
 
-An online bookstore serves two fundamentally different workloads under one domain:
+## Cross-Zone Sign-In Handoff
 
-- **Public discovery (Storefront):** Home page, catalog browsing, book details, customer reviews, static policy pages, authentication entrypoints, and the AI book assistant. Most visitors see identical content, so aggressive component caching (`cacheComponents: true`), static optimization, and search-engine indexing (`@workspace/seo`) directly improve conversion and latency.
-- **Authenticated transactions (Commerce):** Shopping basket (`/basket`), checkout confirmation (`/checkout/confirmation`), account profile (`/account`), and order history (`/account/orders`). Every response is user-specific, must never be served from a shared cache (`cacheComponents: false`), and must stay excluded from search indexing.
-
-Keeping both workloads in one Next.js deployment couples caching settings, release cadences, and failure blast radii. Splitting them into two Next.js zones lets each application tune its rendering pipeline and deploy independently without forcing shoppers onto separate subdomains.
-
-## How it works
-
-### Single origin and shared routing manifest
-
-Customers interact with one HTTPS origin terminated by the YARP API Gateway (`gateway`). Both Aspire (`FrontendExtensions.cs` + `ApiGatewayProxyBuilder.cs`) and the two Next.js apps (`@vercel/microfrontends` `^2.4.2`) read the same routing manifest: `src/Clients/apps/storefront/microfrontends.json`.
-
-This diagram shows how the API Gateway routes browser requests across backend APIs, Microsoft Entra ID, Backoffice, Commerce, and Storefront from one shared manifest.
-
-<MermaidFileLoader file="mermaids/006-microfrontend-architecture-diagram-1.mmd" />
-
-- **Deterministic YARP precedence:** Backend API prefixes (`/chatting`, `/rating`, `/ordering`, `/basket`, `/catalog`) receive orders `0` through `4`, followed by `/entra` at order `5`, explicit frontend routes, and Storefront's catch-all `/{**remainder}` at `int.MaxValue`.
-- **Exact-match collision handling:** Because Commerce serves `/basket` while **Basket API** owns `/basket/{**remainder}`, `ProxyExtensions.cs` assigns exact-match colliding frontend routes `order = -1`. A browser navigation to `/basket` reaches Commerce, while `/basket/api/v1/baskets` routes to **Basket API**.
-- **Isolated static assets:** Commerce sets `assetPrefix: "commerce-assets"` and registers `/commerce-assets/:path*` so its JavaScript, CSS, and image chunks never collide with Storefront's `/_next/static/*` assets.
-- **Zone observability:** YARP attaches `X-Mfe-Zone` (`storefront`, `commerce`, or `backoffice`) to every frontend response for rapid routing verification and diagnostics.
-
-### Shared chrome and single sign-in across zones
-
-Even though Storefront and Commerce run as separate Next.js processes, shoppers experience one continuous interface:
-
-- **Shared shell (`@workspace/storefront-shell`):** Both apps render the identical header, footer, mobile bottom navigation, cross-zone `MfeLink` transitions, and Jotai-backed basket badge.
-- **Single authentication owner:** Storefront owns `/api/auth/[...all]` (Better Auth + Microsoft Entra ID). Commerce runs with `.WithoutEntraId()` in `FrontendExtensions.cs` and reads the same origin-scoped Better Auth session cookie.
-
-This sequence shows how an unauthenticated shopper navigating from Storefront to Commerce is redirected to Storefront's login flow and returned to their destination.
+The visual below illustrates how an unauthenticated shopper crossing from **Storefront** into a protected **Commerce** route is redirected to **Storefront**'s identity handoff and returned seamlessly to their destination.
 
 <MermaidFileLoader file="mermaids/006-microfrontend-architecture-diagram-2.mmd" />
 
-## Design trade-offs
+## Architectural Principles & Rules
 
-| Decision                                             | Benefits                                                                                                                                                | Costs and limits                                                                                                                     |
-| :--------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------ | :----------------------------------------------------------------------------------------------------------------------------------- |
-| Multi-zone split behind YARP + `microfrontends.json` | Independent caching (`cacheComponents: true` vs. `false`), independent container builds/scaling, single origin without CORS or cookie-domain complexity | Two customer Next.js containers to deploy and monitor; top-level Commerce routes must be registered in `microfrontends.json`         |
-| Shared shell package (`@workspace/storefront-shell`) | Visual and behavioral consistency across header, footer, and basket badge without runtime bundle federation                                             | Shell changes rebuild both Storefront and Commerce (mitigated by Turborepo caching)                                                  |
-| Storefront as sole customer auth owner               | One Better Auth callback and Entra ID registration for all customer zones                                                                               | Commerce depends on Storefront availability for initial sign-in (`/login`) and `/api/auth/[...all]`                                  |
-| Full-document transitions across zones               | Clean isolation between app runtimes and React trees with zero shared global state bugs                                                                 | Slightly heavier navigation cost across the Storefront-to-Commerce boundary than intra-app client routing (mitigated by prefetching) |
+- **Workload isolation by caching profile:** Public catalog discovery (**Storefront**) and private transactional workflows (**Commerce**) run as separate application deployments so aggressive component caching and SEO optimization never risk leaking user-specific basket or order state.
+- **Single-origin presentation:** Both customer zones share one HTTPS origin via the **API Gateway**, eliminating cross-domain cookie complexity, extra identity redirect URIs, and CORS overhead.
+- **Shared routing manifest:** Both the reverse proxy and the microfrontend framework read a single authoritative route manifest so path ownership and static asset prefixes stay synchronized.
+- **Document-level zone isolation:** Transitions across the **Storefront**–**Commerce** boundary use full-document navigation with prefetching rather than runtime bundle federation, preventing React tree or global state coupling across independent deployments.
 
-## Alternatives considered
+<Admonition type="info" title="Single Customer Authentication Owner">
+	**Storefront** owns the customer authentication callback and identity provider integration.
+	**Commerce** does not host its own login handler; it validates the shared origin-scoped session
+	cookie and redirects unauthenticated visitors back to **Storefront**'s sign-in flow.
+</Admonition>
 
-- **Single customer Next.js monolith:** Simpler to deploy initially, but forces public catalog caching, AI chat runtime dependencies (`@copilotkit/*`, `@ag-ui/client`), and authenticated checkout routes into one build and runtime profile.
-- **Separate subdomains (`shop.*` and `checkout.*`):** Eliminates gateway path routing, but introduces cross-subdomain cookie scoping, extra Entra ID redirect URIs, and fragmented SEO/origin boundaries.
-- **Client-side Module Federation:** Enables SPA transitions without document reloads, but adds webpack/bundler runtime coupling, version-skew risks across React 19 / Next.js 16 App Router Server Components, and harder SSR hydration.
+## Patterns & Boundaries
 
-## Related documentation
+| Concern / Surface         | Architectural Approach                                  | Responsibility Boundary                                                                   | Key Trade-off                                                                             |
+| :------------------------ | :------------------------------------------------------ | :---------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------- |
+| **Zone Split**            | Two independent web runtimes behind one **API Gateway** | **Storefront** owns discovery and AI chat; **Commerce** owns basket, checkout, and orders | Two customer containers to operate, repaid by independent scaling and cache isolation     |
+| **Asset Isolation**       | Dedicated asset prefix per non-root zone                | **Commerce** serves static bundles under an isolated asset path                           | Prevents static asset collisions, but requires gateway route registration for zone assets |
+| **Shared Chrome**         | Build-time shared customer shell package                | Shared shell owns header, footer, mobile nav, and basket indicator                        | Visual consistency without runtime federation; shell updates rebuild both customer apps   |
+| **Cross-Zone Navigation** | Prefetched cross-zone link abstraction                  | Shared shell provides zone-aware links; browser performs clean runtime handoff            | Slightly heavier transition across zones than intra-app routing, mitigated by prefetching |
 
-- [[doc|frontend/009-add-customer-page]] — Step-by-step procedure for adding a Storefront or Commerce route.
-- [[doc|frontend/002-applications-and-routing]] — Complete zone ownership table, ports, and route maps.
-- [[doc|frontend/007-architecture-and-state-design]] — How `@workspace/storefront-shell` and Turborepo tiers support both customer zones.
+<Accordion title="Alternatives Considered & Rejected">
+
+- **Single customer monolith:** Couples public catalog caching, heavy conversational AI dependencies, and private checkout routes into one build and failure domain.
+- **Separate subdomains:** Simplifies path routing, but introduces cross-subdomain cookie scoping, fragmented SEO authority, and multiple identity callback registrations.
+- **Client-side Module Federation:** Avoids document reloads across zones, but introduces bundler runtime coupling, version-skew risks across Server Components, and complex hydration.
+
+</Accordion>
+
+## Quality & Operational Impact
+
+- **Deployment Agility:** Teams can release **Storefront** catalog or AI assistant updates without redeploying or risking **Commerce** checkout stability.
+- **Security & Privacy:** Separating caching profiles at the application boundary provides defense-in-depth against accidental caching of authenticated customer data.
+- **Reliability:** A fault or memory spike in conversational AI streaming remains isolated to **Storefront** and cannot degrade **Commerce** checkout.

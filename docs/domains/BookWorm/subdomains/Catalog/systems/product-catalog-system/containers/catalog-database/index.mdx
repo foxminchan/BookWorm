@@ -2,9 +2,9 @@
 id: catalog-database
 name: Catalog Database
 version: 1.0.0
-summary: PostgreSQL system of record for catalog data and vector-indexing work.
+summary: Authoritative PostgreSQL system of record owned by the Catalog bounded context for books, authors, categories, publishers, and vector-indexing coordination.
 owners:
-  - contributor-team
+  - catalog-experience-team
 container_type: database
 badges:
   - content: Database
@@ -13,7 +13,7 @@ badges:
 technology: azure-postgresql-flexible-server
 authoritative: true
 access_mode: readWrite
-purpose: System of record for Catalog data and durable coordination of asynchronous vector indexing.
+purpose: System of record for Catalog domain entities and durable coordination of asynchronous vector indexing.
 classification: internal
 retention: indefinite
 residency: eastasia
@@ -21,89 +21,82 @@ styles:
   icon: /icons/database/postgresql.svg
 ---
 
-Catalog database (`catalogdb`) is the authoritative PostgreSQL system of record for the Catalog bounded context. [[service|catalog-api]] owns all domain writes and queries, while [[service|catalog-ingestion]] reads the trigger-maintained `pending_vector_updates` queue to synchronize search embeddings in [[container|catalog-vector]].
+## Purpose & Ownership Boundary
 
-## Overview
+Catalog Database (`catalogdb`) is the authoritative relational system of record for the Catalog bounded context, owned by [[service|catalog-api]]. PostgreSQL was chosen for strict relational integrity across product taxonomy, transactional outbox messaging, and trigger-driven change capture for asynchronous search indexing by [[service|catalog-ingestion]].
 
-| Property               | Value                                                                                                                                                                                                                     |
-| :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Owner**              | Catalog bounded context — [[service\|catalog-api]] (`catalog`, primary) and [[service\|catalog-ingestion]] (`catalog-ingestion`, queue reader)                                                                            |
-| **Aspire resource ID** | `catalogdb` (on shared `postgres` resource)                                                                                                                                                                               |
-| **Source**             | `src/Services/Catalog/BookWorm.Catalog/Extensions/Extensions.cs`, `src/Services/Catalog/BookWorm.Catalog/Infrastructure/EntityConfigurations/`, `src/Services/Catalog/BookWorm.Catalog.Ingestion/VectorBatchProcessor.cs` |
-| **Engine**             | PostgreSQL 18 (Azure Database for PostgreSQL Flexible Server in cloud)                                                                                                                                                    |
-| **ORM & conventions**  | EF Core 11 with `EFCore.NamingConventions` (`snake_case` identifiers) and PostgreSQL `uuidv7()` primary keys                                                                                                              |
-| **Authoritative**      | Yes (`readWrite`)                                                                                                                                                                                                         |
-| **Classification**     | `internal`                                                                                                                                                                                                                |
-| **Retention**          | Indefinite                                                                                                                                                                                                                |
+## Data Store Profile
 
-## Architecture and service boundaries
+| Property                            | Value                                                                                                |
+| :---------------------------------- | :--------------------------------------------------------------------------------------------------- |
+| **Bounded Context / Owner**         | Catalog — [[team\|catalog-experience-team]]                                                          |
+| **Engine / Technology**             | PostgreSQL 18 (Azure Database for PostgreSQL Flexible Server)                                        |
+| **Store Type**                      | Database                                                                                             |
+| **Primary Writer(s)**               | [[service\|catalog-api]] (domain writes), [[service\|catalog-ingestion]] (queue acknowledgment only) |
+| **Primary Reader(s)**               | [[service\|catalog-api]], [[service\|catalog-ingestion]]                                             |
+| **Authoritative / Source of Truth** | Yes                                                                                                  |
+| **Data Classification**             | Internal                                                                                             |
+| **Retention / TTL Policy**          | Indefinite (soft-delete flag on books; transactional outbox pruned after dispatch)                   |
 
-Catalog API handles all transactional writes to product tables and persists outbound integration messages atomically via the Wolverine PostgreSQL outbox in the `wolverine` schema. Database triggers enqueue changed books into `pending_vector_updates`, which Catalog Ingestion drains asynchronously in batches.
+## Logical Data Layout & Key Patterns
 
-The diagram shows how Catalog API and Catalog Ingestion interact with `catalogdb` while keeping binary assets and search vectors in dedicated stores.
+All identifiers use `snake_case`, primary keys default to time-ordered `uuidv7()`, and audit timestamps (`created_at`, `last_modified_at`) are database-generated.
 
-<MermaidFileLoader file="mermaids/catalog-database-diagram-1.mmd" />
+| Table / Schema           | Owned Entity                         | Partition / Primary Key  | Purpose & Concurrency                                                                                                                                                                                                   |
+| :----------------------- | :----------------------------------- | :----------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `books`                  | [[entity\|book]]                     | `id` (`uuidv7()`)        | Canonical book catalog, pricing, availability status, soft-delete flag (`is_deleted`), blob URN (`image`), and derived rating projection (`average_rating`, `total_reviews`); optimistic concurrency via `row_version`. |
+| `authors`                | [[entity\|author]]                   | `id` (`uuidv7()`)        | Author directory; deletion restricted while referenced in `book_authors`.                                                                                                                                               |
+| `categories`             | [[entity\|category]]                 | `id` (`uuidv7()`)        | Product category taxonomy with unique `name`; deleting a category sets `books.category_id` to `NULL`.                                                                                                                   |
+| `publishers`             | [[entity\|publisher]]                | `id` (`uuidv7()`)        | Publisher directory with unique `name`; deleting a publisher sets `books.publisher_id` to `NULL`.                                                                                                                       |
+| `book_authors`           | [[entity\|book]], [[entity\|author]] | (`book_id`, `author_id`) | Many-to-many join table; deleting a book cascades to its author links.                                                                                                                                                  |
+| `pending_vector_updates` | —                                    | `book_id` (`uuid`)       | Coalescing change-capture queue with `revision` UUID and `updated_at`; repeated edits update the row in place.                                                                                                          |
+| `wolverine` schema       | —                                    | Envelope ID              | Transactional outbox and inbox tables sharing the domain write transaction; partitions Kafka events by `BookId` and `FeedbackId`.                                                                                       |
 
-## Tables and integrity rules
+## Consistency, Isolation & Security Guardrails
 
-All relational identifiers follow `snake_case`. Primary keys default to PostgreSQL 18 `uuidv7()`, and audit timestamps (`created_at`, `last_modified_at`) are database-generated.
+- **Transactional outbox:** Domain writes and outbound integration events commit in a single PostgreSQL transaction via the `wolverine` outbox schema.
+- **Trigger-driven search sync:** Five database triggers (`books`, `book_authors`, `authors`, `categories`, `publishers`) enqueue affected `book_id` rows into `pending_vector_updates`. [[service|catalog-ingestion]] acquires PostgreSQL advisory lock `740031001`, processes up to `200` rows per batch, and deletes only rows whose `book_id` and `revision` still match.
+- **Soft-delete & URN invariants:** Books use `is_deleted` soft deletion rather than physical row removal. The `books.image` column stores permanent blob URNs pointing to [[container|catalog-blob]], never raw bytes or expiring SAS URLs.
+- **Derived rating projections:** `average_rating` and `total_reviews` on `books` are eventually consistent projections updated from [[event|FeedbackCreatedIntegrationEvent]] and [[event|FeedbackDeletedIntegrationEvent]]; [[container|rating-database]] remains authoritative for individual reviews.
 
-| Table / schema           | Purpose                                                                                                                                                                                                                                    | Constraints and integrity rules                                                                                                  |
-| :----------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------- |
-| `books`                  | Authoritative book records: title (`name`), description, pricing, `status` (`smallint`), soft-delete flag (`is_deleted`), `image` (Blob URN pointing to `catalog-blob`), and derived rating projection (`average_rating`, `total_reviews`) | `books.image` stores a URN, never raw bytes or SAS URLs; rating projection is updated asynchronously from Reviews Kafka events   |
-| `authors`                | Author records linked to books                                                                                                                                                                                                             | Deletion is restricted while any row exists in `book_authors`                                                                    |
-| `categories`             | Product category taxonomy                                                                                                                                                                                                                  | Unique constraint on category `name`; deleting a category sets `books.category_id` to `NULL` (preserves books)                   |
-| `publishers`             | Publisher records                                                                                                                                                                                                                          | Unique constraint on publisher `name`; deleting a publisher sets `books.publisher_id` to `NULL` (preserves books)                |
-| `book_authors`           | Many-to-many join between `books` and `authors`                                                                                                                                                                                            | Deleting a book cascades to `book_authors`                                                                                       |
-| `pending_vector_updates` | Coalescing queue keyed by `book_id` with a `revision` UUID and `updated_at` timestamp                                                                                                                                                      | Repeated edits before ingestion update the existing row's `revision` and timestamp in place rather than inserting duplicate rows |
-| `wolverine` schema       | Wolverine transactional outbox and inbox message envelopes                                                                                                                                                                                 | Shares transactional boundary with EF Core via `UsePostgresOutbox`; partitions Kafka events by `BookId` and `FeedbackId`         |
+:::warning
+**Database-per-Service Isolation:** Only [[service|catalog-api]] may mutate catalog domain tables, and [[service|catalog-ingestion]] is restricted to reading catalog state and acknowledging `pending_vector_updates`. External services (such as [[service|basket-api]], [[service|order-api]], or [[service|rating-api]]) must never connect to `catalogdb` directly—all cross-context reads flow through [[service|catalog-api]] HTTP/gRPC contracts or Kafka events.
+:::
 
-## Triggers and vector-indexing coordination
+## Operational & Resilience Notes
 
-Five PostgreSQL triggers automatically enqueue affected books into `pending_vector_updates` whenever catalog data changes:
+<AccordionGroup>
+	<Accordion title="Hosting, backup retention, and environment parity">
+		- **Local vs. Cloud:** Local development runs a single persistent PostgreSQL container with
+		automatic dev seeding; cloud environments run Azure Database for PostgreSQL Flexible Server on
+		the shared `postgres` instance alongside `orderingdb` and `schedulerdb`. - **Scaling & HA:**
+		Development uses `Standard_B1ms` (single zone, 7-day backup, 32 GB); Staging uses
+		`Standard_D2ds_v5` (zone-redundant HA, PgBouncer, 14-day backup, 128 GB); Production uses
+		`Standard_D4ds_v5` (zone-redundant HA, PgBouncer, 35-day backup, 256 GB). - **Upgrades &
+		monitoring:** Apply schema changes exclusively through versioned migrations (never by replaying
+		static SQL snapshots), and monitor `pending_vector_updates` row count and oldest `updated_at` to
+		detect ingestion lag.
+	</Accordion>
+</AccordionGroup>
 
-- `books_vector_update` — Enqueues inserts, updates, or soft-deletes on `books`.
-- `book_authors_vector_update` — Enqueues books whose author links change.
-- `authors_vector_update` — Enqueues all books linked to a renamed author.
-- `categories_vector_update` — Enqueues all books linked to a modified category.
-- `publishers_vector_update` — Enqueues all books linked to a modified publisher.
-
-During batch processing, `VectorBatchProcessor` (`BookWorm.Catalog.Ingestion`):
-
-1. Acquires PostgreSQL session advisory lock `740031001` (`pg_try_advisory_lock`) so only one ingestion worker runs a batch at a time.
-2. Reads up to `200` oldest rows ordered by `updated_at, book_id`.
-3. Acknowledges processed rows using `DELETE FROM pending_vector_updates ... WHERE p.book_id = u.book_id AND p.revision = u.revision`, ensuring concurrent mid-batch edits survive for the next pass.
-
-## Hosting and environment provisioning
-
-AppHost provisions `catalogdb` on the shared `postgres` server (`src/Aspire/BookWorm.AppHost/Extensions/Infrastructure/AzureExtensions.Postgres.cs`).
-
-| Environment           | Compute & hosting                                                                                                                 | High availability & pooling          | Backup retention    | Storage      |
-| :-------------------- | :-------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------- | :------------------ | :----------- |
-| **Local development** | Local PostgreSQL container (`ContainerLifetime.Persistent`), persistent data volume, pgAdmin, Postgres MCP, automatic dev seeding | Single container                     | None (local volume) | Local volume |
-| **Azure Development** | Azure Database for PostgreSQL Flexible Server (`Standard_B1ms` Burstable)                                                         | Single zone; PgBouncer disabled      | 7 days              | 32 GB        |
-| **Azure Staging**     | Azure Database for PostgreSQL Flexible Server (`Standard_D2ds_v5` General Purpose)                                                | Zone-redundant HA; PgBouncer enabled | 14 days             | 128 GB       |
-| **Azure Production**  | Azure Database for PostgreSQL Flexible Server (`Standard_D4ds_v5` General Purpose)                                                | Zone-redundant HA; PgBouncer enabled | 35 days             | 256 GB       |
-
-## Operational rules
-
-- **Run EF Core migrations for upgrades:** Upgrade existing environments using EF Core migrations (`src/Services/Catalog/BookWorm.Catalog/Infrastructure/Migrations/`), never by replaying a static SQL state snapshot.
-- **Monitor ingestion lag:** Track row count and oldest `updated_at` in `pending_vector_updates` to detect stalled `catalog-ingestion` runs or Scheduler delays.
-- **Avoid direct row edits:** Perform catalog changes through Catalog API so cache eviction events (`book:{id}`), blob URN checks, and vector triggers remain consistent.
-- **Eventual rating summary consistency:** `average_rating` and `total_reviews` on `books` are derived projections updated asynchronously from `FeedbackCreatedIntegrationEvent` and `FeedbackDeletedIntegrationEvent`. [[container|rating-database]] remains the sole authority for individual feedback records.
-
-## Related documentation
-
-- [[service|catalog-api]] — Owning service endpoints, gRPC contracts, and transaction pipeline.
-- [[service|catalog-ingestion]] — Kafka-triggered Azure Functions worker draining `pending_vector_updates`.
-- [[container|catalog-vector]] — Derived Qdrant hybrid search index fed from this database.
-- [[container|catalog-blob]] — Binary media store referenced by `books.image` URNs.
-- [[container|catalog-cache]] — Non-authoritative read-through cache in front of this database.
+## Architecture Visualizations & Schema
 
 <NodeGraph />
 
+<MermaidFileLoader file="mermaids/catalog-database-diagram-1.mmd" />
+
 <AccordionGroup>
-	<Accordion title="Catalog Database schema">
-		<Schema file="schema.sql" lang="sql" title="schema.sql" />
+	<Accordion title="Catalog Database DDL">
+		<Schema file="schema.sql" lang="sql" title="Catalog Database DDL" />
 	</Accordion>
 </AccordionGroup>
+
+## Related Documentation
+
+- [[service|catalog-api]] — Owning service endpoints, gRPC contracts, and transactional outbox.
+- [[service|catalog-ingestion]] — Worker draining `pending_vector_updates` into [[container|catalog-vector]].
+- [[container|catalog-vector]] — Derived Qdrant hybrid search index fed from this database.
+- [[container|catalog-blob]] — Binary cover media store referenced by `books.image` URNs.
+- [[adr|adr-001-postgresql-system-of-record]] — Decision establishing PostgreSQL as Catalog's system of record.
+- [[adr|adr-003-database-queue-for-vector-indexing]] — Decision for trigger-based vector update coalescing.
+- [[doc|operational/005-backup-restore-and-dr]] — Platform backup, restore, and disaster recovery runbook.

@@ -2,67 +2,41 @@
 id: checkout-interaction
 name: Checkout Interaction
 version: 1.0.0
-summary: |
-  Sequence diagram of checkout acceptance and the independent basket cleanup,
-  order-email, and Finance timeout outcomes.
+summary: End-to-end checkout acceptance and independent basket cleanup, order email, and Finance timeout outcomes across Ordering, Shopping, Catalog, and Platform.
 owners:
-  - contributor-team
+  - commerce-fulfillment-team
+badges:
+  - content: Cross-Domain Interaction
+    backgroundColor: blue
+    textColor: blue
 ---
 
-## 1. Context & Problem
+## Purpose & Scope
 
-When a customer completes checkout in the Storefront, several follow-up actions must happen: saving the purchase snapshot with current prices, clearing the customer's shopping basket, sending a confirmation email, and handling timeouts if downstream work stalls. Performing all of these steps synchronously before confirming the order would make checkout slow and fragile—meaning a temporary email delay could block a customer from buying.
+This interaction view explains how BookWorm separates synchronous checkout acceptance in [[service|order-api]] from asynchronous basket deletion, customer email delivery, and bounded timeout coordination in [[service|order-orchestration]]. Solution architects, platform engineers, and incident responders should use this view to understand failure isolation and recovery boundaries across [[domain|shopping]], [[domain|ordering]], [[domain|catalog]], and [[domain|platform]].
 
-This interaction view clarifies how BookWorm separates immediate checkout acceptance from independent background coordination across Ordering, [[system|cart-system]], Finance, and Notification.
-
-## 2. Business Value
-
-- **Fast, resilient checkout experience**: Customers receive immediate confirmation as soon as their order snapshot is recorded, without waiting on email providers or basket cleanup.
-- **Clear operational ownership**: Solution architects, project managers, and support teams can see exactly which capability owns order status, basket state, background coordination, and customer emails.
-- **Safer incident recovery**: Making independent outcomes and timeout rules explicit helps operations teams avoid mistaking a background cleanup timeout for a cancelled customer order.
-
-## 3. How It Works
-
-1. **Immediate order acceptance**: The Storefront submits the customer's checkout request to Ordering. Ordering reads the persisted item quantities from the [[system|cart-system]] and current prices from Catalog, saves the new order with a snapshot of items and prices, and immediately confirms checkout to the customer.
-2. **Parallel background coordination**: While the customer receives confirmation, Ordering notifies Finance so background follow-up can begin. Finance starts a tracked coordination workflow and dispatches a shared order-placement instruction to both Basket and Notification, while setting a 30-minute timeout.
-3. **Independent basket cleanup**: Basket attempts to delete the submitted shopping basket. If deletion succeeds, Ordering simply logs that cleanup completed. If deletion fails, Finance records the failure and ends its coordination workflow, and Ordering can soft-delete the order record without changing its business order status.
-4. **Independent order email**: Notification checks whether a recipient email address is present. If missing, it skips sending. If present, it records the email before handing it off to the email provider and marks it sent once accepted. Provider acceptance confirms submission, not final inbox delivery.
-5. **Timeout and retry handling**: If the coordination workflow remains active when the 30-minute timeout fires, Finance increments its retry count and reissues the follow-up instruction (up to two reissues). Once the retry limit is reached, Finance cancels its coordination workflow and may request a cancellation email—without cancelling the customer's order itself.
-
-## 4. Trade-offs & Lessons Learned
-
-- **Independent branches over distributed locks**: Running basket cleanup and email notification independently keeps checkout fast and prevents one downstream failure from rolling back another—for example, a basket cleanup failure does not withhold an already-submitted confirmation email.
-- **Repeated work on retries**: Because timeout retries reissue the same shared follow-up instruction, both Basket and Notification consumers must tolerate repeated delivery.
-- **Coordination failure is not order cancellation**: Finance coordinates cleanup and timeout tracking; it does not own Order status or payment settlement. A cancelled coordination workflow or soft-deleted order record does not represent a formal business order cancellation.
-- **Always consult recovery flow before replaying**: Because email submission does not guarantee inbox delivery and branches settle independently, operators should review [[flow|user-checkout]] before replaying failed steps.
-
-## 5. Technical Reference
+## Visual Reference
 
 <MermaidFileLoader file="mermaids/checkout-interaction.mmd" />
 
-### Interaction sequence and contracts
+_Checkout Acceptance and Independent Post-Checkout Coordination_
 
-1. **Checkout submission (`POST /ordering/api/v1/orders`)**:
-   - Storefront submits checkout to Ordering.
-   - Ordering calls `GetBasketGrpc` on Basket API (persisted quantities) and `GetBooksGrpc` on Catalog API (current book details and prices), saves the `New` Order and item-price snapshot, and returns `201 Created` with the Order ID.
-2. **Finance orchestration**:
-   - Ordering publishes [[event|UserCheckedOutIntegrationEvent]] consumed by Finance.
-   - Finance starts a persisted saga, publishes [[command|PlaceOrderCommand]] to Kafka for independent Basket and Notification consumers, and schedules a 30-minute timeout.
-3. **Basket cleanup consumer**:
-   - Basket consumes [[command|PlaceOrderCommand]] and deletes the submitted basket.
-   - On `true`, Basket emits [[event|BasketDeletedCompleteIntegrationEvent]]; Finance sends `DeleteBasketCompleteCommand` to Ordering (logged only).
-   - On `false`, Basket emits [[event|BasketDeletedFailedIntegrationEvent]]; Finance marks failure and finalizes the saga, sending `DeleteBasketFailedCommand` to Ordering (soft-deletes the Order if present, with no Order status change or cancellation event).
-4. **Notification consumer**:
-   - Notification consumes [[command|PlaceOrderCommand]]. If recipient email is absent, email work is skipped.
-   - If present, Notification persists an unsent outbox record in the Notification database before submitting a MIME message over SMTP, then marks the outbox record sent if submission and state save succeed (if either fails, the record may remain unsent and outcome is uncertain; SMTP acceptance is not inbox delivery).
-5. **Finance timeout policy**:
-   - While the saga is active, Finance increments `TimeoutRetryCount`, reissues [[command|PlaceOrderCommand]] to Kafka, and schedules the next timeout (at most two reissues).
-   - When the retry limit is reached, Finance cancels and finalizes the saga and, if name and email are present, sends `CancelOrderCommand` to Notification to request a cancellation email only (saga cancellation does not cancel the Order).
+## Key Takeaways & Boundaries
 
-### Ownership and recovery references
+- **Immediate order acceptance**: [[service|order-api]] reads persisted quantities from [[service|basket-api]] and authoritative prices from [[service|catalog-api]], saves the **New** [[entity|order]] snapshot in [[container|order-database]], and confirms checkout without waiting on cleanup or email providers.
+- **Independent parallel consumers**: [[service|basket-api]] and [[service|notification-api]] consume [[command|PlaceOrderCommand]] independently from <ResourceLink id="bookworm.{env}.finance.place-order" type="channel">`bookworm.{env}.finance.place-order`</ResourceLink>, so an email delay never blocks basket cleanup and vice versa.
+- **Stateless email delivery**: [[service|notification-api]] uses a Redis idempotency guard and submits MIME emails over SMTP to [[system|sendgrid]] (or Mailpit locally), routing exhausted failures to <ResourceLink id="bookworm.{env}.notification.dead-letter-queue" type="channel">`bookworm.{env}.notification.dead-letter-queue`</ResourceLink>.
+- **Bounded timeout retries**: [[service|order-orchestration]] reissues [[command|PlaceOrderCommand]] on a 30-minute timer (up to two reissues) while active, and cancels only its own orchestration—never the customer's [[entity|order]]—when retries exhaust.
 
-- **[[system|cart-system]]**: Owns basket state and deletion.
-- **Ordering**: Owns the accepted Order lifecycle.
-- **Finance**: Coordinates cleanup and timeout handling (does not own Order status or payment settlement).
-- **Notification**: Owns email submission and outbox tracking.
-- **[[flow|user-checkout]]**: Documents the complete checkout process and recovery paths.
+:::warning
+**Soft deletion and orchestration timeouts do not cancel an accepted order.**
+
+If [[service|basket-api]] reports deletion failure via [[event|BasketDeletedFailedIntegrationEvent]], [[service|order-api]] soft-deletes the order record on [[command|DeleteBasketFailedCommand]] while preserving its **New** status. Always inspect [[flow|user-checkout]] before replaying failed messages.
+:::
+
+## Related Resources
+
+- [[domain|shopping]], [[domain|ordering]], [[domain|catalog]], [[domain|platform]] — Participating bounded contexts
+- [[service|order-api]], [[service|basket-api]], [[service|catalog-api]], [[service|order-orchestration]], [[service|notification-api]] — Participating services
+- [[flow|user-checkout]] — Complete step-by-step checkout workflow and recovery table
+- [[diagram|order-lifecycle]] — Authoritative [[entity|order]] state transitions

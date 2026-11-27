@@ -1,212 +1,68 @@
 ---
-title: "How to add a customer page"
-summary: "Add a new customer page to Storefront or Commerce, register microfrontend routing and login protection, and verify zone routing."
+title: Customer Surface Onboarding
+summary: Architectural decision flow for placing, registering, protecting, and verifying new customer-facing routes across Storefront and Commerce.
 owners:
-  - contributor-team
+  - catalog-experience-team
+badges:
+  - content: Architecture
+    backgroundColor: purple
+    textColor: purple
+  - content: Reference
+    backgroundColor: blue
+    textColor: blue
 ---
 
-Use this guide to add a new customer-facing page to BookWorm's customer microfrontends (MFEs)—either **Storefront** (`@bookworm/storefront`) or **Commerce** (`@bookworm/commerce`)—and wire its gateway routing and authentication guard. To add a staff page, edit `src/Clients/apps/backoffice/app/` instead (see [[doc|frontend/002-applications-and-routing]]).
+## Purpose & Scope
 
-## Prerequisites
+This reference defines the architectural onboarding workflow when introducing a new customer-facing capability or route across BookWorm's two customer zones: **Storefront** and **Commerce**. It ensures new pages land in the right caching and authentication boundary, avoid **API Gateway** prefix collisions, and integrate cleanly with the shared customer shell.
 
-- Local workspace configured with `mise install` and `bun install` in `src/Clients` (see [[doc|development/002-getting-started]]).
-- Familiarity with Next.js 16 App Router route groups and BookWorm's thin-route convention (see [[doc|frontend/007-architecture-and-state-design]]).
-
-## Steps
+## Onboarding Decision Flow
 
 <Steps>
-<Step title="Choose the owning customer application">
+<Step title="Select the Owning Customer Zone">
 
-Place the new route under the application whose caching and authentication model fits the page:
-
-- **Storefront (`src/Clients/apps/storefront/app/`):** Public, cacheable (`cacheComponents: true`), or search-indexed pages (catalog views, landing content, informational pages).
-- **Commerce (`src/Clients/apps/commerce/app/`):** Authenticated, personalized, non-cached (`cacheComponents: false`) pages (basket, checkout, account, and order workflows).
+Assign the capability to **Storefront** if it is public, cacheable, and search-indexed (catalog, editorial content, reviews). Assign it to **Commerce** if it is authenticated, user-specific, and must never be cached (basket, checkout, account, orders).
 
 </Step>
-<Step title="Avoid reserved gateway prefixes">
+<Step title="Verify Gateway Prefix Reservation">
 
-Choose a URL segment that does not collide with an existing API Gateway (YARP) backend or staff prefix:
-
-- Backend services: `/catalog`, `/basket`, `/ordering`, `/rating`, `/chatting`, `/entra`
-- Staff application: `/backoffice`
-- Commerce static assets: `/commerce-assets`
-
-:::danger
-The exact path `/basket` works for Commerce only because `ProxyExtensions.cs` assigns exact-match colliding frontend routes `order = -1`, while `/basket/*` still routes to **Basket API**. Do not introduce new routes under any reserved backend prefix.
-:::
+Confirm the chosen URL segment does not collide with reserved backend capability prefixes (Catalog, Basket, Ordering, Rating, Chat, Identity) or the **Backoffice** administrative base path.
 
 </Step>
-<Step title="Create a thin route entrypoint and feature component">
+<Step title="Create Thin Route & Feature Slice">
 
-Add a `page.tsx` file under the appropriate route group in `apps/<app-name>/app/` and place interactive UI, forms, and queries under `apps/<app-name>/features/<feature-name>/`.
-
-For example, to add an authenticated `/account/preferences` page in Commerce, create `src/Clients/apps/commerce/app/(ordering)/account/preferences/page.tsx`:
-
-<CodeGroup>
-
-```typescript
-import type { Metadata } from "next";
-
-import { PreferencesView } from "@/features/account/preferences-view";
-
-export const metadata: Metadata = {
-  title: "Preferences",
-};
-
-export default function PreferencesPage() {
-  return <PreferencesView />;
-}
-```
-
-</CodeGroup>
-
-Where:
-
-- `<app-name>`: `storefront` or `commerce`.
-- `<feature-name>`: Domain-aligned feature slice folder (for example, `account` or `catalog`).
+Define a thin route entrypoint for metadata and server prefetching, and place all interactive UI, validation schemas, and query hooks inside a domain-aligned feature slice.
 
 </Step>
-<Step title="Register Commerce routes in `microfrontends.json`">
+<Step title="Register Zone Routing & Protection">
 
-If you added the page to **Storefront**, skip this step because Storefront handles all unmatched customer paths via the gateway catch-all (`/{**remainder}`).
-
-If you added a new top-level path to **Commerce** (outside the existing `/checkout/:path*` and `/account/:path*` wildcards), add its pattern to `applications.commerce.routing[0].paths` in `src/Clients/apps/storefront/microfrontends.json`:
-
-<CodeGroup>
-
-```json
-{
-	"group": "commerce",
-	"paths": [
-		"/basket",
-		"/checkout",
-		"/checkout/:path*",
-		"/account",
-		"/account/:path*",
-		"/<new-route>",
-		"/<new-route>/:path*",
-		"/commerce-assets/:path*"
-	]
-}
-```
-
-</CodeGroup>
-
-Where:
-
-- `<new-route>`: Kebab-case URL segment owned by Commerce (for example, `wishlist`).
-
-Both the Aspire API Gateway (`FrontendExtensions.cs`) and the Next.js `@vercel/microfrontends` wrappers read this single file.
+If placed in **Commerce**, register the new top-level path pattern in the shared microfrontend routing manifest and add it to the edge session-protection list so unauthenticated visitors redirect to sign-in with a return URL. **Storefront** routes require no manifest entry because **Storefront** owns the catch-all fallback zone.
 
 </Step>
-<Step title="Protect authenticated Commerce routes in `proxy.ts`">
+<Step title="Wire Cross-Zone Navigation & Verify">
 
-If you added a new top-level protected prefix to **Commerce**, append it to `protectedRoutes` in `src/Clients/apps/commerce/proxy.ts` so unauthenticated requests redirect to `/login?callbackUrl=<path>`:
-
-<CodeGroup>
-
-```typescript
-const protectedRoutes = ["/basket", "/checkout", "/account", "/<new-route>"];
-```
-
-</CodeGroup>
-
-Where:
-
-- `<new-route>`: The same route prefix registered in step 4.
-
-Subpaths under `/basket`, `/checkout`, or `/account` are already protected by `path.startsWith(route)`.
-
-</Step>
-<Step title="Link across zones with `@workspace/storefront-shell`">
-
-When linking between Storefront and Commerce (for example, in navigation menus), use the shared MFE link helper from `@workspace/storefront-shell/components/mfe-link` so cross-zone transitions and prefetching behave consistently.
-
-</Step>
-<Step title="Run frontend formatting and quality gates">
-
-From the repository root, format modified files:
-
-<CodeGroup>
-
-```bash
-mise run format:fe
-```
-
-</CodeGroup>
-
-From `src/Clients`, run boundaries, type checks, linting, unit tests, and production builds:
-
-<CodeGroup>
-
-```bash
-bun run boundaries
-bun run check-types
-bun run lint
-bun run test
-bun run build
-```
-
-</CodeGroup>
+Use the shared customer shell's zone-aware link component when linking between **Storefront** and **Commerce**, then verify gateway routing via the zone response header and run all static, unit, and build quality gates.
 
 </Step>
 </Steps>
 
-## Verification
+<Admonition type="warning" title="Reserved Prefix Collision Rule">
+	Never introduce new customer routes under reserved backend API prefixes. Existing exact-match
+	exceptions (such as the shopping basket page sharing a top-level segment with basket API
+	operations) are special-cased in gateway precedence and must not be replicated for new features.
+</Admonition>
 
-Confirm that the API Gateway routes your new URL to the expected microfrontend zone by checking the `X-Mfe-Zone` response header against your running local gateway (`<gateway-url>`):
+## Patterns & Boundaries
 
-<CodeGroup>
+| Concern / Surface      | Architectural Approach                                                                               | Responsibility Boundary                                                                       | Key Trade-off                                                                            |
+| :--------------------- | :--------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------- |
+| **Zone Placement**     | Public/cacheable -> **Storefront**; Private/dynamic -> **Commerce**                                  | Product and frontend leads decide placement based on cacheability and auth requirements       | Misplacing a private page in **Storefront** risks accidental caching or crawler exposure |
+| **Gateway Manifest**   | Single shared routing manifest consumed by both **API Gateway** and Next.js zones                    | **Commerce** top-level routes must be explicitly listed; **Storefront** catches all remainder | Requires coordinated gateway + frontend update for new top-level **Commerce** prefixes   |
+| **Session Protection** | Edge proxy guard on **Commerce** routes redirecting unauthenticated requests to **Storefront** login | **Commerce** enforces route-level cookie presence; backend APIs enforce token authorization   | Protects private UI shells without duplicating login handlers                            |
+| **Cross-Zone Links**   | Zone-aware navigation links in the shared customer shell                                             | Shared shell owns navigation chrome and prefetch behavior                                     | Full-document reload when crossing zones, traded for clean runtime isolation             |
 
-```bash
-curl -k -s -D - -o /dev/null <gateway-url>/<new-route> | grep -i x-mfe-zone
-```
+## Quality & Operational Impact
 
-```powershell
-(Invoke-WebRequest -Uri "<gateway-url>/<new-route>" -SkipCertificateCheck -MaximumRedirection 0 -ErrorAction SilentlyContinue).Headers["X-Mfe-Zone"]
-```
-
-</CodeGroup>
-
-Where:
-
-- `<gateway-url>`: Local Aspire API Gateway HTTPS origin shown in the Aspire Dashboard.
-- `<new-route>`: Path of the page you added.
-
-Expected output (for a Commerce route):
-
-<CodeGroup>
-
-```text
-x-mfe-zone: commerce
-```
-
-</CodeGroup>
-
-Expected output (for a Storefront route):
-
-<CodeGroup>
-
-```text
-x-mfe-zone: storefront
-```
-
-</CodeGroup>
-
-For protected Commerce routes, verify that an unauthenticated request returns HTTP `307` redirecting to `/login?callbackUrl=%2F<new-route>`.
-
-## Troubleshooting
-
-| Symptom                                                                            | Cause                                                                                                                  | Fix                                                                                                               |
-| :--------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------- |
-| New Commerce route returns `404 Not Found` with `x-mfe-zone: storefront`           | Path pattern is missing from `src/Clients/apps/storefront/microfrontends.json`                                         | Add the route pattern to `applications.commerce.routing[0].paths` and restart the gateway and apps                |
-| Request to `/<new-route>/...` returns JSON or `401` from a backend API             | Route prefix collides with a YARP backend route (`/catalog`, `/basket`, `/ordering`, `/rating`, `/chatting`, `/entra`) | Rename the frontend route to a non-colliding top-level segment                                                    |
-| Unauthenticated visitor renders a Commerce page instead of redirecting to `/login` | New top-level prefix is missing from `protectedRoutes` in `src/Clients/apps/commerce/proxy.ts`                         | Add `"/<new-route>"` to `protectedRoutes` and verify the redirect                                                 |
-| Static images or scripts fail to load on a Commerce page                           | Asset path conflicts with Storefront or bypasses `assetPrefix`                                                         | Confirm `assetPrefix: "commerce-assets"` and `/commerce-assets/:path*` remain configured in `microfrontends.json` |
-| `bun run boundaries` fails after importing from an app                             | Shared package imported from an `app`-tagged package                                                                   | Move shared code to a `domain` or `foundation` package under `src/Clients/packages/`                              |
-
-## Related documentation
-
-- [[doc|frontend/006-microfrontend-architecture]] — Why BookWorm splits Storefront and Commerce and how YARP precedence works.
-- [[doc|frontend/002-applications-and-routing]] — Full route maps, ports, and zone ownership table.
-- [[doc|frontend/004-testing-and-quality-gates]] — Full pre-PR verification commands and Playwright BDD E2E runs.
+- **Zero Routing Surprises:** Checking reserved prefixes and manifest registration upfront prevents `404` or backend JSON collision errors in production.
+- **Security by Default:** Enforcing edge session guards on **Commerce** routes ensures unauthenticated users are cleanly redirected before rendering private layouts.
+- **Consistent UX:** Using the shared customer shell keeps navigation, basket state, and accessibility landmarks uniform across every new customer page.

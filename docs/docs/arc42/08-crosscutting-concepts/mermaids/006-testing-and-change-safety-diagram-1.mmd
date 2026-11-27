@@ -1,0 +1,29 @@
+%%{init: {'theme': 'base', 'themeVariables': {'background': '#f5f5f5', 'primaryColor': '#ffffff', 'primaryTextColor': '#2d3142', 'primaryBorderColor': '#2d3142', 'secondaryColor': '#ececec', 'secondaryBorderColor': '#4f5d75', 'tertiaryColor': '#fdf2ee', 'tertiaryBorderColor': '#bf4520', 'lineColor': '#4f5d75', 'textColor': '#2d3142', 'clusterBkg': '#f8f9fa', 'clusterBorder': '#bfc0c0', 'fontFamily': 'Geist, system-ui, sans-serif'}}}%%
+flowchart TB
+	Change["Code or Policy Change"]
+	Local["Local Unit and Component Evidence"]
+	Boundary["Integration and Contract Evidence"]
+	Full["End-to-End and Architecture Evidence"]
+	Gate["Quality and Security Promotion Gate"]
+	Rollout["Controlled Rollout"]
+	Observe["Health, Telemetry, and Business Signals"]
+	Promote["Promote Release"]
+	Halt["Halt or Roll Back"]
+
+	Change --> Local
+	Local -->|"Relevant boundary passes"| Boundary
+	Boundary -->|"Critical journeys pass"| Full
+	Full -->|"Static, schema, privacy, and policy checks pass"| Gate
+	Gate -->|"Approved artifact"| Rollout
+	Rollout --> Observe
+	Observe -->|"All release criteria hold"| Promote
+	Observe -->|"Any release criterion breaches"| Halt
+	Halt -->|"Correct and add evidence"| Change
+
+	classDef focal fill:#fdf2ee,stroke:#bf4520,stroke-width:2px,color:#2d3142
+	classDef service fill:#ffffff,stroke:#2d3142,stroke-width:1.2px,color:#2d3142
+	classDef store fill:#ececec,stroke:#4f5d75,stroke-width:1.2px,color:#2d3142
+	classDef input fill:#eef1f6,stroke:#5a6580,stroke-width:1.2px,color:#2d3142
+	class Gate,Observe focal
+	class Local,Boundary,Full,Rollout,Promote,Halt service
+	class Change input

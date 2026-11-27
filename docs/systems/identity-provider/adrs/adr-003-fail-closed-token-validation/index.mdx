@@ -6,7 +6,7 @@ summary: Protected APIs accept a token only after validating its issuer, audienc
 status: accepted
 date: 2026-11-02
 owners:
-  - contributor-team
+  - platform-engineering-team
 badges:
   - content: Security
     backgroundColor: red
@@ -15,12 +15,12 @@ appliesTo:
   - type: system
     id: identity-provider
   - type: service
-    id: oauthapi
+    id: oauth-api
 ---
 
 ## Context
 
-BookWorm APIs rely on provider-issued tokens to establish the identity of
+BookWorm APIs rely on tokens issued by [[system|identity-provider]] (via [[service|oauth-api]]) to establish the identity of
 callers. A token can only be trusted when it is intended for the receiving
 API, comes from the expected issuer, is valid and unexpired, and contains the
 claims required by that API. Incomplete validation or a permissive fallback

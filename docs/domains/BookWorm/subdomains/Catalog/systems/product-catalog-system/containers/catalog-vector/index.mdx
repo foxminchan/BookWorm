@@ -2,8 +2,9 @@
 id: catalog-vector
 name: Catalog Vector
 version: 1.0.0
+summary: Non-authoritative Qdrant vector search index owned by the Catalog bounded context for hybrid semantic and keyword book discovery.
 owners:
-  - contributor-team
+  - catalog-experience-team
 container_type: searchIndex
 badges:
   - content: Search Index
@@ -15,99 +16,70 @@ access_mode: readWrite
 classification: internal
 retention: transient
 residency: eastasia
-summary: >-
-  Non-authoritative Qdrant index of book text and embeddings for hybrid catalog
-  search.
-purpose: >-
-  Store searchable text and vector representations of active Catalog books for
-  semantic and keyword-based discovery.
+purpose: Store searchable text and vector embeddings of active Catalog books for semantic and keyword-based discovery.
 styles:
   icon: /icons/database/qdrant.svg
 ---
 
-Catalog vector (`vectordb`) is the non-authoritative Qdrant search index used by the Catalog bounded context for hybrid semantic and keyword book discovery. [[service|catalog-api]] queries it to obtain candidate book IDs before resolving canonical product fields from [[container|catalog-database]], while [[service|catalog-ingestion]] refreshes index entries asynchronously in batches.
+## Purpose & Ownership Boundary
 
-## Overview
+Catalog Vector (`vectordb`) is the non-authoritative Qdrant search index owned by the Catalog bounded context for hybrid semantic and keyword book discovery. [[service|catalog-ingestion]] writes 1,536-dimensional embeddings asynchronously in batches, while [[service|catalog-api]] queries the index for candidate book IDs before hydrating authoritative prices, stock status, and ratings from [[container|catalog-database]].
 
-| Property               | Value                                                                                                                                   |
-| :--------------------- | :-------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**              | Catalog bounded context — [[service\|catalog-api]] (`catalog`, reader) and [[service\|catalog-ingestion]] (`catalog-ingestion`, writer) |
-| **Aspire resource ID** | `vectordb`                                                                                                                              |
-| **Source**             | `src/Services/Catalog/BookWorm.Catalog.Ingestion/VectorBatchProcessor.cs`, `src/Aspire/BookWorm.AppHost/AppHost.cs`                     |
-| **Engine**             | Qdrant (local container in development; external Qdrant Cloud via `ConnectionStrings__vectordb` in cloud)                               |
-| **Client library**     | `Aspire.Qdrant.Client` (`17.0.0`), `CommunityToolkit.VectorData.Qdrant` (`1.0.1`)                                                       |
-| **Embedding model**    | Microsoft Foundry `embedding` deployment (`FoundryModel.Cohere.EmbedV40`)                                                               |
-| **Authoritative**      | No (`authoritative: false`, `readWrite`)                                                                                                |
-| **Classification**     | `internal`                                                                                                                              |
-| **Retention**          | Transient (rebuildable derived projection from `catalogdb`)                                                                             |
+## Data Store Profile
 
-## Architecture and data flow
+| Property                            | Value                                                                           |
+| :---------------------------------- | :------------------------------------------------------------------------------ |
+| **Bounded Context / Owner**         | Catalog — [[team\|catalog-experience-team]]                                     |
+| **Engine / Technology**             | Qdrant (Qdrant Cloud in cloud; Qdrant container locally)                        |
+| **Store Type**                      | Vector                                                                          |
+| **Primary Writer(s)**               | [[service\|catalog-ingestion]]                                                  |
+| **Primary Reader(s)**               | [[service\|catalog-api]]                                                        |
+| **Authoritative / Source of Truth** | Derived Read Model (Ephemeral)                                                  |
+| **Data Classification**             | Internal                                                                        |
+| **Retention / TTL Policy**          | Transient (rebuildable derived projection from [[container\|catalog-database]]) |
 
-Search queries and index updates follow separate paths so batch embedding generation never blocks customer requests and commercial fields (prices, stock status, ratings) always come from PostgreSQL.
+## Logical Data Layout & Key Patterns
 
-The diagram shows the hybrid search read path from Catalog API and the scheduled batch ingestion write path from Catalog Ingestion.
+| Collection / Point Key                        | Stored Data                                                                                                                    | TTL / Eviction                                       | Invalidation / Update Trigger                                                                                                                                                                |
+| :-------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `data-bookworm-snippets` / `book_id` (`uuid`) | Assembled text (`Title`, `Description`, `Authors`, `Category`, `Publisher`) + `1,536`-dim cosine embedding (`Cohere.EmbedV40`) | Retained while book is active (`is_deleted = false`) | Asynchronous 5-minute batch triggered by [[service\|scheduler-service]] (`scheduler.process-vector-batch`) draining `pending_vector_updates`. Soft-deleted books are removed from the index. |
+
+Commercial fields—prices, stock status, cover image URNs, and rating summaries—are intentionally excluded from Qdrant and always resolved from [[container|catalog-database]].
+
+## Consistency, Isolation & Security Guardrails
+
+- **Eventual search consistency:** Catalog mutations appear in semantic search after the next 5-minute [[service|scheduler-service]] tick and [[service|catalog-ingestion]] batch run (up to `200` books per batch).
+- **Revision-safe single-writer batching:** [[service|catalog-ingestion]] acquires PostgreSQL advisory lock `740031001` and deletes queued items only when both `book_id` and `revision` match, preventing lost updates from concurrent edits. If embedding generation returns fewer vectors than active items, the batch fails without acknowledging the queue.
+- **No direct external access:** Only [[service|catalog-ingestion]] writes to `data-bookworm-snippets` and only [[service|catalog-api]] queries it.
+
+:::warning
+**Derived Index Only — Never Authoritative:** `vectordb` is strictly a derived search projection. Never treat vector payloads as canonical product data, and never return prices or availability from Qdrant without hydrating from [[container|catalog-database]]. Because the index is fully rebuildable from `catalogdb`, collection resets carry zero data-loss risk.
+:::
+
+## Operational & Resilience Notes
+
+<AccordionGroup>
+	<Accordion title="Hosting, environment parity, and lag triage">
+		- **Local vs. Cloud:** Local development runs a persistent Qdrant container managed by Aspire;
+		cloud environments connect to an external Qdrant Cloud cluster via environment connection
+		strings. - **Triaging stale search results:** Inspect three signals together: pending row count
+		and oldest `updated_at` in `catalogdb.pending_vector_updates`, scheduled job history in
+		[[container|scheduler-database]], and Qdrant/Microsoft Foundry traces in OpenTelemetry.
+	</Accordion>
+</AccordionGroup>
+
+## Architecture Visualizations
+
+<NodeGraph />
 
 <MermaidFileLoader file="mermaids/catalog-vector-diagram-1.mmd" />
 
-## Collection and payload specification
+## Related Documentation
 
-Each active (non-deleted) book is stored as one `TextSnippet` record keyed by its `book_id` (`Guid`).
-
-| Property                | Specification                                                                                                                                    |
-| :---------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Collection name**     | `data-bookworm-snippets`                                                                                                                         |
-| **Record key**          | Book UUID (`Guid`, matching `books.id` in `catalogdb`)                                                                                           |
-| **Indexed text fields** | Assembled string containing `Title`, `Description`, comma-separated `Authors` (ordered by `author.name, author.id`), `Category`, and `Publisher` |
-| **Excluded fields**     | Cover image URN, prices, stock status, and rating summaries (always filtered and returned from `catalogdb`)                                      |
-| **Vector similarity**   | `1,536`-dimension float embedding using cosine similarity (generated by Microsoft Foundry `Cohere.EmbedV40`)                                     |
-
-The Qdrant collection is `data-bookworm-snippets`. `TextSnippet` uses Cohere Embed v4's 1,536-dimensional cosine-similarity vectors.
-
-### Assembled text format
-
-`VectorBatchProcessor.ReadBatchAsync` builds each searchable document from `catalogdb`:
-
-<CodeGroup>
-
-```text
-Title: <book.name>
-Description: <book.description>
-Authors: <author_1, author_2>
-Category: <category.name>
-Publisher: <publisher.name>
-```
-
-</CodeGroup>
-
-Where `<book.name>`, `<book.description>`, `<author_1, author_2>`, `<category.name>`, and `<publisher.name>` come from the current relational rows in `catalogdb`. Missing or soft-deleted (`is_deleted = true`) books produce a `null` content payload, which instructs `VectorBatchProcessor.IngestDataAsync` to delete the corresponding Qdrant point.
-
-## Ingestion batching and concurrency
-
-[[service|scheduler-dashboard]] triggers `ProcessVectorBatchFunction` every 5 minutes UTC via the unprefixed Kafka topic `scheduler.process-vector-batch` (consumer group `catalog-ingestion`).
-
-- **Batch size:** Reads at most `200` rows per run (`BatchSize = 200`), ordered by `pending_vector_updates.updated_at, book_id`.
-- **Single-writer coordination:** Acquires PostgreSQL session advisory lock `740031001` (`pg_try_advisory_lock`) before reading the queue and releases it in `finally`; concurrent invocations exit early (`return 0`).
-- **Revision-safe acknowledgment:** Deletes acknowledged rows only when both `book_id` and `revision` still match the snapshot processed in the batch, preserving any concurrent mid-batch catalog edits for the next pass.
-- **Incomplete-batch guard:** Throws `InvalidOperationException` without acknowledging the queue if Microsoft Foundry returns fewer embeddings than active items in the batch.
-
-## Hosting and environment provisioning
-
-| Environment                                  | Provisioning                                                                                                    | Configuration                                                                                                       |
-| :------------------------------------------- | :-------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------ |
-| **Local development**                        | Local Qdrant container via `AddQdrant("vectordb")` with persistent data volume (`ContainerLifetime.Persistent`) | Managed automatically by Aspire AppHost                                                                             |
-| **Azure Development / Staging / Production** | External Qdrant Cloud cluster (`AddConnectionString("vectordb")`)                                               | Injected via `ConnectionStrings__vectordb` (`QDRANT_CLOUD_CONNECTION` secret in `.github/workflows/apphost-cd.yml`) |
-
-## Operational notes
-
-- **Eventual search consistency:** Newly created or updated books appear in semantic search after the next 5-minute Scheduler tick and `catalog-ingestion` batch run.
-- **Triaging stale search results:** Inspect three signals together: pending row count and age in `catalogdb.pending_vector_updates`, `ProcessVectorBatchJob` history in [[container|scheduler-database]], and Qdrant / Microsoft Foundry connectivity in OpenTelemetry traces.
-- **Safe rebuildability:** Because `vectordb` is non-authoritative, you can rebuild the entire collection from `catalogdb` without risk to canonical product records.
-
-## Related documentation
-
-- [[container|catalog-database]] — Relational source of truth and trigger-maintained `pending_vector_updates` queue.
-- [[service|catalog-ingestion]] — Azure Functions worker that executes `VectorBatchProcessor`.
+- [[service|catalog-ingestion]] — Worker generating embeddings and updating Qdrant points.
 - [[service|catalog-api]] — Hybrid search query pipeline and PostgreSQL hydration.
-- [[container|scheduler-database]] — Quartz schedule storing the 5-minute `ProcessVectorBatchJob`.
-
-<NodeGraph />
+- [[container|catalog-database]] — Relational source of truth and `pending_vector_updates` queue.
+- [[container|scheduler-database]] — Schedule store driving the 5-minute vector batch trigger.
+- [[adr|adr-002-hybrid-vector-search-qdrant]] — Decision adopting Qdrant for hybrid catalog search.
+- [[adr|adr-003-database-queue-for-vector-indexing]] — Decision for coalesced database-queue indexing.
+- [[doc|operational/005-backup-restore-and-dr]] — Platform backup, restore, and disaster recovery runbook.

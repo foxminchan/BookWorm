@@ -1,75 +1,74 @@
 ---
 title: "Architecture overview"
-summary: "Explore BookWorm's system context and container views across its three Next.js apps, YARP gateway, ten .NET services, and backing stores."
+summary: "System context, container structure, and capability ownership for the BookWorm platform."
 owners:
-  - contributor-team
+  - architecture-enabling-team
 ---
 
-BookWorm is an online bookstore built on .NET 11, Aspire 17, Next.js 16, Wolverine, and Kafka across six bounded contexts. This page provides system context and container views showing every user actor, frontend microfrontend (MFE), backend service, AI platform dependency, and backing store.
+BookWorm is an online bookstore for customers and store staff. This page summarizes the system boundary, deployable building blocks, and ownership rules; detailed context, runtime behavior, and hosting are described in the corresponding arc42 chapters.
 
-## Scope and constraints
+## Scope and reading the views
 
-- **Scope:** Covers the entire BookWorm platform—three Next.js 16 frontends (`Storefront`, `Commerce`, `Backoffice`), the YARP `API Gateway`, ten .NET 11 backend services and Azure Functions workers, two Presidio privacy containers, managed Azure stores, and external cloud providers.
-- **Key constraints:** Each bounded context owns its authoritative persistence; cross-service writes never share databases; only the `API Gateway` (and the Entra-protected Quartz Dashboard) expose external HTTP ingress; AI workflows remain strictly read-only with respect to commerce transactions.
+The platform includes customer and staff web experiences, business capabilities, background processing, and the shared foundation that supports them. Identity, AI inference, messaging, email delivery, and managed infrastructure are external dependencies where they are provided by other systems.
 
-## Level 1 — System context
+The views move from the whole system to its internal building blocks. The system context view focuses on users and external neighbors. The container views show the platform's applications and services grouped by responsibility; they do not replace the detailed static, runtime, or deployment views.
 
-This System Context diagram shows who interacts with BookWorm and which external cloud services support authentication, AI inference, messaging, vector search, and email delivery.
+## System context
+
+This view places BookWorm between the people who use the bookstore and the external services it depends on.
 
 <LikeC4View viewId="bookwormContext" project="deployment" />
 
-## Level 2 — Container view
+## Container views
 
-The Container view is split into two focused diagrams: edge and commerce containers, followed by AI, Reviews, and Platform containers.
+The following views group the deployable parts of BookWorm by capability. Together, they cover the customer-facing edge, commerce, discovery, reviews, ordering, and platform operations.
 
-### Edge and core commerce containers
+### Edge and commerce capabilities
 
-This diagram maps external user traffic through the YARP `API Gateway` into the three Next.js 16 microfrontends and the Catalog, Shopping, and Ordering containers.
+This view follows customer and staff traffic through the public entry point and into the storefront, basket, catalog, and ordering capabilities.
 
 <LikeC4View viewId="bookwormCommerceContainers" project="deployment" />
 
-### AI, reviews, and platform containers
+### Discovery and platform capabilities
 
-This diagram shows how conversational book discovery, customer feedback, privacy redaction, vector ingestion, job scheduling, and email delivery connect to backing stores and external services.
+This view shows how conversational discovery, customer feedback, privacy support, scheduled work, and notification delivery relate to their supporting services and data.
 
 <LikeC4View viewId="bookwormAIAndPlatformContainers" project="deployment" />
 
-## Building block inventory
+### Ordering and operations
 
-Every deployable container app in `src/Aspire/BookWorm.AppHost/AppHost.cs` maps to a single bounded context or edge role.
+This view focuses on order ownership, post-checkout coordination, and the operational services that support these workflows.
 
-| Container                                                 | Bounded context | Technology                                        | Owned state and backing stores                                                           | Source path                                        |
-| :-------------------------------------------------------- | :-------------- | :------------------------------------------------ | :--------------------------------------------------------------------------------------- | :------------------------------------------------- |
-| **API Gateway** (`gateway`)                               | Edge            | YARP reverse proxy (`Aspire.Hosting.Yarp`)        | Stateless ingress; routes APIs, frontends, and `/entra` proxy                            | `src/Aspire/BookWorm.AppHost/`                     |
-| **Storefront** (`storefront`)                             | Edge (Frontend) | Next.js 16, React 19, Better Auth, AG-UI          | Public catalog, AI chat UI, customer auth owner (`/` catch-all)                          | `src/Clients/apps/storefront/`                     |
-| **Commerce** (`commerce`)                                 | Edge (Frontend) | Next.js 16, React 19, Vercel Microfrontends       | Authenticated `/basket`, `/checkout/*`, `/account/*` child zone                          | `src/Clients/apps/commerce/`                       |
-| **Backoffice** (`backoffice`)                             | Edge (Frontend) | Next.js 16, React 19, Better Auth                 | Staff dashboard mounted at `/backoffice`                                                 | `src/Clients/apps/backoffice/`                     |
-| **Catalog API** (`catalog`)                               | Catalog         | .NET 11 Minimal API + gRPC (`book.v1`)            | PostgreSQL `catalogdb`, Qdrant `vectordb`, Blob `catalog-blob`, Redis, Microsoft Foundry | `src/Services/Catalog/BookWorm.Catalog/`           |
-| **Catalog Ingestion** (`catalog-ingestion`)               | Catalog         | Azure Functions (`Azure.Functions.Sdk`)           | Reads PostgreSQL `catalogdb`, embeds via Foundry, updates Qdrant `vectordb`              | `src/Services/Catalog/BookWorm.Catalog.Ingestion/` |
-| **Basket API** (`basket`)                                 | Shopping        | .NET 11 Minimal API + gRPC (`basket.v1`)          | Azure Managed Redis (authoritative basket state, cache, idempotency)                     | `src/Services/Basket/BookWorm.Basket/`             |
-| **Ordering API** (`ordering`)                             | Ordering        | .NET 11 Minimal API + Marten event store          | PostgreSQL `orderingdb` (EF Core + Marten), Redis (cache, locks)                         | `src/Services/Ordering/BookWorm.Ordering/`         |
-| **Finance** (`finance`)                                   | Ordering        | Azure Durable Functions (`OrderOrchestrator`)     | Durable Task Scheduler (`finance-taskhub`), Azure Storage host state; no SQL DB          | `src/Services/Finance/BookWorm.Finance/`           |
-| **Rating API** (`rating`)                                 | Reviews         | .NET 11 Minimal API + Agent-to-Agent (A2A) gRPC   | Azure Cosmos DB (`ratingdb`/`feedbacks`), Redis, Foundry, Presidio                       | `src/Services/Rating/BookWorm.Rating/`             |
-| **Chat API** (`chatting`)                                 | Conversational  | .NET 11 + Agent-User Interaction (AG-UI) `/ag-ui` | Azure Blob Storage (`chatting-blob`, `ag-ui/`), Foundry, Presidio                        | `src/Services/Chat/BookWorm.Chat/`                 |
-| **MCP Tools** (`mcptools`)                                | Conversational  | .NET 11 Model Context Protocol (MCP) `/mcp`       | Stateless read-only Catalog tools; not routed through YARP                               | `src/Services/McpTools/BookWorm.McpTools/`         |
-| **Notification** (`notification`)                         | Platform        | .NET 11 Worker (`MailKit`, `Mjml.Net`)            | Stateless Kafka email sender + Redis 24h idempotency; no SQL DB                          | `src/Services/Notification/BookWorm.Notification/` |
-| **Scheduler** (`scheduler`)                               | Platform        | .NET 11 + Quartz.NET (`jobs.json`)                | PostgreSQL `schedulerdb`; triggers `ProcessVectorBatchJob` and `HeartbeatJob`            | `src/Services/Scheduler/BookWorm.Scheduler/`       |
-| **Presidio** (`presidio-analyzer`, `presidio-anonymizer`) | Privacy         | 2 internal Container Apps (port `3000`)           | Stateless PII detection and anonymization sidecars                                       | `src/Integrations/BookWorm.Hosting.Presidio/`      |
+<LikeC4View viewId="bookwormOrderingAndOperations" project="deployment" />
 
-:::note
-`AppHost.cs` also provisions `quartz-dashboard` as an operational tooling container app with external HTTP access protected by Microsoft Entra ID OpenID Connect (`admin` role). Local development adds `scalar` and MCP `inspector` containers in run mode only.
-:::
+## Capability ownership
 
-## Key runtime and deployment boundaries
+Each capability owns its business rules and authoritative records. The table summarizes those boundaries; the Building Block View provides the full static decomposition.
 
-- **Synchronous vs. asynchronous communication:** Interactive reads use REST (`/api/v1/*`) behind YARP and internal gRPC (`book.v1`, `basket.v1`, A2A gRPC). Cross-context workflows use Kafka CloudEvents via Wolverine with per-service dead-letter queues (`bookworm.{env}.{service}.dead-letter-queue`).
-- **Identity and authorization:** Microsoft Entra ID issues OAuth2/JWT tokens for three app roles (`admin`, `business_user`, `customer`), per-service managed identities authenticate passwordlessly to Azure resources, and Entra Agent Identities (`chatAgentId`, `ratingAgentId`) isolate AI On-Behalf-Of (OBO) calls.
-- **Deployment:** Aspire 17 (`aspire deploy`) publishes all 16 core Container Apps plus `quartz-dashboard` into one Azure Container Apps environment (`Consumption` workload profile). See [[doc|arc42/07-deployment-view]] for environment SKUs and open production hardening items.
+| Building block         | Responsibility                                                                               | Main elements                                 | Ownership boundary                                                                                            |
+| :--------------------- | :------------------------------------------------------------------------------------------- | :-------------------------------------------- | :------------------------------------------------------------------------------------------------------------ |
+| **Edge and frontends** | Provides the public entry point and customer and staff journeys.                             | API Gateway, Storefront, Commerce, Backoffice | Routes requests to capability owners; does not own authoritative catalog, basket, order, or feedback records. |
+| **Catalog**            | Owns book information, pricing, and discovery.                                               | Catalog API, Catalog Ingestion                | Catalog records are authoritative here; search indexes and rating summaries are derived data.                 |
+| **Shopping**           | Manages customer baskets before checkout.                                                    | Basket API                                    | Owns active basket state until checkout transfers purchase intent to Ordering.                                |
+| **Ordering**           | Records accepted orders, purchase-time details, and official order status.                   | Ordering API, Finance                         | Ordering owns business outcomes; Finance tracks post-checkout workflow progress separately.                   |
+| **Reviews**            | Manages customer feedback and makes review information available to other capabilities.      | Rating API                                    | Owns individual feedback; other capabilities may maintain derived summaries.                                  |
+| **Conversational**     | Supports guided discovery and customer questions using bookstore information.                | Chat API, MCP Tools                           | Reads catalog and review information; does not create or change baskets or orders.                            |
+| **Platform**           | Supports scheduled work and transactional email delivery.                                    | Scheduler, Notification                       | Delivery and job outcomes do not replace the business outcome recorded by an owning capability.               |
+| **Shared foundation**  | Provides common hosting, identity integration, diagnostics, resilience, and privacy support. | Shared platform capabilities                  | Supports the business capabilities without becoming a shared owner of their domain records.                   |
 
-## Related architecture documentation and decisions
+## Architectural boundaries
 
-- [[doc|arc42]] — Full 12-chapter architecture documentation index.
-- [[doc|arc42/05-building-block-view]] — Progressive Level 1-3 static decomposition.
-- [[doc|arc42/06-runtime-view]] — End-to-end checkout, vector ingestion, feedback, chat, and notification sequences.
-- [[doc|arc42/07-deployment-view]] — Local vs. Azure Container Apps infrastructure topology.
-- [[doc|arc42/09-architecture-decisions]] — All 18 platform ADRs and 55 system ADRs, including the four superseding infrastructure records.
+- **Owned data and contracts:** Each capability remains authoritative for its records. Other capabilities integrate through explicit HTTP, gRPC, or event contracts instead of reading another capability's stores.
+- **Synchronous and asynchronous work:** Request-response calls support interactions that need an immediate result. Kafka events coordinate work across capabilities; projections and external side effects may complete later and require recovery handling.
+- **Order state and workflow state:** Ordering is the source of truth for accepted orders and their official status. Finance coordinates post-checkout work without redefining whether an order succeeded.
+- **Read-only assistance:** Conversational features use catalog and review information to provide guidance, but do not mutate commerce transactions.
+- **External dependencies:** Identity, AI inference, messaging, email delivery, and managed infrastructure can affect availability or behavior. Their interfaces and operational assumptions are detailed in the context and deployment chapters.
+
+## Related architecture documentation
+
+- [[doc|arc42]] — Navigate all arc42 chapters.
+- [[doc|arc42/03-context-and-scope]] — Actors, external systems, and boundary exchanges.
+- [[doc|arc42/05-building-block-view]] — Static decomposition and capability responsibilities.
+- [[doc|arc42/06-runtime-view]] — Representative cross-capability runtime scenarios.
+- [[doc|arc42/07-deployment-view]] — Hosting environments and infrastructure placement.
+- [[doc|arc42/08-crosscutting-concepts]] — Shared contracts, security, resilience, and operating practices.

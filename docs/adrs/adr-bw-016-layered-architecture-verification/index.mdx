@@ -6,83 +6,54 @@ summary: Combine focused business tests, consumer/provider contracts, architectu
 status: proposed
 date: 2026-11-07
 owners:
-  - contributor-team
+  - architecture-enabling-team
 appliesTo:
   - type: domain
-    id: BookWorm
+    id: bookworm
 related:
   - id: adr-bw-017-compatible-contract-evolution
   - id: adr-bw-018-single-source-decision-documentation
 decisionMakers:
-  - contributor-team
+  - architecture-enabling-team
 x-scope: "Whole system"
 ---
 
-## Context and problem statement
+| Field                  | Value                                                                                                       |
+| :--------------------- | :---------------------------------------------------------------------------------------------------------- |
+| **Status**             | Proposed                                                                                                    |
+| **Date**               | 2026-11-07                                                                                                  |
+| **Owners**             | [[team\|architecture-enabling-team]]                                                                        |
+| **Affected Resources** | [[domain\|bookworm]]                                                                                        |
+| **Related ADRs**       | [[adr\|adr-bw-017-compatible-contract-evolution]], [[adr\|adr-bw-018-single-source-decision-documentation]] |
 
-No single test suite catches every defect in a distributed microservices and microfrontend platform. Unit tests verify domain logic quickly but miss Kafka schema drift; end-to-end browser tests validate customer flows but cannot enforce internal dependency rules or exhaustive edge cases.
+## Context & Problem Statement
 
-BookWorm requires an explicit layered verification strategy that assigns each class of architectural risk—domain behavior, structural boundaries, message contracts, Protobuf evolution, and user journeys—to a dedicated automated check.
+No single test layer catches every failure mode in a distributed microservices platform. Unit tests verify domain invariants quickly but miss contract drift; end-to-end browser tests validate user journeys but are too slow and coarse to cover all boundary rules and architecture constraints.
 
-## Decision drivers
+## Decision Drivers
 
-- **Domain correctness:** Catch business-rule and handler regressions rapidly during local development and CI.
-- **Cross-service compatibility:** Verify Kafka producer/consumer schemas and gRPC `.proto` definitions independently before release.
-- **Structural governance:** Enforce Vertical Slice Architecture, DDD conventions, and frontend monorepo boundaries automatically.
+- **Fast feedback:** Catch domain and architecture violations in seconds.
+- **Contract safety:** Verify HTTP, gRPC, and Kafka compatibility without running all live services together.
+- **Boundary enforcement:** Automatically prevent cross-domain coupling and catalog/doc drift.
 
-## Considered options
+## Options Considered
 
-1. Maintain distinct automated verification layers across unit, architecture, contract, schema, and browser E2E suites
-2. Rely on unit tests alone
-3. Rely on full-stack end-to-end tests alone
-4. Rely on manual pull-request code review alone
+| Option                                                                     | Pros                                     | Cons                                                          |
+| :------------------------------------------------------------------------- | :--------------------------------------- | :------------------------------------------------------------ |
+| **Layered verification (unit, architecture, contract, E2E, catalog lint)** | Targeted feedback per risk area; fast CI | Multiple test suites to maintain                              |
+| **Unit tests only**                                                        | Very fast execution                      | Misses contract drift, serialization, and UI integration bugs |
+| **End-to-end UI tests only**                                               | Exercises full real journeys             | Slow, flaky, and poor coverage of internal edge cases         |
+| **Manual QA review only**                                                  | Flexible human judgment                  | Misses subtle regressions and contract breaks                 |
 
-## Decision outcome
+## Decision & Consequences
 
-Chosen option: **Maintain distinct automated verification layers across unit, architecture, contract, schema, and browser E2E suites**, because each layer targets a different failure class at the fastest practical feedback speed.
+**Chosen Option:** Enforce a layered verification strategy combining unit tests, architecture boundary tests, consumer/provider contract tests, schema/catalog linting, and high-value end-to-end journeys.
 
-Verified test layers in the BookWorm repository:
+- **Positive:** Regressions in domain logic, contracts, or documentation are caught at the cheapest appropriate layer.
+- **Negative:** Contributors must keep contract and catalog checks aligned with code changes.
 
-- **Backend unit tests (`mise run test` → `test:unit`):** **TUnit `1.87.12`** on Microsoft.Testing.Platform (MTP) with `Shouldly` `4.3.0`, `Moq` `4.21.0`, `Bogus` `35.6.5`, and `Allure.TestingPlatform` across **9 `.UnitTests` projects** (`Basket`, `Catalog`, `Chat`, `Finance`, `McpTools`, `Notification`, `Ordering`, `Rating`, `Scheduler`; no unit test project currently exists for `BookWorm.Catalog.Ingestion`).
-- **Architecture fitness tests:** `TngTech.ArchUnitNET.TUnit` (`0.13.5`) in `tests/BookWorm.ArchTests` validating bounded-context dependencies, domain primitives, sealed endpoints/handlers, and saga conventions.
-- **Asynchronous contract tests (`mise run test` → `test:contracts`):** `PactNet` (`5.0.1`) across **7 `.ContractTests` projects** generating and verifying **8 pact files** in `tests/pacts/` (`PactConsumer` runs before `PactProvider`).
-- **gRPC contract checks:** Protocol Buffer linting and breaking-change validation (`mise run setup:buf`).
-- **Frontend unit, boundary, and E2E tests (`src/Clients`):** `turbo boundaries` enforcing 4-tier workspace isolation, `vitest` (`^5.1.2`) + `@testing-library/react` (`^16.3.3`), and `@playwright/test` (`^1.65.1`) + `playwright-bdd` (`^9.2.1`) + `@axe-core/playwright` (`^4.14.1`) covering 9 Storefront and 6 Backoffice BDD features (Commerce currently has unit/component tests only, with no Playwright E2E feature files).
-- **Documentation quality gates (`docs/`):** `bun run check` (`eventcatalog-linter` + Prettier) and `bun run fitness` (`eventcatalog fitness check`).
+### Compliance Criteria
 
-Backend `.IntegrationTests` projects are currently **0** in `BookWorm.slnx`; this ADR documents the active verification layers rather than claiming full container-backed backend integration coverage.
-
-### Consequences
-
-- **Positive:** Teams get fast feedback on domain logic, deterministic Pact verification between producers and consumers, automated boundary enforcement, and accessibility-checked UI journeys.
-- **Negative:** Maintaining multiple suites, committed pact baselines, and Allure/SonarCloud pipelines requires disciplined CI upkeep, and the absence of backend `.IntegrationTests` leaves real database/emulator query behavior reliant on unit mocks and manual Aspire validation.
-- **Follow-up:** Evaluate adding targeted backend `.IntegrationTests` for Cosmos DB, PostgreSQL/Marten, and Durable Task Scheduler edge cases, plus Commerce E2E coverage.
-
-## Pros and cons of the options
-
-### Maintain distinct automated verification layers across unit, architecture, contract, schema, and browser E2E suites
-
-- **Good**, because every architectural risk—domain logic, coupling, message contracts, Protobuf compatibility, and UI accessibility—has a targeted automated gate.
-- **Good**, because running `PactConsumer` before `PactProvider` validates asynchronous integration without spinning up a full Kafka cluster.
-- **Bad**, because contributors must understand and maintain multiple test frameworks (`TUnit`, `ArchUnitNET`, `PactNet`, `Vitest`, `Playwright BDD`).
-
-### Rely on unit tests alone
-
-- **Good**, because execution finishes in seconds with zero external dependencies.
-- **Bad**, because mocked unit tests cannot detect broken Kafka message contracts, Protobuf incompatibilities, or broken frontend routing.
-
-### Rely on full-stack end-to-end tests alone
-
-- **Good**, because tests exercise real browser interactions across deployed services.
-- **Bad**, because E2E suites are slower, harder to isolate, and do not enforce internal C# architecture rules or exhaustive error paths.
-
-### Rely on manual pull-request code review alone
-
-- **Good**, because human reviewers apply nuanced domain judgment.
-- **Bad**, because manual inspection misses subtle serialization, dependency, and regression bugs reliably caught by automated suites.
-
-## Verification and links
-
-- **Verified against:** `BookWorm.slnx`, `mise.toml`, `Directory.Packages.props`, `tests/BookWorm.ArchTests/BookWorm.ArchTests.csproj`, `tests/BookWorm.Testing/BookWorm.Testing.csproj`, `tests/pacts/`, `src/Clients/package.json`, `src/Clients/turbo.json`
-- **Related architecture:** [[doc|arc42/08-crosscutting-concepts/006-testing-and-change-safety]], [[doc|development/008-testing-matrix]], [[doc|development/005-testing]]
-- **Related ADRs:** ADR-BW-009, ADR-BW-017, ADR-BW-018, [[doc|arc42/09-architecture-decisions]]
+- Domain logic changes must include unit tests; cross-service contract changes must pass consumer/provider contract verification.
+- Architecture tests must enforce vertical-slice and bounded-context dependency rules.
+- Documentation and EventCatalog changes must pass `eventcatalog-linter` and link validation.

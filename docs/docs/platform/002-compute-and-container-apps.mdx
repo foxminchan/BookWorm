@@ -1,99 +1,85 @@
 ---
 title: Container Apps & Compute Inventory
-summary: Reference inventory of all 15 Azure Container Apps, ingress ports, revision modes, and platform-owned runtime services.
+summary: Reference inventory of all 16 Azure Container Apps, ingress ports, revision modes, and platform-owned runtime services.
 owners:
-  - platform-team
+  - platform-engineering-team
 badges:
   - content: Compute Reference
     backgroundColor: blue
     textColor: blue
 ---
 
-This reference lists every compute workload that `src/Aspire/BookWorm.AppHost/AppHost.cs` assigns to the Azure Container Apps environment (`aca`) in publish mode. BookWorm runs 16 application Container Apps plus the `quartz-dashboard` operational tooling container.
+The compute platform hosts 16 application Container Apps plus the Quartz Dashboard operational tooling container inside the shared Azure Container Apps environment on the `Consumption` workload profile. Every workload runs in single-revision mode with at least one active replica.
 
-## Overview
-
-| Property                       | Value                                                                                                                               |
-| :----------------------------- | :---------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**                      | BookWorm platform (AppHost)                                                                                                         |
-| **Source**                     | `src/Aspire/BookWorm.AppHost/AppHost.cs`, `src/BuildingBlocks/BookWorm.Constants/Aspire/Services.cs`, `Clients.cs`, `Components.cs` |
-| **Environment**                | `aca` (`cae-<token>`), `Consumption` workload profile                                                                               |
-| **Application Container Apps** | 16                                                                                                                                  |
-| **Operational tooling**        | `quartz-dashboard`                                                                                                                  |
-| **Assignment**                 | `containerAppEnvironment.AssignComputeResources()` in publish mode                                                                  |
-
-The generated Bicep snapshot declares `activeRevisionsMode: 'Single'` and `minReplicas: 1` on all 17 Container Apps (16 application workloads plus `quartz-dashboard`). No `maxReplicas` value or scale rule is emitted, so do not document a specific upper bound from this artifact.
-
-## Compute tiers
-
-The diagram groups the workloads by tier.
+## Compute Tiers and Workload Topology
 
 <MermaidFileLoader file="mermaids/002-compute-and-container-apps-diagram-1.mmd" />
 
-## Application Container Apps inventory
+## Component & Responsibility
 
-| Aspire resource ID    | Display name        | Runtime / build                                                      | Ingress  | Local dev port            | Source path                                       |
-| :-------------------- | :------------------ | :------------------------------------------------------------------- | :------- | :------------------------ | :------------------------------------------------ |
-| `gateway`             | API Gateway         | YARP (`Aspire.Hosting.Yarp`)                                         | External | Assigned by Aspire        | `src/Aspire/BookWorm.AppHost/Extensions/Proxy/`   |
-| `storefront`          | Storefront          | Next.js 16; `oven/bun:1-alpine` image; container port `3000`         | Internal | `3000`                    | `src/Clients/apps/storefront`                     |
-| `commerce`            | Commerce            | Next.js 16; `oven/bun:1-alpine` image; container port `3000`         | Internal | `3001`                    | `src/Clients/apps/commerce`                       |
-| `backoffice`          | Backoffice          | Next.js 16; `oven/bun:1-alpine` image; container port `3000`         | Internal | Dynamic (`PORT`)          | `src/Clients/apps/backoffice`                     |
-| `catalog`             | Catalog API         | .NET 11 Minimal API + gRPC; .NET SDK container                       | Internal | HTTP `5100`, HTTPS `7187` | `src/Services/Catalog/BookWorm.Catalog`           |
-| `catalog-ingestion`   | Catalog Ingestion   | Azure Functions (Kafka trigger)                                      | Internal | Functions `7071`          | `src/Services/Catalog/BookWorm.Catalog.Ingestion` |
-| `basket`              | Basket API          | .NET 11 Minimal API + gRPC                                           | Internal | HTTP `5052`, HTTPS `7155` | `src/Services/Basket/BookWorm.Basket`             |
-| `ordering`            | Ordering API        | .NET 11 Minimal API + Marten                                         | Internal | HTTP `5244`, HTTPS `7203` | `src/Services/Ordering/BookWorm.Ordering`         |
-| `finance`             | Finance             | Azure Durable Functions + Durable Task Scheduler                     | Internal | Functions `7072`          | `src/Services/Finance/BookWorm.Finance`           |
-| `chatting`            | Chat API            | .NET 11 + Microsoft Agent Framework (AG-UI)                          | Internal | HTTP `5026`, HTTPS `7132` | `src/Services/Chat/BookWorm.Chat`                 |
-| `rating`              | Rating API          | .NET 11 + Microsoft Agent Framework (A2A gRPC)                       | Internal | HTTP `5278`, HTTPS `7003` | `src/Services/Rating/BookWorm.Rating`             |
-| `mcptools`            | MCP Tools           | .NET 11 Model Context Protocol (MCP) server at `/mcp`                | Internal | HTTP `5243`, HTTPS `7193` | `src/Services/McpTools/BookWorm.McpTools`         |
-| `notification`        | Notification        | .NET 11 worker (MailKit + Mjml.Net)                                  | Internal | HTTP `5259`, HTTPS `7036` | `src/Services/Notification/BookWorm.Notification` |
-| `scheduler`           | Scheduler           | .NET 11 + Quartz.NET                                                 | Internal | HTTP `5062`, HTTPS `7062` | `src/Services/Scheduler/BookWorm.Scheduler`       |
-| `presidio-analyzer`   | Presidio Analyzer   | `ghcr.io/data-privacy-stack/presidio-analyzer:latest`; HTTP `3000`   | Internal | Dynamic HTTPS             | `src/Integrations/BookWorm.Hosting.Presidio`      |
-| `presidio-anonymizer` | Presidio Anonymizer | `ghcr.io/data-privacy-stack/presidio-anonymizer:latest`; HTTP `3000` | Internal | Dynamic HTTPS             | `src/Integrations/BookWorm.Hosting.Presidio`      |
+| Component                              | Role                                                      | Protocol / Interface                | Persistence / State                                                                                                       | Notes                                                                                                                     |
+| :------------------------------------- | :-------------------------------------------------------- | :---------------------------------- | :------------------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------------ |
+| **API Gateway**                        | Public edge reverse proxy (YARP)                          | External HTTPS (`5000`)             | Stateless                                                                                                                 | Routes frontends, APIs, and identity proxy                                                                                |
+| **Storefront**                         | Customer catalog browsing & chat UI (Next.js 16)          | Internal HTTP (`3000`)              | Stateless (Better Auth + Entra ID)                                                                                        | Copilot enabled                                                                                                           |
+| **Commerce**                           | Customer basket, checkout & account UI (Next.js 16)       | Internal HTTP (`3000`)              | Stateless (shares Storefront session)                                                                                     | Health at `/api/health`                                                                                                   |
+| **Backoffice**                         | Staff administration UI (Next.js 16)                      | Internal HTTP (`3000`)              | Stateless (Better Auth + Entra ID)                                                                                        | Path prefix & health `/backoffice`                                                                                        |
+| [[service\|catalog-api]]               | Book, author, category, publisher & vector search API     | Internal HTTP `v1` & gRPC           | [[container\|catalog-database]], [[container\|catalog-cache]], [[container\|catalog-vector]], [[container\|catalog-blob]] | Entra ID JWT; Foundry consumer                                                                                            |
+| [[service\|catalog-ingestion]]         | Asynchronous vector-index batch updater (Azure Functions) | Kafka trigger                       | Reads [[container\|catalog-database]], writes [[container\|catalog-vector]], host storage                                 | Foundry consumer                                                                                                          |
+| [[service\|basket-api]]                | Customer pre-checkout basket service                      | Internal HTTP `v1` & gRPC           | [[container\|basket-database]]                                                                                            | Entra ID JWT; HMAC signing; calls [[service\|catalog-api]] gRPC                                                           |
+| [[service\|order-api]]                 | Accepted orders, lifecycle & SSE updates                  | Internal HTTP `v1` & SSE            | [[container\|order-database]], [[container\|order-cache]]                                                                 | Entra ID JWT; HMAC signing; calls [[service\|catalog-api]] & [[service\|basket-api]] gRPC                                 |
+| [[service\|order-orchestration]]       | Post-checkout saga orchestrator (Azure Durable Functions) | Kafka triggers                      | Durable Task Scheduler, host storage                                                                                      | No PostgreSQL database                                                                                                    |
+| [[service\|chat-api]]                  | Conversational AI assistant (AG-UI)                       | Internal HTTP (`/ag-ui`, `/agents`) | [[container\|chat-session-blob]]                                                                                          | Entra ID JWT + Agent Identity; calls [[service\|mcp-server]], [[service\|rating-api]], [[service\|presidio-api]], Foundry |
+| [[service\|rating-api]]                | Customer feedback & review intelligence agent             | Internal HTTP `v1` & A2A gRPC       | [[container\|rating-database]], [[container\|rating-cache]]                                                               | Entra ID JWT + Agent Identity; calls [[service\|mcp-server]], [[service\|presidio-api]], Foundry                          |
+| [[service\|mcp-server]]                | Shared Model Context Protocol server                      | Internal HTTP (`/mcp`)              | Stateless                                                                                                                 | Entra ID JWT; gateway origin CORS; calls [[service\|catalog-api]] gRPC                                                    |
+| [[service\|notification-api]]          | Transactional order email worker (MailKit + Mjml.Net)     | Kafka worker & SMTP                 | Redis (FusionCache & idempotency)                                                                                         | HMAC signing; no HTTP/gRPC API or SQL DB                                                                                  |
+| [[service\|scheduler-service]]         | Cron job runner (Quartz.NET)                              | Internal HTTP & Kafka               | [[container\|scheduler-database]]                                                                                         | Explicit start in local run mode                                                                                          |
+| [[service\|presidio-api]] (Analyzer)   | PII detection sidecar                                     | Internal HTTP (`3000`)              | Stateless                                                                                                                 | `/health` probe; called by [[service\|chat-api]] & [[service\|rating-api]]                                                |
+| [[service\|presidio-api]] (Anonymizer) | PII redaction sidecar                                     | Internal HTTP (`3000`)              | Stateless                                                                                                                 | `/health` probe; called by [[service\|chat-api]] & [[service\|rating-api]]                                                |
+| **Quartz Dashboard**                   | Operational job management UI (`/quartz`)                 | External HTTPS (`8080`)             | Reads [[container\|scheduler-database]] via [[service\|scheduler-service]]                                                | [[service\|oauth-api]] OIDC (`admin` role)                                                                                |
 
-## Operational tooling
+## Configuration & Operational Defaults
 
-| Aspire resource ID | Display name     | Runtime                                            | Ingress  | Authentication                                                 | Consumer    |
-| :----------------- | :--------------- | :------------------------------------------------- | :------- | :------------------------------------------------------------- | :---------- |
-| `quartz-dashboard` | Quartz Dashboard | `Quartz.Aspire.Hosting` container; UI at `/quartz` | External | Entra ID OpenID Connect; `admin` role; redirect `/signin-oidc` | `scheduler` |
+### Workload Identity Bindings
 
-Run-mode-only tooling (`scalar`, `inspector`, `pgAdmin`, `RedisInsight`, `Kafka UI`, Azure Storage Explorer, Cosmos DB Data Explorer, and Mailpit) is not deployed to Azure.
+User-assigned Managed Identities are provisioned for [[service|catalog-api]], [[service|catalog-ingestion]], [[service|basket-api]], [[service|order-api]], [[service|chat-api]], [[service|rating-api]], [[service|mcp-server]], [[service|notification-api]], [[service|scheduler-service]], [[service|order-orchestration]], Storefront, and Backoffice. API Gateway, Commerce, both Presidio sidecars, and Quartz Dashboard have no workload-specific identity; the environment uses a shared managed identity for registry pulls.
 
-## Dependencies and identities per workload
+<AccordionGroup>
+	<Accordion title="Local Development Ports & Runtime Notes">
+		| Workload | Local Dev Ports | Runtime Notes | | :------- | :-------------- | :------------ | |
+		**API Gateway** | Dynamic (Aspire-assigned) | YARP reverse proxy | | **Storefront** | `3000` |
+		Next.js standalone container | | **Commerce** | `3001` | Next.js standalone container | |
+		**Backoffice** | Dynamic | Next.js standalone container | | [[service\|catalog-api]] | HTTP
+		`5100`, HTTPS `7187` | .NET 11 Minimal API + gRPC | | [[service\|catalog-ingestion]] | Functions
+		`7071` | Azure Functions Kafka trigger | | [[service\|basket-api]] | HTTP `5052`, HTTPS `7155` |
+		.NET 11 Minimal API + gRPC | | [[service\|order-api]] | HTTP `5244`, HTTPS `7203` | .NET 11
+		Minimal API + Marten | | [[service\|order-orchestration]] | Functions `7072` | Connected to
+		Durable Task Scheduler | | [[service\|chat-api]] | HTTP `5026`, HTTPS `7132` | .NET 11 +
+		Microsoft Agent Framework (AG-UI) | | [[service\|rating-api]] | HTTP `5278`, HTTPS `7003` | .NET
+		11 + Microsoft Agent Framework (A2A gRPC) | | [[service\|mcp-server]] | HTTP `5243`, HTTPS
+		`7193` | .NET 11 MCP server at `/mcp` | | [[service\|notification-api]] | HTTP `5259`, HTTPS
+		`7036` | .NET 11 worker (MailKit + Mjml.Net) | | [[service\|scheduler-service]] | HTTP `5062`,
+		HTTPS `7062` | Runs vector batch (5m) and heartbeat (30s) jobs | | [[service\|presidio-api]] |
+		Dynamic HTTPS (dev) / HTTP `3000` (prod) | Uses developer cert in local run mode |
+	</Accordion>
+</AccordionGroup>
 
-| Aspire resource ID    | Backing dependencies                                                          | Managed Identity RBAC                                                           | Auth configuration                                                    |
-| :-------------------- | :---------------------------------------------------------------------------- | :------------------------------------------------------------------------------ | :-------------------------------------------------------------------- |
-| `gateway`             | All routed services; Entra ID proxy                                           | —                                                                               | Entra ID proxy route `/entra`                                         |
-| `storefront`          | `gateway`                                                                     | —                                                                               | Better Auth + Entra ID (`BETTER_AUTH_SECRET`); Copilot enabled        |
-| `commerce`            | `gateway`                                                                     | —                                                                               | Shares Storefront session (`.WithoutEntraId()`); health `/api/health` |
-| `backoffice`          | `gateway`                                                                     | —                                                                               | Better Auth + Entra ID; path prefix and health `/backoffice`          |
-| `catalog`             | PostgreSQL `catalogdb`, Redis, Qdrant, Blob `catalog-blob`, Kafka, Foundry    | PostgreSQL, Redis, Storage Blob Data Contributor, Cognitive Services User       | Entra ID JWT                                                          |
-| `catalog-ingestion`   | PostgreSQL `catalogdb`, Qdrant, Kafka, Foundry, host storage                  | PostgreSQL, Storage Blob Data Owner, Cognitive Services User                    | —                                                                     |
-| `basket`              | Redis, Kafka, `catalog` (gRPC)                                                | Redis                                                                           | Entra ID JWT; `HMAC__Key`                                             |
-| `ordering`            | PostgreSQL `orderingdb`, Redis, Kafka, `catalog` and `basket` (gRPC)          | PostgreSQL, Redis                                                               | Entra ID JWT; `HMAC__Key`                                             |
-| `finance`             | Durable Task Scheduler `finance-taskhub`, host storage, Kafka                 | Storage Blob Data Owner; Durable Task Scheduler (`Authentication=DefaultAzure`) | —                                                                     |
-| `chatting`            | Blob `chatting-blob`, Foundry, `mcptools`, `rating`, Presidio                 | Storage Blob Data Contributor, Cognitive Services User                          | Entra ID JWT + Agent Identity                                         |
-| `rating`              | Cosmos DB `ratingdb`/`feedbacks`, Redis, Kafka, Foundry, `mcptools`, Presidio | Cosmos DB data role, Redis, Cognitive Services User                             | Entra ID JWT + Agent Identity                                         |
-| `mcptools`            | `catalog` (gRPC)                                                              | —                                                                               | Entra ID JWT; gateway CORS                                            |
-| `notification`        | Redis, Kafka, SMTP (SendGrid)                                                 | Redis                                                                           | `HMAC__Key`                                                           |
-| `scheduler`           | PostgreSQL `schedulerdb`, Kafka, `quartz-dashboard`                           | PostgreSQL                                                                      | —                                                                     |
-| `presidio-analyzer`   | —                                                                             | —                                                                               | —                                                                     |
-| `presidio-anonymizer` | —                                                                             | —                                                                               | —                                                                     |
+## Guardrails & Constraints
 
-The snapshot provisions workload-specific user-assigned identities for `catalog`, `catalog-ingestion`, `basket`, `ordering`, `chatting`, `rating`, `mcptools`, `notification`, `scheduler`, `finance`, `storefront`, and `backoffice`. `gateway`, `commerce`, both Presidio apps, and `quartz-dashboard` have no workload-specific identity in these templates. Separately, the Container Apps environment uses the shared `mi-<token>` identity for ACR pulls.
+<Admonition type="warning" title="Baseline Scaling Bounds Are Unspecified">
+	The published deployment baseline declares single-revision mode with a minimum of 1 replica on all
+	17 Container Apps, with no upper replica limit or scale rules. Establish explicit upper bounds and
+	scale signals before production capacity commitments.
+</Admonition>
 
-## Runtime notes
+<Admonition type="info" title="Run-Mode Tooling Exclusion">
+	Developer and diagnostic containers (Scalar, MCP Inspector, pgAdmin, RedisInsight, Kafka UI, Azure
+	Storage Explorer, Cosmos DB Data Explorer, and Mailpit) are active only in local run mode and are
+	never deployed to Azure.
+</Admonition>
 
-- **Azure Functions workers:** `finance` and `catalog-ingestion` use `.WithHostStorage(storage)` and receive `BrokerList` set to the Kafka connection string.
-- **Finance orchestration:** `finance` receives `DTS_CONNECTION_STRING` and `TASKHUB_NAME` from `Infra/durable-task-scheduler.bicep` (`AzureExtensions.DurableTask.cs`). It has no PostgreSQL database.
-- **Notification:** `notification` has no REST or gRPC API and no PostgreSQL database. It uses Redis for FusionCache and integration-event idempotency.
-- **Scheduler:** `scheduler` uses `.WithExplicitStart()`, so it does not start automatically in local run mode. Quartz.NET runs `ProcessVectorBatchJob` every 5 minutes and `HeartbeatJob` every 30 seconds.
-- **Presidio:** Run mode uses HTTPS with the developer certificate; publish mode uses HTTP on port `3000`. Both modes use the `/health` check.
-- **Frontend images:** `FrontendAppBuilder.cs` builds a multi-stage `oven/bun:1-alpine` Dockerfile and runs the Next.js standalone server on port `3000`.
+## Related Documentation
 
-## Related documentation
-
-- [[doc|platform/001-platform-overview]] — Shared platform layer and YARP route map.
+- [[doc|platform/001-platform-overview]] — Shared platform layer and API Gateway route map.
 - [[doc|platform/003-data-ai-and-messaging-resources]] — Datastores backing each workload.
 - [[doc|platform/004-identity-and-rbac-matrix]] — Role assignments and scopes per workload.
 - [[doc|operational/003-incident-response-and-runbooks]] — Recovery steps for failing Container Apps.

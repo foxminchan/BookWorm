@@ -1,0 +1,60 @@
+---
+id: adr-bw-019-polyglot-persistence-strategy
+name: "ADR-BW-019: Adopt polyglot persistence matched to capability access patterns"
+version: 1.0.0
+summary: Match PostgreSQL, Azure Cosmos DB, Redis, and Qdrant to each capability's consistency, partitioning, latency, and search requirements.
+status: accepted
+date: 2026-11-28
+owners:
+  - architecture-enabling-team
+appliesTo:
+  - type: domain
+    id: bookworm
+  - type: service
+    id: catalog-api
+  - type: service
+    id: catalog-ingestion
+  - type: service
+    id: order-api
+  - type: service
+    id: rating-api
+  - type: service
+    id: basket-api
+related:
+  - id: adr-bw-006-service-owned-business-state
+  - id: adr-bw-007-derived-eventually-consistent-views
+decisionMakers:
+  - architecture-enabling-team
+  - platform-engineering-team
+x-scope: "Whole system (data storage layer)"
+---
+
+| Field                  | Value                                                                                                                                                    |
+| :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Status**             | Accepted                                                                                                                                                 |
+| **Date**               | 2026-11-28                                                                                                                                               |
+| **Owners**             | [[team\|architecture-enabling-team]]                                                                                                                     |
+| **Affected Resources** | [[domain\|bookworm]], [[service\|catalog-api]], [[service\|catalog-ingestion]], [[service\|order-api]], [[service\|rating-api]], [[service\|basket-api]] |
+| **Related ADRs**       | [[adr\|adr-bw-006-service-owned-business-state]], [[adr\|adr-bw-007-derived-eventually-consistent-views]]                                                |
+
+## Context & Problem Statement
+
+BookWorm's capabilities have markedly different data access patterns: transactional catalog & event-sourced ordering, high-volume per-book feedback documents, ephemeral low-latency shopping carts, and semantic vector similarity search. Forcing every service onto a single database engine would either compromise latency/search quality or introduce awkward schema workarounds.
+
+## Decision Drivers
+
+- **Capability autonomy:** Each service owns its private store with zero cross-service database sharing.
+- **Workload fit:** Relational ACID + Marten event store for Ordering/Catalog, partitioned document storage for Reviews, sub-millisecond key-value storage for Shopping, and vector similarity search for Discovery.
+- **Operational clarity:** Keep the set of approved storage engines small and well-supported by Aspire hosting.
+
+## Decision & Consequences
+
+**Chosen Option:** Standardize on four purpose-matched persistence engines:
+
+- **PostgreSQL:** Authoritative relational/event-store persistence for [[service|catalog-api]], [[service|order-api]] (Marten), [[service|notification-api]], and [[service|scheduler-service]] (Quartz).
+- **Azure Cosmos DB:** Partitioned document store (`/bookId`) with ETag concurrency for [[service|rating-api]] (`ratingdb`/`feedbacks`).
+- **Redis:** Authoritative ephemeral store for [[service|basket-api]], FusionCache backplane, and distributed idempotency/checkout locks.
+- **Qdrant:** Derived vector index populated asynchronously by [[service|catalog-ingestion]] for semantic book discovery.
+
+- **Positive:** Optimal latency, partitioning, and query semantics per bounded context.
+- **Negative:** Platform operations must maintain backup, monitoring, and restore runbooks for four distinct storage technologies.

@@ -1,0 +1,66 @@
+---
+id: platform-engineering-team
+name: Platform Engineering Team
+summary: |
+  Platform team providing BookWorm's thinnest viable platform—orchestration, messaging fabric, scheduling, notifications, observability, identity, and privacy guardrails.
+members:
+  - nxnhan
+---
+
+## Mission & Topology Boundary
+
+The **Platform Engineering Team** builds and operates BookWorm's shared technical foundation across [[domain|platform]], [[system|identity-provider]], and [[system|data-privacy]], delivering self-service paved roads that reduce cognitive load for stream-aligned and complicated-subsystem teams. It owns service defaults, distributed orchestration, Kafka/Wolverine messaging infrastructure, recurring job scheduling, transactional email delivery, telemetry pipelines, and security/PII boundaries. Explicitly **out of scope** are domain-specific business rules, catalog pricing, basket contents, order lifecycle decisions, and conversational agent prompts.
+
+## Team Profile & Interaction Modes
+
+| Property                            | Value                                                                                                                                        |
+| :---------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Topology Type**                   | Platform                                                                                                                                     |
+| **Primary Mission**                 | Deliver reliable, observable, secure paved roads and shared operational capabilities (_X-as-a-Service_)                                      |
+| **Default Interaction Mode**        | _X-as-a-Service_ (primary); _Collaboration_ (short-lived onboarding of new platform primitives)                                              |
+| **Key Partner Teams**               | [[team\|catalog-experience-team]], [[team\|commerce-fulfillment-team]], [[team\|ai-capabilities-team]], [[team\|architecture-enabling-team]] |
+| **Escalation / Engagement Channel** | [GitHub Discussions](https://github.com/foxminchan/BookWorm/discussions) · [[doc\|operational/003-incident-response-and-runbooks]]           |
+
+## Owned Capabilities & Assets
+
+- **Domain:** [[domain|platform]]
+- **Internal Systems:** [[system|notification-system]], [[system|scheduler-system]], [[system|sendgrid]]
+- **External Platform Systems:** [[system|identity-provider]], [[system|data-privacy]]
+- **Services:** [[service|notification-api]], [[service|scheduler-service]], [[service|sendgrid-api]], [[service|presidio-api]], [[service|oauth-api]]
+- **Flows & Channels:** [[flow|notification-delivery]], and all dead-letter queue channels (`*.dead-letter-queue`)
+- **Platform & Operations Guides:** [[doc|platform/001-platform-overview]], [[doc|operational/001-azure-deployment-guide]], [[doc|operational/003-incident-response-and-runbooks]]
+
+<Accordion title="Interaction Modes with Neighboring Teams">
+
+- **With [[team|catalog-experience-team]] (_X-as-a-Service_):** Provides scheduled vector-batch triggers, OpenTelemetry pipelines, and dead-letter queue monitoring.
+- **With [[team|commerce-fulfillment-team]] (_X-as-a-Service_):** Operates transactional order notification delivery via [[service|notification-api]] and [[service|sendgrid-api]], plus durable outbox/inbox messaging defaults.
+- **With [[team|ai-capabilities-team]] (_X-as-a-Service_ / _Collaboration_):** Supplies fail-closed PII detection and anonymization via [[system|data-privacy]] and agent identity boundaries via [[system|identity-provider]].
+- **With [[team|architecture-enabling-team]] (_Collaboration_):** Co-evolves platform ADRs covering resilience, correlation, observability, and environment configuration.
+
+</Accordion>
+
+## Platform Working Agreements
+
+- **Paved-Road Self-Service:** All services adopt shared Aspire service defaults, OpenTelemetry instrumentation, and resilience policies out of the box without bespoke per-service wiring.
+- **Zero Business State Ownership:** Platform services never authoritatively own books, baskets, orders, or reviews; they transport, schedule, authenticate, or sanitize payloads on behalf of owning domains.
+- **Operational Guardrails:** Dead-letter queues, secret rotation, backup/restore procedures, and deployment pipelines are maintained with documented runbooks.
+- **Requesting Platform Changes:** Stream-aligned teams propose new shared capabilities or infrastructure adjustments via [GitHub Discussions](https://github.com/foxminchan/BookWorm/discussions) before introducing custom workarounds.
+
+:::note
+For production incidents, dead-letter queue spikes, or identity/PII gateway issues, start with [[doc|operational/003-incident-response-and-runbooks]].
+:::
+
+<Tiles columns={2}>
+	<Tile
+		icon="CpuChipIcon"
+		href="/docs/custom/platform/001-platform-overview"
+		title="Platform Overview"
+		description="Azure topology, compute inventory, and shared infrastructure."
+	/>
+	<Tile
+		icon="WrenchScrewdriverIcon"
+		href="/docs/custom/operational/003-incident-response-and-runbooks"
+		title="Incident Runbooks"
+		description="Operational diagnostics, DLQ recovery, and escalation steps."
+	/>
+</Tiles>

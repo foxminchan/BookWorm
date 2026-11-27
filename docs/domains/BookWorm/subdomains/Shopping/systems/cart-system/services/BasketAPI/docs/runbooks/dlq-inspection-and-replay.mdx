@@ -1,0 +1,30 @@
+---
+title: Basket DLQ Inspection and Replay
+summary: CLI-first procedure to inspect and safely replay failed checkout cleanup messages from the Basket dead-letter queue.
+version: 1.0.0
+---
+
+Operational runbook for triaging [[channel|bookworm.&#123;env&#125;.basket.dead-letter-queue]] for [[service|basket-api]].
+
+:::warning
+**Never replay to [[channel|bookworm.&#123;env&#125;.finance.place-order]]**—[[service|notification-api]] also consumes that topic and would send duplicate order confirmation emails. Replay only to a [[service|basket-api]]-scoped recovery path or verify Redis state directly.
+:::
+
+<Steps>
+  <Step title="Inspect dead-lettered records">
+    ```bash
+    kcat -C -b "$KAFKA_BOOTSTRAP" -t "bookworm.${ENV}.basket.dead-letter-queue" -o -20 -e -f '%t [%p] offset=%o key=%k headers=%h\n%s\n---\n'
+    ```
+  </Step>
+  <Step title="Check Redis basket and idempotency keys">
+    Verify Redis health and inspect whether the buyer's basket key or `OrderId` idempotency lock (`24h` TTL) is still present:
+
+    ```bash
+    redis-cli -u "$REDIS_URL" EXISTS "<basketId>"
+    ```
+
+  </Step>
+  <Step title="Reconcile checkout state">
+    If [[service|order-orchestration]] has already compensated the order, do not replay cleanup. Otherwise, clear any stale lock if needed and trigger basket removal or replay the [[command|PlaceOrderCommand]] payload to [[service|basket-api]] only.
+  </Step>
+</Steps>

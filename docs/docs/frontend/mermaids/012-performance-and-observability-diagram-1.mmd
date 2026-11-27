@@ -1,0 +1,25 @@
+architecture-beta
+	group edge(internet)[Client and Edge]
+	service browser(internet)[Browser Experience] in edge
+	service gateway(server)[API Gateway] in edge
+
+	group fe(internet)[Frontend Runtimes]
+	service storefront(server)[Storefront + OTel SDK] in fe
+	service commerce(server)[Commerce + OTel SDK] in fe
+	service backoffice(server)[Backoffice + OTel SDK] in fe
+
+	group be(cloud)[Backend Services]
+	service apis(server)[Capability APIs] in be
+
+	group obs(database)[Observability Sink]
+	service otlp(database)[Aspire Dashboard and Log Analytics] in obs
+
+	browser:R --> L: gateway
+	gateway:R --> L: storefront
+	gateway:R --> L: commerce
+	gateway:R --> L: backoffice
+	storefront:B --> T: otlp
+	commerce:B --> T: otlp
+	backoffice:B --> T: otlp
+	gateway:B --> T: apis
+	apis:R --> L: otlp

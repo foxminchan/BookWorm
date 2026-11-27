@@ -10,134 +10,66 @@ badges:
     textColor: orange
 ---
 
-Use this runbook when order emails are delayed, Kafka consumer lag grows on Finance order command topics, messages accumulate in `bookworm.<env>.notification.dead-letter-queue`, or `notification` logs show SMTP or Redis failures. **Notification** (`notification`) is a stateless Kafka + MailKit + Mjml.Net + Redis idempotency worker with **no PostgreSQL database** and **no scheduled resend or cleanup jobs**.
+## Trigger / Symptom & Blast Radius
 
-## Prerequisites
+Order emails are delayed, Kafka consumer lag grows on Finance order command topics, messages accumulate in <ResourceLink id="bookworm.{env}.notification.dead-letter-queue" type="channel">`bookworm.{env}.notification.dead-letter-queue`</ResourceLink>, or [[service|notification-api]] logs SMTP or Redis failures. Blast radius is transactional email delivery only; commercial order state in [[service|order-api]] is unaffected.
 
-- Read access to **Kafka UI** (locally) or **Confluent Cloud** for topic lag and dead-letter queue (DLQ) depth.
-- Read access to **Aspire Dashboard** (locally) or **Azure Log Analytics** (Azure Container Apps) for `notification` logs, traces, and metrics.
-- Access to **Mailpit** (locally) or your configured SMTP provider dashboard (SendGrid by default in Azure).
-- Read-only access to **RedisInsight** (locally) or Azure Managed Redis monitoring for `redis`.
+<Admonition type="danger">
+	Never flush BookWorm's shared Redis instance during an outage, and never copy recipient email
+	addresses or rendered HTML bodies into incident tickets.
+</Admonition>
 
-## Steps
+## Pre-Flight Check
 
-<Steps>
-<Step title="Measure Kafka consumer lag and DLQ depth safely">
-
-Check consumer lag for the `notification` consumer group across all three inbound Finance topics and inspect message depth in the native Notification DLQ:
-
-- `bookworm.<env>.finance.place-order` (`PlaceOrderCommand`)
-- `bookworm.<env>.finance.complete-order` (`CompleteOrderCommand`)
-- `bookworm.<env>.finance.cancel-order` (`CancelOrderCommand`)
-- `bookworm.<env>.notification.dead-letter-queue` (Wolverine native DLQ after `50ms / 250ms / 1s` retries with full jitter)
-
-Where:
-
-- `<env>`: Environment kebab-case segment (for example, `development`, `staging`, or `production`).
-
-Record lag counts, oldest message timestamps, and `OrderId` / `message.Id` values only. Never copy recipient email addresses or rendered HTML bodies into incident tickets.
-
-</Step>
-<Step title="Check Notification worker health and SMTP telemetry">
-
-In local Development, verify `notification` health endpoints (which include `MailKitHealthCheck`; mapped in Development only):
-
-<CodeGroup>
+Verify [[service|notification-api]] container status and stream recent logs in `<ENV>`:
 
 ```bash
-curl -sS "https://localhost:7036/health"
+az containerapp show --name <SERVICE_NAME> --resource-group <RESOURCE_GROUP> --query "properties.runningStatus" -o tsv
+az containerapp logs show --name <SERVICE_NAME> --resource-group <RESOURCE_GROUP> --tail 150
 ```
 
-</CodeGroup>
+## Quick Recovery Procedure
 
-Expected output:
+<Steps>
+<Step title="Measure Kafka lag and DLQ depth">
 
-<CodeGroup>
-
-```text
-Healthy
-```
-
-</CodeGroup>
-
-In Azure Container Apps, inspect `notification` logs in Azure Log Analytics for:
-
-- **Polly resilience events:** `CircuitBreaker` open state, exponential `Retry` attempts, or `TimeoutRejectedException` (default `30` seconds) wrapping `MailKitSender`.
-- **SMTP errors:** Transient `CommandException`, `ProtocolException`, `IOException`, authentication failures, or provider rate limits.
-- **Template errors:** `MjmlTemplateRenderer` failures rendering `Orders/OrderEmail.mjml` or `_Layout.mjml`.
+Inspect consumer lag for the `notification` consumer group across <ResourceLink id="bookworm.{env}.finance.place-order" type="channel">`bookworm.{env}.finance.place-order`</ResourceLink>, <ResourceLink id="bookworm.{env}.finance.complete-order" type="channel">`bookworm.{env}.finance.complete-order`</ResourceLink>, and <ResourceLink id="bookworm.{env}.finance.cancel-order" type="channel">`bookworm.{env}.finance.cancel-order`</ResourceLink>, plus depth on <ResourceLink id="bookworm.{env}.notification.dead-letter-queue" type="channel">`bookworm.{env}.notification.dead-letter-queue`</ResourceLink>. Record only lag counts, timestamps, and order/message IDs.
 
 </Step>
-<Step title="Verify SMTP configuration and provider status">
+<Step title="Diagnose SMTP, resilience, or template faults">
 
-Confirm connectivity to the configured SMTP server without printing credentials:
+Check [[service|notification-api]] logs for:
 
-- **Local Development:** Verify the **Mailpit** (`mailpit`) container is running in Aspire Dashboard (SMTP port `587`) and inspect captured messages in the Mailpit web UI.
-- **Azure environments:** Verify runtime parameters (`email-smtp-endpoint` defaulting to `smtp://smtp.sendgrid.net:587`, `email-smtp-username`, `email-smtp-password`, `email-sender-address`, `email-sender-name`) and confirm the external SMTP provider is not throttling or rejecting connections.
+**Circuit breaker open / 30s timeouts:** [[service|sendgrid-api]] (or local Mailpit) unreachable or throttling on port `587`.
 
-</Step>
-<Step title="Check Redis availability and idempotency behavior">
+**SMTP auth failures:** Invalid SMTP username, password, or unverified sender address.
 
-Verify `redis` health in Aspire Dashboard or Azure Managed Redis monitoring. Notification relies on Redis (`IIntegrationEventIdempotencyGuard`, 24-hour TTL keyed by `message.Id` and handler name) to suppress duplicate deliveries of the same Kafka message.
+**Redis errors:** Idempotency store unreachable (24-hour deduplication guard).
 
-- Do not flush `redis` during an outage; flushing drops active idempotency markers across Notification, Basket, Ordering, Catalog, and Rating.
+**Blank recipient email:** Commands with blank/whitespace email addresses are intentionally skipped without error or DLQ entry.
 
 </Step>
-<Step title="Confirm the command included a non-blank recipient email">
+<Step title="Restore dependencies and replay DLQ messages">
 
-If a specific customer did not receive an email while lag and DLQ depth are zero, check sanitized Finance and Notification traces for `<order-id>`. `OrderNotificationHelper.SendAsync` intentionally skips commands whose `Email` field is null, empty, or whitespace without throwing an error or writing to the DLQ.
-
-</Step>
-<Step title="Restore dependencies and replay DLQ messages safely">
-
-- Fix the failing dependency (Kafka broker connectivity, `redis`, `notification` container health, or SMTP provider credentials/limits). Active Kafka lag drains automatically once the consumer recovers.
-- For messages already moved to `bookworm.<env>.notification.dead-letter-queue`, inspect the failure reason first so permanently malformed payloads are not replayed in a loop.
-- Replay recoverable DLQ messages to their original Finance topic using your environment's approved Kafka replay tooling. Because SMTP timeouts can be ambiguous (the provider may have accepted the message before timing out), check provider delivery logs before replaying to minimize duplicate emails.
-- Never treat an email backlog as an Ordering outage; verify commercial order status directly in **Ordering API** (`GET /api/v1/orders/{id}`).
+Fix the failing dependency (SMTP credentials/egress, Redis connectivity, or Kafka broker). Active lag drains automatically. For messages in <ResourceLink id="bookworm.{env}.notification.dead-letter-queue" type="channel">`bookworm.{env}.notification.dead-letter-queue`</ResourceLink>, verify provider delivery logs first to minimize duplicates after ambiguous SMTP timeouts, then replay recoverable messages to their original Finance topic.
 
 </Step>
 </Steps>
 
 ## Verification
 
-Confirm that lag has drained, SMTP errors have stopped, and new order emails deliver cleanly:
-
-1. Verify consumer lag on `bookworm.<env>.finance.place-order`, `bookworm.<env>.finance.complete-order`, and `bookworm.<env>.finance.cancel-order` trends to `0`.
-2. Confirm `bookworm.<env>.notification.dead-letter-queue` receives no new messages.
-3. Confirm Polly `CircuitBreaker` is closed and `MailKitSender` logs show successful handoffs (or verify a test order email appears in Mailpit locally).
-
-In local Development, re-verify the health endpoint:
-
-<CodeGroup>
+Confirm consumer lag on all three Finance command topics trends to `0`, no new messages enter <ResourceLink id="bookworm.{env}.notification.dead-letter-queue" type="channel">`bookworm.{env}.notification.dead-letter-queue`</ResourceLink>, and container logs show successful SMTP handoffs:
 
 ```bash
-curl -sS "https://localhost:7036/health"
+az containerapp logs show --name <SERVICE_NAME> --resource-group <RESOURCE_GROUP> --tail 50
 ```
 
-</CodeGroup>
+## Rollback / Escalation
 
-Expected output:
-
-<CodeGroup>
-
-```text
-Healthy
-```
-
-</CodeGroup>
-
-## Troubleshooting
-
-| Symptom                                                                                       | Cause                                                                                                          | Fix                                                                                                                     |
-| :-------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------- |
-| Growing lag on `bookworm.<env>.finance.*` and `BrokenCircuitException` in logs                | SMTP provider (Mailpit or SendGrid) unreachable or returning transient errors, tripping Polly `CircuitBreaker` | Restore SMTP endpoint connectivity or provider quota; wait for circuit breaker half-open recovery and verify lag drains |
-| Messages accumulating in `bookworm.<env>.notification.dead-letter-queue` with SMTP auth error | Invalid `email-smtp-username`, `email-smtp-password`, or unverified `email-sender-address`                     | Rotate/fix SMTP parameters through the standard deployment workflow, then replay affected DLQ messages                  |
-| `TimeoutRejectedException` after 30 seconds in `MailKitSender`                                | Slow SMTP handshake or blocked outbound port `587`                                                             | Check network egress / firewall rules to the SMTP host and provider latency before replaying DLQ messages               |
-| Redis connection errors in `notification` logs                                                | `redis` unavailable for `IIntegrationEventIdempotencyGuard`                                                    | Restore `redis` connectivity without flushing cache; allow consumer retries or replay DLQ once Redis is healthy         |
-| No email received, zero lag, zero DLQ entries                                                 | Finance command had a blank or whitespace `Email` address, intentionally skipped by `OrderNotificationHelper`  | Confirm buyer email data in Ordering/Finance; do not treat as a Notification defect                                     |
+- **Rollback:** If a recent [[service|notification-api]] deployment introduced template rendering or SMTP config regressions, roll back to the previous Container App revision in `<RESOURCE_GROUP>`.
+- **Escalation:** Escalate SMTP provider/credential issues to [[team|platform-engineering-team]]; escalate template or handler defects to [[team|platform-engineering-team]].
 
 ## Related documentation
 
-- Platform integration boundaries reference — Notification contracts, resilience pipeline, and ownership rules.
-- Scheduled work and email notifications — Why Notification is stateless with no PostgreSQL outbox.
-- [[service|notification-api]] — Detailed Notification worker contract reference.
-- Order and Finance status boundaries — Why email state never reflects authoritative order status.
+- [[flow|notification-delivery]] — End-to-end notification delivery flow.
+- [[adr|adr-003-notification-smtp-provider-boundary]] — SMTP provider boundary and resilience.

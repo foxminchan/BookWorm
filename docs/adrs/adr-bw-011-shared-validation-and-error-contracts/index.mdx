@@ -6,74 +6,54 @@ summary: Validate applicable requests before handlers and expose predictable HTT
 status: proposed
 date: 2026-11-07
 owners:
-  - contributor-team
+  - architecture-enabling-team
 appliesTo:
   - type: domain
-    id: BookWorm
+    id: bookworm
 related:
   - id: adr-bw-009-local-cqrs-building-blocks
   - id: adr-bw-013-opentelemetry-observability
 decisionMakers:
-  - contributor-team
+  - architecture-enabling-team
 x-scope: "Whole system (HTTP API services)"
 ---
 
-## Context and problem statement
+| Field                  | Value                                                                                           |
+| :--------------------- | :---------------------------------------------------------------------------------------------- |
+| **Status**             | Proposed                                                                                        |
+| **Date**               | 2026-11-07                                                                                      |
+| **Owners**             | [[team\|architecture-enabling-team]]                                                            |
+| **Affected Resources** | [[domain\|bookworm]]                                                                            |
+| **Related ADRs**       | [[adr\|adr-bw-009-local-cqrs-building-blocks]], [[adr\|adr-bw-013-opentelemetry-observability]] |
 
-Invalid input payloads, missing entities, concurrency conflicts, rate-limit rejections, and unhandled exceptions happen across every HTTP service. Implementing ad hoc validation checks and custom error JSON shapes in each endpoint forces Storefront, Commerce, and Backoffice clients to write service-specific error parsers and risks leaking stack traces or internal schema names.
+## Context & Problem Statement
 
-BookWorm requires a shared validation pipeline and uniform HTTP error contract across its Minimal API services.
+Every HTTP API in [[domain|bookworm]] handles invalid payloads, missing resources, rate limits, and unexpected faults. If each service invents its own error schema or leaks raw stack traces, microfrontends become brittle and internal implementation details are exposed to callers.
 
-## Decision drivers
+## Decision Drivers
 
-- **Input correctness:** Reject malformed requests before domain handlers execute or touch persistence.
-- **Predictable client contracts:** Expose standardized RFC 7807 `ProblemDetails` responses across all APIs.
-- **Security and diagnosability:** Attach correlation trace identifiers to client errors while confining raw exception details to server logs.
+- **Early rejection:** Validate inputs before executing business logic or database writes.
+- **Contract consistency:** Return RFC-compliant `ProblemDetails` across all HTTP services.
+- **Information security:** Keep stack traces and internal exception details out of client responses.
 
-## Considered options
+## Options Considered
 
-1. Validate CQRS requests with FluentValidation pipeline behavior and return standardized `ProblemDetails` via shared ASP.NET Core exception handlers
-2. Validate inputs and build error JSON manually inside each endpoint
-3. Return raw exception messages and stack traces in HTTP error responses
-4. Wrap failures inside HTTP `200 OK` responses with custom error flags
+| Option                                                            | Pros                                                             | Cons                                                            |
+| :---------------------------------------------------------------- | :--------------------------------------------------------------- | :-------------------------------------------------------------- |
+| **Shared validation pipeline + standard `ProblemDetails` errors** | Consistent client error handling; invalid requests blocked early | Services must register validators and domain exception mappings |
+| **Ad-hoc per-endpoint validation and errors**                     | Zero shared-pipeline setup                                       | Error formats and status codes diverge across services          |
+| **Return raw exception details to clients**                       | Faster ad-hoc debugging                                          | Leaks internal schemas, paths, and stack traces                 |
+| **Mask failures behind `200 OK` responses**                       | Uniform HTTP status                                              | Breaks HTTP semantics and misleads retry logic                  |
 
-## Decision outcome
+## Decision & Consequences
 
-Chosen option: **Validate CQRS requests with FluentValidation pipeline behavior and return standardized `ProblemDetails` via shared ASP.NET Core exception handlers**, because it stops invalid requests before domain execution and gives frontend clients one consistent error format.
+**Chosen Option:** Validate requests in a shared pre-handler pipeline and map failures to standardized `ProblemDetails` HTTP responses carrying a correlation trace ID. Detailed exception diagnostics remain strictly in protected OpenTelemetry logs.
 
-API services register `FluentValidation` (`12.2.0`) validators and `BookWorm.Chassis.CQRS.ValidationBehavior` alongside shared exception handlers (`AddValidationExceptionHandler`, `AddNotFoundExceptionHandler`, `AddGlobalExceptionHandler`, and `AddProblemDetails`). Validation failures return field-grouped `400 Bad Request` problem responses, missing entities map to `404 Not Found`, rate-limit rejections return `429 Too Many Requests` `ProblemDetails` with a `Retry-After` header, and unexpected errors return generic `500 Internal Server Error` problem payloads carrying a trace identifier. Internal exception details stay in structured logs. Each host explicitly registers its validators, exception handlers, and domain-specific conflict mappings.
+- **Positive:** Storefront and Backoffice handle validation, `404`, `409`, `429`, and `500` responses uniformly.
+- **Negative:** Every new command or query must include an explicit validator and exception mapping where applicable.
 
-### Consequences
+### Compliance Criteria
 
-- **Positive:** Frontend applications (`@workspace/api-client`) and API consumers parse one uniform `ProblemDetails` contract across Catalog API, Basket API, Ordering API, Rating API, and Chat API.
-- **Negative:** Contributors must register validators and custom domain exception mappings explicitly in each host and keep validation rules synchronized with API contracts.
-- **Follow-up:** Verify exception-handler registration and problem-details responses in service unit tests and OpenAPI documentation.
-
-## Pros and cons of the options
-
-### Validate CQRS requests with FluentValidation pipeline behavior and return standardized `ProblemDetails` via shared ASP.NET Core exception handlers
-
-- **Good**, because invalid commands never reach domain repositories or external dependencies.
-- **Good**, because RFC 7807 `ProblemDetails` aligns natively with ASP.NET Core Minimal APIs and OpenAPI schemas.
-- **Bad**, because teams must verify that every host wires the shared handlers and maps service-specific domain conflicts intentionally.
-
-### Validate inputs and build error JSON manually inside each endpoint
-
-- **Good**, because endpoints have zero dependency on shared middleware.
-- **Bad**, because validation logic and error formats diverge quickly across endpoints and services.
-
-### Return raw exception messages and stack traces in HTTP error responses
-
-- **Good**, because developers see failure details directly in browser network tabs.
-- **Bad**, because exposing internal stack traces, SQL/Cosmos error messages, or connection metadata creates a security disclosure risk.
-
-### Wrap failures inside HTTP `200 OK` responses with custom error flags
-
-- **Good**, because transport status codes never vary.
-- **Bad**, because it breaks HTTP semantics, confuses gateway/client retries, and undermines OpenTelemetry error-rate metrics.
-
-## Verification and links
-
-- **Verified against:** `Directory.Packages.props`, `src/BuildingBlocks/BookWorm.Chassis/CQRS/`, `src/BuildingBlocks/BookWorm.Chassis/Exceptions/`, `src/Aspire/BookWorm.ServiceDefaults/Kestrel/RateLimiterExtensions.cs`, `src/Services/Rating/BookWorm.Rating/Extensions/Extensions.cs`
-- **Related architecture:** [[doc|arc42/08-crosscutting-concepts/003-validation-errors-and-resilience]], [[doc|arc42/08-crosscutting-concepts/006-testing-and-change-safety]]
-- **Related ADRs:** ADR-BW-009, ADR-BW-013, [[doc|arc42/09-architecture-decisions]]
+- HTTP APIs must return `ProblemDetails` for validation (`400`), missing (`404`), conflict (`409`), rate-limit (`429`), and server (`500`) errors.
+- Production error responses must never expose stack traces, SQL errors, or internal file paths.
+- Request validation must run in the shared pipeline before handler execution.

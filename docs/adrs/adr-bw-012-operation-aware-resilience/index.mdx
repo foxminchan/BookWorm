@@ -6,85 +6,56 @@ summary: Use shared outbound defaults and capability-specific failure handling w
 status: proposed
 date: 2026-11-07
 owners:
-  - platform-team
+  - platform-engineering-team
 appliesTo:
   - type: domain
-    id: BookWorm
+    id: bookworm
 related:
   - id: adr-bw-008-durable-message-handoffs
   - id: adr-004-finance-bounded-scheduled-retries
   - id: adr-003-idempotent-misfire-aware-jobs
   - id: adr-002-durable-outbox-and-bounded-retries
 decisionMakers:
-  - platform-team
+  - platform-engineering-team
 x-scope: "Whole system"
 ---
 
-## Context and problem statement
+| Field                  | Value                                                                                                                                                                                                 |
+| :--------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Status**             | Proposed                                                                                                                                                                                              |
+| **Date**               | 2026-11-07                                                                                                                                                                                            |
+| **Owners**             | [[team\|platform-engineering-team]]                                                                                                                                                                   |
+| **Affected Resources** | [[domain\|bookworm]]                                                                                                                                                                                  |
+| **Related ADRs**       | [[adr\|adr-bw-008-durable-message-handoffs]], [[adr\|adr-004-finance-bounded-scheduled-retries]], [[adr\|adr-003-idempotent-misfire-aware-jobs]], [[adr\|adr-002-durable-outbox-and-bounded-retries]] |
 
-Network calls, databases, Kafka brokers, AI endpoints, and external SMTP servers experience transient failures. Retrying a read-only catalog query has very different consequences from retrying an order checkout, a compensation command, or an outbound customer email. Applying one aggressive retry policy blindly amplifies dependency load and triggers duplicate external side effects.
+## Context & Problem Statement
 
-BookWorm requires an operation-aware resilience strategy that reuses safe platform defaults while tailoring timeouts, retries, circuit breakers, and idempotency guards to each capability's side-effect semantics.
+Transient network or provider faults affect read queries, checkout writes, scheduled batches, and SMTP email delivery differently. Applying identical aggressive retries everywhere can duplicate orders or emails, while disabling retries altogether turns brief blips into customer-visible outages.
 
-## Decision drivers
+## Decision Drivers
 
-- **Transient recoverability:** Survive brief network or dependency blips without failing customer requests prematurely.
-- **Side-effect safety:** Prevent duplicate order actions, emails, or cascading retry storms under concurrent or repeated execution.
-- **Bounded load and visibility:** Enforce explicit retry budgets, timeouts, rate limits, and dead-letter routing so failures remain observable.
+- **Transient recovery:** Absorb brief network or dependency hiccups automatically.
+- **Side-effect safety:** Prevent blind retries from duplicating orders, charges, or emails.
+- **Bounded failure:** Enforce timeouts, circuit breakers, and dead-letter queues so outages stay visible.
 
-## Considered options
+## Options Considered
 
-1. Apply shared budgeted defaults with operation-specific resilience, idempotency, and compensation policies
-2. Apply one identical retry policy to every synchronous and asynchronous operation
-3. Disable retries and resilience pipelines across all services
-4. Treat an HTTP or message idempotency key as a distributed ACID transaction
+| Option                                                       | Pros                                                                 | Cons                                                                         |
+| :----------------------------------------------------------- | :------------------------------------------------------------------- | :--------------------------------------------------------------------------- |
+| **Shared outbound defaults + operation-specific resilience** | Safe retries for reads; idempotency/circuit-breakers/DLQs for writes | Each integration must review its timeout and retry semantics                 |
+| **Uniform aggressive retries everywhere**                    | Simple global policy                                                 | Duplicates non-idempotent side effects and amplifies outages                 |
+| **Zero retries anywhere**                                    | Never repeats an external call                                       | Brief transient blips cause immediate user-facing failures                   |
+| **Assume idempotency guards guarantee exactly-once**         | Simpler mental model                                                 | Time-bounded guards and external SMTP timeouts cannot guarantee exactly-once |
 
-## Decision outcome
+## Decision & Consequences
 
-Chosen option: **Apply shared budgeted defaults with operation-specific resilience, idempotency, and compensation policies**, because each capability chooses failure handling matched to its idempotency and external side effects.
+**Chosen Option:** Apply shared outbound resilience defaults (timeouts, jittered retries, circuit breakers) tailored to operation semantics—combining idempotency keys, bounded saga retries ([[service|order-orchestration]]), misfire policies ([[service|scheduler-service]]), and DLQs ([[service|notification-api]]) without claiming exactly-once external side effects.
 
-Verified resilience mechanisms across BookWorm:
+- **Positive:** Read paths recover transparently while stateful and external integrations remain protected against amplification and silent loss.
+- **Negative:** Every new outbound client or consumer must explicitly configure and document its retry/timeout bounds.
 
-- **Outbound HTTP clients (`BookWorm.ServiceDefaults`):** Standard resilience handler with budgeted retries (`UseBudgetedRetries()`) to cap retry amplification, plus Kestrel connection limits and global/per-user rate limiters (`100` concurrent limit, `30 req/min` per IP, `PerUserRateLimit` token bucket).
-- **Caching (`BookWorm.Chassis`):** FusionCache (`2.10.0`) L1/L2 caching with Redis backplane, distributed locking, soft/hard timeouts, and 2-hour fail-safe stale fallback.
-- **Kafka messaging (`BookWorm.Chassis`):** Wolverine retry cooldowns (`50ms`, `250ms`, `1s` with full jitter), per-service dead-letter queues, and 24-hour Redis `IIntegrationEventIdempotencyGuard` for duplicate suppression.
-- **Email delivery (Notification):** Dedicated Polly pipeline combining a circuit breaker, exponential jittered retry (handling transient MailKit `CommandException`, `ProtocolException`, `IOException`, and timeouts), and a `30s` timeout.
-- **Order saga (Finance):** Azure Durable Functions replayable orchestration with configurable `MaxAttempts`, `MaxRetryTimeout`, and explicit compensation activities (`PublishCancelOrderActivity`).
-- **Scheduled jobs (Scheduler):** Quartz.NET persistent PostgreSQL store with misfire handling and 30-day execution history.
+### Compliance Criteria
 
-No retry policy, broker acknowledgment, or 24-hour idempotency cache claims exactly-once external side effects.
-
-### Consequences
-
-- **Positive:** Transient failures recover automatically within bounded retry budgets while non-idempotent side effects are guarded by explicit idempotency checks and compensating actions.
-- **Negative:** Contributors must analyze timeouts, duplicate delivery, and failure paths at every new integration boundary rather than relying on one global setting.
-- **Follow-up:** Define environment-specific production latency and retry budgets when formal production SLOs are established.
-
-## Pros and cons of the options
-
-### Apply shared budgeted defaults with operation-specific resilience, idempotency, and compensation policies
-
-- **Good**, because read-heavy paths use fail-safe caching and budgeted HTTP retries while saga and SMTP workflows use bounded retries, circuit breakers, and compensations.
-- **Good**, because explicit dead-letter queues and circuit breakers surface sustained outages quickly.
-- **Bad**, because resilience settings live across several layers and must be reviewed per workflow.
-
-### Apply one identical retry policy to every synchronous and asynchronous operation
-
-- **Good**, because configuration lives in a single global policy.
-- **Bad**, because blind retries duplicate non-idempotent side effects and can trigger cascading overload during downstream outages.
-
-### Disable retries and resilience pipelines across all services
-
-- **Good**, because services never issue duplicate outbound requests.
-- **Bad**, because routine cloud network glitches immediately fail customer checkouts, emails, and background jobs.
-
-### Treat an HTTP or message idempotency key as a distributed ACID transaction
-
-- **Good**, because teams write less compensating code.
-- **Bad**, because TTL-bounded caches (such as Redis 24-hour guards) and external SMTP providers cannot guarantee atomic, exactly-once execution.
-
-## Verification and links
-
-- **Verified against:** `src/Aspire/BookWorm.ServiceDefaults/Extensions.cs`, `src/Aspire/BookWorm.ServiceDefaults/Kestrel/RateLimiterExtensions.cs`, `src/BuildingBlocks/BookWorm.Chassis/EventBus/Wolverine/WolverineHostExtensions.cs`, `src/Services/Notification/BookWorm.Notification/Infrastructure/Senders/ResilienceExtensions.cs`, `src/Services/Finance/BookWorm.Finance/Features/Orders/Orchestration/OrderOrchestrator.cs`
-- **Related architecture:** [[doc|arc42/08-crosscutting-concepts/003-validation-errors-and-resilience]], [[doc|arc42/06-runtime-view]]
-- **Related ADRs:** ADR-BW-008, Finance Durable Task Scheduler ADR, Notification Stateless Kafka Worker ADR, [[doc|arc42/09-architecture-decisions]]
+- Non-idempotent write endpoints (such as order creation) must require client idempotency keys (`x-request-id`).
+- Outbound HTTP/gRPC/SMTP clients must configure explicit timeouts and circuit breakers.
+- Architecture and operational docs must describe at-least-once delivery with idempotent handling rather than claiming exactly-once.

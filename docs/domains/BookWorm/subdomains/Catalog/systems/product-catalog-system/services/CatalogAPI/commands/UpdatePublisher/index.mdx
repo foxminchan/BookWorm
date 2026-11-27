@@ -8,7 +8,7 @@ badges:
     textColor: green
 summary: Updates an existing publisher in the Catalog.
 owners:
-  - contributor-team
+  - catalog-experience-team
 schemaPath: schema.json
 operation:
   method: PUT
@@ -18,59 +18,60 @@ sidebar:
   badge: "PUT"
 ---
 
-`UpdatePublisher` updates the display name of an existing publisher in **Catalog API** (`PUT /api/v1/publishers`) and returns `204 No Content`. Callers pass both `id` and `name` in the JSON request body rather than using a path parameter.
+`UpdatePublisher` updates the display name of an existing publisher in [[service|catalog-api]] (`PUT /catalog/api/v1/publishers`) and returns `204 No Content`. Callers pass both `id` and `name` in the JSON request body rather than as a path parameter.
 
 ## Overview
 
-| Property              | Value                                                                                                                        |
-| :-------------------- | :--------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**             | Catalog bounded context (**Catalog API**, Aspire resource `catalog`)                                                         |
-| **Source**            | `src/Services/Catalog/BookWorm.Catalog/Features/Publishers/Update/`                                                          |
-| **Protocol / format** | HTTP `PUT`, JSON request (`application/json`), empty response body (`204 No Content`)                                        |
-| **Endpoint**          | Direct: `PUT /api/v1/publishers` (local HTTP `5100`, HTTPS `7187`); API Gateway: `PUT /catalog/api/v1/publishers`            |
-| **Authentication**    | Microsoft Entra ID JWT — `business_user` policy (role `business_user` or `admin` and scopes `catalog_read`, `catalog_write`) |
-| **Rate limiting**     | Global concurrency (`100`) and fixed-window (`30 req/min`) limiters plus `PerUserRateLimit` token bucket                     |
-| **Idempotency**       | Naturally idempotent for repeated requests with the same `id` and `name`; no `x-request-id` header is enforced               |
-| **Contract version**  | `1.0.0` (`ApiVersions.V1`)                                                                                                   |
+| Property                           | Value                                                                                                                                 |
+| :--------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------ |
+| **Bounded Context**                | Catalog                                                                                                                               |
+| **Owner Service**                  | [[service\|catalog-api]]                                                                                                              |
+| **Protocol / Format**              | HTTP `PUT`, `application/json` request and empty response (`204 No Content`)                                                          |
+| **Gateway Endpoint**               | `PUT /catalog/api/v1/publishers` (service path `/api/v1/publishers`)                                                                  |
+| **Authentication & Authorization** | Microsoft Entra ID JWT — `business_user` policy (role `business_user` or `admin` and scopes `catalog_read`, `catalog_write`)          |
+| **Idempotency / Concurrency**      | Naturally idempotent for repeated requests with the same `id` and `name`; no `x-request-id` header is enforced                        |
+| **Rate Limit / Caching**           | Global concurrency (`100`) and fixed-window (`30 req/min`) limiters plus per-user token bucket; invalidates publisher and book caches |
+| **Contract Version**               | `1.0.0` (`ApiVersions.V1`)                                                                                                            |
 
-## Parameters and fields
+## Request & Response Contract
 
-### Request body (`application/json`)
+### Request Body (`application/json`)
 
-`StringTrimmerJsonConverter` trims leading and trailing whitespace from string properties during deserialization.
+Leading and trailing whitespace is trimmed from string properties during deserialization.
 
-| Name   | Type     | Required | Default | Constraints                                                                        | Description                                |
-| :----- | :------- | :------- | :------ | :--------------------------------------------------------------------------------- | :----------------------------------------- |
-| `id`   | `uuid`   | Yes      | —       | Non-empty UUID (`Guid != Guid.Empty`, `PublisherId`)                               | Identifier of the publisher to update      |
-| `name` | `string` | Yes      | —       | Non-empty, max `50` chars (`DataSchemaLength.Medium`), unique in `publishers.name` | Replacement display name for the publisher |
+| Name   | Type              | Required | Constraints                            | Description                                |
+| :----- | :---------------- | :------- | :------------------------------------- | :----------------------------------------- |
+| `id`   | `string` (`uuid`) | Yes      | Non-empty UUID                         | Identifier of the publisher to update      |
+| `name` | `string`          | Yes      | Non-empty, max `50` characters, unique | Replacement display name for the publisher |
 
 :::note
-`UpdatePublisherValidator` enforces `DataSchemaLength.Medium` (`50` characters), which is narrower than the `100`-character limit (`DataSchemaLength.Large`) allowed by `CreatePublisherValidator` and `PublisherConfiguration`. Updating a publisher to a name between 51 and 100 characters returns `400 Bad Request`.
+`UpdatePublisher` enforces a `50`-character maximum, which is narrower than the `100`-character limit allowed by [[command|CreatePublisher]]. Updating a publisher to a name between 51 and 100 characters returns `400 Bad Request`.
 :::
 
-## Behavior and side effects
+## Behavior & Side Effects
 
-- **Persistence and uniqueness:** Loads the publisher by `id`, updates `Publisher.Name` in PostgreSQL (`catalogdb`), and saves changes. `PublisherConfiguration.cs` enforces a unique index on `publishers.name`; renaming to another existing publisher's name raises an unhandled database exception mapped to `500 Internal Server Error` by `GlobalExceptionHandler`.
-- **Cache invalidation:** Dispatches `PublisherUpdatedEvent` on save; `PublisherChangedEventHandler` removes `catalog:publishers:v1` and invalidates FusionCache tags `book` and `books:list`.
-- **Vector index queueing:** PostgreSQL trigger `publishers_vector_update` (`BEFORE UPDATE OR DELETE ON publishers`) enqueues all `book_id` rows with matching `publisher_id` into `pending_vector_updates` for asynchronous Qdrant refresh by **Catalog Ingestion**.
+- **Persistence & uniqueness:** Updates the [[entity|publisher]] display name; publisher names are unique-indexed, so renaming to an existing publisher's name fails with `500 Internal Server Error`.
+- **Cache invalidation:** Clears `catalog:publishers:v1` and invalidates `book` and `books:list` cache tags.
+- **Vector index queueing:** Database triggers enqueue all linked book IDs for asynchronous vector embedding refresh by [[service|catalog-ingestion]].
 
-## Error responses
+## Error Responses
 
-| Code / status               | Condition                                                                                                                             | Recovery behavior                                                       |
-| :-------------------------- | :------------------------------------------------------------------------------------------------------------------------------------ | :---------------------------------------------------------------------- |
-| `400 Bad Request`           | `id` is empty or invalid UUID, `name` is missing, empty, whitespace-only, or exceeds `50` characters (`HttpValidationProblemDetails`) | Fix the request body; do not retry unchanged input                      |
-| `401 Unauthorized`          | Missing, expired, or invalid Entra ID JWT                                                                                             | Acquire a valid Entra ID access token and retry                         |
-| `403 Forbidden`             | Token lacks role `business_user` or `admin`, or lacks scopes `catalog_read` and `catalog_write`                                       | Request the required Entra ID app role and scopes                       |
-| `404 Not Found`             | No publisher exists with the supplied `id` (`{ "detail": "The requested resource was not found." }`)                                  | Verify the UUID; do not treat `404` as a completed update               |
-| `429 Too Many Requests`     | Global or `PerUserRateLimit` quota exceeded (`ProblemDetails` with `Retry-After` header)                                              | Wait for the `Retry-After` interval before retrying                     |
-| `500 Internal Server Error` | Duplicate `name` violating the `publishers.name` unique index or unhandled server error (`ProblemDetails` with `traceId`)             | Check for a conflicting publisher name and inspect logs using `traceId` |
+| Status / Code               | Condition                                                                                               | Client Recovery Action                                                  |
+| :-------------------------- | :------------------------------------------------------------------------------------------------------ | :---------------------------------------------------------------------- |
+| `400 Bad Request`           | `id` is empty or invalid UUID, or `name` is missing, empty, whitespace-only, or exceeds `50` characters | Fix the request body; do not retry unchanged input                      |
+| `401 Unauthorized`          | Missing, expired, or invalid Entra ID JWT                                                               | Acquire a valid Entra ID access token and retry                         |
+| `403 Forbidden`             | Token lacks role `business_user` or `admin`, or lacks scopes `catalog_read` and `catalog_write`         | Request the required Entra ID app role and scopes                       |
+| `404 Not Found`             | No publisher exists with the supplied `id`                                                              | Verify the UUID; do not treat `404` as a completed update               |
+| `429 Too Many Requests`     | Rate limit quota exceeded (`Retry-After` header included)                                               | Wait for the `Retry-After` interval before retrying                     |
+| `500 Internal Server Error` | Duplicate `name` violating the unique constraint or unhandled server error (`traceId` included)         | Check for a conflicting publisher name and inspect logs using `traceId` |
 
-## Related documentation
+## Related Documentation
 
 - [[service|catalog-api]] — Service overview, routing, and authorization policies.
+- [[entity|publisher]] — Publisher entity model.
 - [[command|CreatePublisher]] — Create a new publisher record.
 - [[command|DeletePublisher]] — Permanently delete a publisher with no active books.
 
 <NodeGraph />
 
-<SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />
+<SchemaViewer file="schema.json" title="Update publisher schema" maxHeight="500" search="true" />

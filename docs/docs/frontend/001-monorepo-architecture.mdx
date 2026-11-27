@@ -1,10 +1,10 @@
 ---
-title: Frontend Monorepo & Workspace Boundaries
-summary: How BookWorm organizes its frontend applications and shared packages into layered workspace tiers, and why dependencies flow in one direction.
+title: Workspace & Dependency Tiers
+summary: Four-tier dependency model separating application surfaces, domain capabilities, shared foundations, and tooling presets across the frontend workspace.
 owners:
-  - contributor-team
+  - catalog-experience-team
 badges:
-  - content: Explanation
+  - content: Architecture
     backgroundColor: purple
     textColor: purple
   - content: Reference
@@ -12,127 +12,46 @@ badges:
     textColor: blue
 ---
 
-This reference catalogs the Bun and Turborepo workspace under `src/Clients/`, covering toolchain versions, root scripts, Turborepo dependency boundary tiers, and all 19 workspace members (3 Next.js applications and 16 `@workspace/*` packages). For the architectural rationale behind these boundaries, see [[doc|frontend/007-architecture-and-state-design]].
+## Purpose & Scope
 
-## Overview
+This reference defines the structural dependency model governing BookWorm's three web surfaces—**Storefront**, **Commerce**, and **Backoffice**—and their shared platform libraries. It establishes strict one-way dependency tiers so domain UI, transport contracts, and configuration presets remain reusable without circular coupling.
 
-| Property                  | Value                                                                      |
-| :------------------------ | :------------------------------------------------------------------------- |
-| **Owner**                 | BookWorm Frontend (`@bookworm/clients`)                                    |
-| **Source**                | `src/Clients/`                                                             |
-| **Package manager**       | `bun@1.4.4` (lockfile: `src/Clients/bun.lock`; do not use `npm` or `pnpm`) |
-| **Monorepo orchestrator** | Turborepo `^2.11.13` (`src/Clients/turbo.json`)                            |
-| **Workspace members**     | 19 total: 3 applications (`apps/*`) and 16 shared packages (`packages/*`)  |
+## Workspace Tier Hierarchy
 
-## Toolchain and core library versions
+The visual below illustrates how dependencies flow strictly downward from deployable web surfaces through domain capabilities and shared foundations to configuration presets.
 
-Verified against `src/Clients/package.json`, app manifests, and `.bun-version`:
+<MermaidFileLoader file="mermaids/007-architecture-and-state-design-diagram-1.mmd" />
 
-| Component                 | Package / tool                                                         | Version                                      | Scope                                               |
-| :------------------------ | :--------------------------------------------------------------------- | :------------------------------------------- | :-------------------------------------------------- |
-| Runtime & package manager | `bun` / Node.js `engines`                                              | `1.4.4` / `>= 24.0.0`                        | Workspace root                                      |
-| Monorepo task runner      | `turbo`                                                                | `^2.11.13`                                   | Workspace root                                      |
-| Web framework             | `next` (Turbopack)                                                     | `^16.4.6`                                    | All 3 apps                                          |
-| UI library                | `react`, `react-dom`                                                   | `^19.3.1`                                    | All 3 apps                                          |
-| Type checking             | `typescript`, `@typescript/native`                                     | `^6.0.3`, `^7.0.2`                           | `check-types` uses `@typescript/native` `tsc`       |
-| Styling                   | `@tailwindcss/postcss` (Tailwind CSS v4)                               | `^4.3.5`                                     | All 3 apps and `@workspace/ui`                      |
-| Linting & formatting      | `eslint`, `prettier`                                                   | `^10.15.0`, `^3.10.1`                        | Workspace root and packages                         |
-| Authentication            | `better-auth`                                                          | `^1.7.28`                                    | All 3 apps via `@workspace/auth`                    |
-| Data & forms              | `@tanstack/react-query`, `valibot`, `@formisch/react`                  | `^5.108.4`, `^1.5.0`, `^1.2.0`               | Shared data and form pipeline                       |
-| Client state              | `jotai`, `jotai-tanstack-query`                                        | `^3.0.2`, `^0.11.0`                          | Storefront, Commerce, `@workspace/storefront-shell` |
-| Microfrontends            | `@vercel/microfrontends`                                               | `^2.4.2`                                     | Storefront, Commerce, `@workspace/storefront-shell` |
-| AI chat UI                | `@ag-ui/client`, `@copilotkit/*`, `@generative-a11y/*`                 | `^1.0.5`, `2.0.0-rc.65`, `^0.3.0` / `^0.2.0` | Storefront only                                     |
-| Testing                   | `vitest`, `@playwright/test`, `playwright-bdd`, `@axe-core/playwright` | `^5.1.2`, `^1.65.1`, `^9.2.1`, `^4.14.1`     | Unit (all 3 apps), E2E (Storefront, Backoffice)     |
+## Architectural Principles & Rules
 
-## Repository layout
+- **Strict one-way dependency flow:** Higher tiers may depend on lower tiers, never the reverse. Application surfaces consume domain and foundation layers; domain capabilities consume foundations; foundations remain independent of domain UI.
+- **Direct source composition:** Shared layers resolve directly from source within the workspace rather than through intermediate package registries, keeping cross-surface changes atomic while automated boundary checks prevent illegal imports.
+- **Composable capability configuration:** Environment validation, telemetry startup, and API contracts are split into focused capability modules so each surface only adopts what its runtime requires.
 
-Directory structure of `src/Clients/`:
+<Admonition type="warning" title="Non-Negotiable Dependency Boundary">
+	Shared domain and foundation modules must never import from an application surface. Any capability
+	needed by more than one surface belongs in the domain or foundation tier before it is consumed.
+</Admonition>
 
-<MermaidFileLoader file="mermaids/monorepo-layout.mmd" />
+## Patterns & Boundaries
 
-## Dependency boundary tiers
+| Concern / Surface    | Architectural Approach                                                                          | Responsibility Boundary                                          | Key Trade-off                                                                      |
+| :------------------- | :---------------------------------------------------------------------------------------------- | :--------------------------------------------------------------- | :--------------------------------------------------------------------------------- |
+| **Application Tier** | Independent deployable web surfaces (**Storefront**, **Commerce**, **Backoffice**)              | Owns route entrypoints, surface layouts, and feature composition | Separate deployments require explicit shared shell contracts for visual continuity |
+| **Domain Tier**      | Shared UI system, customer shell, transport clients, query factories, auth, SEO, and validation | Owns reusable business-aligned UI and typed service integration  | Changes to shared customer shell trigger rebuilds across both customer surfaces    |
+| **Foundation Tier**  | Pure domain types, environment schemas, telemetry initialization, and stateless utilities       | Owns cross-cutting primitives with zero UI or framework coupling | Must remain free of React, routing, or domain-specific business logic              |
+| **Config Tier**      | Standardized linting, type-checking, test harness, and build presets                            | Owns engineering standards and quality gate definitions          | Centralizing presets enforces uniformity but requires coordinated upgrades         |
 
-`turbo boundaries` enforces one-way dependencies across all 19 packages using `tags` defined in each package's `turbo.json` and deny rules in `src/Clients/turbo.json`:
+<Accordion title="Surface Ownership Breakdown">
 
-| Tier tag     | Allowed workspace imports               | Denied workspace imports      | Responsibility                                                                                |
-| :----------- | :-------------------------------------- | :---------------------------- | :-------------------------------------------------------------------------------------------- |
-| `config`     | None within workspace                   | `app`, `domain`, `foundation` | Shared ESLint, TypeScript, Next.js, Vitest, Playwright, and Allure presets                    |
-| `foundation` | `config`, `foundation`                  | `app`, `domain`               | Pure DTO types, helper utilities, environment schemas, and OpenTelemetry startup              |
-| `domain`     | `config`, `foundation`, `domain`        | `app`                         | Design system, shared customer shell, API clients, query hooks, auth, SEO, validations, mocks |
-| `app`        | `config`, `foundation`, `domain`, `app` | —                             | Deployable Next.js 16 applications (`storefront`, `commerce`, `backoffice`)                   |
+- **Storefront:** Public customer discovery, catalog browsing, customer reviews, conversational AI assistant, and customer authentication ownership.
+- **Commerce:** Authenticated customer transactions including shopping basket, checkout confirmation, customer profile, and order history.
+- **Backoffice:** Staff administration dashboard covering inventory management, catalog taxonomy, buyer directory, order lifecycle actions, and review moderation.
 
-## Workspace package inventory
+</Accordion>
 
-### Applications (`apps/*`)
+## Quality & Operational Impact
 
-| Package                | Path              | Tier  | Responsibility                                                                                    |
-| :--------------------- | :---------------- | :---- | :------------------------------------------------------------------------------------------------ |
-| `@bookworm/storefront` | `apps/storefront` | `app` | Public customer storefront: landing, catalog, reviews, Better Auth owner, AI chat                 |
-| `@bookworm/commerce`   | `apps/commerce`   | `app` | Authenticated customer microfrontend (MFE): basket, checkout confirmation, account, order history |
-| `@bookworm/backoffice` | `apps/backoffice` | `app` | Staff administration dashboard: books, taxonomy, customers, orders, review moderation             |
-
-### Shared packages (`packages/*`)
-
-All 16 shared packages under `src/Clients/packages/`:
-
-| Package                        | Path                         | Tier         | Responsibility                                                                           |
-| :----------------------------- | :--------------------------- | :----------- | :--------------------------------------------------------------------------------------- |
-| `@workspace/storefront-shell`  | `packages/storefront-shell`  | `domain`     | Shared customer header/footer/mobile nav, MFE links, auth client, and Jotai basket state |
-| `@workspace/api-hooks`         | `packages/api-hooks`         | `domain`     | TanStack Query key registry, query options factories, mutations, and `getQueryClient`    |
-| `@workspace/api-client`        | `packages/api-client`        | `domain`     | Typed Axios HTTP client, retries, conditional ETag helpers, and dashboard SSE client     |
-| `@workspace/auth`              | `packages/auth`              | `domain`     | Better Auth and Microsoft Entra ID configuration                                         |
-| `@workspace/seo`               | `packages/seo`               | `domain`     | Page metadata builders and Schema.org JSON-LD helpers                                    |
-| `@workspace/ui`                | `packages/ui`                | `domain`     | Base UI (`@base-ui/react`) and shadcn/ui accessible components with Tailwind CSS v4      |
-| `@workspace/validations`       | `packages/validations`       | `domain`     | Shared Valibot schemas for Formisch forms and API payloads                               |
-| `@workspace/mocks`             | `packages/mocks`             | `domain`     | MSW v2 request handlers and deterministic Faker factories                                |
-| `@workspace/env`               | `packages/env`               | `foundation` | Composable environment variable schemas (`@t3-oss/env-nextjs`)                           |
-| `@workspace/otel`              | `packages/otel`              | `foundation` | OpenTelemetry Node SDK startup instrumentation (`@opentelemetry/sdk-node`)               |
-| `@workspace/types`             | `packages/types`             | `foundation` | Shared domain TypeScript interfaces, DTOs, and pagination types                          |
-| `@workspace/utils`             | `packages/utils`             | `foundation` | Entra ID auth helpers (`createEntraAuth`), token exchange, formatting, URL helpers       |
-| `@workspace/app-config`        | `packages/app-config`        | `config`     | Shared Next.js, Vitest, Playwright BDD, and test-utility factories                       |
-| `@workspace/allure-config`     | `packages/allure-config`     | `config`     | Allure 3 report categories and enrichment plugins                                        |
-| `@workspace/eslint-config`     | `packages/eslint-config`     | `config`     | Shared ESLint flat configs (base, Next.js, `eslint-plugin-jsx-a11y`)                     |
-| `@workspace/typescript-config` | `packages/typescript-config` | `config`     | Strict TypeScript compiler configuration bases                                           |
-
-## Root workspace scripts and Turborepo environment
-
-### Root scripts (`src/Clients/package.json`)
-
-Run from `src/Clients/`:
-
-| Script                    | Underlying command                            | Purpose                                                                               |
-| :------------------------ | :-------------------------------------------- | :------------------------------------------------------------------------------------ |
-| `bun run dev`             | `turbo run dev`                               | Starts Next.js development servers with Turbopack                                     |
-| `bun run build`           | `turbo run build`                             | Builds production Next.js bundles (tracks `microfrontends.json` as input)             |
-| `bun run boundaries`      | `turbo boundaries`                            | Validates tier import rules across all 19 packages                                    |
-| `bun run check-types`     | `turbo run check-types`                       | Runs `@typescript/native` `tsc --noEmit` across packages                              |
-| `bun run lint`            | `turbo run lint`                              | Runs ESLint (`--max-warnings 0`) across packages                                      |
-| `bun run test`            | `turbo run test`                              | Runs Vitest unit/component tests with Allure output                                   |
-| `bun run e2e`             | `turbo run test:e2e`                          | Compiles Gherkin specs (`bddgen`) and runs Playwright E2E suites                      |
-| `bun run format`          | `prettier --write "**/*.{ts,tsx,md,feature}"` | Formats workspace source, Markdown, and Gherkin files (also via `mise run format:fe`) |
-| `bun run allure:generate` | `turbo run allure:generate`                   | Generates per-app Allure reports (depends on `test`)                                  |
-| `bun run allure:report`   | `allure generate --clean ...`                 | Aggregates Backoffice, Storefront, and Commerce results into `allure-report/`         |
-
-### Turborepo environment variables (`src/Clients/turbo.json`)
-
-| Scope                     | Variables                                                                                                                                                                              | Notes                                |
-| :------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------- |
-| `globalEnv`               | `NODE_ENV`, `NEXT_PUBLIC_GATEWAY_HTTPS`, `NEXT_PUBLIC_GATEWAY_HTTP`, `NEXT_PUBLIC_COPILOT_ENABLED`, `NEXT_PUBLIC_COPILOT_AGENT_NAME`, `NEXT_PUBLIC_MAX_RETRIES`, `NEXT_PUBLIC_APP_URL` | Included in every task cache hash    |
-| `build.env`               | `ENTRA_INSTANCE`, `ENTRA_TENANT_ID`, `ENTRA_CLIENT_ID`, `BETTER_AUTH_SECRET`, `SKIP_ENV_VALIDATION`, `NEXT_RUNTIME`, `OTEL_EXPORTER_OTLP_ENDPOINT`, `OTEL_EXPORTER_OTLP_HEADERS`       | Scoped to Next.js build tasks        |
-| `test.passThroughEnv`     | `FAKER_SEED`, `MSW_COOKIE_STORE_PATH`                                                                                                                                                  | Passed through without busting cache |
-| `test:e2e.passThroughEnv` | `PLAYWRIGHT_*`, `BASE_URL`, `HEADLESS`, `CI`, `SLOW_MO`, `VIDEO`, `TEST_ADMIN_EMAIL`, `TEST_ADMIN_PASSWORD`                                                                            | Passed through to Playwright runs    |
-
-:::note
-`lint` and `check-types` depend on the Turborepo `transit` virtual node (`"dependsOn": ["transit"]`) so dependency changes invalidate downstream lint/type caches without requiring intermediate package build artifacts.
-:::
-
-## Related documentation
-
-- [[doc|frontend/007-architecture-and-state-design]] — Architectural rationale for four-tier boundaries and direct workspace resolution.
-- [[doc|frontend/002-applications-and-routing]] — Route maps, dev ports, and microfrontend zone ownership.
-- [[doc|frontend/003-data-fetching-and-state]] — API clients, query factories, and state specifications.
-- [[doc|frontend/004-testing-and-quality-gates]] — Step-by-step verification workflow before opening a pull request.
-
-## Monorepo layout
-
-<MermaidFileLoader file="mermaids/monorepo-layout.mmd" />
+- **Maintainability:** Automated boundary enforcement prevents spaghetti dependencies and keeps domain logic portable across surfaces.
+- **Build & CI Efficiency:** Scoped dependency graphs enable affected-only validation so isolated surface changes do not needlessly rebuild unrelated layers.
+- **Security & Reliability:** Isolating environment schemas and authentication adapters in lower tiers ensures consistent validation and session handling across all surfaces.

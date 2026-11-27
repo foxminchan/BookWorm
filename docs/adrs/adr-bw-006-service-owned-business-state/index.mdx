@@ -6,10 +6,10 @@ summary: Preserve one accountable owner for each business model and integrate th
 status: proposed
 date: 2026-11-07
 owners:
-  - contributor-team
+  - architecture-enabling-team
 appliesTo:
   - type: domain
-    id: BookWorm
+    id: bookworm
 related:
   - id: adr-bw-001-capability-aligned-boundaries
   - id: adr-bw-007-derived-eventually-consistent-views
@@ -18,77 +18,46 @@ related:
   - id: adr-001-postgresql-order-system-of-record
   - id: adr-001-postgresql-feedback-system-of-record
 decisionMakers:
-  - contributor-team
+  - architecture-enabling-team
 x-scope: "Whole system"
 ---
 
-## Context and problem statement
+| Field                  | Value                                                                                                                                                                                                                                                                                                                  |
+| :--------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Status**             | Proposed                                                                                                                                                                                                                                                                                                               |
+| **Date**               | 2026-11-07                                                                                                                                                                                                                                                                                                             |
+| **Owners**             | [[team\|architecture-enabling-team]]                                                                                                                                                                                                                                                                                   |
+| **Affected Resources** | [[domain\|bookworm]]                                                                                                                                                                                                                                                                                                   |
+| **Related ADRs**       | [[adr\|adr-bw-001-capability-aligned-boundaries]], [[adr\|adr-bw-007-derived-eventually-consistent-views]], [[adr\|adr-001-postgresql-system-of-record]], [[adr\|adr-001-redis-authoritative-basket-store]], [[adr\|adr-001-postgresql-order-system-of-record]], [[adr\|adr-001-postgresql-feedback-system-of-record]] |
 
-Catalog products, customer baskets, accepted orders, feedback reviews, chat sessions, scheduled jobs, and workflow state each follow distinct lifecycles and consistency rules. Allowing multiple services to read or write shared database tables lets consumers bypass domain invariants and prevents independent schema evolution.
+## Context & Problem Statement
 
-BookWorm requires an unambiguous data-ownership rule that pairs each business model with one owning capability and enforces contract-based integration across boundaries.
+Books, baskets, orders, reviews, chat sessions, and scheduled jobs have distinct consistency, retention, and scaling requirements. Allowing multiple services to read or mutate the same database tables bypasses domain invariants and prevents independent schema evolution.
 
-## Decision drivers
+## Decision Drivers
 
-- **Correctness:** Guarantee that one owning capability enforces every domain invariant and state transition.
-- **Evolvability:** Allow internal schemas and storage engines to change without breaking hidden database consumers.
-- **Clear accountability:** Separate shared infrastructure provisioning from logical business ownership.
+- **Invariant enforcement:** Route every state mutation through a single authoritative service.
+- **Storage autonomy:** Let each capability choose the datastore best suited to its workload.
+- **Schema freedom:** Evolve internal tables and document schemas without breaking other services.
 
-## Considered options
+## Options Considered
 
-1. Keep business state and persistence access strictly capability-owned
-2. Store all business entities in a shared mutable database schema
-3. Route all persistence through a central data-access service
-4. Mandate physically separate database servers for every service
+| Option                                               | Pros                                                                             | Cons                                                               |
+| :--------------------------------------------------- | :------------------------------------------------------------------------------- | :----------------------------------------------------------------- |
+| **Capability-owned state and persistence access**    | Single authority for invariants; polyglot storage (PostgreSQL, Redis, Cosmos DB) | Cross-domain queries require API composition or projections        |
+| **Shared relational database across services**       | Simple cross-domain SQL joins                                                    | Tight coupling; schema changes risk breaking unrelated services    |
+| **Centralized data-access service**                  | Single access gatekeeper                                                         | Creates a central bottleneck that must understand all domain rules |
+| **Physically isolated servers for every tiny store** | Maximum hardware isolation                                                       | Unnecessary infrastructure cost for lightweight caches/queues      |
 
-## Decision outcome
+## Decision & Consequences
 
-Chosen option: **Keep business state and persistence access strictly capability-owned**, because it preserves domain encapsulation while letting each bounded context select the storage engine suited to its access patterns.
+**Chosen Option:** Keep all business state and persistence access strictly owned by the responsible capability. Each service selects its optimal datastore (e.g., [[container|catalog-database]], [[container|basket-database]], [[container|order-database]], [[container|rating-database]]) and exposes data solely via public contracts.
 
-Each service owns its logical database, container, cache namespace, or blob container:
+- **Positive:** Domain invariants cannot be bypassed; internal schema refactors do not impact consumers.
+- **Negative:** Cross-domain reporting or enrichment requires explicit API calls or derived projections.
 
-- **Catalog:** PostgreSQL (`catalogdb`), Qdrant (`vectordb`), and Azure Blob Storage (`catalog-blob`).
-- **Shopping (Basket API):** Redis (`IBasketRepository`).
-- **Ordering (Ordering API):** PostgreSQL (`orderingdb` with EF Core and Marten event store).
-- **Ordering (Finance):** Azure Durable Task Scheduler (`durable-task-scheduler` / `finance-taskhub`) and Azure Storage host state.
-- **Reviews (Rating API):** Azure Cosmos DB (`ratingdb` / `feedbacks`).
-- **Conversational (Chat API):** Azure Blob Storage (`chatting-blob`, `ag-ui/` prefix).
-- **Platform (Scheduler):** PostgreSQL (`schedulerdb`).
-- **Platform (Notification):** Stateless worker using Redis for 24-hour integration-event idempotency only.
+### Compliance Criteria
 
-Logical ownership does not prohibit multiple databases (`catalogdb`, `orderingdb`, `schedulerdb`) from sharing one managed PostgreSQL Flexible Server instance when each database remains isolated to its owner.
-
-### Consequences
-
-- **Positive:** Services can switch persistence engines independently—such as moving Rating API to Azure Cosmos DB or Finance to Durable Task Scheduler—without changing downstream contracts.
-- **Negative:** Cross-context queries cannot use SQL joins and must rely on gRPC/HTTP calls, read projections, or API composition; multi-service workflows cannot share one ACID database transaction.
-- **Follow-up:** Maintain engine-specific storage decisions in dedicated system ADRs under `explanation/adrs/systems/` and verify zero cross-context DbContext references in `tests/BookWorm.ArchTests`.
-
-## Pros and cons of the options
-
-### Keep business state and persistence access strictly capability-owned
-
-- **Good**, because every state change passes through the owning service's validation, authorization, and domain events.
-- **Good**, because bounded contexts choose purpose-built engines (PostgreSQL, Cosmos DB, Redis, Qdrant, Azure Blob Storage, Durable Task Scheduler).
-- **Bad**, because cross-domain reporting and workflows require asynchronous projections or synchronous composition.
-
-### Store all business entities in a shared mutable database schema
-
-- **Good**, because queries can join across catalogs, baskets, orders, and reviews in one statement.
-- **Bad**, because schema changes break unrelated services and bypass domain validation rules.
-
-### Route all persistence through a central data-access service
-
-- **Good**, because database credentials stay concentrated in one component.
-- **Bad**, because it creates a single scaling bottleneck and strips bounded contexts of autonomous model ownership.
-
-### Mandate physically separate database servers for every service
-
-- **Good**, because physical server isolation eliminates noisy-neighbor resource contention.
-- **Bad**, because it exceeds logical ownership requirements and inflates cloud infrastructure cost for small databases.
-
-## Verification and links
-
-- **Verified against:** `src/Aspire/BookWorm.AppHost/AppHost.cs`, `src/Services/Rating/BookWorm.Rating/Extensions/Extensions.cs`, `src/Services/Finance/BookWorm.Finance/Extensions/Extensions.cs`, `src/Services/Notification/BookWorm.Notification/Extensions/Extensions.cs`, `src/Services/Chat/BookWorm.Chat/Orchestration/WorkflowRegistration.cs`
-- **Related architecture:** [[doc|arc42/02-architecture-constraints]], [[doc|arc42/05-building-block-view]], [[doc|platform/003-data-ai-and-messaging-resources]]
-- **Related ADRs:** ADR-BW-001, ADR-BW-007, Rating Cosmos DB ADR, Finance Durable Task Scheduler ADR, Chat Blob Sessions ADR
+- Only the owning service may hold read/write credentials or schemas for its authoritative datastore.
+- Cross-service data access must use published HTTP, gRPC, or event contracts—never cross-schema SQL queries.
+- Shared infrastructure hosts (such as Redis) must isolate keys by service-owned prefixes.

@@ -1,127 +1,164 @@
 ---
 id: notification-delivery
-name: Notification delivery
+name: Notification Delivery
 version: 1.0.0
 summary: >-
-  Finance emits a notification command and the Notification System renders the
-  MJML email template and submits it through SMTP with MailKit resilience
-  without owning the business state behind the message.
+  Finance emits order-notification commands over Kafka; Notification API
+  applies Redis idempotency, renders MJML email templates, and submits MIME
+  messages over SMTP with bounded retries and dead-lettering.
 owners:
-  - contributor-team
+  - platform-engineering-team
 badges:
   - content: Platform Capability
     backgroundColor: blue
     textColor: blue
 steps:
   - id: finance
-    title: Finance emits a notification request
-    actor:
-      name: Finance workflow
-    next_step:
-      id: place-order
-      label: Publish the order notification command
+    title: Finance emits order notification command
+    summary: >-
+      Publishes placement, completion, or cancellation notification commands
+      over Kafka without coupling order status to email delivery.
+    service:
+      id: order-orchestration
+      version: 1.0.0
+    next_steps:
+      - id: place-order
+        label: New order placed
+      - id: complete-order
+        label: Order completed
+      - id: cancel-order
+        label: Order cancelled or orchestration timed out
   - id: place-order
-    title: PlaceOrderCommand reaches Notification
+    title: PlaceOrderCommand
     message:
       id: PlaceOrderCommand
       version: 1.0.0
     next_step:
+      id: placement-channel
+      label: Publish to finance.place-order
+  - id: complete-order
+    title: CompleteOrderCommand
+    message:
+      id: CompleteOrderCommand
+      version: 1.0.0
+    next_step:
       id: notification-api
-      label: Render and submit the email request
+      label: Deliver via finance.complete-order
+  - id: cancel-order
+    title: CancelOrderCommand
+    message:
+      id: CancelOrderCommand
+      version: 1.0.0
+    next_step:
+      id: notification-api
+      label: Deliver via finance.cancel-order
+  - id: placement-channel
+    title: Finance placement channel
+    channel:
+      id: bookworm.{env}.finance.place-order
+      version: 1.0.0
+    next_step:
+      id: notification-api
+      label: Consume placement command
   - id: notification-api
-    title: Notification API renders and submits the email
+    title: Notification API deduplicates and renders email
     summary: >-
-      The service validates the recipient, renders the Orders/OrderEmail MJML
-      template, and submits the MIME message over SMTP via MailKit.
+      Checks a 24-hour Redis idempotency guard keyed by message ID, skips blank
+      recipients, and renders the order email template into a MIME message.
     service:
       id: notification-api
       version: 1.0.0
-    next_step:
-      id: smtp-provider
-      label: Submit the message through SMTP
-  - id: smtp-provider
-    title: SMTP provider accepts or rejects the message
+    next_steps:
+      - id: smtp-provider
+        label: Valid recipient and template rendered
+      - id: notification-skipped
+        label: Recipient email absent
+  - id: notification-skipped
+    title: Email delivery skipped
     summary: >-
-      Delivery success completes the handler; failures trigger the MailKit
-      resilience pipeline and Wolverine retries before dead-lettering.
-    externalSystem:
-      name: SMTP provider
-      summary: Mail delivery provider used by BookWorm Notification.
+      Returns cleanly without calling SMTP when no recipient address is present.
+    custom:
+      title: Email skipped
+      type: Outcome
+      icon: CheckCircleIcon
+      color: gray
+  - id: smtp-provider
+    title: SendGrid - SMTP submission
+    summary: >-
+      Submits the rendered MIME email over SMTP with MailKit resilience (Mailpit
+      locally, SendGrid in Azure).
+    service:
+      id: sendgrid-api
+      version: 1.0.0
     next_steps:
       - id: notification-sent
-        label: Submission succeeded
+        label: SMTP provider accepted message
       - id: notification-failed
         label: Submission failed after retries
   - id: notification-sent
-    title: Notification completes SMTP submission
+    title: Email submitted to SMTP provider
+    summary: >-
+      Provider accepted the message for delivery. Notification emits no
+      delivery-result callback.
     custom:
       title: Email submitted
       type: Outcome
       icon: CheckCircleIcon
       color: green
   - id: notification-failed
-    title: Message routed to dead-letter queue
-    custom:
-      title: Dead-lettered notification
-      type: Outcome
-      icon: ExclamationTriangleIcon
-      color: red
+    title: Notification dead-letter queue
+    summary: >-
+      Exhausted transient failures route the command to the dead-letter queue
+      for operator inspection.
+    channel:
+      id: bookworm.{env}.notification.dead-letter-queue
+      version: 1.0.0
 ---
 
-**Notification** (`BookWorm.Notification`) is a stateless Kafka worker that renders order lifecycle emails with Mjml.Net and submits them over SMTP via MailKit—using **Mailpit** locally and SendGrid SMTP in Azure. It owns **no PostgreSQL database and no email outbox**: message durability comes from Kafka, duplicate-delivery protection comes from Redis (`IIntegrationEventIdempotencyGuard`), and transient SMTP failures are handled by a MailKit resilience pipeline followed by Wolverine retries and a native Kafka dead-letter queue.
+## Trigger & Business Outcome
 
-## Context and motivation
+This flow is triggered when [[service|order-orchestration]] publishes [[command|PlaceOrderCommand]], [[command|CompleteOrderCommand]], or [[command|CancelOrderCommand]] over Kafka. Success is confirmed when [[service|notification-api]] passes its Redis idempotency check, renders the MJML order template, and hands the MIME message off to [[service|sendgrid-api]] over SMTP (or Mailpit in local development) without maintaining any relational email outbox.
 
-Sending customer emails relies on external SMTP providers that can throttle connections, slow down, or reject requests. If **Ordering API** or **Finance** waited synchronously on SMTP handshakes, mail provider outages would block checkouts or stall order orchestration.
-
-BookWorm isolates email delivery behind an asynchronous Kafka boundary:
-
-- **Strict state separation:** Notification never owns order status or purchase history. Email delivery failures never roll back an accepted order, and SMTP acceptance never implies that an order succeeded.
-- **Stateless worker footprint:** Instead of maintaining a separate relational email-outbox database or scheduled resend jobs, Notification relies on Kafka consumer durability, Redis idempotency keys, and bounded retries.
-- **No public API:** Notification (`BookWorm.Notification`, `Sdk.Worker`) exposes no REST or gRPC endpoints. In Development only, it maps `/health` and `/alive` endpoints (local ports HTTP `5259`, HTTPS `7036`).
-
-## How it works
-
-Finance emits three order-notification commands over Kafka, each partitioned by `OrderId` and wrapped in a CloudEvents JSON envelope:
-
-- `PlaceOrderCommand` on `bookworm.{env}.finance.place-order`
-- `CompleteOrderCommand` on `bookworm.{env}.finance.complete-order`
-- `CancelOrderCommand` on `bookworm.{env}.finance.cancel-order`
-
-This flowchart shows how Notification consumes Finance commands from Kafka, applies Redis idempotency, renders MJML templates, and submits email over SMTP or routes exhausted messages to the dead-letter queue.
-
-<MermaidFileLoader file="mermaids/notification-delivery-diagram-1.mmd" />
-
-### Processing lifecycle
-
-1. **Consume and deduplicate:** Each Wolverine command handler (`PlaceOrderCommandHandler`, `CompleteOrderCommandHandler`, `CancelOrderCommandHandler`) wraps execution in `IIntegrationEventIdempotencyGuard.ExecuteAsync` keyed by `message.Id` and handler name. Redis (via FusionCache, 24-hour TTL) prevents duplicate email sends if Kafka redelivers the same message ID.
-2. **Validate recipient:** `OrderNotificationHelper.SendAsync` checks the recipient address. If the email is null, empty, or whitespace, the handler returns immediately without rendering or calling SMTP.
-3. **Render MJML and build MIME:** For valid recipients, `IRenderer` renders `Orders/OrderEmail.mjml` (using `_Layout.mjml`) through Mjml.Net, and `OrderMimeMessageBuilder` constructs the MIME message with sender defaults from `MailKitSettings`.
-4. **Submit over SMTP with resilience:** `MailKitSender` executes SMTP submission through a named Polly resilience pipeline (`Notification`). In local Aspire runs, MailKit connects to the **Mailpit** container on SMTP port `587`. In Azure publish mode, AppHost injects parameterized SMTP settings (`email-smtp-endpoint`, default `smtp://smtp.sendgrid.net:587`; `email-smtp-username`, default `apikey`; `email-smtp-password`; `email-sender-address`; optional `email-sender-name`).
-5. **Handle failures and dead-lettering:** Non-cancellation exceptions throw `NotificationException` back to Wolverine. Wolverine retries on a `50ms / 250ms / 1s` cooldown schedule with full jitter, then routes exhausted messages to `bookworm.{env}.notification.dead-letter-queue`. Notification publishes no delivery-result event back to Finance or Ordering.
-
-:::note
-**Scheduler** (`BookWorm.Scheduler`) runs only `ProcessVectorBatchJob` and `HeartbeatJob`. It runs no email resend or outbox cleanup jobs for Notification.
-:::
-
-## Design trade-offs
-
-| Decision                                                       | Benefits                                                                                         | Costs and limits                                                                                         |
-| :------------------------------------------------------------- | :----------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------- |
-| **Stateless Kafka + Redis idempotency (no PostgreSQL outbox)** | Eliminates a database dependency, schema migrations, and scheduled cleanup jobs                  | Relies on Kafka DLQ inspection for exhausted failures rather than querying an SQL outbox table           |
-| **Idempotency keyed by `message.Id` (24-hour TTL)**            | Stops duplicate sends from Kafka consumer redeliveries and Wolverine retries of the same command | Does not deduplicate a new `PlaceOrderCommand` issued with a new `message.Id` by a Finance timeout retry |
-| **MailKit over SMTP (not vendor HTTP API)**                    | Keeps local **Mailpit** and cloud **SendGrid** identical behind one standard protocol            | SMTP acceptance confirms provider handoff, not inbox delivery, bounce status, or customer open events    |
-| **No delivery-result callback event**                          | Preserves unidirectional decoupling between business state and email side effects                | Finance and Ordering cannot automatically display email delivery receipts                                |
-
-## Alternatives considered
-
-- **PostgreSQL email outbox with Scheduler resend/cleanup jobs:** Retired from the architecture because Kafka durability, Wolverine retries/DLQ, and Redis idempotency already provide resilient delivery without operating a dedicated database and maintenance cron jobs.
-- **Direct SendGrid HTTP Mail Send API:** Rejected in favor of standard SMTP via MailKit so local development with **Mailpit** exercises the exact same transport, MIME builder, and resilience pipeline as Azure deployments.
-- **Synchronous email sending during checkout:** Rejected because external SMTP latency and outages would directly degrade checkout availability.
-
-## Related documentation
-
-- [[flow|user-checkout]] — How Finance fans out `PlaceOrderCommand` to Basket API and Notification.
-- [[flow|order-lifecycle]] — How Ordering status changes flow through Finance to trigger `CompleteOrderCommand` and `CancelOrderCommand`.
+## Interactive Flow Visualization
 
 <NodeGraph />
+
+## Step-by-Step Walkthrough
+
+<Steps title="Stateless Email Rendering and Resilient SMTP Handoff">
+	<Step title="Consume order notification command">
+		[[service|notification-api]] consumes [[command|PlaceOrderCommand]],
+		[[command|CompleteOrderCommand]], or [[command|CancelOrderCommand]] from Kafka partitioned by
+		Order ID.
+	</Step>
+	<Step title="Apply Redis idempotency and validate recipient">
+		A Redis-backed idempotency guard (24-hour TTL keyed by message ID) prevents duplicate sends on
+		Kafka redeliveries or worker retries. If the recipient email address is blank, processing ends
+		cleanly without calling SMTP.
+	</Step>
+	<Step title="Render MJML template and submit over SMTP">
+		[[service|notification-api]] renders the order email template into a MIME message and submits it
+		to [[service|sendgrid-api]] (or Mailpit locally) through a resilient SMTP pipeline. No
+		delivery-result callback is published back to [[domain|ordering]].
+	</Step>
+</Steps>
+
+## Failure, Retry & Compensation Behavior
+
+| Failure Point                            | System Behavior                                                                                                                                                                                                 | Compensation / Recovery                                                                                                                                                                  |
+| :--------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Blank recipient email**                | Handler returns immediately without calling SMTP                                                                                                                                                                | No error or retry; order state is unaffected                                                                                                                                             |
+| **Transient SMTP throttling or timeout** | MailKit resilience and worker cooldown retries execute                                                                                                                                                          | If retries exhaust, the command routes to <ResourceLink id="bookworm.{env}.notification.dead-letter-queue" type="channel">`bookworm.{env}.notification.dead-letter-queue`</ResourceLink> |
+| **Finance timeout reissue**              | <ResourceLink id="order-orchestration" type="service">order-orchestration</ResourceLink> emits a new <ResourceLink id="PlaceOrderCommand" type="command">PlaceOrderCommand</ResourceLink> with a new message ID | Bypasses per-message-ID deduplication and may send a duplicate placement email                                                                                                           |
+
+:::note
+**Stateless worker boundary:** [[service|notification-api]] owns no PostgreSQL database and no email outbox. SMTP acceptance confirms handoff to the mail provider, not final inbox delivery.
+:::
+
+## Participating Resources
+
+- **Domains & Systems:** [[domain|platform]], [[domain|ordering]], [[system|notification-system]], [[system|sendgrid]]
+- **Services:** [[service|order-orchestration]], [[service|notification-api]], [[service|sendgrid-api]]
+- **Messages:** [[command|PlaceOrderCommand]], [[command|CompleteOrderCommand]], [[command|CancelOrderCommand]]
+- **Channels:** <ResourceLink id="bookworm.{env}.finance.place-order" type="channel">`bookworm.{env}.finance.place-order`</ResourceLink>, <ResourceLink id="bookworm.{env}.finance.complete-order" type="channel">`bookworm.{env}.finance.complete-order`</ResourceLink>, <ResourceLink id="bookworm.{env}.finance.cancel-order" type="channel">`bookworm.{env}.finance.cancel-order`</ResourceLink>, <ResourceLink id="bookworm.{env}.notification.dead-letter-queue" type="channel">`bookworm.{env}.notification.dead-letter-queue`</ResourceLink>
+- **Related Views:** [[flow|user-checkout]], [[flow|order-lifecycle]]

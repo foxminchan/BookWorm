@@ -8,7 +8,7 @@ badges:
     textColor: purple
 summary: Returns a generated feedback summary, classification, rating metrics, evidence, and confidence for a book.
 owners:
-  - contributor-team
+  - catalog-experience-team
 diagrams:
   - id: rating-summarizer-workflow
     version: 1.0.0
@@ -21,69 +21,69 @@ sidebar:
   badge: "GET"
 ---
 
-`SummarizeFeedback` queries **Rating API** (`GET /api/v1/feedbacks/{id}/summarize`) to return a synthesized summary, application-computed rating metrics, classification, supporting evidence, and confidence for a book's customer feedback. The operation is read-only, requires Microsoft Entra ID authentication, and caches results in FusionCache (6 hours when feedback exists; 1 minute when no feedback exists).
+`SummarizeFeedback` queries [[service|rating-api]] (`GET /rating/api/v1/feedbacks/{id}/summarize`) to return a synthesized summary, application-computed rating metrics, classification, supporting evidence, and confidence for a book's customer feedback. The operation is read-only, requires Microsoft Entra ID authentication, and caches results.
 
 ## Overview
 
-| Property                  | Value                                                                                                                                                                                                                                          |
-| :------------------------ | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**                 | Reviews bounded context (**Rating API**, Aspire resource `rating`)                                                                                                                                                                             |
-| **Source**                | `src/Services/Rating/BookWorm.Rating/Features/Summarize/SummarizeFeedbackEndpoint.cs`, `SummarizeFeedbackQuery.cs`                                                                                                                             |
-| **Protocol / format**     | HTTP `GET /api/v1/feedbacks/{id}/summarize` (via API Gateway: `GET /rating/api/v1/feedbacks/{id}/summarize`), `ApiVersions.V1`, JSON (`application/json`)                                                                                      |
-| **Authentication**        | Microsoft Entra ID JWT required (`.RequireAuthorization()`)                                                                                                                                                                                    |
-| **Rate limiting**         | `PerUserRateLimit` token bucket (30 token limit, 20 tokens per 10 seconds, queue limit 5) plus global IP/concurrency limiters                                                                                                                  |
-| **Caching & AI pipeline** | FusionCache L1 + Redis L2 (`6 hours` when `reviewCount > 0`, `1 minute` when `reviewCount == 0`); invokes the Microsoft Agent Framework map-reduce-assess workflow backed by Microsoft Foundry and Presidio PII redaction when feedback exists |
-| **Contract version**      | `1.0.0`                                                                                                                                                                                                                                        |
+| Property                           | Value                                                                                                                                                                                                          |
+| :--------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Bounded Context**                | Reviews                                                                                                                                                                                                        |
+| **Owner Service**                  | [[service\|rating-api]]                                                                                                                                                                                        |
+| **Protocol / Format**              | HTTP `GET`, `application/json` response                                                                                                                                                                        |
+| **Gateway Endpoint**               | `GET /rating/api/v1/feedbacks/{id}/summarize` (service path `/api/v1/feedbacks/{id}/summarize`)                                                                                                                |
+| **Authentication & Authorization** | Microsoft Entra ID JWT required                                                                                                                                                                                |
+| **Idempotency / Concurrency**      | Read-only and naturally idempotent                                                                                                                                                                             |
+| **Rate Limit / Caching**           | Global concurrency (`100`), per-IP fixed-window (`30 req/min`), and per-user token bucket (`30` limit, `20` per `10s`, queue `5`); cached `6 hours` when `reviewCount > 0`, `1 minute` when `reviewCount == 0` |
+| **Contract Version**               | `1.0.0` (`ApiVersions.V1`)                                                                                                                                                                                     |
 
 :::note
 A book with zero feedback records returns `200 OK` with `"classification": "NoData"` and does **not** invoke the AI model workflow. Do not treat `404 Not Found` or `5xx` errors as equivalent to `NoData`.
 :::
 
-## Parameters and fields
+## Request & Response Contract
 
-### Path parameters
+### Path Parameters
 
-| Name | Type                | Required | Default | Constraints | Description                                        |
-| :--- | :------------------ | :------- | :------ | :---------- | :------------------------------------------------- |
-| `id` | `string` (`BookId`) | Yes      | —       | Valid UUID  | Unique identifier of the Catalog book to summarize |
+| Name | Type              | Required | Constraints | Description                                        |
+| :--- | :---------------- | :------- | :---------- | :------------------------------------------------- |
+| `id` | `string` (`uuid`) | Yes      | Valid UUID  | Unique identifier of the Catalog book to summarize |
 
-### Response schema (`SummarizeResult`)
+### Success Response (`200 OK`)
 
-A `200 OK` response returns a `SummarizeResult` JSON object. Only `summary` is strictly required in the OpenAPI schema; clients should handle all remaining fields defensively.
+Only `summary` is strictly required in the schema; clients should handle remaining fields defensively.
 
-| Field            | Type             | Required | Constraints                               | Description                                                                                                         |
+| Name             | Type             | Required | Constraints                               | Description                                                                                                         |
 | :--------------- | :--------------- | :------- | :---------------------------------------- | :------------------------------------------------------------------------------------------------------------------ |
-| `summary`        | `string`         | Yes      | —                                         | Generated narrative summary of customer feedback, or `"No feedback found for this book."` when `reviewCount` is `0` |
-| `classification` | `string`         | No       | Enum: `NoData`, `Bad`, `Good`, `TopRated` | Application-derived classification computed by deterministic business rules (not persisted)                         |
+| `summary`        | `string`         | Yes      | Non-null                                  | Generated narrative summary of customer feedback, or `"No feedback found for this book."` when `reviewCount` is `0` |
+| `classification` | `string`         | No       | Enum: `NoData`, `Bad`, `Good`, `TopRated` | Application-derived classification computed by deterministic business rules                                         |
 | `averageRating`  | `number \| null` | No       | `double` or `null`                        | Arithmetic mean rating across included feedback records (`null` when `reviewCount` is `0`)                          |
 | `reviewCount`    | `integer`        | No       | `int32`                                   | Number of feedback records included in the summary (`0` when unreviewed)                                            |
 | `evidence`       | `string`         | No       | —                                         | Supporting evidence produced by the quality assessment step (empty string when `reviewCount` is `0`)                |
 | `confidence`     | `string`         | No       | Free-form string                          | Confidence reported by the quality assessment step (empty string when `reviewCount` is `0`)                         |
 
-Classification is `NoData` when fewer than 3 reviews are present, the average is non-finite, or it is outside 0-5. Otherwise it is `Bad` when the average is below 3.5 or a dominant negative pattern is found; `TopRated` at an average of at least 4.5 with 50+ reviews or at least 4.0 with 200+ reviews; all other valid results are `Good`.
+## Behavior & Side Effects
 
-## Error responses
+- **AI summarization & PII redaction:** When feedback exists, invokes the map-reduce-assess AI workflow with [[service|presidio-api]] PII redaction before generating the summary.
+- **Deterministic classification:** Returns `NoData` when fewer than 3 reviews exist (or average is invalid), `Bad` when average `< 3.5` or a dominant negative pattern is found, `TopRated` at average `>= 4.5` with `50+` reviews or `>= 4.0` with `200+` reviews, and `Good` otherwise.
+- **Tiered caching:** Caches non-empty summaries for 6 hours and empty (`NoData`) results for 1 minute; invalidated on feedback mutations.
 
-| Code / status               | Condition                                                                                                   | Recovery behavior                                                |
-| :-------------------------- | :---------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------- |
-| `401 Unauthorized`          | Missing, expired, or invalid Entra ID bearer token                                                          | Re-authenticate and retry                                        |
-| `403 Forbidden`             | Authenticated principal lacks Rating API authorization                                                      | Request a token with the required Rating API scopes              |
-| `404 Not Found`             | Target resource or summary could not be found (`application/problem+json`)                                  | Surface an unavailable/not-found state; do not treat as `NoData` |
-| `429 Too Many Requests`     | Caller exceeded `PerUserRateLimit` or global rate limit (`application/problem+json` + `Retry-After` header) | Wait for the `Retry-After` duration before retrying              |
-| `500 Internal Server Error` | Downstream Microsoft Foundry, Presidio, or Cosmos DB failure                                                | Retry with exponential backoff; do not fall back to `NoData`     |
+## Error Responses
 
-## Related documentation
+| Status / Code               | Condition                                                      | Client Recovery Action                                           |
+| :-------------------------- | :------------------------------------------------------------- | :--------------------------------------------------------------- |
+| `401 Unauthorized`          | Missing, expired, or invalid Entra ID bearer token             | Re-authenticate and retry                                        |
+| `403 Forbidden`             | Authenticated principal lacks Rating API authorization         | Request a token with the required Rating API scopes              |
+| `404 Not Found`             | Target resource or summary could not be found                  | Surface an unavailable/not-found state; do not treat as `NoData` |
+| `429 Too Many Requests`     | Rate limit quota exceeded (`Retry-After` header included)      | Wait for the `Retry-After` duration before retrying              |
+| `500 Internal Server Error` | Downstream AI, [[service\|presidio-api]], or Cosmos DB failure | Retry with exponential backoff; do not fall back to `NoData`     |
+
+## Related Documentation
 
 - [[service|rating-api]] — Service overview, Azure Cosmos DB storage, and AI governance.
-- [[agent|rating-agent]] — AI agent configuration and Presidio privacy middleware.
+- [[service|presidio-api]] — PII detection and anonymization service.
+- [[entity|feedback]] — Feedback document model.
 - [[query|ListFeedbacks]] — Retrieve paginated individual customer reviews for a book.
-- [[entity|feedback]] — Domain model for individual customer reviews.
 
 <NodeGraph />
 
-<SchemaViewer
-	file="schema.json"
-	title="SummarizeResult JSON Schema"
-	maxHeight="500"
-	search="true"
-/>
+<SchemaViewer file="schema.json" title="Summarize feedback schema" maxHeight="500" search="true" />

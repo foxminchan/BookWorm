@@ -1,99 +1,77 @@
 ---
-title: Basket API engineering reference
-summary: Implementation guidance for the Basket API contract, validation, persistence, and Catalog enrichment.
+title: Basket consistency, enrichment, and cleanup
+summary: Engineering invariants, Redis ownership, Catalog enrichment purity, and checkout cleanup idempotency for Basket API.
 version: 1.0.0
 type: engineering
+order: 1
 badges:
   - content: Architecture
     backgroundColor: green
     textColor: green
 ---
 
-This reference defines the HTTP v1 API, gRPC server and client contracts, **Redis** (`redis`) storage model, validation rules, and post-checkout Kafka cleanup contracts for **Basket API** (`basket`) in the **Shopping** subdomain.
+## Purpose & Scope
 
-## Overview
+This document defines the data ownership, consistency model, read-time enrichment rules, and asynchronous checkout cleanup guarantees for [[service|basket-api]] in the [[domain|shopping]] subdomain. Use it when modifying basket endpoints, gRPC contracts, Redis persistence, or post-checkout Kafka handlers.
 
-| Property                  | Value                                                                                                                                                                                                                 |
-| :------------------------ | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**                 | Shopping subdomain (**Basket API**, `basket`)                                                                                                                                                                         |
-| **Source**                | `src/Services/Basket/BookWorm.Basket/`                                                                                                                                                                                |
-| **Persistence & caching** | **Redis** (`redis`): `IBasketRepository` (`basket:{userId}`, camelCase JSON), FusionCache, and 24-hour `IIntegrationEventIdempotencyGuard` (**no SQL database**)                                                      |
-| **Protocols**             | HTTP v1 (`/api/v1/baskets`, routed via API Gateway `/basket/api/v1/baskets`), gRPC server (`basket.v1.BasketGrpcService`), gRPC client (`book.v1.BookGrpcService`), Kafka CloudEvents JSON (Wolverine)                |
-| **Authentication**        | Microsoft Entra ID JWT (`customer` role + `basket_read` and `basket_write` scopes); customer identity derived strictly from the authenticated token; `PerUserRateLimit` on all HTTP endpoints; `HMAC__Key` configured |
+## Visual Reference
 
-## Integration boundary overview
-
-Basket API serves authenticated customers through API Gateway, enriches reads via Catalog API gRPC, serves basket snapshots to Ordering API over gRPC during checkout, and processes asynchronous post-checkout cleanup from Finance over Kafka.
+The visual below shows how [[service|basket-api]] interacts with [[container|basket-database]], [[service|catalog-api]], [[service|order-api]], and [[service|order-orchestration]].
 
 <MermaidFileLoader file="mermaids/basket-api-contracts-diagram-1.mmd" />
 
-## HTTP API contract
+_Basket Persistence, Enrichment, and Checkout Cleanup Boundaries_
 
-All routes are versioned under `ApiVersions.V1` (`/api/v1/baskets`), require default customer authorization (`customer` role + `basket_read`/`basket_write` scopes), and apply `PerUserRateLimit`:
+## Core Invariants & Design Rules
 
-| Method   | Path              | Success response                          | Behavior                                                                                                 |
-| :------- | :---------------- | :---------------------------------------- | :------------------------------------------------------------------------------------------------------- |
-| `POST`   | `/api/v1/baskets` | `201 Created` (`CustomerId` + `Location`) | Creates a customer-scoped basket (`basket:{userId}`) from one or more items                              |
-| `GET`    | `/api/v1/baskets` | `200 OK` (`CustomerBasketDto`)            | Loads `basket:{userId}` (`404 Not Found` if absent) and enriches distinct book IDs via Catalog API gRPC  |
-| `PUT`    | `/api/v1/baskets` | `204 No Content`                          | Loads `basket:{userId}` (`404 Not Found` if absent) and replaces the complete item collection atomically |
-| `DELETE` | `/api/v1/baskets` | `204 No Content`                          | Loads `basket:{userId}` (`404 Not Found` if absent) and deletes the Redis key                            |
+- **Customer-scoped identity:** [[service|basket-api]] derives the basket key (`basket:{userId}`) strictly from the authenticated Microsoft Entra ID `ClaimsPrincipal` (`customer` role with `basket_read` / `basket_write` scopes), never from caller-supplied route or body identifiers.
+- **Transient pre-order intent:** [[entity|basket]] and [[entity|basket-item]] records represent mutable pre-order customer intent only; they are out of scope for order totals, payments, or fulfillment.
+- **No persisted prices or titles:** [[container|basket-database]] stores only `BookId` and a strictly positive `Quantity` (`> 0`). Live titles, regular prices, and sale prices are never persisted in Redis.
+- **Full-set replacement semantics:** Updating a basket replaces the entire item collection atomically rather than merging individual items, and requires at least one item.
+- **Explicit missing-basket semantics:** Reading, updating, or deleting an absent `basket:{userId}` returns `404 Not Found`; missing baskets are never masked as empty `200 OK` responses.
 
-## Parameters and domain invariants
+:::warning
+**Read-time enrichment must remain pure.** During `GET /api/v1/baskets`, if [[service|catalog-api]] has no record for a stored `BookId`, [[service|basket-api]] must preserve the stored [[entity|basket-item]] and omit unavailable display fields—never invent prices or mutate [[container|basket-database]] during a read.
+:::
 
-### Request item fields (`CreateBasketCommand`, `UpdateBasketCommand`)
+## Boundaries & Guarantees
 
-| Field              | Type                  | Required | Constraints            | Description                                                                            |
-| :----------------- | :-------------------- | :------- | :--------------------- | :------------------------------------------------------------------------------------- |
-| `items`            | `BasketItemRequest[]` | Yes      | Non-empty collection   | Complete set of basket items; `PUT` replaces the entire collection rather than merging |
-| `items[].id`       | `string` / `Guid`     | Yes      | Valid Catalog `BookId` | Book reference stored in Redis (no title or price persisted)                           |
-| `items[].quantity` | `int`                 | Yes      | Greater than `0`       | Requested item count                                                                   |
+| Concern                       | Strategy & Guarantee                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Failure / Edge-Case Behavior                                                                                                                                                                                                                                                                                                                                                                                                                          | Related Resources                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| :---------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Persistence**               | <ResourceLink id="basket-database" type="container">basket-database</ResourceLink> (Redis) is the sole authoritative store (`basket:{userId}`, camelCase JSON); no relational database is used.                                                                                                                                                                                                                                                                                    | Missing keys return `404 Not Found` on HTTP reads/writes and empty/absent responses over gRPC without auto-creating state.                                                                                                                                                                                                                                                                                                                            | <ResourceLink id="basket-database" type="container">basket-database</ResourceLink>, <ResourceLink id="basket" type="entity">basket</ResourceLink>, <ResourceLink id="basket-item" type="entity">basket-item</ResourceLink>, <ResourceLink id="adr-001-redis-authoritative-basket-store" type="adr">adr-001-redis-authoritative-basket-store</ResourceLink>                                                                                                                                                                                                                                                       |
+| **Caching & Enrichment**      | `GET /api/v1/baskets` resolves distinct `BookId` values on demand via <ResourceLink id="GetBooksGrpc" type="query">GetBooksGrpc</ResourceLink> on <ResourceLink id="catalog-api" type="service">catalog-api</ResourceLink>; <ResourceLink id="basket-database" type="container">basket-database</ResourceLink> also backs FusionCache.                                                                                                                                             | Unavailable Catalog fields are omitted gracefully on read; <ResourceLink id="order-api" type="service">order-api</ResourceLink> snapshots prices independently at checkout via <ResourceLink id="GetBasketGrpc" type="query">GetBasketGrpc</ResourceLink>.                                                                                                                                                                                            | <ResourceLink id="GetBasket" type="query">GetBasket</ResourceLink>, <ResourceLink id="GetBasketGrpc" type="query">GetBasketGrpc</ResourceLink>, <ResourceLink id="GetBooksGrpc" type="query">GetBooksGrpc</ResourceLink>, <ResourceLink id="adr-004-catalog-enrichment-at-read-time" type="adr">adr-004-catalog-enrichment-at-read-time</ResourceLink>                                                                                                                                                                                                                                                           |
+| **Messaging**                 | Consumes <ResourceLink id="PlaceOrderCommand" type="command">PlaceOrderCommand</ResourceLink> partitioned by `OrderId` and emits <ResourceLink id="BasketDeletedCompleteIntegrationEvent" type="event">BasketDeletedCompleteIntegrationEvent</ResourceLink> or <ResourceLink id="BasketDeletedFailedIntegrationEvent" type="event">BasketDeletedFailedIntegrationEvent</ResourceLink> to <ResourceLink id="order-orchestration" type="service">order-orchestration</ResourceLink>. | Missing basket on cleanup emits <ResourceLink id="BasketDeletedFailedIntegrationEvent" type="event">BasketDeletedFailedIntegrationEvent</ResourceLink> (signals cleanup failure only, never order/payment failure); unhandled exceptions exhaust Wolverine retries (`50ms / 250ms / 1s` with jitter) and route to <ResourceLink id="bookworm.{env}.basket.dead-letter-queue" type="channel">`bookworm.{env}.basket.dead-letter-queue`</ResourceLink>. | <ResourceLink id="PlaceOrderCommand" type="command">PlaceOrderCommand</ResourceLink>, <ResourceLink id="BasketDeletedCompleteIntegrationEvent" type="event">BasketDeletedCompleteIntegrationEvent</ResourceLink>, <ResourceLink id="BasketDeletedFailedIntegrationEvent" type="event">BasketDeletedFailedIntegrationEvent</ResourceLink>, <ResourceLink id="bookworm.{env}.basket.dead-letter-queue" type="channel">`bookworm.{env}.basket.dead-letter-queue`</ResourceLink>, <ResourceLink id="adr-005-explicit-checkout-cleanup-outcomes" type="adr">adr-005-explicit-checkout-cleanup-outcomes</ResourceLink> |
+| **Concurrency & Idempotency** | `PlaceOrderCommand` handling is guarded by a `24h` Redis integration-event idempotency guard keyed by `OrderId`; all HTTP routes enforce `PerUserRateLimit`.                                                                                                                                                                                                                                                                                                                       | Duplicate `OrderId` deliveries within `24h` immediately re-emit <ResourceLink id="BasketDeletedCompleteIntegrationEvent" type="event">BasketDeletedCompleteIntegrationEvent</ResourceLink> without touching Redis; exceptions release the `OrderId` guard so retries can execute cleanly.                                                                                                                                                             | <ResourceLink id="basket-api" type="service">basket-api</ResourceLink>, <ResourceLink id="order-orchestration" type="service">order-orchestration</ResourceLink>, <ResourceLink id="user-checkout" type="flow">user-checkout</ResourceLink>                                                                                                                                                                                                                                                                                                                                                                      |
 
-### Persistence and Catalog enrichment rules
+<AccordionGroup>
+	<Accordion title="Why checkout cleanup failure does not fail the order">
+		Once [[service|order-api]] commits an order, [[service|order-orchestration]] issues
+		[[command|PlaceOrderCommand]] asynchronously to clean up the customer's basket. If the basket
+		was already deleted or expired, [[service|basket-api]] emits
+		[[event|BasketDeletedFailedIntegrationEvent]] so the saga can record the cleanup outcome without
+		rolling back an already-accepted order.
+	</Accordion>
+	<Accordion title="Exception vs. absent-key handling in cleanup">
+		Returning `false` from basket deletion (key absent) is a deterministic business outcome that
+		emits [[event|BasketDeletedFailedIntegrationEvent]]. Throwing a transient infrastructure
+		exception (e.g., Redis timeout) releases the `24h` `OrderId` idempotency guard so Wolverine
+		retries or DLQ replay can re-attempt deletion.
+	</Accordion>
+</AccordionGroup>
 
-- **Key format:** `basket:{userId}` in Redis (`BasketRepository.cs`), serialized as camelCase JSON. Basket state is transient pre-order intent—out of scope for orders, payments, and fulfillment.
-- **Read-time enrichment:** On `GET /api/v1/baskets`, Basket API resolves distinct book IDs through `book.v1.BookGrpcService/GetBooks` and attaches each book's current name, regular price, and sale price when available.
-- **Graceful degradation on missing books:** If Catalog API has no record for a stored book ID, Basket API preserves the stored `BasketItem` and omits unavailable display fields rather than inventing values or mutating the basket during a read.
+## Safe Change & Verification Checklist
 
-## gRPC and Kafka contracts
+- Keep customer identity derived exclusively from Entra ID claims and preserve `basket:{userId}` key isolation and `customer` authorization policies.
+- Preserve full-set replacement semantics on [[command|UpdateBasket]] and non-empty, positive-quantity validation on [[command|CreateBasket]] and [[command|UpdateBasket]].
+- Verify [[query|GetBasketGrpc]] remains backward-compatible for [[service|order-api]] and [[query|GetBooksGrpc]] degradation never mutates Redis on read.
+- Test both [[event|BasketDeletedCompleteIntegrationEvent]] and [[event|BasketDeletedFailedIntegrationEvent]] outcomes, plus `OrderId` idempotency guard release on exception.
+- Run `mise run format`, `mise run build`, and `mise run test` to verify Basket unit tests and Pact contracts (`Basket-Finance`, `Finance-Basket`).
 
-### gRPC contracts (`edition = "2023"`)
+## Related Resources
 
-| Role       | Service & RPC                           | Counterpart                   | Purpose                                                                 |
-| :--------- | :-------------------------------------- | :---------------------------- | :---------------------------------------------------------------------- |
-| **Server** | `basket.v1.BasketGrpcService/GetBasket` | **Ordering API** (`ordering`) | Returns the customer's stored basket items during `POST /api/v1/orders` |
-| **Client** | `book.v1.BookGrpcService/GetBooks`      | **Catalog API** (`catalog`)   | Enriches `GET /api/v1/baskets` with live book titles and pricing        |
-
-### Post-checkout Kafka cleanup contracts
-
-`PlaceOrderCommandHandler` consumes `PlaceOrderCommand` partitioned by `OrderId` and uses a 24-hour Redis `IIntegrationEventIdempotencyGuard` keyed by `command.OrderId`:
-
-| Message                                 | Kafka topic                               | Direction            | Semantics                                                                                                                                    |
-| :-------------------------------------- | :---------------------------------------- | :------------------- | :------------------------------------------------------------------------------------------------------------------------------------------- |
-| `PlaceOrderCommand`                     | `bookworm.{env}.finance.place-order`      | Finance → Basket API | Triggers deletion of `basket:{BasketId}`; duplicate `OrderId` within 24 hours immediately returns `BasketDeletedCompleteIntegrationEvent`    |
-| `BasketDeletedCompleteIntegrationEvent` | `bookworm.{env}.basket.delete-complete`   | Basket API → Finance | Emitted only when `DeleteBasketAsync` returns `true` (or on deduplicated repeat for the same `OrderId`)                                      |
-| `BasketDeletedFailedIntegrationEvent`   | `bookworm.{env}.basket.delete-failed`     | Basket API → Finance | Emitted when `DeleteBasketAsync` returns `false` (key absent/not deleted); signals cleanup failure only, never payment or order failure      |
-| Dead-letter queue                       | `bookworm.{env}.basket.dead-letter-queue` | Basket API → DLQ     | Captures commands that throw exceptions (releasing the `OrderId` guard) and exhaust Wolverine retries (`50ms / 250ms / 1s` with full jitter) |
-
-## Error responses
-
-| Status                  | Condition                                                                       | Recovery behavior                                                                              |
-| :---------------------- | :------------------------------------------------------------------------------ | :--------------------------------------------------------------------------------------------- |
-| `400 Bad Request`       | Empty `items` list, missing book ID, or non-positive `quantity`                 | Fix request payload; do not retry unchanged                                                    |
-| `401 Unauthorized`      | Missing or invalid Microsoft Entra ID JWT                                       | Re-authenticate and retry                                                                      |
-| `403 Forbidden`         | Token lacks `customer` role or `basket_read`/`basket_write` scopes              | Sign in with a customer account                                                                |
-| `404 Not Found`         | `GET`, `PUT`, or `DELETE` called when `basket:{userId}` does not exist in Redis | Create a basket via `POST /api/v1/baskets`; missing baskets are never masked as empty `200 OK` |
-| `429 Too Many Requests` | Caller exceeded `PerUserRateLimit`                                              | Back off for the `Retry-After` interval                                                        |
-
-## Pre-merge change checklist
-
-1. Update FluentValidation rules, OpenAPI v1 metadata, `basket.proto`, or Kafka contract types as applicable.
-2. Preserve customer scoping from `ClaimsPrincipal`, `basket:{userId}` key format, and read purity when Catalog omits a book.
-3. Verify both `BasketDeletedCompleteIntegrationEvent` and `BasketDeletedFailedIntegrationEvent` paths and `OrderId` idempotency guard release on exception.
-4. Run `mise run format`, `mise run build`, and `mise run test` (verifying Pact suites `Basket-Finance` and `Finance-Basket`).
-
-## Related documentation
-
-- Checkout lifecycle — End-to-end Shopping handoff into Ordering and Finance.
-- How to recover a failed basket cleanup — Operational recovery for cleanup failures and DLQ messages.
-- Ordering consistency and data ownership reference — How Ordering snapshots basket items at checkout.
-- [[doc|platform/006-api-and-contracts]] — Consolidated HTTP, gRPC, and Kafka contracts.
+- [[service|basket-api]] — Authoritative Shopping basket service
+- [[command|CreateBasket]], [[command|UpdateBasket]], [[command|DeleteBasket]], [[query|GetBasket]], [[query|GetBasketGrpc]] — Basket commands and queries
+- [[command|PlaceOrderCommand]], [[event|BasketDeletedCompleteIntegrationEvent]], [[event|BasketDeletedFailedIntegrationEvent]] — Checkout cleanup contracts
+- [[flow|user-checkout]] — End-to-end checkout and basket cleanup flow
+- [[adr|adr-001-redis-authoritative-basket-store]], [[adr|adr-002-customer-scoped-basket-ownership]], [[adr|adr-003-replace-basket-items-as-a-set]], [[adr|adr-004-catalog-enrichment-at-read-time]], [[adr|adr-005-explicit-checkout-cleanup-outcomes]]
+- [[doc|platform/006-api-and-contracts]] — Consolidated HTTP, gRPC, and Kafka contracts

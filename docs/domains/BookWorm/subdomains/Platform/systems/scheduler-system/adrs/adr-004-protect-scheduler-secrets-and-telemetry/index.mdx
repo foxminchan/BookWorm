@@ -6,14 +6,14 @@ summary: Scheduler credentials and sensitive downstream data are supplied throug
 status: accepted
 date: 2026-10-27
 owners:
-  - contributor-team
+  - platform-engineering-team
 decisionMakers:
-  - contributor-team
+  - platform-engineering-team
 appliesTo:
   - type: system
     id: scheduler-system
   - type: service
-    id: scheduler-dashboard
+    id: scheduler-service
   - type: container
     id: scheduler-database
 badges:
@@ -51,7 +51,7 @@ Automated background jobs managed by the [[system|scheduler-system]] must call o
 
 ## 5. Technical Reference
 
-- **Scope**: Applies to [[system|scheduler-system]], `scheduler-dashboard`, and `scheduler-database`.
+- **Scope**: Applies to [[system|scheduler-system]], `scheduler-service`, and `scheduler-database`.
 - **Credential sourcing**: Outbound service-to-service credentials are supplied exclusively via runtime secret configuration and must never be embedded in Quartz job definitions (`JobDataMap`), committed to the catalog, or written to routine logs.
 - **Job metadata minimization**: Quartz job data and execution history store only minimal non-sensitive identifiers (firing, job, trigger, and target identifiers) and operational metadata required to execute and diagnose runs. For example, Notification maintenance requests carry only request metadata while Notification selects its own outbox records.
 - **Telemetry & retention rules**: Logs and telemetry retain correlation identifiers, target identifiers, status, duration, and sanitized failure categories instead of authorization headers, credentials, notification contents, or personal data. Any controlled diagnostic capture of sensitive values requires restricted access and compliance with the platform retention policy.

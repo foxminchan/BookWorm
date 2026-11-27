@@ -10,65 +10,83 @@ badges:
     textColor: teal
 ---
 
-BookWorm's **Platform** subdomain separates recurring time-based orchestration from transactional email dispatch into two independent services: **Scheduler** (`scheduler`) runs recurring Quartz.NET jobs backed by PostgreSQL (`schedulerdb`), while **Notification** (`notification`) operates as a stateless Kafka + MailKit + Mjml.Net + Redis idempotency worker with **no PostgreSQL database**. Scheduler does not trigger email resend or cleanup jobs—Kafka retries, Polly SMTP resilience, and native dead-letter queues handle delivery reliability directly.
+**Audience & Outcome:** This guide is for platform engineers and operators working with [[service|scheduler-service]] and [[service|notification-api]]. You will learn how recurring jobs trigger catalog indexing and how stateless transactional email delivery guarantees reliability without a notification database.
+
+BookWorm's Platform subdomain separates recurring time-based orchestration from transactional email dispatch into two independent services: [[service|scheduler-service]] runs recurring Quartz.NET jobs backed by [[container|scheduler-database]], while [[service|notification-api]] operates as a stateless Kafka and SMTP worker with no database.
 
 ## Context and motivation
 
 Two distinct operational needs exist across BookWorm's business domains:
 
-- **Periodic batch triggers:** Catalog books change continuously, and generating Microsoft Foundry embeddings plus updating Qdrant (`vectordb`) is more efficient in scheduled batches than inside synchronous HTTP book writes.
+- **Periodic batch triggers:** Catalog books change continuously, and generating embeddings plus updating [[container|catalog-vector]] is more efficient in scheduled batches than inside synchronous HTTP book writes.
 - **Decoupled customer emails:** Order creation, completion, and cancellation should never block on external SMTP server latency or fail when an email provider is temporarily unreachable.
 
 Separating these capabilities into dedicated Platform services keeps domain services focused on business invariants while avoiding cross-domain database coupling.
 
 ## How it works
 
-The diagram below illustrates the two independent Platform pipelines—Scheduler triggering Catalog Ingestion on a UTC cadence, and Notification delivering Finance order emails over SMTP.
+The visual below illustrates the two independent Platform pipelines—[[service|scheduler-service]] triggering [[service|catalog-ingestion]] on a UTC cadence, and [[service|notification-api]] delivering order emails over SMTP.
 
 <MermaidFileLoader file="mermaids/scheduled-work-and-email-notifications-diagram-1.mmd" />
 
 ### Recurring work in Scheduler
 
-**Scheduler** (`BookWorm.Scheduler`) loads job definitions from `src/Services/Scheduler/BookWorm.Scheduler/jobs.json` (scanned every 1 minute) and persists Quartz state, 30-day / 100,000-entry execution history, and Wolverine's `wolverine` outbox in PostgreSQL (`schedulerdb`). **Quartz Dashboard** (`quartz-dashboard`, exposed at `/quartz` behind Microsoft Entra ID OIDC with the `admin` role) provides operational visibility.
+[[service|scheduler-service]] persists Quartz state, 30-day execution history, and its transactional outbox in [[container|scheduler-database]]. **Quartz Dashboard** (exposed at `/quartz` behind Microsoft Entra ID `admin` role) provides operational visibility.
 
-Scheduler runs exactly two UTC jobs, both configured with `FireOnceNow` misfire handling (a missed run triggers one immediate catch-up execution rather than replaying every missed interval):
+| Job                     | Cron (UTC)       | Cadence          | Behavior                                                                                                               |
+| :---------------------- | :--------------- | :--------------- | :--------------------------------------------------------------------------------------------------------------------- |
+| `ProcessVectorBatchJob` | `0 0/5 * * * ?`  | Every 5 minutes  | Non-concurrent; publishes [[event\|ProcessVectorBatchIntegrationEvent]] to [[channel\|scheduler.process-vector-batch]] |
+| `HeartbeatJob`          | `0/30 * * * * ?` | Every 30 seconds | Emits structured heartbeat logs and OpenTelemetry telemetry                                                            |
 
-| Job                     | Cron (UTC)       | Cadence          | Behavior                                                                                                                                          |
-| :---------------------- | :--------------- | :--------------- | :------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `ProcessVectorBatchJob` | `0 0/5 * * * ?`  | Every 5 minutes  | Marked `[DisallowConcurrentExecution]`; publishes `ProcessVectorBatchIntegrationEvent` to unprefixed Kafka topic `scheduler.process-vector-batch` |
-| `HeartbeatJob`          | `0/30 * * * * ?` | Every 30 seconds | Emits structured heartbeat logs (`FireTime`, `NextFireTime`) and OpenTelemetry telemetry                                                          |
-
-When `ProcessVectorBatchJob` succeeds, Scheduler guarantees only that the Kafka event was published via its transactional outbox. **Catalog Ingestion** (`BookWorm.Catalog.Ingestion`) independently consumes `scheduler.process-vector-batch`, acquires PostgreSQL advisory lock `740031001` on `catalogdb`, reads up to `200` rows from `pending_vector_updates`, computes embeddings via Microsoft Foundry, updates Qdrant, and deletes acknowledged `(book_id, revision)` rows.
+Both jobs use `FireOnceNow` misfire handling so a missed run triggers one immediate catch-up execution rather than replaying every missed interval. When `ProcessVectorBatchJob` succeeds, [[service|scheduler-service]] guarantees only that the Kafka event was published. [[service|catalog-ingestion]] independently consumes [[channel|scheduler.process-vector-batch]] to update [[container|catalog-vector]].
 
 ### Stateless email delivery in Notification
 
-**Notification** (`BookWorm.Notification`) consumes Finance's Kafka order commands (`bookworm.{env}.finance.place-order`, `bookworm.{env}.finance.complete-order`, `bookworm.{env}.finance.cancel-order`), partitioned by `OrderId`:
+[[service|notification-api]] consumes Finance's Kafka order commands (<ResourceLink id="bookworm.{env}.finance.place-order" type="channel">`bookworm.{env}.finance.place-order`</ResourceLink>, <ResourceLink id="bookworm.{env}.finance.complete-order" type="channel">`bookworm.{env}.finance.complete-order`</ResourceLink>, and <ResourceLink id="bookworm.{env}.finance.cancel-order" type="channel">`bookworm.{env}.finance.cancel-order`</ResourceLink>), partitioned by `OrderId`:
 
-1. **Idempotency check:** Each handler guards execution with a 24-hour Redis `IIntegrationEventIdempotencyGuard` keyed by `message.Id` and handler name, skipping duplicate deliveries of the same message ID.
-2. **Blank-email filter:** `OrderNotificationHelper.SendAsync` returns cleanly without error when `Email` is blank or whitespace.
-3. **Template rendering:** `MjmlTemplateRenderer` compiles `Orders/OrderEmail.mjml` (with `_Layout.mjml`) into HTML and builds a MIME message.
-4. **Resilient SMTP handoff:** `MailKitSender` delivers the message over SMTP (**Mailpit** in Development, parameterized SMTP defaulting to SendGrid `smtp://smtp.sendgrid.net:587` in Azure) through a Polly pipeline (`CircuitBreaker`, exponential `Retry` with jitter, 30-second default `Timeout`).
-5. **Dead-letter fallback:** If transient SMTP failures exhaust both Polly and Wolverine retries (`50ms / 250ms / 1s` with full jitter), Wolverine routes the message to `bookworm.{env}.notification.dead-letter-queue` for operator investigation and replay.
+<Steps>
+<Step title="Idempotency and blank-email check">
 
+Each handler checks a 24-hour Redis idempotency guard keyed by message ID and handler name, skipping duplicate deliveries. Messages with blank or whitespace recipient emails return cleanly without error.
+
+</Step>
+<Step title="Template rendering and resilient SMTP handoff">
+
+The worker renders the MJML order email template into HTML and delivers it over SMTP (Mailpit locally, [[service|sendgrid-api]] in Azure) through a resilience pipeline with circuit breaking, exponential retry with jitter, and a 30-second timeout.
+
+</Step>
+<Step title="Dead-letter queue fallback">
+
+If transient SMTP failures exhaust both resilience and broker retries, failed messages route to <ResourceLink id="bookworm.{env}.notification.dead-letter-queue" type="channel">`bookworm.{env}.notification.dead-letter-queue`</ResourceLink> for operator investigation and replay.
+
+:::note
 SMTP acceptance proves only that the relay server accepted the message; it never proves inbox delivery or commercial order status.
+:::
 
-## Design trade-offs
+</Step>
+</Steps>
 
-| Decision                                                                                   | Benefits                                                                                                                    | Costs and limits                                                                                                         |
-| :----------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------- |
-| **Stateless Notification worker (Kafka + Redis + DLQ) instead of PostgreSQL email outbox** | Removes a database, schema migrations, and hourly Quartz resend/cleanup jobs; uses native Kafka durability and backpressure | Replaying failed emails requires Kafka DLQ tooling rather than SQL queries; Redis idempotency is time-bounded (24 hours) |
-| **At-least-once Kafka delivery with `message.Id` deduplication**                           | Prevents lost order emails during transient network or SMTP outages                                                         | Ambiguous SMTP timeouts or reissued Finance commands (with new message IDs) can still produce duplicate emails           |
-| **Kafka event trigger from Scheduler to Catalog Ingestion**                                | Eliminates synchronous HTTP coupling and auth token management between Scheduler and Catalog                                | Operators must inspect both Scheduler history and `catalogdb` (`pending_vector_updates`) to confirm end-to-end indexing  |
-| **`FireOnceNow` misfire instruction**                                                      | Prevents catch-up storms after Scheduler downtime                                                                           | Intermediate missed 5-minute or 30-second windows are skipped                                                            |
+<AccordionGroup>
+<Accordion title="Design trade-offs and alternatives considered">
 
-## Alternatives considered
+| Decision                                                       | Benefits                                                                                | Costs and limits                                                                                      |
+| :------------------------------------------------------------- | :-------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------- |
+| **Stateless Notification worker (Kafka + Redis + DLQ)**        | Removes a database, migrations, and hourly resend jobs; uses native Kafka durability    | Replaying failed emails requires Kafka DLQ tooling rather than SQL queries                            |
+| **At-least-once Kafka delivery with message ID deduplication** | Prevents lost order emails during transient network or SMTP outages                     | Ambiguous SMTP timeouts or reissued commands can still produce duplicate emails                       |
+| **Kafka event trigger from Scheduler to Catalog Ingestion**    | Eliminates synchronous HTTP coupling and token management between Scheduler and Catalog | Operators must inspect both Scheduler history and [[container\|catalog-database]] to confirm indexing |
+| **`FireOnceNow` misfire instruction**                          | Prevents catch-up storms after Scheduler downtime                                       | Intermediate missed windows are skipped                                                               |
 
-- **PostgreSQL outbox table in Notification with hourly Quartz resend and cleanup jobs:** Previously used in earlier designs, but retired because maintaining a dedicated relational database plus two hourly sweeping jobs duplicated Kafka's native durable log, retry, and dead-letter queue capabilities.
-- **Direct HTTP calls from Scheduler to Catalog API:** Rejected because Kafka decouples ingestion availability from Scheduler execution and aligns Catalog Ingestion with BookWorm's event-driven Azure Functions model.
+**Rejected alternatives:**
+
+- **PostgreSQL email outbox with hourly Quartz resend jobs:** Retired because maintaining a dedicated database and sweeping jobs duplicated Kafka's native durable log, retry, and dead-letter queue capabilities.
+- **Direct HTTP calls from Scheduler to Catalog:** Coupled ingestion availability directly to Scheduler execution.
+
+</Accordion>
+</AccordionGroup>
 
 ## Related documentation
 
-- Platform integration boundaries reference — Exact contracts, topics, and ownership rules.
-- How to troubleshoot a Notification delivery backlog — Operational steps for Kafka lag, DLQ replay, and SMTP errors.
-- How to troubleshoot a failed or missed scheduled job — Operational steps for Quartz triggers and Catalog Ingestion stalls.
+- [[flow|notification-delivery]] — End-to-end notification delivery flow.
+- [[flow|product-ingestion]] — End-to-end scheduled vector ingestion flow.
+- [[service|scheduler-service]] — Detailed Scheduler service reference.
 - [[service|notification-api]] — Detailed Notification service reference.

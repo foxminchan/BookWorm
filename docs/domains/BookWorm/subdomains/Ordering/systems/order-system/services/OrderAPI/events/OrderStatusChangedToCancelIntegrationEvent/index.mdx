@@ -5,7 +5,7 @@ version: 1.0.0
 summary: |
   Reports that an Order transitioned from New to Cancelled.
 owners:
-  - business-strategy
+  - commerce-fulfillment-team
 schemaPath: schema.json
 badges:
   - content: Order Lifecycle
@@ -13,63 +13,64 @@ badges:
     textColor: blue
 ---
 
-`OrderStatusChangedToCancelIntegrationEvent` (v1.0.0) reports that Ordering API transitioned an `Order` aggregate from `New` to `Cancelled`. Finance consumes this authoritative status change to terminate its orchestration instance and dispatch `CancelOrderCommand` for customer notification; this event is a confirmed transition, not a cancellation request or soft deletion.
+`OrderStatusChangedToCancelIntegrationEvent` (v1.0.0) reports that [[service|order-api]] transitioned an [[entity|order]] from `New` to `Cancelled`. [[service|order-orchestration]] consumes this authoritative status change to terminate its orchestration instance and dispatch [[command|CancelOrderCommand]] for customer notification; this event is a confirmed transition, not a cancellation request or soft deletion.
 
 ## Overview
 
-| Property              | Value                                                                                                            |
-| :-------------------- | :--------------------------------------------------------------------------------------------------------------- |
-| **Owner**             | Ordering bounded context (`Ordering API`)                                                                        |
-| **Producer**          | [[service\|order-api]]                                                                                           |
-| **Consumer**          | [[service\|order-orchestration]] (`OrderOrchestrator`)                                                           |
-| **Source**            | `src/Services/Ordering/BookWorm.Ordering/IntegrationEvents/Events/OrderStatusChangedToCancelIntegrationEvent.cs` |
-| **Protocol / format** | Kafka + CloudEvents JSON (Wolverine)                                                                             |
-| **Kafka topic**       | `bookworm.{env}.ordering.order-status-change-to-cancel` (where `{env}` is the kebab-case environment name)       |
-| **Message identity**  | `BookWorm.Contracts.OrderStatusChangedToCancelIntegrationEvent`                                                  |
-| **Partition key**     | `OrderId` (preserves per-order saga ordering on Kafka)                                                           |
-| **Outbox**            | Wolverine PostgreSQL outbox (`orderingdb`, `wolverine` schema) with EF Core transactional middleware             |
+| Property                             | Value                                                                                               |
+| :----------------------------------- | :-------------------------------------------------------------------------------------------------- |
+| **Bounded Context**                  | Ordering                                                                                            |
+| **Producer**                         | [[service\|order-api]]                                                                              |
+| **Consumer(s)**                      | [[service\|order-orchestration]]                                                                    |
+| **Protocol / Format**                | Kafka + CloudEvents JSON (camelCase payload)                                                        |
+| **Channel / Topic**                  | [[channel\|bookworm.&#123;env&#125;.ordering.order-status-change-to-cancel]]                        |
+| **Dead-Letter Channel**              | [[channel\|bookworm.&#123;env&#125;.ordering.dead-letter-queue]]                                    |
+| **Partition Key**                    | `OrderId`                                                                                           |
+| **Delivery / Idempotency Guarantee** | Published via transactional outbox (at-least-once); orchestration routes idempotently per `OrderId` |
 
-## Parameters and fields
+## Payload Fields & Envelope
 
-The schema below defines the camelCase JSON `data` payload carried inside the CloudEvents envelope (`additionalProperties: false` in JSON Schema). All seven properties are present in the serialized contract, including nullable `fullName` and `email`.
+### Event Payload
 
-| Name           | Type                 | Required | Default                 | Constraints                                              | Description                                                                    |
-| :------------- | :------------------- | :------- | :---------------------- | :------------------------------------------------------- | :----------------------------------------------------------------------------- |
-| `id`           | `string` (UUID)      | Yes      | `Guid.CreateVersion7()` | UUID v7 inherited from `IntegrationEvent`                | Unique identifier for this integration event instance.                         |
-| `creationDate` | `string` (date-time) | Yes      | `DateTime.UtcNow`       | ISO 8601 UTC timestamp inherited from `IntegrationEvent` | UTC timestamp when Ordering API created the event.                             |
-| `orderId`      | `string` (UUID)      | Yes      | —                       | Valid UUID; also used as Kafka partition key             | Identifier of the canceled `Order`.                                            |
-| `basketId`     | `string` (UUID)      | Yes      | —                       | Valid UUID (currently populated from `Order.BuyerId`)    | Buyer-linked basket reference supplied by Ordering `EventMapper`.              |
-| `fullName`     | `string \| null`     | Yes      | `null`                  | Nullable string                                          | Customer full name when available on the buyer record.                         |
-| `email`        | `string \| null`     | Yes      | `null`                  | Nullable email format                                    | Customer email address when available; Finance skips email dispatch if absent. |
-| `totalMoney`   | `number` (`decimal`) | Yes      | —                       | Non-negative monetary amount                             | Total purchase amount associated with the canceled order.                      |
+| Name           | Type                   | Required | Constraints                     | Description                                                                |
+| :------------- | :--------------------- | :------- | :------------------------------ | :------------------------------------------------------------------------- |
+| `id`           | `string` (`uuid`)      | Yes      | UUIDv7                          | Unique identifier for this integration event instance                      |
+| `creationDate` | `string` (`date-time`) | Yes      | ISO 8601 UTC timestamp          | UTC timestamp when the event was created                                   |
+| `orderId`      | `string` (`uuid`)      | Yes      | Valid UUID; Kafka partition key | Identifier of the cancelled order                                          |
+| `basketId`     | `string` (`uuid`)      | Yes      | Valid UUID                      | Buyer-linked basket reference supplied by the producer                     |
+| `fullName`     | `string \| null`       | Yes      | Nullable string                 | Customer full name when available on the buyer record                      |
+| `email`        | `string \| null`       | Yes      | Nullable email format           | Customer email address when available; email dispatch is skipped if absent |
+| `totalMoney`   | `number`               | Yes      | Non-negative monetary amount    | Total purchase amount associated with the cancelled order                  |
 
 :::note
-The current Ordering `EventMapper` populates `basketId` with the order's `BuyerId`. Downstream consumers must not assume `basketId` was independently resolved from Basket API.
+The current producer populates `basketId` with the order's `BuyerId`. Downstream consumers must not assume `basketId` was independently resolved from [[service|basket-api]].
 :::
 
-### CloudEvents envelope headers
+### CloudEvents Envelope Headers
 
-| Header        | Value / source                                                  | Purpose                                                                       |
-| :------------ | :-------------------------------------------------------------- | :---------------------------------------------------------------------------- |
-| `messagetype` | `BookWorm.Contracts.OrderStatusChangedToCancelIntegrationEvent` | Explicit message identity for cross-service deserialization.                  |
-| `source`      | `urn:bookworm:bookworm-ordering`                                | Identifies the producing service.                                             |
-| `requestid`   | Propagated from the triggering HTTP request                     | Correlates order cancellation across Ordering API, Finance, and Notification. |
+| Header        | Value / Source                                                  | Purpose                                                                  |
+| :------------ | :-------------------------------------------------------------- | :----------------------------------------------------------------------- |
+| `messagetype` | `BookWorm.Contracts.OrderStatusChangedToCancelIntegrationEvent` | Explicit message identity for cross-service deserialization              |
+| `source`      | `urn:bookworm:bookworm-ordering`                                | Identifies the producing service                                         |
+| `requestid`   | Propagated from the triggering HTTP request                     | Correlates order cancellation across Ordering, Finance, and Notification |
 
-## Error handling and delivery guarantees
+## Delivery Guarantees & Error Handling
 
-| Condition                               | Behavior                                                                                                            | Recovery behavior                                                                                                        |
-| :-------------------------------------- | :------------------------------------------------------------------------------------------------------------------ | :----------------------------------------------------------------------------------------------------------------------- |
-| `email` or `fullName` is `null`         | Payload remains valid; Finance checks `order.CanSendNotification` before dispatching `CancelOrderCommand`.          | Consumers must tolerate `null` contact fields without failing deserialization.                                           |
-| Transient broker or orchestration error | Wolverine outbox guarantees at-least-once publication from `orderingdb`; Kafka trigger retries delivery to Finance. | Check Durable Task Scheduler instance state and `bookworm.{env}.ordering.dead-letter-queue` for failed local processing. |
-| Contract mismatch                       | Caught in CI by Pact consumer/provider verification.                                                                | Verify against `tests/pacts/Finance-Ordering.json`.                                                                      |
+| Condition                               | System Behavior                                                                                                                            | Recovery / Compensation                                                                                   |
+| :-------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------- |
+| `email` or `fullName` is `null`         | Payload remains valid; [[service\|order-orchestration]] checks notification eligibility before dispatching [[command\|CancelOrderCommand]] | Consumers must tolerate `null` contact fields without failing deserialization                             |
+| Transient broker or orchestration error | Transactional outbox guarantees at-least-once publication; Kafka trigger retries delivery                                                  | Inspect orchestration instance state and [[channel\|bookworm.&#123;env&#125;.ordering.dead-letter-queue]] |
 
-## Related documentation
+## Related Documentation
 
+- [[service|order-api]] — Producer service.
+- [[service|order-orchestration]] — Consumer orchestration service.
 - [[channel|bookworm.&#123;env&#125;.ordering.order-status-change-to-cancel]] — Kafka channel specification.
+- [[channel|bookworm.&#123;env&#125;.ordering.dead-letter-queue]] — Dead-letter queue for failed Ordering consumers.
 - [[event|OrderStatusChangedToCompleteIntegrationEvent]] — Companion event for `New` to `Completed` transitions.
 - [[event|UserCheckedOutIntegrationEvent]] — Initial order placement event.
 - [[entity|order]] — Ordering aggregate schema and status lifecycle.
 
 <NodeGraph />
 
-<SchemaViewer file="schema.json" title="Order cancellation event payload" maxHeight="500" />
+<SchemaViewer file="schema.json" title="Order cancelled schema" maxHeight="500" search="true" />

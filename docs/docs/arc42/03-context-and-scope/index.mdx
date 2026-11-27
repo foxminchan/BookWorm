@@ -1,40 +1,72 @@
 ---
 title: Context and Scope
-summary: Business and technical context for the complete BookWorm platform.
+summary: Business and technical boundary of the complete BookWorm platform.
 owners:
-  - contributor-team
+  - architecture-enabling-team
 badges:
   - content: Architecture
     backgroundColor: blue
     textColor: blue
 ---
 
-This chapter defines the whole-platform boundary of BookWorm—what runs inside the system, who interacts with it, and which external providers it integrates with. Following arc42, it separates domain-level business exchanges from the concrete protocols, gateways, and cloud services that realize them.
+This chapter defines the BookWorm system boundary: which people and external systems interact with it and what information or value crosses the boundary. It treats the complete platform as one black box.
 
-## Platform boundary at a glance
+BookWorm is responsible for the complete customer and administration experience of an online bookstore. External providers supply identity, AI, email transport, and managed infrastructure capabilities; they do not become part of the BookWorm system boundary.
 
-BookWorm operates as a distributed commerce platform built from three Next.js 16 microfrontends (MFEs) behind a YARP **API Gateway** and ten .NET 11 backend services across six bounded contexts, integrated with **Microsoft Entra ID**, **Microsoft Foundry**, and SMTP email delivery (**Mailpit** locally, **SendGrid** in cloud).
+## Overview
 
-The diagram below illustrates the high-level boundary between BookWorm's user roles, internal platform, and live external dependencies.
+The subject system is the whole BookWorm platform, including all capabilities exposed to customers and store staff. It owns the domain information and business outcomes needed to operate the bookstore, while the following kinds of actors and neighbors remain outside:
+
+- Customers and store administrators who use the platform.
+- Identity services that authenticate users and establish roles.
+- AI services that provide language, routing, and embedding capabilities.
+- Email delivery services that transport transactional messages.
+- Managed infrastructure services that support messaging and search.
+
+Internal applications, bounded contexts, databases, queues, and modules are outside the scope of this chapter. They are described in the [[doc|arc42/05-building-block-view]] and the [[doc|arc42/07-deployment-view]].
+
+The system boundary is illustrated below:
 
 <MermaidFileLoader file="mermaids/03-context-and-scope-diagram-1.mmd" />
 
-:::note
-External payment gateways and physical shipping fulfillment providers are **not implemented** in the current repository. **Finance** (`BookWorm.Finance`) is an Azure Functions + Durable Task Scheduler post-checkout saga that coordinates basket cleanup and email notifications rather than payment settlement.
-:::
+## Business Context
+
+The Business Context describes the domain-level relationships between BookWorm and its communication partners. It covers:
+
+- The actors and external neighbors that exchange information or receive business outcomes.
+- The purpose and value of each exchange.
+- The information sent into and out of the BookWorm boundary.
+- Any relevant business assumptions or interface exclusions.
+
+The business view must not contain protocols, API routes, deployment components, or infrastructure product names.
+
+See [[doc|arc42/03-context-and-scope/002-business-context]].
+
+## Technical Context
+
+The Technical Context describes how each business relationship is realized across the boundary. It identifies:
+
+- Human and machine communication channels.
+- Protocols, formats, authentication mechanisms, and interaction directions.
+- External systems and the interfaces through which they are reached.
+- Open network or infrastructure assumptions that are not yet formally resolved.
+
+The technical view must map every communication partner in the Business Context to one or more concrete technical channels. Internal implementation detail remains in the deployment and building-block views.
+
+See [[doc|arc42/03-context-and-scope/003-technical-context]].
 
 ## Chapter map
 
-| Section                                                   | Focus                                                                                               | Primary audience                            |
-| :-------------------------------------------------------- | :-------------------------------------------------------------------------------------------------- | :------------------------------------------ |
-| [[doc\|arc42/03-context-and-scope/001-overview]]          | In-scope bounded contexts, out-of-scope external neighbors, and boundary assumptions                | Product stakeholders, architects, engineers |
-| [[doc\|arc42/03-context-and-scope/002-business-context]]  | Black-box business actors, value flow, and inbound/outbound business data exchanges                 | Product stakeholders, analysts, architects  |
-| [[doc\|arc42/03-context-and-scope/003-technical-context]] | Concrete clients, YARP gateway, HTTP/gRPC/Kafka/AG-UI/MCP channels, and verified external providers | Architects, contributors, operators         |
+| Section                                                   | Focus                                                                 | Primary audience                            |
+| :-------------------------------------------------------- | :-------------------------------------------------------------------- | :------------------------------------------ |
+| [[doc\|arc42/03-context-and-scope/001-overview]]          | Subject system, boundary responsibilities, and scope exclusions       | Product stakeholders, architects, engineers |
+| [[doc\|arc42/03-context-and-scope/002-business-context]]  | Black-box actors, external neighbors, and business data exchanges     | Product stakeholders, analysts, architects  |
+| [[doc\|arc42/03-context-and-scope/003-technical-context]] | Boundary channels, protocols, formats, and external technical systems | Architects, contributors, operators         |
 
 ## Related architecture documentation
 
-- [[doc|arc42/00-c4-overview]] — Visual C4 Context and Container diagrams for the full platform.
+- [[doc|arc42/00-c4-overview]] — C4 context and container diagrams.
 - [[doc|arc42/01-introduction-and-goals]] — Business purpose, requirements, and prioritized quality goals.
-- [[doc|arc42/02-architecture-constraints]] — Technical and organizational guardrails.
+- [[doc|arc42/02-architecture-constraints]] — Technical and organizational constraints.
 - [[doc|arc42/05-building-block-view]] — Whitebox decomposition inside the BookWorm boundary.
-- [[doc|arc42/07-deployment-view]] — Local Aspire containers and Azure Container Apps topology.
+- [[doc|arc42/07-deployment-view]] — Runtime and infrastructure topology.

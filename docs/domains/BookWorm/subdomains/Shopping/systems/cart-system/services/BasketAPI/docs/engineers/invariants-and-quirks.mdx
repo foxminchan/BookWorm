@@ -1,0 +1,20 @@
+---
+title: Engineering Invariants and Quirks
+summary: Redis-only authoritative storage, OBO gRPC authentication, idempotent checkout cleanup, and empty-basket behavior for Basket API.
+version: 1.0.0
+---
+
+Engineering invariants and known contract quirks for [[service|basket-api]].
+
+## Storage, Auth & Idempotency Invariants
+
+- **Redis-only authoritative store:** [[service|basket-api]] persists customer baskets exclusively in [[container|basket-database]] (Redis) keyed by authenticated customer identifier; there is no relational backing store.
+- **On-Behalf-Of (OBO) gRPC auth:** [[query|GetBasketGrpc]] is called by [[service|order-api]] during checkout using delegated user identity so basket ownership remains strictly scoped to the authenticated buyer.
+- **Checkout cleanup idempotency:** Consumes [[command|PlaceOrderCommand]] with a `24`-hour Redis idempotency lock keyed by `OrderId`. On transient Redis errors, the lock is released and retried before routing to [[channel|bookworm.&#123;env&#125;.basket.dead-letter-queue]].
+- **Explicit cleanup outcomes:** Emits [[event|BasketDeletedCompleteIntegrationEvent]] when deletion succeeds, or [[event|BasketDeletedFailedIntegrationEvent]] when Redis deletion returns `false` so [[service|order-orchestration]] can compensate.
+
+## Known Contract & Runtime Quirks
+
+:::note
+[[query|GetBasketGrpc]] returns an empty basket response rather than `NotFound` when no Redis key exists for the buyer. Upstream callers such as [[command|CreateOrder]] must explicitly validate item counts if empty baskets should be rejected.
+:::

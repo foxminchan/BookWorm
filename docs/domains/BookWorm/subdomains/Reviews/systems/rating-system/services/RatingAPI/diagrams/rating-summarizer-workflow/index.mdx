@@ -2,139 +2,40 @@
 id: rating-summarizer-workflow
 name: Rating Summarizer Workflow
 version: 1.0.0
-summary: Bounded parallel review summarization with confidence-driven refinement and deterministic rating classification.
+summary: Bounded parallel review summarization with confidence-driven refinement and deterministic rating classification in Rating API.
 owners:
-  - contributor-team
-repository:
-  language: C#
-  url: https://github.com/foxminchan/BookWorm
+  - catalog-experience-team
+badges:
+  - content: AI Workflow
+    backgroundColor: purple
+    textColor: purple
 ---
 
-## 1. Context & Problem
+## Purpose & Scope
 
-Popular books can accumulate dozens or hundreds of customer reviews, making it difficult for readers and merchandisers to quickly grasp overall sentiment, recurring strengths, and common complaints. Feeding every review into an AI model in a single pass can exceed prompt limits, degrade summary quality, or produce inconsistent results. At the same time, allowing an AI model to estimate review counts, guess average ratings, or decide final book classifications introduces unnecessary risk of inaccurate numbers and unpredictable labels.
+This workflow view illustrates how [[service|rating-api]] handles [[query|SummarizeFeedback]] by partitioning customer reviews into parallel batches, consolidating summaries through [[agent|rating-agent]], and applying deterministic business classification rules. Architects and AI engineers should read this to understand concurrency bounds, quality-refinement caps, and the boundary between AI synthesis and application-owned metrics.
 
-The [[query|SummarizeFeedback]] capability in [[service|rating-api]] addresses this by orchestrating a structured, read-only summarization workflow over a book's stored [[entity|feedback]] records using [[agent|rating-agent]].
-
-## 2. Business Value
-
-- **Trustworthy metrics**: Review totals and average ratings are calculated directly by the application rather than estimated by an AI model, ensuring exact accuracy.
-- **Fast, scalable processing**: Large sets of customer reviews are divided into batches and summarized in parallel within a predictable concurrency limit, while caching returns repeated requests without re-running the analysis.
-- **Controlled AI latency and cost**: Quality refinement is strictly capped at a maximum number of passes so response times and model usage remain bounded even when review evidence is mixed.
-- **Consistent classification**: Final book ratings are governed by transparent, deterministic business rules rather than subjective model judgment.
-- **Safe, non-destructive insights**: Summarization runs as a read-time insight that never modifies stored customer reviews or catalog book totals.
-
-## 3. How It Works
-
-When a summary is requested for a book, the workflow follows five plain-step stages:
-
-1. **Check cache and calculate exact metrics**: The service first checks whether a recent summary is already cached for the book. If so, it returns that snapshot immediately. Otherwise, it loads all stored reviews for the book and calculates the exact review count and average rating. If the book has no reviews yet, it returns a "no data" result immediately without running the AI workflow (cached briefly for one minute so initial reviews appear quickly; full summaries are cached for six hours).
-2. **Split reviews into parallel batches**: Reviews are ordered and split into fixed-size batches (20 reviews per batch by default) and distributed evenly across up to four parallel workers. Only as many workers as needed are started—for example, a single batch uses a single worker.
-3. **Summarize batches and consolidate findings**: Each worker summarizes its assigned batches into six consistent sections: overall sentiment, recurring themes, reported strengths, reported weaknesses, review-based quality signals, and data limitations. Once all active workers finish, their partial summaries are reordered and merged into one consolidated summary (if there was only one batch, the merge step is skipped). Consolidation accounts for unequal batch sizes and preserves conflicting viewpoints rather than smoothing them over.
-4. **Assess confidence and refine if needed**: A quality check compares the consolidated summary against the true review count and average rating to identify any dominant negative pattern, supporting evidence, and a confidence level (low, medium, or high). If confidence falls below the minimum threshold (medium by default) and the refinement limit has not been reached (up to two refinement passes by default), the assessment feedback is sent back to refine the consolidated summary—without re-reading or re-summarizing the original review batches.
-5. **Apply business classification rules**: Once confidence meets the threshold or the refinement cap is reached, application rules assign the final rating label:
-   - **No data**: Fewer than three reviews, or invalid rating metrics.
-   - **Bad**: Average rating below 3.5, or a dominant negative pattern detected in the reviews.
-   - **Top-rated**: Average rating of at least 4.5 with 50 or more reviews, or at least 4.0 with 200 or more reviews (provided no dominant negative pattern was detected).
-   - **Good**: Any remaining valid book with at least three reviews.
-
-## 4. Trade-offs & Lessons Learned
-
-- **Cached snapshots vs. real-time freshness**: Caching full summaries for six hours (and empty-review results for one minute) cuts latency and AI cost, at the trade-off that newly submitted feedback may not appear immediately in the summary.
-- **Bounded refinement vs. guaranteed confidence**: Limiting refinement to two passes prevents endless retry loops and unpredictable response times; reaching the cap proceeds to final classification even if confidence remains low.
-- **Application-owned rules vs. model judgment**: Keeping numeric calculations and classification thresholds in application code prevents AI arithmetic errors and ensures that a dominant negative pattern in written feedback overrides high star ratings.
-- **Preserving conflicting evidence over fake precision**: Because the final batch may be smaller than earlier batches, the consolidation step avoids inventing exact theme counts across batches and explicitly retains conflicting feedback and data limitations.
-- **Untrusted review handling and fail-loud behavior**: Customer review text and intermediate summaries are treated strictly as untrusted evidence with tool use disabled, preventing embedded text from triggering unwanted actions or fabricating facts. Failures to load reviews, fetch prompt templates, or parse model outputs raise errors rather than silently returning misleading empty summaries.
-
-## 5. Technical Reference
-
-### Workflow overview and topology
-
-The [[query|SummarizeFeedback]] query exposed by [[service|rating-api]] runs an in-process Microsoft Agent Framework workflow over a book's stored [[entity|feedback]]. It creates structured partial summaries, consolidates them, assesses the evidence, and applies application-owned classification rules.
-
-The workflow uses the [[agent|rating-agent]] for structured model responses. It is orchestration, not a separate agent: every model call starts a fresh session with tool use disabled. The summarizer loads reviews directly through the feedback repository; it does not ask the model to retrieve reviews or Catalog book metadata.
+## Visual Reference
 
 <MermaidFileLoader file="mermaids/rating-summarizer-workflow.mmd" />
 
-The diagram shows the maximum four map workers under the default configuration. Only as many workers as there are batches are created, up to `MaxConcurrency`. The fan-in waits for every active worker before reduction.
+_Bounded Parallel Review Summarization and Quality Classification_
 
-### Reading the control flow
+## Key Takeaways & Boundaries
 
-- The four map nodes are the configured concurrency ceiling, not a promise that every invocation starts four workers. The runtime starts `min(batchCount, MaxConcurrency)` workers; each worker processes its assigned batches sequentially.
-- The join is a barrier: reduction starts after all active workers return shards. The join orders partial summaries by their original batch indexes before creating the first reduction input.
-- The assessment-to-refinement branch is taken only when confidence is below `MinimumConfidence` **and** the current iteration is below `MaxIterations`. Refinement returns to reduction with the original partial summaries plus assessment feedback; it does not repeat partitioning or mapping.
-- The other branch reaches classification when confidence is sufficient or the iteration limit is reached. Classification is the terminal stage and applies application-owned rules without another model call, even if the final confidence is still low.
+- **Application-owned metrics and classification**: Review counts and average ratings are computed deterministically by [[service|rating-api]] from [[container|rating-database]], and final labels (`NoData`, `Bad`, `Good`, `TopRated`) are assigned by transparent business rules rather than model judgment.
+- **Bounded map-reduce parallelism**: Reviews are chunked into batches (20 per batch by default) and distributed across up to four concurrent workers, with a barrier join that restores original batch order before consolidation.
+- **Capped quality refinement**: If assessed confidence falls below the minimum threshold, refinement loops back to consolidation with assessment feedback—capped at two refinement passes without re-reading raw review batches.
+- **Untrusted review isolation**: Customer review text is treated strictly as untrusted evidence with tool use disabled on every model session, preventing prompt injection from triggering actions or altering metrics.
 
-### Request preparation and caching
+:::note
+**Cached read-time snapshots:** [[service|rating-api]] caches completed summaries in [[container|rating-cache]] for six hours (and empty-review results for one minute). Execution is read-only and never mutates stored [[entity|feedback]] records or [[domain|catalog]] rating projections.
+:::
 
-1. The authenticated, per-user-rate-limited `GET /api/v1/feedbacks/{id}/summarize` endpoint sends a query for the book ID.
-2. The query handler uses FusionCache with key `rating:summary:v1:{bookId}`. A cache hit bypasses review loading and the entire model workflow.
-3. On a cache miss, the summarizer loads all feedback for that book and computes the review count and arithmetic mean rating in application code. These metrics are carried through the workflow, not estimated by the model.
-4. If there are no reviews, it returns `No feedback found for this book.` without creating a workflow or making model calls. The result has classification `NoData`, count `0`, a null average, and empty evidence and confidence.
-5. Normal summaries use six-hour local and distributed cache durations. Zero-review results use one minute in both caches so the first reviews can surface sooner.
+## Related Resources
 
-This is a read-time insight: execution does not modify feedback, update Catalog's rating projection, or persist the classification as domain state. The response can reflect a cached review snapshot rather than the latest feedback.
-
-### Execution stages
-
-| Executor                  | Responsibility                                                                                                                                                                                                                                                                                   |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `PartitionExecutor`       | Sorts reviews by review ID, chunks them into batches, and distributes batches round-robin across active workers. Preserves the application-computed metrics.                                                                                                                                     |
-| `MapExecutor-{index}`     | Processes its assigned batches sequentially while other workers run in parallel. Serializes each batch, obtains the `summarize_rating` MCP prompt, and requests a structured `RatingSummaryOutput`. Emits one shard containing its partial summaries, batch indexes, review counts, and metrics. |
-| `MapResultsJoinExecutor`  | Collects all expected worker shards, sorts partial summaries by original batch index, and creates the first reduction request at iteration `0`. Rejects excess shards or an empty set of partial summaries.                                                                                      |
-| `ReduceExecutor`          | Reuses the partial summary when iteration `0` contains exactly one batch. Otherwise requests a merged structured summary using the partial summaries and any prior assessment feedback.                                                                                                          |
-| `QualityAssessExecutor`   | Obtains the `analyze_book_quality` MCP prompt using the mean rating, total count, and candidate summary. Requests `DominantNegativePattern`, `Evidence`, and `Confidence`.                                                                                                                       |
-| `RefineReductionExecutor` | Builds feedback from the candidate summary, assessment evidence, and confidence. Increments the iteration and sends the original partial summaries back to reduction; it does not rerun partitioning or mapping.                                                                                 |
-| `ClassifyExecutor`        | Applies deterministic thresholds to the original metrics and the final negative-pattern assessment, then emits `SummarizeResult`. Makes no model call.                                                                                                                                           |
-
-Each structured summary contains **overall sentiment**, **recurring themes**, **reported strengths**, **reported weaknesses**, **review-based quality signals**, and **data limitations**. The final `summary` renders these six sections as text.
-
-Reduction accounts for unequal batch sizes using each partial summary's `ReviewCount`. A batch count is not an exact theme frequency: the prompt explicitly preserves conflicting evidence and limitations rather than giving every batch equal weight or inventing theme counts.
-
-### Quality gate and bounded refinement
-
-Refinement runs only when **both** conditions hold:
-
-- The candidate's iteration is less than `MaxIterations`.
-- Assessed confidence is below `MinimumConfidence`.
-
-Confidence is parsed case-insensitively as `Low`, `Medium`, or `High`. Unrecognized confidence is treated as `Unknown`, below all three levels. With the defaults, `Medium` or `High` proceeds directly to classification; `Low` or unknown confidence can trigger up to two refinement passes.
-
-The initial candidate is iteration `0`, so the default limit allows at most three quality assessments: the initial assessment and two reassessments. Reaching the limit proceeds to classification even if confidence remains low. This bound prevents an endless refinement loop; it is not a guarantee of minimum confidence. Setting `MaxIterations` to `0` disables refinement.
-
-### Classification rules
-
-Rules are evaluated in this order by `RatingClassifier`, not delegated to the model:
-
-| Priority | Condition                                                                                 | Result     |
-| -------- | ----------------------------------------------------------------------------------------- | ---------- |
-| 1        | Fewer than three reviews, a non-finite average, or an average outside 0-5.                | `NoData`   |
-| 2        | Average below 3.5, or the assessment reports a dominant negative pattern.                 | `Bad`      |
-| 3        | Average at least 4.5 with at least 50 reviews, or at least 4.0 with at least 200 reviews. | `TopRated` |
-| 4        | Any remaining valid case with at least three reviews.                                     | `Good`     |
-
-A dominant negative pattern overrides otherwise qualifying `TopRated` metrics. One or two reviews still go through summarization, but classification is `NoData`. `TopRated` describes review-based quality signals, not sales volume or a best-seller claim.
-
-### Configuration and workload
-
-Options are bound from the `RatingSummarizer` configuration section.
-
-| Option              | Default  | Constraint and effect                                                        |
-| ------------------- | -------- | ---------------------------------------------------------------------------- |
-| `BatchSize`         | `20`     | Positive integer; maximum reviews per map batch.                             |
-| `MaxConcurrency`    | `4`      | Positive integer; maximum active map workers per workflow invocation.        |
-| `MaxIterations`     | `2`      | Non-negative integer; maximum refinement passes after the initial candidate. |
-| `MinimumConfidence` | `Medium` | One of `Low`, `Medium`, or `High`; threshold used by the quality gate.       |
-
-Batch count is `ceil(reviewCount / BatchSize)` and worker count is the smaller of batch count and `MaxConcurrency`. This is a per-invocation worker bound, not a service-wide model-call limit.
-
-For example, 85 reviews with default options create five batches of 20, 20, 20, 20, and 5 reviews across four workers. Worker 0 handles batches 0 and 4 sequentially; workers 1-3 each handle one batch. Without refinement or structured-output retries, this requires five map calls, one reduction call, and one quality-assessment call. Each refinement adds one reduction call and one quality-assessment call. A single-batch request skips the initial reduction model call.
-
-### Output, safety, and failures
-
-The response includes `summary`, `classification`, `averageRating`, `reviewCount`, `evidence`, and `confidence`. Classification serializes as `NoData`, `Bad`, `Good`, or `TopRated`. Evidence and confidence come from the last quality assessment; the count and average remain application-computed.
-
-- MCP supplies prompt templates, not model-selected tool invocations. Review content, merged summaries, and assessment feedback are treated as untrusted evidence. Prompts prohibit following embedded instructions or inventing facts, identities, demographics, or sales claims.
-- Each model call requests a JSON-schema response. A JSON parsing failure or null deserialization result gets one retry in a fresh session. A second failure raises `InvalidOperationException`; this retry is separate from the quality-refinement limit and is not a general retry for transport failures.
-- A new workflow is built for each invocation, isolating the join executor's collected shards between requests.
-- Repository, prompt-provider, and workflow failures are not converted into empty successful summaries. If execution produces no `SummarizeResult`, cancellation is checked first, then an `InvalidOperationException` includes the emitted event types and any workflow error as its inner exception.
+- [[domain|reviews]] — Reviews bounded context
+- [[service|rating-api]] — Service hosting [[query|SummarizeFeedback]]
+- [[agent|rating-agent]] — AI specialist used for structured summarization and quality assessment
+- [[container|rating-database]], [[container|rating-cache]] — Feedback store and summary cache
+- [[flow|feedback-publication]] — Upstream feedback creation and rating projection workflow

@@ -10,174 +10,69 @@ badges:
     textColor: orange
 ---
 
-Use this runbook when a BookWorm Chat API (`chatting`) request is rejected, gets a scope or English-only reply, pauses with a "choose a specialist" prompt, reaches the wrong specialist, or is only partly answered. It walks through each gate in execution order so you can tell an intended guardrail apart from a routing defect.
+## Trigger / Symptom & Blast Radius
 
-If the request failed with an HTTP error or returned the generic rephrase fallback after acceptance, use How to triage a chat request that returns no usable response instead.
-
-## Prerequisites
-
-- Access to structured logs and traces for `chatting`:
-  - **Local:** the Aspire dashboard (`https://localhost:17290` with the HTTPS profile, or `http://localhost:15061` with the HTTP profile).
-  - **Azure:** the Log Analytics workspace attached to the `aca` Azure Container Apps environment.
-- The approximate time of the request, the reply the customer saw, and the specialist the customer expected.
-- Background on routing in How BookWorm routes customer chat requests.
-
-## Steps
-
-<Steps>
-<Step title="Confirm the request used the main workflow">
-
-Confirm the request reached `/ag-ui` (through the API Gateway at `/chatting/ag-ui`). Only this endpoint runs `AGUIWorkflowAgent`, input validation, and `Microsoft-Decision-1` routing.
-
-</Step>
-<Step title="Match the reply to the stage that produced it">
-
-Compare the reply text with this table to find the gate that fired:
-
-| Reply text the customer saw                                                                                                | Stage                                                                                            | Trigger                                                                                                       |
-| :------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------ |
-| `Could you please provide more details? Your message appears to be empty.`                                                 | `PromptValidationService`                                                                        | Prompt is empty after trimming                                                                                |
-| `I'm sorry, but I can't process that request. Please rephrase your question about books or our bookstore services.`        | `PromptValidationService`, `GovernancePromptSafetyEvaluator`, or `ChatRoutingGuardrailEvaluator` | Prompt matched the suspicious-pattern regex, failed the governance safety check, or scored `P(is_safe) < 0.5` |
-| `BookWorm Chat currently supports English only. Please resend your request in English.`                                    | `ChatRoutingGuardrailEvaluator`                                                                  | `P(is_english) < 0.5`                                                                                         |
-| `I can only help with BookWorm bookstore topics such as book search, recommendations, reviews, orders, or store policies.` | `ChatRoutingGuardrailEvaluator`                                                                  | `P(is_in_scope) < 0.5`                                                                                        |
-| `I want to make sure the right specialist helps you. Which area best fits your request?`                                   | `RouteDisambiguationPort` (`disambiguateRoute`)                                                  | In-scope route confidence below `0.6`                                                                         |
-
-If the reply came from a specialist instead, go to step 5.
-
-</Step>
-<Step title="Check input validation details">
-
-`InputValidationExecutor` runs before any model call:
-
-- It skips turns that only carry a tool result (such as a disambiguation selection), so those turns are never re-validated.
-- It rejects empty prompts and prompts that match `SuspiciousPatternRegex()` (phrases such as `ignore previous`, `system:`, `[INST]`, `you are now a`, `act as a`, and HTML or script tags).
-- It runs `GovernancePromptSafetyEvaluator`, which applies the `multi_turn_injection_patterns` in `Policies/chat-agents.yaml`.
-- It truncates prompts longer than 2,000 characters to the first 1,900 characters and appends `... [Message truncated due to length]`.
+A [[service|chat-api]] request is rejected, receives an English-only or out-of-scope reply, pauses with a disambiguation prompt, reaches the wrong specialist, or only partially answers a mixed request. Blast radius is limited to conversational routing quality; transactional services remain unaffected.
 
 <Admonition type="warning">
-	Truncation can cut off a book ID or the main question at the end of a long message. If a long
-	prompt was misrouted, check whether the key detail was in the last part of the message.
+	Prompts exceeding `2,000` characters are truncated to the first `1,900` characters before routing.
+	A book UUID or primary question at the end of a long prompt may be clipped, causing misrouting.
 </Admonition>
 
-A legitimate question can trip the regex. For example, a customer asking for a book "where the hero must act as a spy" matches `act as a`. Record such false positives for engineering review.
+## Pre-Flight Check
 
-</Step>
-<Step title="Check the routing decision logs">
-
-Search the `chatting` logs around the request time for these messages from `ChatRoutingDecisionService` and `ChatRoutingGuardrailEvaluator`:
-
-| Log message pattern                                                                                        | Meaning                                                                                   |
-| :--------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------- |
-| `Decision router rejected unsafe message (P(is_safe)=...)`                                                 | Safety guardrail rejected the turn                                                        |
-| `Decision router rejected non-English message (P(is_english)=...)`                                         | Language guardrail rejected the turn                                                      |
-| `Decision router rejected out-of-scope message (P(is_in_scope)=...)`                                       | Scope guardrail rejected the turn                                                         |
-| `Decision router confidence ... is below threshold 0.600; requesting human disambiguation (suggested=...)` | Route confidence was below `0.6`; the workflow paused                                     |
-| `Decision router selected <Target> (confidence=...)`                                                       | Normal direct route                                                                       |
-| `Decision router selected <Target> with partial response (confidence=...)`                                 | `Microsoft-Decision-1` returned a partial answer; missing route choices default to `Book` |
-
-In Azure, stream recent Chat API logs:
-
-<CodeGroup>
+Stream recent [[service|chat-api]] logs in `<ENV>` to inspect routing and guardrail decisions:
 
 ```bash
-az containerapp logs show --name <chatting-app-name> --resource-group <resource-group> --tail 300
+az containerapp logs show --name <SERVICE_NAME> --resource-group <RESOURCE_GROUP> --tail 300
 ```
 
-</CodeGroup>
+## Quick Recovery Procedure
 
-Where:
+<Steps>
+<Step title="Match the customer reply to the gate that fired">
 
-- `<chatting-app-name>`: The Azure Container Apps name for the `chatting` resource in your environment.
-- `<resource-group>`: The resource group that `aspire deploy` deployed BookWorm into (`AZURE_RESOURCE_GROUP`).
-
-The generated Bicep snapshot names this Container App `chatting`.
-
-Compare the selected target with the intended route:
-
-| Customer intent                                                                                  | Expected route |
-| :----------------------------------------------------------------------------------------------- | :------------- |
-| Book search, recommendations, book details, book feedback, or review questions without a book ID | `Book`         |
-| Store policies, shipping, returns, accounts, orders, or billing                                  | `QA`           |
-| Review summaries or rating analysis with a book catalog ID (UUID/GUID)                           | `Rating`       |
+| Reply text                                          | Gate                | Cause                                                                       |
+| :-------------------------------------------------- | :------------------ | :-------------------------------------------------------------------------- |
+| `Your message appears to be empty.`                 | Input validation    | Prompt empty after trimming                                                 |
+| `I can't process that request...`                   | Safety guardrail    | Matched suspicious pattern, governance safety policy, or `P(is_safe) < 0.5` |
+| `BookWorm Chat currently supports English only...`  | Language guardrail  | `P(is_english) < 0.5`                                                       |
+| `I can only help with BookWorm bookstore topics...` | Scope guardrail     | `P(is_in_scope) < 0.5`                                                      |
+| `Which area best fits your request?`                | Disambiguation port | Route confidence below `0.6`                                                |
 
 </Step>
-<Step title="Check disambiguation resume">
+<Step title="Inspect Decision Router logs">
 
-If the workflow paused at `RouteDisambiguationPort`, the customer's next turn must resume it. Storefront sends a tool result for `disambiguateRoute`. Plain-text clients can reply with text that `AGUIWorkflowAgent.NormalizeDisambiguationResume` recognizes:
+Filter [[service|chat-api]] logs around the request timestamp for `Decision router` entries (`P(is_safe)`, `P(is_english)`, `P(is_in_scope)`, and selected target `Book`, `QA`, or `Rating` with confidence score). Compare against expected routing:
 
-| Reply contains                             | Resumes to   |
-| :----------------------------------------- | :----------- |
-| `1`, `book`                                | Book Agent   |
-| `2`, `qa`, `support`, `policy`, `policies` | QA Agent     |
-| `3`, `rating`, `review`                    | Rating Agent |
+**[[agent|book-agent]]:** Book search, recommendations, catalog details, or review questions without a book ID.
 
-Matching runs in that order and is case-insensitive. A reply such as "book reviews" contains `book` and resumes to Book Agent, not Rating Agent. A reply that matches none of these values does not resume the pause and is treated as a new message.
+**[[agent|qa-agent]]:** Store policies, shipping, returns, accounts, orders, or billing.
+
+**[[agent|rating-agent]]:** Review summaries or rating analysis when a book catalog ID is already present.
 
 </Step>
-<Step title="Check specialist handoffs for mixed requests">
+<Step title="Check disambiguation resume and mixed-intent handoffs">
 
-For partly answered mixed requests, confirm the expected handoff appears in the trace:
-
-- `handoff_to_book`: QA Agent passes the book part of a support request to Book Agent.
-- `handoff_to_qa`: Book Agent passes a store-policy follow-up to QA Agent.
-- `handoff_to_rating`: Book Agent passes review analysis to Rating Agent after it resolves exactly one book ID.
-
-Book Agent does not hand off to Rating Agent when a title has no catalog match or several matches; it asks the customer to clarify instead. Rating Agent cannot hand back. A missing handoff tool call usually points to a prompt or governance issue. Confirm the handoff tool is allowed for the agent in `Policies/chat-agents.yaml`.
-
-</Step>
-<Step title="Recover or escalate">
-
-- **Validation rejection:** ask the customer to rephrase without instruction-like phrases, or to shorten very long messages.
-- **English-only or out-of-scope reply:** explain the boundary. Do not ask the customer to resend unchanged text.
-- **Disambiguation pause:** ask the customer to pick a specialist from the prompt.
-- **Route does not match intent:** record the request category, validation outcome, selected route, confidence, and expected route, then escalate to the contributor team.
-- **Mixed request partly answered:** tell the customer which part the assistant answered and what remains.
+If paused for disambiguation, confirm the follow-up turn sent a tool result or recognized plain-text choice (`1`/`book`, `2`/`qa`/`policy`, `3`/`rating`/`review`). For mixed requests, confirm the trace shows `handoff_to_book`, `handoff_to_qa`, or `handoff_to_rating`.
 
 </Step>
 </Steps>
 
 ## Verification
 
-Replay an equivalent sanitized request and confirm the logs show the expected path:
-
-<CodeGroup>
+Replay a sanitized equivalent prompt and confirm the trace logs the expected specialist selection (`confidence >= 0.6`) and handoff completion:
 
 ```text
-Decision router selected <expected Book|QA|Rating> (confidence=<value at or above 0.600>)
+Decision router selected <Book|QA|Rating> (confidence >= 0.600)
 ```
 
-</CodeGroup>
+## Rollback / Escalation
 
-For a paused request, confirm that the resume turn produces a `RouteDisambiguationResolutionExecutor` step and then the selected specialist's sub-workflow.
-
-Before escalating, capture these sanitized details:
-
-- Environment and approximate time.
-- Sanitized request category and reply text.
-- Validation outcome and routing log line, including probabilities or confidence.
-- Selected route, expected route, and observed handoffs.
-
-:::danger
-Escalate with request categories and stage outcomes, not raw customer prompts.
-:::
-
-## Troubleshooting
-
-| Symptom                                                       | Cause                                                                                                     | Fix                                                                                                                                               |
-| :------------------------------------------------------------ | :-------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Legitimate prompt gets the "can't process that request" reply | The prompt matched `SuspiciousPatternRegex()` (for example, `act as a`) or the governance safety check    | Ask the customer to rephrase. Record the false positive for regex or policy tuning in `PromptValidationService.cs` or `Policies/chat-agents.yaml` |
-| English prompt gets the English-only reply                    | `Microsoft-Decision-1` scored `P(is_english)` below `0.5`, often for very short or mixed-language prompts | Ask the customer to add context in English. Escalate if it recurs for clear English prompts                                                       |
-| Bookstore question gets the out-of-scope reply                | `P(is_in_scope)` scored below `0.5`                                                                       | Escalate with the request category. The scope question lives in `ChatRoutingDecisionService.cs`                                                   |
-| "Choose a specialist" prompt appears often                    | Route confidence is regularly below the `0.6` threshold for that request type                             | Expected for ambiguous prompts. Escalate if clear prompts pause often                                                                             |
-| Customer picked a specialist, but the workflow did not resume | The reply text did not match any recognized option                                                        | Ask the customer to reply with `1`, `2`, or `3`, or to use the Storefront selection buttons                                                       |
-| Review question went to Book Agent instead of Rating Agent    | The message had a title but no book catalog ID                                                            | Expected. Book Agent resolves the ID and then hands off to Rating Agent                                                                           |
-| Book Agent never hands off to Rating Agent                    | The title matched no book or several books                                                                | Expected. Book Agent asks the customer to clarify before handing off                                                                              |
-| Long message routed to the wrong specialist                   | Truncation at 1,900 characters cut off the key intent or book ID                                          | Ask the customer to put the main question first or shorten the message                                                                            |
-| Route defaults to Book unexpectedly                           | `Microsoft-Decision-1` returned a partial response with no route choice                                   | Check Microsoft Foundry `decision` deployment health and escalate if partial responses recur                                                      |
-| Mixed request answers only the policy or only the book part   | A handoff tool call was not made or was denied by governance                                              | Check the trace for `handoff_to_*` calls and the matching rules in `Policies/chat-agents.yaml`                                                    |
+- **Rollback:** If a recent `Microsoft-Decision-1` configuration or prompt-policy update caused false rejections, revert the policy/revision in `<RESOURCE_GROUP>`.
+- **Escalation:** Log false-positive regex/guardrail rejections (without raw PII) and escalate to [[team|ai-capabilities-team]].
 
 ## Related documentation
 
-- How BookWorm routes customer chat requests — Routing design, thresholds, and the routing flowchart.
-- Conversational architecture and domain boundaries reference — Full list of stages and boundary responses.
-- Conversational agent and workflow change checklist reference — Checks to run before changing routing or validation.
+- [[flow|agent-orchestration]] — Routing thresholds and handoff rules.
+- [[adr|adr-007-system-one-decision-model-routing-and-tool-selection]] — Decision model routing architecture.

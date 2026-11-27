@@ -1,10 +1,10 @@
 ---
-title: API Client, Query Factories & State Management
-summary: How BookWorm clients fetch data, synchronize server/client caches, prevent conflicting edits with ETags, and handle real-time streams.
+title: Data Flow & Gateway Integration
+summary: Typed transport contracts, retry and idempotency rules, optimistic concurrency with ETags, and real-time streaming channels.
 owners:
-  - contributor-team
+  - catalog-experience-team
 badges:
-  - content: Explanation
+  - content: Architecture
     backgroundColor: purple
     textColor: purple
   - content: Reference
@@ -12,112 +12,50 @@ badges:
     textColor: blue
 ---
 
-This reference specifies BookWorm's frontend data pipeline across `@workspace/types`, `@workspace/validations`, `@workspace/api-client`, `@workspace/api-hooks`, and Jotai client atoms. For architectural rationale behind these layers, see [[doc|frontend/007-architecture-and-state-design]].
+## Purpose & Scope
 
-## Overview
+This reference governs how **Storefront**, **Commerce**, and **Backoffice** communicate with backend capability services (**Catalog API**, **Basket API**, **Ordering API**, **Rating API**, and **Chat API**) through the **API Gateway**. It defines transport standardization, resilience policies, optimistic concurrency controls, and real-time streaming patterns.
 
-| Property              | Value                                                                                                                                        |
-| :-------------------- | :------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**             | BookWorm Frontend (`src/Clients/packages/`)                                                                                                  |
-| **Source**            | `packages/api-client`, `packages/api-hooks`, `packages/types`, `packages/validations`, `packages/storefront-shell`                           |
-| **Protocol / format** | HTTP/JSON (including HTTP `QUERY`), conditional ETags (`If-None-Match`/`If-Match`), Server-Sent Events (SSE), Agent-User Interaction (AG-UI) |
-| **Authentication**    | Bearer token injected via `ApiClient.setTokenProvider(...)` from Better Auth + Microsoft Entra ID                                            |
+## Layered Data Flow
 
-## Data pipeline packages
+The visual below traces how feature slices interact with server query caches, minimal client state, resilient HTTP transport, and real-time streaming channels across the gateway boundary.
 
-| Package                       | Tier         | Key dependencies                                   | Responsibility                                                                             |
-| :---------------------------- | :----------- | :------------------------------------------------- | :----------------------------------------------------------------------------------------- |
-| `@workspace/types`            | `foundation` | TypeScript                                         | Shared domain DTO interfaces and pagination wrappers                                       |
-| `@workspace/validations`      | `domain`     | `valibot` `^1.5.0`                                 | Shared Valibot schemas reused by `@formisch/react` forms and API payloads                  |
-| `@workspace/api-client`       | `domain`     | `axios` `^1.21.1`, `p-retry` `^9.0.0`              | Typed HTTP clients, retry policy, conditional ETag transport, and dashboard SSE subscriber |
-| `@workspace/api-hooks`        | `domain`     | `@tanstack/react-query` `^5.108.4`                 | Query key registry, `queryOptions` factories, mutation hooks, and `getQueryClient`         |
-| `@workspace/storefront-shell` | `domain`     | `jotai` `^3.0.2`, `jotai-tanstack-query` `^0.11.0` | Customer cross-zone auth and derived basket atoms                                          |
+<MermaidFileLoader file="mermaids/007-architecture-and-state-design-diagram-2.mmd" />
 
-## API endpoint registry (`@workspace/api-client/endpoints`)
+## Architectural Principles & Rules
 
-All frontend HTTP requests target the YARP API Gateway using `API_ENDPOINTS` (`src/Clients/packages/api-client/src/endpoints.ts`):
+- **Gateway-only communication:** Frontend surfaces never call internal backend services directly; every request routes through the **API Gateway** using shared, typed domain contracts.
+- **Safe retry & idempotency discipline:** Transient timeouts, rate-limit responses (honoring server retry-after hints), and safe read methods retry automatically with bounded backoff. Non-idempotent writes only retry when carrying an explicit request idempotency identifier.
+- **Optimistic concurrency for staff edits:** Mutable administrative resources in **Backoffice** (such as catalog items and order summaries) exchange entity tags (`ETag`) on reads and require matching preconditions on updates to prevent silent lost updates.
+- **Zero-retry on authorization & conflict failures:** Missing credentials or stale precondition conflicts never retry automatically; the UI surfaces explicit re-authentication or reload-and-merge prompts.
 
-| Domain         | Backing service  | Endpoint paths                                                                                                                                                                                                                                                                                                          |
-| :------------- | :--------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Basket         | **Basket API**   | `/basket/api/v1/baskets`                                                                                                                                                                                                                                                                                                |
-| Catalog        | **Catalog API**  | `/catalog/api/v1/books`, `/catalog/api/v1/books/:id`, `/catalog/api/v1/authors`, `/catalog/api/v1/authors/:id`, `/catalog/api/v1/categories`, `/catalog/api/v1/categories/:id`, `/catalog/api/v1/publishers`, `/catalog/api/v1/publishers/:id`                                                                          |
-| Conversational | **Chat API**     | `/chatting/ag-ui`                                                                                                                                                                                                                                                                                                       |
-| Ordering       | **Ordering API** | `/ordering/api/v1/orders`, `/ordering/api/v1/orders/:id`, `/ordering/api/v1/orders/:id/{history,summary,cancel,complete}`, `/ordering/api/v1/buyers`, `/ordering/api/v1/buyers/me`, `/ordering/api/v1/buyers/address`, `/ordering/api/v1/buyers/:id`, `/ordering/api/v1/dashboard`, `/ordering/api/v1/dashboard/stream` |
-| Reviews        | **Rating API**   | `/rating/api/v1/feedbacks`, `/rating/api/v1/feedbacks/:id`, `/rating/api/v1/feedbacks/:bookId/summarize`                                                                                                                                                                                                                |
+<Admonition type="warning" title="No Ad-Hoc Network Calls in UI Components">
+	Feature components must consume centralized query and mutation abstractions rather than issuing
+	raw network requests. This guarantees uniform authorization token injection, correlation headers,
+	retry rules, and cache key consistency.
+</Admonition>
 
-## HTTP client, retries, and ETag headers (`@workspace/api-client/client`)
+## Patterns & Boundaries
 
-### Standard headers (`@workspace/api-client/headers`)
+| Concern / Surface               | Architectural Approach                                                                            | Responsibility Boundary                                                                                       | Key Trade-off                                                                                                       |
+| :------------------------------ | :------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------ |
+| **Standard REST & Query Reads** | Centralized typed HTTP client with normalized cache keys and bounded retries                      | Shared transport layer handles headers, retries, and error classification; feature slices handle presentation | Slight abstraction overhead compared to inline fetches, repaid in consistent error and retry behavior               |
+| **Optimistic Concurrency**      | Conditional reads and precondition-guarded writes via `ETag` headers                              | **Backoffice** surfaces detect precondition conflicts and prompt staff to refresh before overwriting          | Requires staff to resolve concurrent edits manually rather than silent last-write-wins                              |
+| **Dashboard Metrics Stream**    | Initial snapshot load followed by authenticated Server-Sent Events (SSE) with exponential backoff | **Backoffice** dashboard subscribes to live ordering metrics; **Ordering API** pushes incremental updates     | Maintains persistent connection per active admin session; falls back cleanly via bounded reconnects                 |
+| **Conversational AI Stream**    | Server-side assistant runtime forwarding customer identity to **Chat API** over AG-UI             | **Storefront** mediates streaming responses and declarative UI cards; **Chat API** owns agent orchestration   | Adds a lightweight server-side proxy hop in **Storefront** to keep agent integration decoupled from browser clients |
 
-`HttpHeaders` standardizes header names across clients and MSW mocks: `Accept`, `Authorization`, `Cache-Control`, `Content-Type`, `ETag`, `If-Match`, `If-None-Match`, `Link`, `Location`, `Pagination-Count`, `x-request-id`, and `Retry-After`.
+<Accordion title="HTTP Status Recovery Matrix">
 
-### Retry and conditional request contract
+- **Not Modified:** Conditional reads retain the existing cached entity without re-downloading payloads.
+- **Unauthorized:** Immediate halt of retries; customer surfaces redirect to sign-in while preserving the return destination.
+- **Timeout / Rate Limited:** Automatic bounded retry respecting server-provided backoff windows.
+- **Precondition Failed:** Explicit conflict notification in **Backoffice** prompting the operator to reload the latest state.
+- **Server Errors:** Retried only for idempotent operations or writes carrying a correlation idempotency key.
 
-| Setting / behavior                 | Verified value (`packages/api-client/src/client.ts`)                                                                       | Notes                                                                       |
-| :--------------------------------- | :------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------- |
-| Max retries                        | `NEXT_PUBLIC_MAX_RETRIES` (default `5`)                                                                                    | Executed via `p-retry`; respects `AbortSignal`                              |
-| `Retry-After` cap                  | `60,000 ms` (`MAX_RETRY_AFTER_MS`)                                                                                         | Parses both delay-seconds and HTTP-date headers                             |
-| Always retried statuses            | `408 Request Timeout`, `429 Too Many Requests`                                                                             | Never retries other `4xx` responses                                         |
-| Network error retry                | Retried when `error.code` is present and not `ECONNABORTED`                                                                | Never retries canceled requests (`axios.isCancel`)                          |
-| `5xx` retry rule                   | Retried for idempotent methods (`GET`, `HEAD`, `OPTIONS`, `PUT`, `DELETE`, `QUERY`) or any request carrying `x-request-id` | Prevents duplicate non-idempotent writes without an idempotency key         |
-| Conditional GET (`getConditional`) | Sends `Cache-Control: no-cache` and optional `If-None-Match`; accepts `2xx` or `304 Not Modified`                          | Returns `{ data, etag, notModified }`                                       |
-| Optimistic concurrency conflict    | `isPreconditionFailedError(error)` checks HTTP `412 Precondition Failed`                                                   | Triggered when `If-Match` fails on Backoffice book or order-summary updates |
+</Accordion>
 
-## Query client and factory exports (`@workspace/api-hooks`)
+## Quality & Operational Impact
 
-### `QueryClient` defaults (`@workspace/api-hooks/query-client`)
-
-| Option                           | Server (`typeof window === "undefined"`)                           | Browser                                                                            |
-| :------------------------------- | :----------------------------------------------------------------- | :--------------------------------------------------------------------------------- |
-| Instance lifecycle               | New `QueryClient` per request (prevents cross-request state leaks) | Module-scoped singleton (`browserQueryClient`)                                     |
-| `staleTime`                      | `60,000 ms` (60 seconds)                                           | `60,000 ms` (60 seconds)                                                           |
-| `retry`                          | `false` (zero SSR retries)                                         | Up to `2` retries (`MAX_CLIENT_QUERY_RETRIES`); skips `4xx` except `408` and `429` |
-| `dehydrate.shouldDehydrateQuery` | Includes `pending` queries alongside default settled queries       | —                                                                                  |
-
-### Subpath export map (`packages/api-hooks/package.json`)
-
-| Subpath export                                                         | Key exports / factories                                                                        | Backing service   |
-| :--------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------- | :---------------- |
-| `@workspace/api-hooks/keys`                                            | `basketKeys`, `catalogKeys`, `orderingKeys` (including `dashboard`), `ratingKeys`              | All REST services |
-| `@workspace/api-hooks/query-client`                                    | `getQueryClient`                                                                               | All apps          |
-| `@workspace/api-hooks/catalog/queries`                                 | `bookQueries`, `authorQueries`, `categoryQueries`, `publisherQueries`                          | **Catalog API**   |
-| `@workspace/api-hooks/catalog/{books,authors,categories,publishers}/*` | Entity-specific query and mutation hooks                                                       | **Catalog API**   |
-| `@workspace/api-hooks/basket/queries` and `/basket/*`                  | `basketQueries` and basket mutation hooks                                                      | **Basket API**    |
-| `@workspace/api-hooks/ordering/queries`                                | `orderQueries` (`all`, `list`, `detail`, `history`), `buyerQueries` (`all`, `current`, `list`) | **Ordering API**  |
-| `@workspace/api-hooks/ordering/{orders,buyers}/*`                      | Order and buyer mutation/query hooks                                                           | **Ordering API**  |
-| `@workspace/api-hooks/rating/queries` and `/rating/*`                  | `feedbackQueries` (`all`, `list`, `summary`) and feedback mutation hooks                       | **Rating API**    |
-
-## Real-time channels and client state
-
-### Real-time streaming channels
-
-| Channel           | Application    | Endpoint & protocol                                                                              | Reconnect / streaming contract                                                                                                                                                                                     |
-| :---------------- | :------------- | :----------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Dashboard metrics | **Backoffice** | `/ordering/api/v1/dashboard/stream` (`text/event-stream` SSE via `dashboardApiClient.subscribe`) | Sends `Accept: text/event-stream`, `credentials: "include"`, `cache: "no-store"`, and Bearer token; parses `event: dashboard` frames; reconnects with exponential backoff starting at `1,000 ms` up to `30,000 ms` |
-| AI assistant chat | **Storefront** | `/api/copilotkit/[[...slug]]` -> `/chatting/ag-ui` (CopilotKit AG-UI & declarative A2UI)         | Forwards authenticated customer tokens to **Chat API**, streams responses, and connects to `@generative-a11y/ag-ui` for screen-reader pacing                                                                       |
-
-### Jotai client atoms
-
-| Atom                   | Source file                                          | Applications         | Behavior                                                                                                              |
-| :--------------------- | :--------------------------------------------------- | :------------------- | :-------------------------------------------------------------------------------------------------------------------- |
-| `isAuthenticatedAtom`  | `packages/storefront-shell/src/atoms/basket-atom.ts` | Storefront, Commerce | Boolean auth flag (default `false`) gating basket fetches                                                             |
-| `basketAtom`           | `packages/storefront-shell/src/atoms/basket-atom.ts` | Storefront, Commerce | `atomWithQuery` keyed by `basketKeys.detail()`; `enabled: get(isAuthenticatedAtom)` short-circuits anonymous requests |
-| `basketItemCountAtom`  | `packages/storefront-shell/src/atoms/basket-atom.ts` | Storefront, Commerce | Derived sum of item quantities (`0` when empty or signed out)                                                         |
-| `basketItemsAtom`      | `packages/storefront-shell/src/atoms/basket-atom.ts` | Storefront, Commerce | Derived array of `BasketItem` (stable empty array fallback)                                                           |
-| `isCopilotEnabledAtom` | `apps/storefront/atoms/feature-flags-atom.ts`        | Storefront           | Initialized from `env.NEXT_PUBLIC_COPILOT_ENABLED`                                                                    |
-
-## Error responses
-
-| HTTP status                                     | Condition                                                         | Client recovery behavior                                                                                                 |
-| :---------------------------------------------- | :---------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------- |
-| `304 Not Modified`                              | `If-None-Match` matches current server ETag on `getConditional()` | Returns `{ data: null, etag, notModified: true }`; caller retains cached entity                                          |
-| `401 Unauthorized`                              | Missing or expired Microsoft Entra ID token                       | Not retried; triggers re-authentication or redirects to `/login`                                                         |
-| `408 Request Timeout` / `429 Too Many Requests` | Transient timeout or API rate limit                               | Retried by `ApiClient` (up to `NEXT_PUBLIC_MAX_RETRIES`, honoring `Retry-After` up to `60,000 ms`)                       |
-| `412 Precondition Failed`                       | `If-Match` ETag is stale due to a concurrent Backoffice edit      | Detected by `isPreconditionFailedError(error)`; never retried; prompts user to reload latest version                     |
-| `5xx`                                           | Upstream service error                                            | Retried only for idempotent methods (`GET`, `HEAD`, `OPTIONS`, `PUT`, `DELETE`, `QUERY`) or requests with `x-request-id` |
-
-## Related documentation
-
-- [[doc|frontend/007-architecture-and-state-design]] — Why BookWorm separates server cache, ETags, streams, and Jotai atoms.
-- [[doc|frontend/002-applications-and-routing]] — Where routes prefetch queries and host `/api/copilotkit/[[...slug]]`.
-- [[doc|frontend/001-monorepo-architecture]] — Package boundary tiers for `@workspace/types`, `@workspace/api-client`, and `@workspace/api-hooks`.
+- **Reliability:** Bounded retries with idempotency safeguards absorb transient network blips without creating duplicate orders or basket mutations.
+- **Data Integrity:** `ETag` precondition checks protect **Backoffice** operators from accidentally overwriting concurrent catalog or order updates.
+- **Responsiveness:** Real-time SSE and AG-UI streaming deliver live operational metrics and conversational AI responses without polling overhead.

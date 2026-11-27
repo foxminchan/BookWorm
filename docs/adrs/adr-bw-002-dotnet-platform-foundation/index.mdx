@@ -6,74 +6,55 @@ summary: Use the repository's .NET and C# baseline and centralized dependency pr
 status: proposed
 date: 2026-11-07
 owners:
-  - contributor-team
+  - architecture-enabling-team
 appliesTo:
   - type: domain
-    id: BookWorm
+    id: bookworm
 related:
   - id: adr-bw-003-aspire-shared-service-defaults
   - id: adr-bw-009-local-cqrs-building-blocks
 decisionMakers:
-  - contributor-team
+  - architecture-enabling-team
 x-scope: "Whole system (backend services)"
 ---
 
-## Context and problem statement
+| Field                  | Value                                                                                              |
+| :--------------------- | :------------------------------------------------------------------------------------------------- |
+| **Status**             | Proposed                                                                                           |
+| **Date**               | 2026-11-07                                                                                         |
+| **Owners**             | [[team\|architecture-enabling-team]]                                                               |
+| **Affected Resources** | [[domain\|bookworm]]                                                                               |
+| **Related ADRs**       | [[adr\|adr-bw-003-aspire-shared-service-defaults]], [[adr\|adr-bw-009-local-cqrs-building-blocks]] |
 
-BookWorm's backend services share building blocks (`BookWorm.Chassis`, `BookWorm.SharedKernel`, `BookWorm.Constants`), Aspire service defaults, TUnit testing utilities, and centralized package versions. Introducing competing backend runtimes or per-service package version pinning would fragment tooling, duplicate integration plumbing, and complicate cross-service upgrades.
+## Context & Problem Statement
 
-BookWorm needs an explicit platform baseline that preserves backend consistency without restricting browser clients, infrastructure containers, or external providers to .NET.
+[[domain|bookworm]]'s backend services share common tooling for hosting, resilience, observability, testing, and centralized package management. Allowing each service to adopt a different runtime or independently pin package versions would fragment operational tooling, duplicate integration effort, and complicate security patching.
 
-## Decision drivers
+## Decision Drivers
 
-- **Reuse:** Share common hosting, telemetry, security, messaging, and testing libraries across all backend services.
-- **Maintainability:** Prevent runtime fragmentation and inconsistent dependency versions across the solution.
-- **Contributor onboarding:** Preserve uniform C# coding conventions, analyzers, and build workflows.
+- **Tooling reuse:** Share proven runtime defaults across backend services.
+- **Dependency hygiene:** Prevent version drift and conflicting transitive packages.
+- **Contributor onboarding:** Provide one predictable build, lint, and test workflow.
+- **Patch velocity:** Apply security and runtime upgrades consistently across services.
 
-## Considered options
+## Options Considered
 
-1. Standardize backend services on the repository .NET and C# baseline with Central Package Management
-2. Allow polyglot backend service runtimes by default
-3. Migrate backend services to another runtime ecosystem
-4. Pin NuGet package versions independently in each service project
+| Option                                                        | Pros                                                                | Cons                                                                    |
+| :------------------------------------------------------------ | :------------------------------------------------------------------ | :---------------------------------------------------------------------- |
+| **Standardize on .NET baseline + central package management** | Consistent setup, quality gates, and single-point security patching | Services cannot adopt a different runtime without an explicit exception |
+| **Per-service runtime choice**                                | Optimal fit for niche workloads                                     | Multiplies monitoring, CI, and security maintenance overhead            |
+| **Migrate all services to a different runtime**               | Aligns with an alternative ecosystem                                | High rewrite cost with no direct customer or operational gain           |
+| **Independent per-project package versioning**                | Individual services can upgrade dependencies early                  | Causes version skew and subtle cross-service incompatibilities          |
 
-## Decision outcome
+## Decision & Consequences
 
-Chosen option: **Standardize backend services on the repository .NET and C# baseline with Central Package Management**, because it maximizes library reuse and keeps build, analyzer, and security standards uniform across all 10 backend projects.
+**Chosen Option:** Retain the established .NET and C# baseline with centralized package version management for all core backend services. Storefront microfrontends, external providers (such as [[service|presidio-api]]), and specialized datastores remain free to use their native ecosystems.
 
-Services target the repository SDK (`11.0.100` in `global.json`) and framework settings (`net11.0`, C# preview features, nullable reference types, `TreatWarningsAsErrors`, and `EnforceCodeStyleInBuild` in `Directory.Build.props`). Package versions stay centralized in `Versions.props` and `Directory.Packages.props` with transitive pinning enabled. Future .NET upgrades follow the repository baseline rather than freezing this ADR to a single release. Browser clients (`src/Clients/` on Next.js 16 and Bun), sidecars (Presidio), and backing stores remain free to use their native runtimes.
+- **Positive:** Consistent quality gates, predictable onboarding, and coordinated security updates across services.
+- **Negative:** Major framework or shared-package upgrades require validation across all backend services.
 
-### Consequences
+### Compliance Criteria
 
-- **Positive:** Backend services reuse shared building blocks, CSharpier formatting, Roslyn analyzers, and TUnit test tooling without reimplementation.
-- **Negative:** SDK and shared-package upgrades require compatibility verification across every backend project in `BookWorm.slnx`.
-- **Follow-up:** Confirm formal acceptance of this reconstructed decision and continue enforcing Central Package Management in code review.
-
-## Pros and cons of the options
-
-### Standardize backend services on the repository .NET and C# baseline with Central Package Management
-
-- **Good**, because every backend service shares one build toolchain, analyzer ruleset, and dependency graph.
-- **Good**, because security patches and library updates propagate from one central location.
-- **Bad**, because services cannot adopt an alternative backend runtime without an explicit architectural exception.
-
-### Allow polyglot backend service runtimes by default
-
-- **Good**, because individual teams can select language ecosystems tailored to specific workloads.
-- **Bad**, because each additional runtime requires separate telemetry, auth, messaging, and CI/CD implementations.
-
-### Migrate backend services to another runtime ecosystem
-
-- **Good**, because it could align with a different ecosystem if a strong business driver emerged.
-- **Bad**, because migration carries high rewrite cost with no documented product or operational driver.
-
-### Pin NuGet package versions independently in each service project
-
-- **Good**, because one service can upgrade a dependency ahead of others.
-- **Bad**, because version drift breaks binary compatibility with `BookWorm.Chassis` and increases dependency maintenance cost.
-
-## Verification and links
-
-- **Verified against:** `global.json`, `Directory.Build.props`, `Directory.Packages.props`, `Versions.props`, `BookWorm.slnx`
-- **Related architecture:** [[doc|arc42/02-architecture-constraints]], [[doc|development/004-engineering-standards]]
-- **Related ADRs:** ADR-BW-003, ADR-BW-009, [[doc|arc42/09-architecture-decisions]]
+- Backend application services must target the repository's established .NET SDK baseline.
+- Package versions must be managed centrally rather than pinned in individual service project files.
+- Non-.NET runtimes are permitted only for specialized external containers or frontend applications.

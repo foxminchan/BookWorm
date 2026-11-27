@@ -22,14 +22,24 @@ const reportUrl = `${base}${suite.reportUrl}`;
 						<h1 class="text-xl font-bold text-[rgb(var(--ec-page-text))]">{suite.name}</h1>
 						<p class="text-xs text-[rgb(var(--ec-page-text-muted))]">{suite.description}</p>
 					</div>
-					<a
-						href={reportUrl}
-						target="_blank"
-						rel="noopener noreferrer"
-						class="inline-flex items-center gap-1 rounded-lg border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-card-bg))] px-3 py-1.5 text-xs font-medium text-[rgb(var(--ec-page-text))] transition-colors hover:border-[rgb(var(--ec-accent))]"
-					>
-						Open standalone ↗
-					</a>
+					<div class="flex items-center gap-2">
+						<button
+							id="allure-back-summary"
+							type="button"
+							class="hidden cursor-pointer items-center gap-1 rounded-lg border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-card-bg))] px-3 py-1.5 text-xs font-medium text-[rgb(var(--ec-page-text))] transition-colors hover:border-[rgb(var(--ec-accent))]"
+						>
+							← Back to summary
+						</button>
+						<a
+							id="allure-standalone-link"
+							href={reportUrl}
+							target="_blank"
+							rel="noopener noreferrer"
+							class="inline-flex items-center gap-1 rounded-lg border border-[rgb(var(--ec-page-border))] bg-[rgb(var(--ec-card-bg))] px-3 py-1.5 text-xs font-medium text-[rgb(var(--ec-page-text))] transition-colors hover:border-[rgb(var(--ec-accent))]"
+						>
+							Open standalone ↗
+						</a>
+					</div>
 				</div>
 				<ReportsNav />
 			</div>
@@ -80,50 +90,6 @@ const reportUrl = `${base}${suite.reportUrl}`;
 	</div>
 
 	<script>
-		function showFallback(loading: HTMLElement | null, fallback: HTMLElement | null) {
-			loading?.classList.add("hidden");
-			if (fallback) {
-				fallback.classList.remove("hidden");
-				fallback.classList.add("flex");
-			}
-		}
-
-		function loadAllureReport() {
-			const frame = document.getElementById("allure-frame") as HTMLIFrameElement | null;
-			const fallback = document.getElementById("allure-fallback");
-			const loading = document.getElementById("allure-loading");
-			const url = frame?.dataset.reportUrl;
-
-			if (!frame || !fallback || !url || frame.dataset.initialized === "true") return;
-			frame.dataset.initialized = "true";
-
-			fetch(url)
-				.then(async (res) => {
-					if (!frame.isConnected) return;
-					if (!res.ok) {
-						showFallback(loading, fallback);
-						return;
-					}
-					const html = await res.text();
-					if (!frame.isConnected) return;
-					if (html.includes("404: Not found") || html.includes("data-not-found")) {
-						showFallback(loading, fallback);
-						return;
-					}
-					frame.src = url;
-					frame.classList.remove("hidden");
-					loading?.classList.add("hidden");
-					fallback.classList.add("hidden");
-				})
-				.catch(() => {
-					if (!frame.isConnected) return;
-					showFallback(loading, fallback);
-				});
-		}
-
-		document.addEventListener("astro:page-load", loadAllureReport);
-		if (document.readyState !== "loading") {
-			loadAllureReport();
-		}
+		import "../_scripts/allure-report";
 	</script>
 </Layout>

@@ -3,7 +3,8 @@ id: catalog-ingestion
 name: Catalog Ingestion
 version: 1.0.0
 summary: |
-  Internal Azure Functions worker that reads pending Catalog book updates and maintains the Qdrant search index.
+  Internal background worker that reads pending Catalog book updates and
+  synchronizes semantic search vectors in Qdrant.
 styles:
   icon: /icons/compute/function.svg
 writesTo:
@@ -12,7 +13,7 @@ writesTo:
 readsFrom:
   - id: catalog-database
 owners:
-  - contributor-team
+  - catalog-experience-team
 badges:
   - content: Internal
     backgroundColor: gray
@@ -31,72 +32,53 @@ repository:
   url: "https://github.com/foxminchan/BookWorm"
 ---
 
-Catalog Ingestion (`catalog-ingestion`) is an internal Azure Functions isolated worker in the Catalog bounded context that reads queued book mutations from PostgreSQL, generates semantic embeddings with Microsoft Foundry, and updates the Qdrant vector index in bounded batches. It exposes no HTTP or gRPC endpoints and is not routed through the API Gateway.
+## Service Responsibility & Boundary
 
-## Overview
+Catalog Ingestion is an internal background worker within the [[domain|catalog]] domain that reads coalesced book mutations from [[container|catalog-database]], generates semantic embeddings, and upserts or removes records in [[container|catalog-vector]]. Authoring APIs and synchronous search queries remain owned by [[service|catalog-api]], while recurring schedule management is delegated to [[service|scheduler-service]].
 
-| Property                 | Value                                                                                                                                                                               |
-| :----------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**                | Catalog bounded context (`BookWorm.Catalog.Ingestion`)                                                                                                                              |
-| **Aspire resource ID**   | `catalog-ingestion`                                                                                                                                                                 |
-| **Source**               | `src/Services/Catalog/BookWorm.Catalog.Ingestion`                                                                                                                                   |
-| **Runtime & local port** | `Azure.Functions.Sdk` `1.1.0` (`Microsoft.Azure.Functions.Worker` `2.52.0`) — local `--port 7071`; not routed via API Gateway                                                       |
-| **Trigger & protocol**   | `[KafkaTrigger]` (`ProcessVectorBatch`) on unprefixed topic `scheduler.process-vector-batch`, consumer group `catalog-ingestion`                                                    |
-| **Dependencies**         | PostgreSQL (`catalogdb`), Qdrant (`vectordb`), Microsoft Foundry (`embedding` = `Cohere.EmbedV40`), Azure Storage (`storage` host state), Wolverine PostgreSQL outbox (`catalogdb`) |
-| **Authentication**       | Internal worker (no public auth); Azure Managed Identity RBAC (`CognitiveServicesUser` for Microsoft Foundry) in Azure                                                              |
+## Service Profile
 
-## Runtime architecture
+| Property                                  | Value                                                                                                                      |
+| :---------------------------------------- | :------------------------------------------------------------------------------------------------------------------------- |
+| **Bounded Context / Domain**              | [[domain\|catalog]]                                                                                                        |
+| **Owner Team**                            | [[team\|catalog-experience-team]]                                                                                          |
+| **Runtime Style**                         | Async Worker (Kafka-triggered serverless function)                                                                         |
+| **Public / Gateway Exposure**             | Internal Only (no HTTP or gRPC surface)                                                                                    |
+| **Authentication & Authorization Policy** | Internal worker; Azure Managed Identity RBAC for AI embedding generation                                                   |
+| **Owned Data Store(s)**                   | Reads/acknowledges pending queue in [[container\|catalog-database]]; writes derived index in [[container\|catalog-vector]] |
+| **Key Resilience / Idempotency Pattern**  | Distributed advisory lock for single-writer exclusivity and revision-checked queue acknowledgment                          |
 
-Scheduler triggers Catalog Ingestion every five minutes over Kafka; the worker acquires a PostgreSQL advisory lock, reads coalesced book revisions, generates embeddings, and upserts or deletes vectors in Qdrant.
+## Contracts & Data Ownership
+
+Catalog Ingestion owns no authoritative business entities. It processes bounded batches of up to 200 pending updates from [[container|catalog-database]] on each scheduled trigger and updates [[container|catalog-vector]] accordingly.
+
+:::note
+If a book is modified concurrently while a batch is in flight, its pending queue revision changes and the worker leaves the row queued for the next cycle—preventing stale embeddings from overwriting newer edits.
+:::
+
+<MessageTable format="all" limit={10} showChannels={true} />
+
+<Accordion title="Batch Execution & Failure Semantics">
+	- **Single-writer exclusivity:** Acquires an exclusive advisory lock on
+	[[container|catalog-database]]; overlapping triggers exit immediately without duplicate work. -
+	**Retry on downstream failure:** If embedding generation or vector store writes fail,
+	unacknowledged rows remain queued and are retried automatically on the next 5-minute trigger.
+</Accordion>
+
+## Architecture Visualizations & Specifications
+
+### Vector Indexing Flow
 
 <MermaidFileLoader file="mermaids/CatalogIngestion-diagram-1.mmd" />
 
-## Trigger and batch execution contract
+### Service Interactions
 
-| Property                     | Value                                                                                                           |
-| :--------------------------- | :-------------------------------------------------------------------------------------------------------------- |
-| **Function name**            | `ProcessVectorBatch`                                                                                            |
-| **Inbound event**            | [[event\|ProcessVectorBatchIntegrationEvent]]                                                                   |
-| **Kafka topic**              | `scheduler.process-vector-batch` (`AppendPrefix = false`)                                                       |
-| **Consumer group**           | `catalog-ingestion`                                                                                             |
-| **Cadence**                  | Every 5 minutes UTC (`0 0/5 * * * ?`), dispatched by [[service\|scheduler-dashboard]] (`ProcessVectorBatchJob`) |
-| **Batch limit**              | Up to `200` pending updates per invocation (controlled by the worker, not the trigger payload)                  |
-| **Target Qdrant collection** | `data-bookworm-snippets`                                                                                        |
+<NodeGraph />
 
-### Processing steps per invocation
-
-1. **Acquire exclusivity:** Requests a PostgreSQL advisory lock on `catalogdb`. If another worker holds the lock, the invocation exits immediately without duplicate work.
-2. **Fetch bounded batch:** Reads up to `200` rows from `pending_vector_updates`, ordered oldest-first by update timestamp and book ID.
-3. **Assemble searchable text:** For each active [[entity|book]], builds combined text from title, description, [[entity|author]] names, [[entity|category]], and [[entity|publisher]].
-4. **Upsert or delete in Qdrant:** Generates embeddings through Microsoft Foundry (`Cohere.EmbedV40`) and upserts active book snippets into `data-bookworm-snippets`. Deletes the Qdrant record when a queued book is missing or soft-deleted.
-5. **Revision-safe acknowledgment:** Deletes each `pending_vector_updates` row only if its stored revision still matches the revision read at step 2; concurrent edits remain queued for the next cycle.
-6. **Release lock:** Releases the PostgreSQL advisory lock in all exit paths, including exceptions.
-
-## Failure semantics and operational checks
-
-| Condition                              | Behavior                                                                                        | Recovery behavior                                                                                                 |
-| :------------------------------------- | :---------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------- |
-| Advisory lock held by another instance | Invocation returns immediately with no side effects                                             | Wait for active batch to complete                                                                                 |
-| Embedding or Qdrant failure            | Exception propagates; affected rows are not acknowledged and remain in `pending_vector_updates` | Next 5-minute trigger retries automatically; verify Foundry RBAC and Qdrant connectivity                          |
-| Growing `pending_vector_updates` queue | Catalog writes continue normally while semantic search lags behind                              | Inspect [[service\|scheduler-dashboard]] execution history, `pending_vector_updates` count/age, and Function logs |
-| Concurrent edit during active batch    | Revision mismatch prevents premature acknowledgment                                             | Newer revision is processed on the next scheduled cycle                                                           |
-
-`VectorBatchProcessor` uses PostgreSQL advisory lock key `740031001` via `pg_try_advisory_lock($1)` and releases it in a `finally` block. Its per-invocation read limit is 200 pending updates.
-
-:::note
-`BookWorm.Catalog.Ingestion` currently has no dedicated `.UnitTests` project in `BookWorm.slnx`; contract coverage relies on `Catalog-Scheduler` Pact verification (`tests/pacts/`).
-:::
-
-## Messages
-
-<MessageTable format="all" limit={10} />
-
-## Related documentation
+## Attached Resources & Related Docs
 
 - [[doc|platform/006-api-and-contracts]] — Consolidated service and messaging directory.
 - [[service|catalog-api]] — Authoritative Catalog service that enqueues vector updates.
-- [[service|scheduler-dashboard]] — Scheduler triggering `ProcessVectorBatchJob`.
-- [[container|catalog-database]] — PostgreSQL `pending_vector_updates` queue and triggers.
-- [[container|catalog-vector]] — Qdrant collection reference.
-
-<NodeGraph />
+- [[service|scheduler-service]] — Scheduler dispatching periodic batch triggers.
+- [[container|catalog-database]] — Authoritative catalog store and pending update queue.
+- [[container|catalog-vector]] — Derived vector search collection.

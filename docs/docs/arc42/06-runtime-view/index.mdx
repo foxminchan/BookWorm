@@ -2,57 +2,29 @@
 title: Runtime View
 summary: Representative BookWorm runtime scenarios across commerce, discovery, customer feedback, and platform operations.
 owners:
-  - contributor-team
+  - architecture-enabling-team
 badges:
   - content: Architecture
     backgroundColor: blue
     textColor: blue
 ---
 
-The runtime view explains how BookWorm's services collaborate over time across five representative commerce, discovery, feedback, AI, and platform journeys. Use this chapter to trace synchronous request paths, asynchronous Kafka choreography, compensation boundaries, and authoritative state ownership across bounded contexts.
+BookWorm combines synchronous request-response interactions for browsing and commands with asynchronous event-driven coordination for post-commit work. Bounded contexts own their state and publish facts or commands across Kafka; derived views and external side effects may therefore lag while retries, idempotency, and compensation preserve eventual consistency.
 
-## Scope and constraints
+## Runtime Overview
 
-- **Scope:** End-to-end runtime interactions across BookWorm's microfrontends (**Storefront**, **Commerce**, **Backoffice**), **API Gateway** (YARP), 10 backend services/workers, and their backing data stores and brokers.
-- **Out of scope:** Exhaustive CRUD endpoint documentation (see [[doc|platform/006-api-and-contracts]]) and Azure hosting/networking topology (see [[doc|arc42/07-deployment-view]]).
-- **Key constraint:** Each bounded context owns its private persistence store. Services never share databases and interact exclusively through versioned HTTP/REST APIs, gRPC, Kafka CloudEvents, AG-UI, Agent-to-Agent (A2A) gRPC, or Model Context Protocol (MCP).
-
-## Runtime scenario map
-
-This flowchart summarizes how customer entry points and scheduled triggers enter BookWorm's five primary runtime scenarios.
+The overview distinguishes direct web and service calls from broker-mediated coordination and scheduled work.
 
 <MermaidFileLoader file="mermaids/06-runtime-view-diagram-1.mmd" />
 
-## Representative runtime scenarios
+## Scenario Index
 
-| Scenario                                                                 | Trigger                                           | Participating services                                                                                          | Protocols & messaging                                                                                                            | Backing stores                                                                               |
-| :----------------------------------------------------------------------- | :------------------------------------------------ | :-------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------- |
-| [[doc\|arc42/06-runtime-view/001-checkout-and-order-coordination]]       | Customer checks out in **Commerce** (`/checkout`) | **Commerce**, **API Gateway**, **Ordering API**, **Basket API**, **Catalog API**, **Finance**, **Notification** | HTTPS REST (`x-request-id`), gRPC (`GetBasket`, `GetBooks`), Kafka CloudEvents, Durable Functions saga                           | PostgreSQL (`orderingdb` + Marten), Redis, Durable Task Scheduler (`finance-taskhub`)        |
-| [[doc\|arc42/06-runtime-view/002-catalog-search-index-maintenance]]      | Book write in **Catalog API** + 5-min Quartz cron | **Catalog API**, **Scheduler**, **Catalog Ingestion**                                                           | PostgreSQL trigger queue, Kafka (`scheduler.process-vector-batch`), Foundry Embeddings, Qdrant gRPC/HTTP                         | PostgreSQL (`catalogdb`, `schedulerdb`), Qdrant (`vectordb`)                                 |
-| [[doc\|arc42/06-runtime-view/003-feedback-and-rating-projection]]        | Customer creates or deletes review                | **Rating API**, **Catalog API**                                                                                 | HTTPS REST, Kafka CloudEvents (`rating.feedback-create`, `rating.feedback-delete`, `catalog.book-update-rating-failed`)          | Azure Cosmos DB (`ratingdb`/`feedbacks`), PostgreSQL (`catalogdb`), Redis                    |
-| [[doc\|arc42/06-runtime-view/004-conversational-book-discovery]]         | Customer prompts AI chat in **Storefront**        | **Storefront**, **Chat API**, **MCP Tools**, **Catalog API**, **Rating API**, **Presidio**                      | AG-UI (`/ag-ui`), Microsoft Foundry (`ModelRouter`, `MicrosoftDecision1`), MCP Streamable HTTP (`/mcp`), A2A gRPC, Presidio HTTP | Azure Blob Storage (`chatting-blob`), Azure Cosmos DB (`ratingdb`), PostgreSQL (`catalogdb`) |
-| [[doc\|arc42/06-runtime-view/005-notification-delivery-and-maintenance]] | **Finance** order commands + Quartz cron          | **Finance**, **Notification**, **Scheduler**, **Catalog Ingestion**                                             | Kafka CloudEvents, MailKit SMTP (`587`), Quartz.NET                                                                              | Redis (24h idempotency), PostgreSQL (`schedulerdb`), Mailpit / SendGrid SMTP                 |
+These scenarios cover the highest-risk runtime boundaries: cross-service checkout, derived catalog state, review compensation, AI orchestration, and external delivery. They expose both state-changing transactions and independently retryable work.
 
-## Authoritative state ownership
-
-| Bounded context    | Authoritative owner              | Persistence store                                             | Owned business state                                                                                           | Derived or transient state elsewhere                                                                                           |
-| :----------------- | :------------------------------- | :------------------------------------------------------------ | :------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------- |
-| **Catalog**        | **Catalog API**                  | PostgreSQL (`catalogdb`) + Azure Blob (`catalog-blob`)        | Canonical books, authors, categories, publishers, prices, cover images, pending vector queue                   | Qdrant (`vectordb`) semantic index; derived average rating & review count on `Book`; purchase-time price snapshots in Ordering |
-| **Shopping**       | **Basket API**                   | Redis (`redis`)                                               | Customer-scoped mutable pre-order baskets                                                                      | None (no relational DB)                                                                                                        |
-| **Ordering**       | **Ordering API**                 | PostgreSQL (`orderingdb`, EF Core + Marten event store)       | Accepted orders, immutable purchase snapshots, lifecycle statuses (`New`, `Cancelled`, `Completed`)            | Durable orchestration state in **Finance** (`finance-taskhub`)                                                                 |
-| **Reviews**        | **Rating API**                   | Azure Cosmos DB (`ratingdb`/`feedbacks`, partition `/bookId`) | Individual customer `Feedback` records                                                                         | Derived book rating summary in **Catalog API**                                                                                 |
-| **Conversational** | **Chat API**                     | Azure Blob Storage (`chatting-blob`, prefix `ag-ui/`)         | AG-UI conversation session transcripts                                                                         | None (read-only access to Catalog via MCP and Rating via A2A)                                                                  |
-| **Platform**       | **Scheduler** / **Notification** | PostgreSQL (`schedulerdb`) / Redis (`redis`)                  | Quartz job definitions and 30-day history (**Scheduler**); 24-hour email deduplication keys (**Notification**) | Notification holds no persistent email outbox                                                                                  |
-
-## Cross-scenario runtime invariants
-
-1. **Authoritative state stays with its owner:** Downstream caches, search indexes, rating projections, and saga states are derived or operational views. Always query the owning service to confirm business truth.
-2. **Handoff is not completion:** Returning `201 Created`, publishing a Kafka command, firing a Quartz trigger, or receiving SMTP `250 OK` proves only that the handoff succeeded—not that downstream processing or mailbox delivery finished.
-3. **At-least-once delivery requires idempotent consumers:** Network retries, Wolverine cooldown retries (`50ms / 250ms / 1s`), and Finance saga reissues can repeat work. Consumers rely on PostgreSQL/Cosmos DB durable inboxes or Redis 24-hour idempotency guards to stay safe.
-4. **Explicit compensation beats distributed locks:** When cross-service invariants fail asynchronously (such as failed basket cleanup or feedback referencing a missing book), services emit explicit failure events to trigger bounded compensation rather than holding cross-service transactions.
-
-## Related documentation
-
-- [[doc|arc42/05-building-block-view]] — Static decomposition of domains, services, and data stores.
-- [[doc|arc42/08-crosscutting-concepts]] — Shared security, messaging, resilience, observability, AI governance, and testing rules.
-- [[doc|arc42/09-architecture-decisions]] — Formal decisions behind BookWorm's runtime boundaries and storage choices.
+| Scenario                                                                 | Trigger                                                      | Key Building Blocks                                                                 | Primary Quality Goal                                              |
+| :----------------------------------------------------------------------- | :----------------------------------------------------------- | :---------------------------------------------------------------------------------- | :---------------------------------------------------------------- |
+| [[doc\|arc42/06-runtime-view/001-checkout-and-order-coordination]]       | Customer submits checkout                                    | Commerce, API Gateway, Ordering API, Basket API, Catalog API, Finance, Notification | Consistent order creation with bounded post-checkout coordination |
+| [[doc\|arc42/06-runtime-view/002-catalog-search-index-maintenance]]      | Catalog write or scheduled batch trigger                     | Catalog API, PostgreSQL, Scheduler, Catalog Ingestion, Microsoft Foundry, Qdrant    | Fresh and concurrency-safe search data                            |
+| [[doc\|arc42/06-runtime-view/003-feedback-and-rating-projection]]        | Feedback is created or deleted                               | Rating API, Catalog API, Kafka Broker                                               | Accurate derived ratings with recoverable invalid references      |
+| [[doc\|arc42/06-runtime-view/004-conversational-book-discovery]]         | Customer submits a chat turn                                 | Storefront, Chat API, Microsoft Foundry, Presidio, MCP Tools, Rating API            | Safe, grounded, low-latency guidance                              |
+| [[doc\|arc42/06-runtime-view/005-notification-delivery-and-maintenance]] | Finance publishes an email command or a scheduled job starts | Finance, Notification, Scheduler, Catalog Ingestion, Kafka Broker                   | Reliable delivery attempts and predictable maintenance            |

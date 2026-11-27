@@ -2,13 +2,19 @@
 id: bookworm.{env}.notification.dead-letter-queue
 name: Notification Dead Letter Queue
 version: 1.0.0
-type: stream
+type: topic
 summary: |
-  Native Kafka dead-letter stream where Wolverine routes order-notification
-  commands that exhaust Notification API listener retry policies or fail JSON
-  deserialization.
+  Kafka dead-letter topic owned by the platform team that captures order
+  notification commands that Notification API could not deliver.
 owners:
-  - contributor-team
+  - platform-engineering-team
+badges:
+  - content: Kafka
+    backgroundColor: blue
+    textColor: blue
+  - content: Dead-Letter Queue
+    backgroundColor: red
+    textColor: red
 address: bookworm.{env}.notification.dead-letter-queue
 parameters:
   env:
@@ -21,101 +27,48 @@ parameters:
       - development
       - staging
       - production
-    description: "Environment to use"
+    description: BookWorm deployment environment.
 deliveryGuarantee: at-least-once
 protocols:
   - kafka
 ---
 
-`bookworm.{env}.notification.dead-letter-queue` (v1.0.0) is the native Kafka dead-letter topic for Notification. Wolverine routes incoming order-email commands here when Notification exhausts retries, fails MJML rendering or SMTP submission, or cannot deserialize the payload. All three Finance notification command channels feed this single per-service DLQ.
+## Purpose & Scope
 
-## Channel information
+This dead-letter channel captures order lifecycle email commands that [[service|notification-api]] failed to process. Records land here after bounded SMTP/MailKit retries and listener cooldowns are exhausted, or immediately upon template/deserialization failures.
 
-<ChannelInformation />
+## DLQ Profile
 
-## Overview
+| Property                          | Value                                                                                                                                                                               |
+| :-------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Owning Service**                | [[service\|notification-api]]                                                                                                                                                       |
+| **Address Pattern**               | `bookworm.{env}.notification.dead-letter-queue`                                                                                                                                     |
+| **Upstream Source Channels**      | [[channel\|bookworm.&#123;env&#125;.finance.place-order]], [[channel\|bookworm.&#123;env&#125;.finance.complete-order]], [[channel\|bookworm.&#123;env&#125;.finance.cancel-order]] |
+| **Routing Triggers**              | Exhausted SMTP/provider retries or immediate poison/deserialization/rendering errors                                                                                                |
+| **Retention / Inspection Window** | Governed by Kafka broker retention policy; inspect and triage before broker expiry                                                                                                  |
+| **Replay Safety**                 | Requires manual validation — check mail provider logs to avoid duplicate customer emails                                                                                            |
 
-| Property              | Value                                                                                                                                                                                                                                                                                    |
-| :-------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**             | Platform bounded context (**Notification**, Aspire resource `notification`)                                                                                                                                                                                                              |
-| **Topic pattern**     | `bookworm.{env}.notification.dead-letter-queue`                                                                                                                                                                                                                                          |
-| **Name derivation**   | `KafkaTopicRouter.CreateDeadLetterTopicName(applicationName, environmentName)`                                                                                                                                                                                                           |
-| **Writer**            | Wolverine Kafka transport in Notification (`EnableNativeDeadLetterQueue()`)                                                                                                                                                                                                              |
-| **Source listeners**  | [[channel\|bookworm.&#123;env&#125;.finance.place-order]] (`PlaceOrderCommand`); [[channel\|bookworm.&#123;env&#125;.finance.complete-order]] (`CompleteOrderCommand`); [[channel\|bookworm.&#123;env&#125;.finance.cancel-order]] (`CancelOrderCommand`)                                |
-| **Reader**            | None in code; operators inspect the topic manually                                                                                                                                                                                                                                       |
-| **Protocol / format** | Kafka stream; original CloudEvents JSON record                                                                                                                                                                                                                                           |
-| **Message store**     | None (Notification uses Redis only for caching and idempotency; no PostgreSQL or email outbox table)                                                                                                                                                                                     |
-| **Source**            | `src/BuildingBlocks/BookWorm.Chassis/EventBus/Wolverine/WolverineHostExtensions.cs`, `src/Services/Notification/BookWorm.Notification/Infrastructure/Senders/MailKit/MailKitSender.cs`, `src/Services/Notification/BookWorm.Notification/Infrastructure/Senders/ResilienceExtensions.cs` |
+## Triage & Replay Guardrails
 
-## Parameters and fields
+:::warning
+Before replaying any record from this DLQ:
 
-| Parameter | Type     | Required | Default       | Allowed values                         | Description                              |
-| :-------- | :------- | :------- | :------------ | :------------------------------------- | :--------------------------------------- |
-| `{env}`   | `string` | Yes      | `development` | `development`, `staging`, `production` | Kebab-case Aspire host environment name. |
+1. Check [[service|sendgrid-api]] (mail provider) activity logs first — an SMTP timeout may have occurred _after_ the provider already accepted the email.
+2. Verify that the 24-hour message-ID deduplication cache behavior is understood; replaying a newly issued command ID can send a duplicate email.
+3. **Never replay [[command|PlaceOrderCommand]] to [[channel|bookworm.&#123;env&#125;.finance.place-order]]** to recover email alone, as [[service|basket-api]] also consumes that topic.
+4. Keep customer names and email addresses out of incident notes; correlate using `orderId` and message IDs only.
 
-A dead-lettered record preserves the original CloudEvents value (`PlaceOrderCommand`, `CompleteOrderCommand`, or `CancelOrderCommand`) and Kafka key (`orderId`).
-
-Wolverine 6.65.1 adds `exception-type`, `exception-message`, `exception-stack` (truncated to 8,192 characters), `failed-at` (Unix milliseconds), and `original-destination` to native dead-letter records; Kafka records also include `original-partition` and `original-offset`. The delivery-attempt count is in the `attempts` header. See the [version-pinned diagnostic header reference](https://github.com/JasperFx/wolverine/blob/V6.65.1/docs/tutorials/dead-letter-queues.md#diagnostic-headers-on-dead-letter-messages).
-
-## Routing rules
-
-| Exception or failure                                                                                                                      | Handling before DLQ                                                                                                                                                                                 | Source                                        |
-| :---------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------- |
-| Transient SMTP failure (`CommandException` transient, `ProtocolException`, `IOException`, `TimeoutException`, `TimeoutRejectedException`) | Retried inside the `Notification` Polly pipeline (circuit breaker, exponential retry with jitter, `30s` timeout). If retries exhaust, `MailKitSender` wraps the failure in `NotificationException`. | `ResilienceExtensions.cs`, `MailKitSender.cs` |
-| `NotificationException` or MJML rendering failure                                                                                         | `IIntegrationEventIdempotencyGuard.ExecuteAsync` releases the Redis key and rethrows. `NotificationException` is not in `ConfigureDefaultErrorHandling`'s transient retry list.                     | `MailKitSender.cs`, `MjmlTemplateRenderer.cs` |
-| `TimeoutException`, `HttpRequestException`, `DbUpdateConcurrencyException`, transient `NpgsqlException`                                   | `3` Wolverine retries at `50ms`, `250ms`, `1s` with full jitter, then DLQ.                                                                                                                          | `ConfigureDefaultErrorHandling`               |
-| `JsonException`, `FormatException`                                                                                                        | DLQ immediately with zero retries.                                                                                                                                                                  | `ConfigureDefaultErrorHandling`               |
-
-`NotificationException` is not matched by the explicit BookWorm policies. BookWorm does not configure a catch-all `MaximumAttempts` rule, so Wolverine 6.65.1's unmatched-exception fallback moves it to the native DLQ on the first failure. See the [version-pinned continuation fallback](https://github.com/JasperFx/wolverine/blob/V6.65.1/src/Wolverine/ErrorHandling/FailureRuleCollection.cs) and [dead-letter guide](https://github.com/JasperFx/wolverine/blob/V6.65.1/docs/tutorials/dead-letter-queues.md#when-does-a-message-get-dead-lettered).
-
-:::note
-`DeadLetterQueueExpiration = 7 days` in `WolverineHostExtensions` applies to Wolverine durable message stores. Notification has no SQL message store, so Kafka broker topic retention governs how long dead-lettered records persist.
+Follow the operational triage procedures in [[doc|operational/003-incident-response-and-runbooks]].
 :::
 
-## Replay safety and privacy
+<Accordion title="Retention & Privacy Notes">
+	- **PII sensitivity:** Dead-lettered payloads contain customer contact fields (`fullName`,
+	`email`). Restrict DLQ inspection access to authorized operators. - **Preserved metadata:**
+	Records retain the `orderId` Kafka partition key and original CloudEvents metadata.
+</Accordion>
 
-| Check                                | Why it matters                                                                                                                                                                                                                                          |
-| :----------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **PII hygiene**                      | Dead-lettered payloads contain customer `fullName` and `email`. Never copy recipient addresses or names into incident tickets or logs; correlate using `orderId`, `id`, and `traceparent`.                                                              |
-| **Redis idempotency key**            | Notification handlers guard execution with `idempotency:{HandlerName}:{id:N}` (24-hour TTL). Failed attempts release the key, so replaying a dead-lettered message re-runs delivery; replaying an already delivered `id` within 24 hours is suppressed. |
-| **SMTP provider check**              | Because Notification has no email database and an SMTP timeout can occur after the provider accepted the message, check Mailpit (local) or SendGrid activity logs (cloud) before replaying to avoid duplicate customer emails.                          |
-| **Shared `PlaceOrderCommand` topic** | Do not blindly republish `PlaceOrderCommand` to `bookworm.{env}.finance.place-order` without verifying Basket API state, because both services subscribe to that topic.                                                                                 |
+## Channel Details & Visualization
 
-## Examples
-
-### Dead-lettered record value
-
-Kafka key: `0193f1a2-1111-7d8e-9f01-23456789abcd` (`orderId`)
-
-<CodeGroup>
-
-```json
-{
-	"specversion": "1.0",
-	"id": "0193f1a2-9c01-7d8e-9f01-23456789abcd",
-	"type": "BookWorm.Contracts.CancelOrderCommand",
-	"source": "urn:bookworm:book-worm.finance",
-	"time": "2026-11-25T16:20:00Z",
-	"datacontenttype": "application/json",
-	"messagetype": "BookWorm.Contracts.CancelOrderCommand",
-	"data": {
-		"id": "0193f1a2-9c01-7d8e-9f01-23456789abcd",
-		"creationDate": "2026-11-25T16:20:00Z",
-		"orderId": "0193f1a2-1111-7d8e-9f01-23456789abcd",
-		"fullName": "Alex Reader",
-		"email": "reader@example.com",
-		"totalMoney": 59.98
-	}
-}
-```
-
-</CodeGroup>
-
-## Related documentation
-
-- [[channel|bookworm.&#123;env&#125;.finance.place-order]] — Order-placement email source channel.
-- [[channel|bookworm.&#123;env&#125;.finance.complete-order]] — Order-completion email source channel.
-- [[channel|bookworm.&#123;env&#125;.finance.cancel-order]] — Order-cancellation email source channel.
-- [[service|notification-api]] — SMTP worker architecture, Mailpit/SendGrid configuration, and Polly pipeline.
+<ChannelInformation />
 
 <NodeGraph />

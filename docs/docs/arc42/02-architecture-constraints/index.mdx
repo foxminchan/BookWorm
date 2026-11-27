@@ -1,54 +1,117 @@
 ---
 title: Architecture Constraints
-summary: System-wide architectural and engineering constraints documented for BookWorm.
+summary: Mandatory technical, organizational, and engineering guardrails for BookWorm.
 owners:
-  - contributor-team
+  - architecture-enabling-team
 badges:
   - content: Architecture
     backgroundColor: blue
     textColor: blue
 ---
 
-This chapter defines the non-negotiable technical, organizational, and engineering constraints that shape BookWorm across its .NET 11 backend services, Next.js 16 microfrontends (MFEs), and Aspire 17 orchestration. It separates verified constraints enforced by the repository and CI pipelines from open organizational and operational targets that still require stakeholder sign-off.
+This chapter defines the guardrails for decisions that shape BookWorm across .NET 11 services, Next.js 16 microfrontends, and Aspire 17 orchestration. It separates mandatory constraints from engineering conventions and open commitments: constraints limit options, while principles guide choices and exceptions.
+
+The catalog distinguishes:
+
+- **Mandatory constraints:** changes require an approved exception or an architecture decision record (ADR).
+- **Engineering conventions:** repository standards that automated checks or review should enforce.
+- **Open commitments:** targets or controls that are not yet signed off and must not be presented as guarantees.
+
+## Executive summary
+
+- Preserve bounded-context ownership and explicit interoperability.
+- Resolve breaking changes through impact and migration planning.
+- Name an owner and approver for every material exception.
+- Enforce platform standards and evidence-based architecture changes.
+- Avoid uncontrolled technology, compliance, vendor, or operational commitments.
+
+BookWorm is an open-source reference architecture. It does not, by itself, establish organization-specific procurement mandates, staffing models, regulatory certification, approved service levels, or named production approvers.
+
+## Architecture constraint principles
+
+These principles translate architecture governance into practical BookWorm rules.
+
+1. **Domain ownership is explicit.** One bounded context owns one domain and its authoritative data.
+2. **Contracts are products.** Consumers depend on stable, versioned interfaces owned and evolved by a producer.
+3. **Standards reduce variance.** Approved runtimes, frameworks, protocols, and verification tools take precedence over local alternatives.
+4. **Independent deployment follows compatibility.** Deployment autonomy is earned through validated contracts and operational readiness.
+5. **Infrastructure is supportive.** Shared platform components must not become hidden domain owners or transaction coordinators.
+6. **Decisions must be traceable.** Material changes include an ADR, updated documentation, and recorded evidence.
+7. **Gaps remain visible.** Proposed targets remain proposals until scope, owners, budgets, and acceptance evidence are approved.
 
 ## Technical constraints
 
-| ID      | Constraint                                                                                                                                                                                                                                                                                                                              | Rationale and architectural consequence                                                                                                                                                                                                |
-| :------ | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **TC1** | **Preserve bounded-context data ownership.** Each bounded context owns its domain behavior and persistence; services never query another service's database directly.                                                                                                                                                                   | Limits change blast radius and keeps business invariants inside their owning service. Cross-boundary needs require explicit REST, gRPC, or Kafka contracts.                                                                            |
-| **TC2** | **Integrate through explicit, owned contracts.** Cross-service communication uses versioned HTTP (`ApiVersions.V1`), Protocol Buffers gRPC, or CloudEvents JSON over Kafka via **Wolverine**.                                                                                                                                           | Events carry ownership, routing metadata (`bookworm.{env}.{owner}.{topic}`, except unprefixed `scheduler.process-vector-batch`), and stable message identities. Contract changes require consumer-impact review and Pact verification. |
-| **TC3** | **Evolve Protocol Buffer contracts deliberately.** Lint and check `.proto` definitions (`edition = "2023"`) for backward compatibility against the committed baseline before updating it.                                                                                                                                               | Prevents breaking gRPC clients (`Basket`, `Ordering`, `McpTools`). Deliberate breaking changes require consumer coordination and a migration plan.                                                                                     |
-| **TC4** | **Standardize on the verified .NET 11 and Aspire 17 backend stack.** Target `net11.0`, C# 15 (`preview`), `BookWorm.slnx`, `Mediator.SourceGenerator` (do not add `MediatR`), **Wolverine** + Kafka, **Microsoft Entra ID**, **Aspire** 17 (`aspire deploy`), and **TUnit** on Microsoft.Testing.Platform (no xUnit, NUnit, or MSTest). | Keeps tooling, observability, resilience, and deployment pipelines uniform across all 10 backend projects without bespoke runtimes or legacy frameworks.                                                                               |
-| **TC5** | **Standardize on the verified Bun and Next.js 16 frontend stack.** Use **Bun** (`1.4.4`), Turborepo with enforced package boundary tags (`config`, `foundation`, `domain`, `app`), Next.js 16, React 19, TypeScript, and Better Auth wired to **Microsoft Entra ID** across **Storefront**, **Commerce**, and **Backoffice**.           | Prevents lockfile drift (no `npm` or `pnpm`) and enforces strict dependency layering via `turbo boundaries`.                                                                                                                           |
-| **TC6** | **Enforce independent deployability only where contracts remain compatible.** A service builds, tests, and deploys independently when its contracts preserve consumer compatibility.                                                                                                                                                    | Breaking contract changes require coordinated consumer migration before removing legacy behavior.                                                                                                                                      |
-| **TC7** | **Keep shared platform infrastructure strictly supportive.** **Notification**, **Scheduler**, **API Gateway**, and **BuildingBlocks** must not own commerce domain state or business rules.                                                                                                                                             | Prevents shared infrastructure from becoming a coupling bottleneck or implicit domain owner.                                                                                                                                           |
+| ID      | Mandatory constraint                                                                                                                                                                                                                   | Business and architectural impact                                                                               | Primary evidence                                                             |
+| :------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------- |
+| **TC1** | **Preserve bounded-context data ownership.** Each bounded context owns its domain behavior and persistence. Services do not query another service's database directly.                                                                 | Limits change blast radius, protects domain invariants, and requires explicit cross-boundary contracts.         | Service boundaries and persistence configuration; `BookWorm.ArchTests`       |
+| **TC2** | **Integrate through owned, explicit contracts.** Cross-service communication uses versioned HTTP (`ApiVersions.V1`), Protocol Buffers gRPC, or CloudEvents JSON over Kafka through Wolverine.                                          | Gives producers and consumers a stable interoperability surface and makes compatibility a release gate.         | Contract definitions; Pact and Protocol Buffer verification                  |
+| **TC3** | **Evolve Protocol Buffer contracts compatibly.** Lint `.proto` definitions (`edition = "2023"`) and verify backward compatibility against the committed baseline. Breaking changes require consumer coordination and a migration plan. | Prevents incompatible gRPC clients and avoids unplanned rollout coupling.                                       | `.proto` lint and compatibility jobs                                         |
+| **TC4** | **Use the approved backend stack.** Target `net11.0`, C# 15, `BookWorm.slnx`, `Mediator.SourceGenerator` for CQRS, Wolverine and Kafka, Microsoft Entra ID, Aspire 17, and TUnit on Microsoft.Testing.Platform.                        | Standardizes runtime behavior, tooling, observability, identity, and delivery pipelines.                        | `Directory.Packages.props`, solution projects, CI workflows                  |
+| **TC5** | **Use the approved frontend stack.** Use Bun, Turborepo, Next.js 16, React 19, TypeScript, and Better Auth integrated with Microsoft Entra ID across Storefront, Commerce, and Backoffice.                                             | Prevents lockfile and dependency-layer drift while preserving consistent identity and delivery behavior.        | Bun lockfile, Turbo boundaries, frontend CI                                  |
+| **TC6** | **Make independent deployability a compatibility property.** A service may deploy independently only when the intended contract and behavior remain compatible with consumers.                                                         | Supports faster, lower-risk releases; breaking changes require a coordinated migration or compatibility period. | Contract tests, deployment pipelines, release evidence                       |
+| **TC7** | **Keep shared infrastructure domain-neutral.** Notification, Scheduler, API Gateway, and BuildingBlocks must not own commerce domain state or enforce commerce business rules.                                                         | Prevents shared infrastructure from becoming an implicit coupling point or hidden source of truth.              | Architecture tests, code ownership, service boundaries                       |
+| **TC8** | **Apply security controls at platform and endpoint boundaries.** Authenticate and authorize external requests, protect secrets, and apply PII and AI governance controls where sensitive data or agents are used.                      | Reduces exposure from identity, privacy, and model-integration failures.                                        | Endpoint policies, secret configuration, Presidio and AI governance settings |
 
 ## Organizational constraints
 
-| ID      | Constraint                                                                                                                                                                                                                                           | Rationale and architectural consequence                                                                                                                    |
-| :------ | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **OC1** | **Align responsibility with bounded-context ownership.** Every service, contract, and cross-context flow has an explicit owning context and team role before boundaries change.                                                                      | Keeps incident triage, code review, and contract evolution accountable to a single owner.                                                                  |
-| **OC2** | **Maintain architecture documentation alongside the system.** Behavioral, contract, or persistence changes update the relevant arc42 views, service references, and ADRs.                                                                            | Automated checks (`BookWorm.ArchTests`, `eventcatalog fitness check`, Pact contract tests) surface drift between documented boundaries and implementation. |
-| **OC3** | **Keep secrets out of source control and protect toolchain pins.** Store credentials in user secrets, local environment variables, or GitHub Actions / Azure OIDC secrets; do not modify `global.json` or `NuGet.config` unless explicitly approved. | Prevents credential leaks and unexpected SDK or NuGet feed drift across contributors and CI runners.                                                       |
+| ID      | Mandatory constraint                                                                                                                                                           | Enforcement and governance                                                                                                                   |
+| :------ | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------- |
+| **OC1** | **Assign bounded-context ownership.** Every service, contract, and cross-context flow has an explicit owner and escalation path before production adoption or boundary change. | Architecture review confirms ownership; the owning team maintains implementation and contract evolution.                                     |
+| **OC2** | **Keep architecture artifacts synchronized.** Behavior, contract, persistence, or boundary changes update the relevant architecture views and ADR set.                         | Pull-request review and documentation/architecture fitness checks identify drift.                                                            |
+| **OC3** | **Protect credentials and toolchain baselines.** Secrets remain outside source control. SDK and package-feed configuration changes require explicit approval.                  | GitHub Actions or Azure OIDC, user secrets, or environment variables contain credentials; `global.json` and `NuGet.config` remain protected. |
+| **OC4** | **Record material architecture decisions.** Non-reversible or cross-team decisions require an ADR describing context, options, consequences, and ownership.                    | Accepted ADRs are reviewed and linked to implementation, roadmap, and operational runbooks.                                                  |
+| **OC5** | **Use evidence for production commitments.** Availability, recovery, latency, privacy, security, and AI safeguards require frozen test conditions and recorded evidence.       | Service owners report evidence; designated review forums grant production status.                                                            |
 
-:::note
-BookWorm is an open-source reference architecture. The repository does not establish organization-specific vendor procurement mandates, staffing structures, regulatory compliance certifications, or approved production SLA numbers.
-:::
+## Engineering conventions
 
-## Conventions
+| ID     | Convention                                                                                                                                                                                                                                           | Repository and CI enforcement                                                                                                |
+| :----- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------- |
+| **C1** | Use `mise` tasks for restore, build, test, format, and workspace preparation.                                                                                                                                                                        | Repository task definitions and pre-commit checks provide a repeatable workflow.                                             |
+| **C2** | Keep C# types, async flows, namespaces, and dependencies consistent. Endpoints, handlers, `DbContext` types, and tests are sealed by default; `CancellationToken` is propagated; namespaces are file-scoped; package versions are centrally managed. | `.editorconfig`, analyzers, Central Package Management, and `BookWorm.ArchTests` enforce and detect violations.              |
+| **C3** | Use `snake_case` PostgreSQL identifiers and explicit API versioning. Authorization is applied at endpoint boundaries.                                                                                                                                | Naming conventions, migrations, OpenAPI metadata, and endpoint tests preserve consistency.                                   |
+| **C4** | Preserve integration-event naming and routing metadata. Shared contracts live in `BookWorm.Contracts`; events follow owned naming and identity conventions.                                                                                          | Wolverine routing, contract tests, and EventCatalog fitness checks validate interoperability.                                |
+| **C5** | Validate boundaries continuously. Combine unit, contract, architecture, frontend, and documentation checks.                                                                                                                                          | TUnit, PactNet, ArchUnitNET, Vitest, Playwright BDD, Turbo boundaries, and documentation checks form the change-safety gate. |
 
-| ID     | Convention                                                                                                                                                                                                                                                                                      | Enforcement and application                                                                                                                                                                                       |
-| :----- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **C1** | **Use `mise` workspace tasks and strict C# build settings.** Run `mise run restore`, `mise run build`, `mise run test`, and `mise run format` (`dnx csharpier format .`).                                                                                                                       | `Directory.Build.props` enforces `Nullable: enable`, `TreatWarningsAsErrors: true`, and `EnforceCodeStyleInBuild: true`. Pre-commit hooks (`.husky/pre-commit`) verify formatting, analyzers, and Release builds. |
-| **C2** | **Follow C# coding and dependency conventions.** Keep endpoints, handlers, `DbContext` types, and tests `sealed` by default; propagate `CancellationToken` through all async flows; use file-scoped namespaces; centralize NuGet versions in `Versions.props` and `Directory.Packages.props`.   | Enforced by `.editorconfig`, analyzers, Central Package Management (`ManagePackageVersionsCentrally: true`), and `BookWorm.ArchTests`.                                                                            |
-| **C3** | **Use `snake_case` for PostgreSQL and explicit API versioning.** Keep PostgreSQL identifiers and raw SQL in `snake_case` (`EFCore.NamingConventions`); apply authorization at endpoint boundaries; version HTTP endpoints explicitly (`ApiVersions.V1`).                                        | Preserves consistent database migrations across `catalogdb`, `orderingdb`, and `schedulerdb` and predictable HTTP contracts.                                                                                      |
-| **C4** | **Preserve integration-event naming and routing metadata.** Declare shared contracts in `BookWorm.Contracts`, name events `[Action][Entity]IntegrationEvent`, and preserve owner/identity metadata for Wolverine + Kafka topic routing.                                                         | Keeps CloudEvents payloads, partition keys (`OrderId`, `BookId`, `FeedbackId`), and Pact contracts stable across releases.                                                                                        |
-| **C5** | **Validate boundaries continuously in CI.** Pair unit tests (9 projects), Pact messaging contract tests (7 projects), `BookWorm.ArchTests` (`ArchUnitNET`), frontend quality gates (`turbo boundaries`, Vitest, Playwright BDD), and documentation checks (`bun run check`, `bun run fitness`). | Catches architectural, contract, and formatting drift before changes merge to `main`.                                                                                                                             |
+## Architecture governance
+
+Architecture governance should make constraints visible, proportionate, and reviewable before implementation.
+
+| Governance stage            | Required output                                                                                        | Decision authority                        |
+| :-------------------------- | :----------------------------------------------------------------------------------------------------- | :---------------------------------------- |
+| **Architecture principles** | Confirm that the proposal follows the principles in this chapter                                       | Architecture review                       |
+| **Baseline and target**     | Compare current and target business, application, data, and technology states                          | Product and architecture review           |
+| **Impact assessment**       | Identify affected bounded contexts, consumers, data, security, operations, cost, and rollout risk      | Domain owners and delivery management     |
+| **Decision and roadmap**    | Record an ADR and sequence migrations, compatibility periods, and verification                         | Delegated architecture authority          |
+| **Implementation review**   | Demonstrate contract compatibility, automated checks, operational readiness, and documentation updates | Engineering leads and governance forum    |
+| **Benefit and risk review** | Record outcomes and unresolved risks against the approved target                                       | Executive sponsor and architecture review |
+
+### Exception process
+
+An exception is a documented, time-bound deviation; it is not an informal bypass.
+
+1. Identify the constraint or convention, affected systems, and the reason the baseline is unsuitable.
+2. Assess user, security, compliance, delivery, cost, operability, and migration impacts.
+3. Define compensating controls, an expiry or exit condition, and a named accountable owner.
+4. Obtain approval from the authority appropriate to the risk.
+5. Record the exception in an ADR or governed exception register.
+6. Review the exception before expiry and remove or renew it with evidence.
+
+## Open commitments and scope limits
+
+The following items require formal approval and are intentionally not represented as current guarantees:
+
+- Numerical latency, availability, throughput, freshness, recovery, and retention budgets.
+- Named production SLAs, RTO/RPO targets, and contractual compliance obligations.
+- Organization-specific regulatory scope, security certification, vendor procurement, and staffing requirements.
+- End-to-end operational evidence for all proposed quality scenarios.
+
+Unresolved numerical budgets belong in the quality requirements and decisions records rather than this constraint catalog.
 
 ## Related architecture documentation
 
 - [[doc|development/004-engineering-standards]] — Detailed backend and frontend coding standards.
 - [[doc|arc42/04-solution-strategy]] — How BookWorm satisfies quality goals within these constraints.
 - [[doc|arc42/08-crosscutting-concepts/002-contracts-and-messaging]] — Detailed gRPC, REST, and Kafka contract rules.
-- [[doc|arc42/08-crosscutting-concepts/006-testing-and-change-safety]] — Verification layers enforcing `TC2`, `TC3`, `TC5`, and `C5`.
-- [[doc|arc42/09-architecture-decisions]] — Formal decisions behind these constraints (`ADR-BW-001`-`ADR-BW-018`).
+- [[doc|arc42/08-crosscutting-concepts/006-testing-and-change-safety]] — Verification layers enforcing compatibility and boundary rules.
+- [[doc|arc42/09-architecture-decisions]] — Formal decisions behind these constraints.
+- [[doc|arc42/10-quality-requirements]] — Proposed quality targets and measurable scenarios.

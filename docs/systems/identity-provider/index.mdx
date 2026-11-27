@@ -7,9 +7,9 @@ summary: |
   provides OAuth-compatible identity verification for protected APIs.
 scope: external
 owners:
-  - contributor-team
+  - platform-engineering-team
 services:
-  - id: oauthapi
+  - id: oauth-api
     version: 1.0.0
 flows:
   - id: product-ingestion
@@ -36,67 +36,43 @@ badges:
     icon: GlobeAltIcon
 ---
 
-## Context Diagram
+## System Purpose & Boundary
 
-The Identity Provider is an external security boundary. [[domain|BookWorm]] applications
-delegate authentication to the provider and validate the resulting identity
-before allowing access to protected operations.
+The Identity Provider system is BookWorm's external authentication and OAuth 2.0 / OpenID Connect (OIDC) boundary, backed by Microsoft Entra ID. It authenticates **Customers**, **Business Users**, and **Administrators**, issues JWT access tokens, and supports On-Behalf-Of (OBO) agent identity delegation across BookWorm services. Owning domain business data and making fine-grained resource authorization decisions are explicitly out of scope—each consuming BookWorm service enforces its own policies and ownership checks.
+
+:::warning
+Authentication is a prerequisite for protected operations, not a substitute for service-level authorization. Protected BookWorm APIs must **fail closed** when token validation or provider metadata fails, never falling back to anonymous access.
+:::
+
+## Contained Capabilities
+
+| Service / Agent        | Role in System                                                                                | Primary Data Store          | Interaction Style (Sync / Async) |
+| :--------------------- | :-------------------------------------------------------------------------------------------- | :-------------------------- | :------------------------------- |
+| [[service\|oauth-api]] | External OAuth/OIDC provider issuing user tokens, agent identities, and verification metadata | External (Provider-managed) | Sync (HTTP / OAuth 2.0 / OIDC)   |
+
+## External Interactions & Trust Boundaries
+
+- **Human sign-in:** Customers, Business Users, and Administrators authenticate through Storefront and Backoffice sessions and present bearer tokens to protected BookWorm APIs.
+- **Service token validation:** [[system|product-catalog-system]], [[system|cart-system]], [[system|order-system]], [[system|rating-system]], [[system|chat-system]], [[system|mcp-tools]], and [[system|scheduler-system]] validate issuer, audience, signing keys, expiry, roles, and scopes before executing protected operations.
+- **Agent delegation:** Supports delegated OBO token exchange between [[system|chat-system]], [[system|rating-system]], and [[system|mcp-tools]].
+
+## System Visualizations
+
+### System Context
 
 <ContextDiagram />
 
-## Overview
-
-The Identity Provider authenticates users and issues the identity information
-used by BookWorm APIs to establish an authenticated caller. Its integration
-surface is represented by [[service|oauthapi]], the OAuth API exposed by the
-provider.
-
-BookWorm remains responsible for authorization decisions inside each
-application boundary. The Identity Provider does not own
-[[domain|catalog]], [[domain|reviews]], [[domain|shopping]], or
-[[domain|ordering]] business data, and a valid identity does not by itself
-grant access to every operation.
-
-## Services
-
-The system's integration surface is provided by [[service|oauthapi]], which
-handles OAuth-based authentication and identity verification.
-
-## Responsibilities
-
-| Capability            | Responsibility                                                                                      |
-| --------------------- | --------------------------------------------------------------------------------------------------- |
-| User authentication   | Verify the user's identity through the configured identity provider.                                |
-| Token issuance        | Provide OAuth-compatible access credentials for authenticated clients.                              |
-| Identity verification | Supply claims that BookWorm services can validate before processing protected requests.             |
-| Account boundary      | Maintain provider-side identity records and authentication policy rather than domain business data. |
-
-## Integration boundary
-
-1. A customer or administrator authenticates with the Identity Provider.
-2. The provider returns an access token for the client and requested
-   audience.
-3. The client presents the token when calling a protected BookWorm API.
-4. The receiving service validates the token and applies its own policy,
-   resource ownership, and administrative checks.
-
-Authentication is therefore a prerequisite for protected operations, not a
-replacement for service-level authorization. Public or anonymous operations
-may still be exposed by individual services where their contracts allow it.
-
-## Security and operational considerations
-
-- Treat access tokens, refresh credentials, and provider configuration as
-  secrets; they must not be stored in source control or written to logs.
-- Validate issuer, audience, signature or introspection result, expiry, and
-  required claims before accepting a token.
-- Keep authorization policies in the consuming service so business permissions
-  remain close to the operation they protect.
-- Handle provider outages explicitly: protected requests should fail closed
-  rather than being treated as anonymous or authenticated by a fallback.
-- Monitor authentication failures, token-validation failures, and provider
-  availability without recording token contents or unnecessary personal data.
-
-## Architecture
+### Component Topology
 
 <NodeGraph />
+
+### Architecture Decisions
+
+<ADRTable />
+
+## Related Documentation
+
+- [[service|oauth-api]] — App roles, service scopes, and Entra Agent Identity details.
+- [[doc|platform/004-identity-and-rbac-matrix]] — Platform-wide Azure RBAC and Entra ID permissions matrix.
+- [[flow|user-checkout]] — Authenticated customer checkout flow.
+- [[flow|product-ingestion]] — Authenticated catalog authoring and scheduled ingestion flow.

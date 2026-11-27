@@ -1,11 +1,12 @@
 ---
-id: BookWorm
+id: bookworm
 name: BookWorm
 summary: |
-  The core business domain encompassing all e-commerce functionality for the platform, including catalog management, shopping cart, checkout, and order processing
+  Core e-commerce domain for the BookWorm online bookstore, coordinating catalog discovery,
+  customer baskets, order fulfillment, customer reviews, conversational guidance, and platform operations.
 version: 1.0.0
 owners:
-  - business-strategy
+  - architecture-enabling-team
 domains:
   - id: catalog
   - id: reviews
@@ -16,7 +17,7 @@ domains:
 diagrams:
   - id: bookworm-event-storming
 badges:
-  - content: Core domain
+  - content: Core Domain
     backgroundColor: blue
     textColor: blue
     icon: RectangleGroupIcon
@@ -28,74 +29,98 @@ repository:
   url: "https://github.com/foxminchan/BookWorm"
 ---
 
-BookWorm decomposes its online bookstore platform into six bounded contexts classified by Domain-Driven Design (DDD) strategic importance: four Core domains (`Catalog`, `Shopping`, `Ordering`, `Conversational`), one Supporting domain (`Reviews`), and one Generic domain (`Platform`). Each context owns its authoritative data and communicates across boundaries exclusively through versioned HTTP, gRPC, MCP, A2A, or Kafka contracts.
+## Business Purpose & Boundary
 
-## Scope and constraints
+BookWorm is the root business domain for an online bookstore marketplace, decomposed into six autonomous bounded contexts by Domain-Driven Design (DDD) strategic importance: four Core domains ([[domain|catalog]], [[domain|shopping]], [[domain|ordering]], [[domain|conversational]]), one Supporting domain ([[domain|reviews]]), and one Generic domain ([[domain|platform]]). Each bounded context owns its authoritative business state and communicates across boundaries exclusively through explicit, versioned synchronous and asynchronous contracts. Explicitly **out of scope** for BookWorm are external payment-provider settlement, physical shipping carrier execution, external SMTP delivery internals, AI model hosting internals, and external identity provider infrastructure ([[system|identity-provider]]).
 
-- **In scope:** Product discovery and catalog management, customer baskets, checkout and order lifecycle management, customer feedback and AI summaries, conversational assistance, and cross-cutting scheduling and notification delivery.
-- **Out of scope:** External payment-provider settlement, physical shipping carrier execution, external SMTP delivery internals, AI model hosting internals, and external identity provider infrastructure (Microsoft Entra ID).
-- **Key constraints:** Bounded contexts never share databases; derived projections (Catalog rating summaries, Qdrant vectors, Marten order summaries) remain rebuildable from authoritative sources.
+:::warning
+Bounded contexts never share databases or reach directly into another context's persistence store. Derived projections—such as catalog rating summaries, semantic search indexes, and order dashboard summaries—remain strictly rebuildable from their authoritative owning contexts.
+:::
 
-## System context and container views
+## Core Responsibilities & Capabilities
 
-These architecture views show BookWorm's external users and dependencies, followed by its edge applications, services, stores, and integration protocols.
+| Subdomain                      | DDD Classification | Core Capability                                                                                   | Owning Team                         |
+| :----------------------------- | :----------------- | :------------------------------------------------------------------------------------------------ | :---------------------------------- |
+| **[[domain\|catalog]]**        | Core               | Canonical book metadata, taxonomies, pricing, availability, and hybrid discovery                  | [[team\|catalog-experience-team]]   |
+| **[[domain\|shopping]]**       | Core               | Authenticated customer baskets, pre-purchase intent, and checkout cleanup                         | [[team\|commerce-fulfillment-team]] |
+| **[[domain\|ordering]]**       | Core               | Accepted purchase records, locked order pricing, lifecycle state, and post-checkout orchestration | [[team\|commerce-fulfillment-team]] |
+| **[[domain\|conversational]]** | Core               | Privacy-filtered multi-agent book discovery and read-only store-policy guidance                   | [[team\|ai-capabilities-team]]      |
+| **[[domain\|reviews]]**        | Supporting         | Individual customer feedback submissions, rating publication, and review summarization            | [[team\|catalog-experience-team]]   |
+| **[[domain\|platform]]**       | Generic            | Cross-cutting recurring job scheduling and transactional email delivery                           | [[team\|platform-engineering-team]] |
+
+## Cross-Domain Interactions (Context Map)
+
+| Neighboring Domain / System                                                | Direction                                                       | Integration Mechanism                 | Business Data Exchanged                                                                  |
+| :------------------------------------------------------------------------- | :-------------------------------------------------------------- | :------------------------------------ | :--------------------------------------------------------------------------------------- |
+| **[[domain\|catalog]] ↔ [[domain\|shopping]]**                             | Upstream (`Catalog`) → Downstream (`Shopping`)                  | Sync (gRPC)                           | Book titles, live prices, and availability for basket enrichment                         |
+| **[[domain\|shopping]] ↔ [[domain\|ordering]]**                            | Upstream (`Shopping`) → Downstream (`Ordering`)                 | Sync (gRPC) & Async (Events/Commands) | Basket item quantities at checkout; post-checkout basket cleanup commands and outcomes   |
+| **[[domain\|catalog]] ↔ [[domain\|ordering]]**                             | Upstream (`Catalog`) → Downstream (`Ordering`)                  | Sync (gRPC)                           | Authoritative book pricing resolved and locked onto accepted orders                      |
+| **[[domain\|reviews]] ↔ [[domain\|catalog]]**                              | Bidirectional (Partnership / Compensation)                      | Async (Events)                        | Feedback created/deleted events for rating aggregation; missing-book compensation events |
+| **[[domain\|conversational]] ↔ [[domain\|catalog]] / [[domain\|reviews]]** | Downstream (`Conversational`) ← Upstream (`Catalog`, `Reviews`) | Sync (MCP & A2A gRPC)                 | Read-only book discovery lookups and AI-summarized customer feedback                     |
+| **[[domain\|platform]] ↔ [[domain\|catalog]] / [[domain\|ordering]]**      | Supporting (`Platform`) ↔ Core (`Catalog`, `Ordering`)          | Async (Events/Commands)               | Scheduled vector batch triggers and transactional order email commands                   |
+| **[[system\|identity-provider]] & [[system\|data-privacy]]**               | Upstream (External Systems) → Downstream (`BookWorm`)           | Sync (OIDC / HTTP)                    | User and agent identity tokens; fail-closed PII detection and anonymization              |
+
+:::note
+**Domain Invariants:** A basket cannot proceed to checkout without valid [[domain|catalog]] book identities and current pricing. Every accepted checkout creates one authoritative `Order` in [[domain|ordering]] with status `New`, and only explicit ordering commands transition it to `Completed` or `Cancelled`.
+:::
+
+## Ubiquitous Language Highlights
+
+BookWorm's shared domain vocabulary prevents ambiguity across bounded contexts (see [[doc|arc42/12-glossary]] and the BookWorm Ubiquitous Language dictionary):
+
+- **Book:** A canonical title owned by [[domain|catalog]]; other contexts reference it strictly by identifier.
+- **Basket:** Mutable pre-purchase shopping intent owned by [[domain|shopping]]—never an order or inventory reservation.
+- **Order & Order Item:** Durable purchase records owned by [[domain|ordering]] with locked purchase-time pricing and lifecycle status.
+- **Feedback:** An individual customer rating and optional comment owned by [[domain|reviews]], distinct from [[domain|catalog]]'s aggregate rating summary.
+- **Checkout:** The cross-context process that transitions a checked-out basket into the ordering workflow.
+- **Chat Request:** A customer question routed by [[domain|conversational]] agents without taking ownership of referenced books or orders.
+
+## Architecture Visualizations
+
+<NodeGraph />
+
+### Enterprise Context Overview
 
 <LikeC4View viewId="bookwormContext" project="deployment" />
 
+### Commerce Capabilities Overview
+
 <LikeC4View viewId="bookwormCommerceContainers" project="deployment" />
+
+### Conversational & Platform Capabilities Overview
 
 <LikeC4View viewId="bookwormAIAndPlatformContainers" project="deployment" />
 
-## Building block view
+## Related Governance & Documentation
 
-| Bounded context                | DDD classification | Deployable services                                              | Authoritative persistence                                                                     | Primary responsibility                                                                      |
-| :----------------------------- | :----------------- | :--------------------------------------------------------------- | :-------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------ |
-| **[[domain\|catalog]]**        | Core               | Catalog API (`catalog`), Catalog Ingestion (`catalog-ingestion`) | PostgreSQL (`catalogdb`), Azure Blob Storage (`catalog-blob`), Qdrant (`vectordb`, derived)   | Canonical books, authors, categories, publishers, pricing, availability, and hybrid search  |
-| **[[domain\|shopping]]**       | Core               | Basket API (`basket`)                                            | Redis (`redis`, no SQL database)                                                              | Authenticated customer baskets and pre-order shopping intent                                |
-| **[[domain\|ordering]]**       | Core               | Ordering API (`ordering`), Finance (`finance`)                   | PostgreSQL (`orderingdb`, EF Core + Marten), Azure Durable Task Scheduler (`finance-taskhub`) | Accepted orders, purchase-time snapshots, lifecycle status, and post-checkout orchestration |
-| **[[domain\|conversational]]** | Core               | Chat API (`chatting`), MCP Tools (`mcptools`)                    | Azure Blob Storage (`chatting-blob`, `ag-ui/` prefix)                                         | Privacy-filtered multi-agent book discovery and read-only store-policy guidance             |
-| **[[domain\|reviews]]**        | Supporting         | Rating API (`rating`)                                            | Azure Cosmos DB (`ratingdb` / `feedbacks`, partitioned by `/bookId`)                          | Individual customer feedback records, rating publication, and AI review summaries           |
-| **[[domain\|platform]]**       | Generic            | Notification (`notification`), Scheduler (`scheduler`)           | PostgreSQL (`schedulerdb` for Quartz), Redis (Notification 24-hour idempotency)               | Recurring scheduled triggers and transactional email delivery                               |
+<Tiles columns={2}>
+	<Tile
+		icon="RectangleGroupIcon"
+		href="/visualiser/domains/bookworm/1.0.0"
+		title="Explore Domain Graph"
+		description="Interactive view of BookWorm subdomains, services, and message flows."
+	/>
+	<Tile
+		icon="DocumentTextIcon"
+		href="/docs/custom/arc42/12-glossary"
+		title="Domain Glossary"
+		description="Canonical vocabulary and ownership rules across all bounded contexts."
+	/>
+	<Tile
+		icon="ClipboardDocumentListIcon"
+		href="/docs/custom/arc42/09-architecture-decisions"
+		title="Architecture Decisions"
+		description="Platform-wide ADRs governing service boundaries, messaging, and state."
+	/>
+	<Tile
+		icon="SparklesIcon"
+		href="/diagrams/bookworm-event-storming/1.0.0"
+		title="BookWorm Event Storming"
+		description="Domain events, commands, and bounded-context handoffs across the platform."
+	/>
+</Tiles>
 
-### Edge applications
-
-Three Next.js 16 applications run behind the YARP API Gateway (`gateway`): **Storefront** (`@bookworm/storefront`) serves public catalog browsing, AI chat, and customer authentication; **Commerce** (`@bookworm/commerce`) serves authenticated `/basket`, `/checkout/*`, and `/account/*` routes; **Backoffice** (`@bookworm/backoffice`) serves staff administration under `/backoffice`.
-
-## Business invariants
-
-- A basket cannot proceed to checkout without valid Catalog book identities and current pricing.
-- Every accepted checkout creates one authoritative `Order` in `Ordering` with status `New`.
-- `Ordering` owns the `Order` lifecycle (`New` → `Completed` or `Cancelled`); Finance workflow timeouts and Notification outcomes never alter `Order` status.
-- `Reviews` references books strictly by `BookId` UUID and does not own Catalog metadata.
-- `Conversational` reads Catalog through MCP tools and Rating through A2A gRPC; it answers Ordering and Shopping policy questions as read-only guidance without modifying live baskets or orders.
-- `Platform` triggers jobs and delivers emails without taking ownership of any business domain's records.
-
-## Deployment and cross-cutting concerns
-
-- **Hosting and ingress:** YARP API Gateway is the sole externally exposed entry point; all backend services, frontends, and Presidio sidecars run internally behind it and deploy via Aspire 17 (`aspire deploy`).
-- **Security and privacy:** Microsoft Entra ID governs user and service authentication (`admin`, `business_user`, `customer` roles plus Entra Agent Identities). Presidio screens AI prompts and outputs fail-closed.
-- **Observability and resilience:** OpenTelemetry propagates W3C trace context across HTTP, gRPC, and Kafka; Wolverine routes exhausted Kafka consumers to per-service dead-letter queues.
-
-## Quality scenarios and known risks
-
-| Quality attribute / risk      | Scenario or exposure                                                   | Current mitigation or gap                                                                      |
-| :---------------------------- | :--------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------- |
-| **Modifiability**             | Domain rules evolve without cross-service database coupling            | Enforced by `tests/BookWorm.ArchTests` (`ArchUnitNET.TUnit`) and Pact contract tests           |
-| **Eventual consistency**      | Catalog rating summaries and Qdrant search vectors trail source writes | Explicitly modeled as rebuildable projections; see [[domain\|catalog]] and [[domain\|reviews]] |
-| **External boundary outages** | External SMTP, Qdrant Cloud, or Kafka interruption                     | MailKit resilience, Wolverine retries + DLQs, and FusionCache fail-safe                        |
-
-## Related architecture decisions
-
-| ADR                                       | Decision summary                                                    | Status   |
-| :---------------------------------------- | :------------------------------------------------------------------ | :------- |
-| ADR-BW-001: Capability-aligned boundaries | Decompose BookWorm by bounded context and business capability       | Proposed |
-| ADR-BW-005: Kafka integration backbone    | Use Kafka with Wolverine and CloudEvents for asynchronous messaging | Proposed |
-| ADR-BW-006: Service-owned business state  | Keep persistence isolated inside the owning bounded context         | Proposed |
-
-## Related documentation
-
-- BookWorm domain reading guide — Reading order and team ownership map.
-- Business capabilities and journey map — End-to-end customer journeys across contexts.
-- Domain principles and boundaries — Ownership matrix and anti-patterns.
-- [[doc|arc42/12-glossary]] — Canonical vocabulary across all domains.
-- [[doc|arc42/00-c4-overview]] — Whole-platform context and container views.
+- [[adr|adr-bw-001-capability-aligned-boundaries]] — Decompose BookWorm by business capability and bounded context.
+- [[adr|adr-bw-005-kafka-integration-backbone]] — Standardize asynchronous cross-context messaging.
+- [[adr|adr-bw-006-service-owned-business-state]] — Keep persistence isolated inside each owning bounded context.
+- [[diagram|bookworm-event-storming]] — Whole-domain event storming overview.

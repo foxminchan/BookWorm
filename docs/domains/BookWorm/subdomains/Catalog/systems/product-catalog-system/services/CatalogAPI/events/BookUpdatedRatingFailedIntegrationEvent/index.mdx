@@ -6,7 +6,7 @@ summary: |
   Indicates that Catalog could not apply a feedback-created event because the
   referenced book was not found.
 owners:
-  - contributor-team
+  - catalog-experience-team
 schemaPath: schema.json
 badges:
   - content: Reviews
@@ -14,60 +14,62 @@ badges:
     textColor: purple
 ---
 
-`BookUpdatedRatingFailedIntegrationEvent` (v1.0.0) is a compensating event published by Catalog API when it receives `FeedbackCreatedIntegrationEvent` for a book that does not exist in `catalogdb`. Rating API consumes this event to revert and delete the orphaned `Feedback` document in Azure Cosmos DB.
+`BookUpdatedRatingFailedIntegrationEvent` (v1.0.0) is a compensating event published by [[service|catalog-api]] when it receives [[event|FeedbackCreatedIntegrationEvent]] for a book that does not exist in the catalog. [[service|rating-api]] consumes this event to revert and delete the orphaned feedback record.
 
 ## Overview
 
-| Property                 | Value                                                                                                                                                    |
-| :----------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**                | Catalog bounded context (`Catalog API`)                                                                                                                  |
-| **Producer**             | [[service\|catalog-api]] (`FeedbackCreatedIntegrationEventHandler`)                                                                                      |
-| **Consumer**             | [[service\|rating-api]] (`BookUpdatedRatingFailedIntegrationEventHandler`)                                                                               |
-| **Source**               | `src/Services/Catalog/BookWorm.Catalog/IntegrationEvents/Events/BookUpdatedRatingFailedIntegrationEvent.cs`                                              |
-| **Protocol / format**    | Kafka + CloudEvents JSON (Wolverine)                                                                                                                     |
-| **Kafka topic**          | `bookworm.{env}.catalog.book-update-rating-failed` (where `{env}` is the kebab-case environment name)                                                    |
-| **Message identity**     | `BookWorm.Contracts.BookUpdatedRatingFailedIntegrationEvent`                                                                                             |
-| **Partition key**        | `FeedbackId` (configured via `opts.MessagePartitioning.ByPropertyNamed("BookId", "FeedbackId")`)                                                         |
-| **Outbox / idempotency** | Published via Catalog PostgreSQL Wolverine outbox (`catalogdb`, `wolverine` schema); consumed in Rating API with 24-hour Redis idempotency keyed by `id` |
+| Property                             | Value                                                                                            |
+| :----------------------------------- | :----------------------------------------------------------------------------------------------- |
+| **Bounded Context**                  | Catalog (compensating for Reviews)                                                               |
+| **Producer**                         | [[service\|catalog-api]]                                                                         |
+| **Consumer(s)**                      | [[service\|rating-api]]                                                                          |
+| **Protocol / Format**                | Kafka + CloudEvents JSON (camelCase payload)                                                     |
+| **Channel / Topic**                  | [[channel\|bookworm.&#123;env&#125;.catalog.book-update-rating-failed]]                          |
+| **Dead-Letter Channel**              | [[channel\|bookworm.&#123;env&#125;.rating.dead-letter-queue]]                                   |
+| **Partition Key**                    | `FeedbackId`                                                                                     |
+| **Delivery / Idempotency Guarantee** | Published via transactional outbox; consumed with Redis-backed 24-hour idempotency keyed by `id` |
 
-## Parameters and fields
+## Payload Fields & Envelope
 
-The table below reflects the runtime C# contract (`BookUpdatedRatingFailedIntegrationEvent : IntegrationEvent`) serialized as camelCase JSON inside the CloudEvents envelope.
+### Event Payload
 
-| Name           | Type                 | Required | Default                 | Constraints                                              | Description                                                                        |
-| :------------- | :------------------- | :------- | :---------------------- | :------------------------------------------------------- | :--------------------------------------------------------------------------------- |
-| `id`           | `string` (UUID)      | Yes      | `Guid.CreateVersion7()` | UUID v7 inherited from `IntegrationEvent`                | Unique event identifier; used by Rating API as the Redis idempotency key.          |
-| `creationDate` | `string` (date-time) | Yes      | `DateTime.UtcNow`       | ISO 8601 UTC timestamp inherited from `IntegrationEvent` | UTC timestamp when Catalog API created the event.                                  |
-| `feedbackId`   | `string` (UUID)      | Yes      | —                       | Valid UUID; also used as Kafka partition key             | Identifier of the orphaned `Feedback` document in Rating API to revert and delete. |
+| Name           | Type                   | Required | Constraints                     | Description                                                                          |
+| :------------- | :--------------------- | :------- | :------------------------------ | :----------------------------------------------------------------------------------- |
+| `id`           | `string` (`uuid`)      | Yes      | UUIDv7                          | Unique event identifier used by [[service\|rating-api]] as the Redis idempotency key |
+| `creationDate` | `string` (`date-time`) | Yes      | ISO 8601 UTC timestamp          | UTC timestamp when the event was created                                             |
+| `feedbackId`   | `string` (`uuid`)      | Yes      | Valid UUID; Kafka partition key | Identifier of the orphaned [[entity\|feedback]] record to revert and delete          |
 
-:::warning
-**Schema drift notice:** The legacy EventCatalog file `schema.json` sets `"additionalProperties": false` and lists only `feedbackId`, omitting `id` and `creationDate` inherited from `IntegrationEvent`. Consumers must accept `id` and `creationDate` when validating live Kafka payloads.
-:::
+### CloudEvents Envelope Headers
 
-### CloudEvents envelope headers
+| Header        | Value / Source                                                      | Purpose                                                       |
+| :------------ | :------------------------------------------------------------------ | :------------------------------------------------------------ |
+| `messagetype` | `BookWorm.Contracts.BookUpdatedRatingFailedIntegrationEvent`        | Explicit message identity for cross-service deserialization   |
+| `source`      | `urn:bookworm:bookworm-catalog`                                     | Identifies the producing service                              |
+| `requestid`   | Propagated from incoming [[event\|FeedbackCreatedIntegrationEvent]] | Traces compensation back to the originating review submission |
 
-| Header        | Value / source                                               | Purpose                                                        |
-| :------------ | :----------------------------------------------------------- | :------------------------------------------------------------- |
-| `messagetype` | `BookWorm.Contracts.BookUpdatedRatingFailedIntegrationEvent` | Explicit message identity for cross-service deserialization.   |
-| `source`      | `urn:bookworm:bookworm-catalog`                              | Identifies the producing service.                              |
-| `requestid`   | Propagated from incoming `FeedbackCreatedIntegrationEvent`   | Traces compensation back to the originating review submission. |
+## Delivery Guarantees & Error Handling
 
-## Error handling and delivery guarantees
+| Condition                          | System Behavior                                                                   | Recovery / Compensation                                                                    |
+| :--------------------------------- | :-------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------- |
+| Duplicate delivery within 24 hours | Consumer skips reprocessing via Redis-backed 24-hour idempotency keyed by `id`    | Safe at-least-once delivery                                                                |
+| Feedback record already deleted    | Consumer returns without error                                                    | No action required; compensation is naturally idempotent                                   |
+| Transient store or network failure | Retried with cooldown (`50ms`, `250ms`, `1s`) and full jitter                     | Exhausted messages route to [[channel\|bookworm.&#123;env&#125;.rating.dead-letter-queue]] |
+| Deserialization failure            | Routed directly to [[channel\|bookworm.&#123;env&#125;.rating.dead-letter-queue]] | Inspect dead-letter payload against contract schema                                        |
 
-| Condition                                                                   | Behavior                                                                                                                        | Recovery behavior                                                       |
-| :-------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------ | :---------------------------------------------------------------------- |
-| `Feedback` document already deleted in Cosmos DB (`ratingdb` / `feedbacks`) | `BookUpdatedRatingFailedIntegrationEventHandler` returns without error.                                                         | No action required; compensation is idempotent.                         |
-| Duplicate delivery within 24 hours                                          | `IIntegrationEventIdempotencyGuard` skips reprocessing using `idempotency:BookUpdatedRatingFailedIntegrationEventHandler:{id}`. | Safe at-least-once delivery.                                            |
-| Transient Cosmos DB or network failure                                      | Wolverine retries with cooldown (`50ms`, `250ms`, `1s`) and full jitter.                                                        | Exhausted messages route to `bookworm.{env}.rating.dead-letter-queue`.  |
-| Deserialization failure (`JsonException` / `FormatException`)               | Routed directly to `bookworm.{env}.rating.dead-letter-queue`.                                                                   | Check contract compatibility against `tests/pacts/Rating-Catalog.json`. |
-
-## Related documentation
+## Related Documentation
 
 - [[channel|bookworm.&#123;env&#125;.catalog.book-update-rating-failed]] — Kafka channel specification.
+- [[channel|bookworm.&#123;env&#125;.rating.dead-letter-queue]] — Dead-letter channel for failed Rating consumers.
 - [[event|FeedbackCreatedIntegrationEvent]] — Upstream event that triggers this compensation when a book is missing.
-- [[service|rating-api]] — Consumer service owning Cosmos DB `Feedback` records.
-- [[entity|feedback]] — Cosmos DB `Feedback` document schema.
+- [[service|catalog-api]] — Producer service.
+- [[service|rating-api]] — Consumer service owning feedback records.
+- [[entity|feedback]] — Feedback document schema.
 
 <NodeGraph />
 
-<SchemaViewer file="schema.json" title="Book rating update failed schema" maxHeight="500" />
+<SchemaViewer
+	file="schema.json"
+	title="Book rating update failed schema"
+	maxHeight="500"
+	search="true"
+/>

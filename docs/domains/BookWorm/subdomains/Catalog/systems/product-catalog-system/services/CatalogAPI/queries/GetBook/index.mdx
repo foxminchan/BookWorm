@@ -8,7 +8,7 @@ badges:
     textColor: green
 summary: Returns one book and its catalog relationships by identifier.
 owners:
-  - contributor-team
+  - catalog-experience-team
 schemaPath: schema.json
 operation:
   method: GET
@@ -18,62 +18,70 @@ sidebar:
   badge: "GET"
 ---
 
-`GetBook` queries **Catalog API** (`GET /api/v1/books/{id}`) to retrieve a single book's full projection, including pricing, stock status, category, publisher, authors, and derived rating summary. The endpoint is publicly readable, supports HTTP `ETag` conditional requests, and caches book details in FusionCache.
+`GetBook` queries [[service|catalog-api]] (`GET /catalog/api/v1/books/{id}`) to retrieve a single book's full projection, including pricing, stock status, category, publisher, authors, and derived rating summary. The endpoint is publicly readable, supports HTTP `ETag` conditional requests, and caches book details.
 
 ## Overview
 
-| Property                         | Value                                                                                                                                                                    |
-| :------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**                        | Catalog bounded context (**Catalog API**, Aspire resource `catalog`)                                                                                                     |
-| **Source**                       | `src/Services/Catalog/BookWorm.Catalog/Features/Books/Get/GetBookEndpoint.cs`, `GetBookQuery.cs`, `src/Services/Catalog/BookWorm.Catalog/Features/Books/BookDto.cs`      |
-| **Protocol / format**            | HTTP `GET /api/v1/books/{id}` (via API Gateway: `GET /catalog/api/v1/books/{id}`), `ApiVersions.V1`, JSON (`application/json`)                                           |
-| **Authentication**               | None required (public read endpoint)                                                                                                                                     |
-| **HTTP caching & rate limiting** | `.WithETag()` conditional requests (`ETag` / `If-None-Match` → `304 Not Modified`); `PerUserRateLimit` token bucket (30 limit, 20 per 10s, queue 5) plus global limiters |
-| **Persistence & caching**        | PostgreSQL (`catalogdb`, EF Core) cached in FusionCache (L1 + Redis L2, tagged with `BookTag`)                                                                           |
-| **Contract version**             | `1.0.0`                                                                                                                                                                  |
+| Property                           | Value                                                                                                                                                      |
+| :--------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Bounded Context**                | Catalog                                                                                                                                                    |
+| **Owner Service**                  | [[service\|catalog-api]]                                                                                                                                   |
+| **Protocol / Format**              | HTTP `GET`, `application/json` response                                                                                                                    |
+| **Gateway Endpoint**               | `GET /catalog/api/v1/books/{id}` (service path `/api/v1/books/{id}`)                                                                                       |
+| **Authentication & Authorization** | None required (public read endpoint)                                                                                                                       |
+| **Idempotency / Concurrency**      | Read-only; supports conditional requests via `ETag` / `If-None-Match` (`304 Not Modified`)                                                                 |
+| **Rate Limit / Caching**           | Global concurrency (`100`), per-IP fixed-window (`30 req/min`), and per-user token bucket (`30` limit, `20` per `10s`, queue `5`); cached in L1 + Redis L2 |
+| **Contract Version**               | `1.0.0` (`ApiVersions.V1`)                                                                                                                                 |
 
-## Parameters and fields
+## Request & Response Contract
 
-### Path parameters
+### Path Parameters
 
-| Name | Type                | Required | Default | Constraints | Description                               |
-| :--- | :------------------ | :------- | :------ | :---------- | :---------------------------------------- |
-| `id` | `string` (`BookId`) | Yes      | —       | Valid UUID  | Unique identifier of the book to retrieve |
+| Name | Type              | Required | Constraints | Description                               |
+| :--- | :---------------- | :------- | :---------- | :---------------------------------------- |
+| `id` | `string` (`uuid`) | Yes      | Valid UUID  | Unique identifier of the book to retrieve |
 
-### Response schema (`BookDto`)
+### Success Response (`200 OK`)
 
-A `200 OK` response returns a `BookDto` JSON object.
+Returns a `BookDto` JSON object with an `ETag` response header.
 
-| Field           | Type             | Required | Constraints                                    | Description                                              |
-| :-------------- | :--------------- | :------- | :--------------------------------------------- | :------------------------------------------------------- |
-| `id`            | `string`         | Yes      | UUID                                           | Unique identifier of the book                            |
-| `name`          | `string \| null` | Yes      | Nullable                                       | Book title                                               |
-| `description`   | `string \| null` | Yes      | Nullable                                       | Book description                                         |
-| `imageUrl`      | `string \| null` | Yes      | URI or `null`                                  | Publicly accessible cover image URI                      |
-| `price`         | `number`         | Yes      | Decimal                                        | Regular unit price                                       |
-| `priceSale`     | `number \| null` | Yes      | Decimal or `null`                              | Promotional sale price (`null` when no discount applies) |
-| `status`        | `string`         | Yes      | Enum: `InStock`, `OutOfStock`                  | Current stock availability status                        |
-| `category`      | `object \| null` | Yes      | `{ id: uuid, name: string \| null }` or `null` | Assigned book category                                   |
-| `publisher`     | `object \| null` | Yes      | `{ id: uuid, name: string \| null }` or `null` | Assigned publisher                                       |
-| `authors`       | `object[]`       | Yes      | Array of `{ id: uuid, name: string \| null }`  | Authors associated with the book                         |
-| `averageRating` | `number`         | Yes      | `>= 0`                                         | Derived average customer rating projected from Reviews   |
-| `totalReviews`  | `integer`        | Yes      | `>= 0`                                         | Derived total feedback count projected from Reviews      |
+| Name            | Type              | Required | Constraints                                    | Description                                              |
+| :-------------- | :---------------- | :------- | :--------------------------------------------- | :------------------------------------------------------- |
+| `id`            | `string` (`uuid`) | Yes      | Valid UUID                                     | Unique identifier of the book                            |
+| `name`          | `string \| null`  | Yes      | Nullable                                       | Book title                                               |
+| `description`   | `string \| null`  | Yes      | Nullable                                       | Book description                                         |
+| `imageUrl`      | `string \| null`  | Yes      | URI or `null`                                  | Publicly accessible cover image URI                      |
+| `price`         | `number`          | Yes      | Decimal                                        | Regular unit price                                       |
+| `priceSale`     | `number \| null`  | Yes      | Decimal or `null`                              | Promotional sale price (`null` when no discount applies) |
+| `status`        | `string`          | Yes      | Enum: `InStock`, `OutOfStock`                  | Current stock availability status                        |
+| `category`      | `object \| null`  | Yes      | `{ id: uuid, name: string \| null }` or `null` | Assigned book category                                   |
+| `publisher`     | `object \| null`  | Yes      | `{ id: uuid, name: string \| null }` or `null` | Assigned publisher                                       |
+| `authors`       | `object[]`        | Yes      | Array of `{ id: uuid, name: string \| null }`  | Authors associated with the book                         |
+| `averageRating` | `number`          | Yes      | `>= 0`                                         | Derived average customer rating projected from Reviews   |
+| `totalReviews`  | `integer`         | Yes      | `>= 0`                                         | Derived total feedback count projected from Reviews      |
 
-## Error responses
+## Behavior & Side Effects
 
-| Code / status           | Condition                                                                                                   | Recovery behavior                                             |
-| :---------------------- | :---------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------ |
-| `304 Not Modified`      | Request included a matching `If-None-Match` ETag header                                                     | Reuse the client's cached `BookDto`                           |
-| `404 Not Found`         | No book exists for the supplied UUID (`application/problem+json`)                                           | Render a not-found state; do not fabricate an empty `BookDto` |
-| `429 Too Many Requests` | Caller exceeded `PerUserRateLimit` or global rate limit (`application/problem+json` + `Retry-After` header) | Wait for the `Retry-After` duration before retrying           |
+- **Read-through caching:** Serves cached book details from L1/Redis L2 and invalidates automatically on book, author, category, publisher, or rating updates.
+- **ETag concurrency support:** Returns the book's row version as an `ETag` header for conditional reads (`If-None-Match`) and optimistic concurrency updates via [[command|UpdateBook]].
+- **No state mutation:** Pure read query with no database writes or integration events.
 
-## Related documentation
+## Error Responses
 
-- [[service|catalog-api]] — Service overview, PostgreSQL/Qdrant persistence, and endpoints.
-- [[query|ListBooks]] — Search, filter, and paginate books with `QUERY /api/v1/books`.
-- [[query|GetBookDetailsGrpc]] — Internal gRPC contract returning full `BookItem` details.
-- [[entity|book]] — Domain model for catalog books.
+| Status / Code           | Condition                                                 | Client Recovery Action                                   |
+| :---------------------- | :-------------------------------------------------------- | :------------------------------------------------------- |
+| `304 Not Modified`      | Request included a matching `If-None-Match` ETag header   | Reuse the client's cached book payload                   |
+| `404 Not Found`         | No active book exists for the supplied UUID               | Render a not-found state; do not fabricate an empty book |
+| `429 Too Many Requests` | Rate limit quota exceeded (`Retry-After` header included) | Wait for the `Retry-After` duration before retrying      |
+
+## Related Documentation
+
+- [[service|catalog-api]] — Service overview, persistence, and endpoints.
+- [[entity|book]] — Book entity model.
+- [[query|ListBooks]] — Search, filter, and paginate books.
+- [[query|GetBookDetailsGrpc]] — Internal gRPC contract returning full book details.
+- [[command|UpdateBook]] — Update book details using the `ETag` returned by this query.
 
 <NodeGraph />
 
-<SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />
+<SchemaViewer file="schema.json" title="Get book schema" maxHeight="500" search="true" />

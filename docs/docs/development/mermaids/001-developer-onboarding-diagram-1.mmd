@@ -1,41 +1,38 @@
+---
+title: Developer Onboarding Path
+---
 %%{init: {'theme': 'base', 'themeVariables': {'background': '#f5f5f5', 'primaryColor': '#ffffff', 'primaryTextColor': '#2d3142', 'primaryBorderColor': '#2d3142', 'secondaryColor': '#ececec', 'secondaryBorderColor': '#4f5d75', 'tertiaryColor': '#fdf2ee', 'tertiaryBorderColor': '#bf4520', 'lineColor': '#4f5d75', 'textColor': '#2d3142', 'clusterBkg': '#f8f9fa', 'clusterBorder': '#bfc0c0', 'fontFamily': 'Geist, system-ui, sans-serif'}}}%%
-flowchart LR
-	customer["Customer\n(Browser)"]
-	staff["Store Staff\n(Browser)"]
-	gateway["API Gateway\n(YARP Reverse Proxy)"]
-	storefront["Storefront & Commerce\n(Next.js 16 MFEs)"]
-	backoffice["Backoffice\n(Next.js 16 App)"]
-	catalog["Catalog & Ingestion\n(.NET 11 + Azure Functions)"]
-	shopping["Basket API\n(.NET 11 + Redis)"]
-	ordering["Ordering API & Finance\n(.NET 11 + Durable Functions)"]
-	reviews["Rating API\n(.NET 11 + Cosmos DB)"]
-	conv["Chat API & MCP Tools\n(.NET 11 + Agent Framework)"]
-	platform["Notification & Scheduler\n(.NET 11 + Quartz.NET)"]
+flowchart TD
+	orient["Day 1: orient and identify an owning area"]
+	setup{"How much setup do you need?"}
+	quick["Run the local quickstart"]
+	detailed["Review the environment guide"]
+	verify["Verify the dashboard and one application endpoint"]
+	recover["Use the local troubleshooting guide"]
+	week["Week 1: read workflow and engineering standards"]
+	select["Choose a focused, well-owned change"]
+	test["Select and run the relevant checks"]
+	pr["Open a focused pull request"]
+	learn["Use review feedback to plan the next change"]
 
-	customer -->|"HTTPS"| gateway
-	staff --> |"HTTPS: /backoffice"| gateway
-	gateway -->|"HTTP"| storefront
-	gateway -->|"HTTP"| backoffice
-	gateway --> |"HTTP: /catalog"| catalog
-	gateway --> |"HTTP: /basket"| shopping
-	gateway --> |"HTTP: /ordering"| ordering
-	gateway --> |"HTTP: /rating"| reviews
-	gateway --> |"HTTP: /chatting"| conv
-	ordering -->|"gRPC"| shopping
-	ordering -->|"gRPC"| catalog
-	ordering -->|"Kafka"| platform
-	reviews -->|"Kafka"| catalog
-	conv -->|"MCP & A2A"| catalog
-	conv -->|"A2A gRPC"| reviews
+	orient --> setup
+	setup -->|"Fastest route"| quick
+	setup -->|"More setup detail"| detailed
+	quick --> verify
+	detailed --> verify
+	verify -->|"Blocked"| recover
+	recover --> verify
+	verify -->|"Ready"| week
+	week --> select
+	select --> test
+	test --> pr
+	pr --> learn
 
 	classDef focal fill:#fdf2ee,stroke:#bf4520,stroke-width:2px,color:#2d3142
 	classDef service fill:#ffffff,stroke:#2d3142,stroke-width:1.2px,color:#2d3142
 	classDef store fill:#ececec,stroke:#4f5d75,stroke-width:1.2px,color:#2d3142
 	classDef input fill:#eef1f6,stroke:#5a6580,stroke-width:1.2px,color:#2d3142
-	classDef ext fill:#f5f5f5,stroke:#949eb2,stroke-width:1px,stroke-dasharray:4 3,color:#4f5d75
-	class gateway focal
-	class catalog,ordering,conv,platform service
-	class shopping,reviews store
-	class customer,staff,storefront,backoffice input
-	linkStyle 0 stroke:#bf4520,stroke-width:2px
-	linkStyle 1 stroke:#bf4520,stroke-width:2px
+	class setup focal
+	class orient input
+	class quick,detailed,verify,week,select,test,pr service
+	class recover,learn store

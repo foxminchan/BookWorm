@@ -10,117 +10,73 @@ badges:
     textColor: orange
 ---
 
-Use this runbook when **Catalog API** (`catalog`) publishes `BookUpdatedRatingFailedIntegrationEvent` on `bookworm.<env>.catalog.book-update-rating-failed` or when a created feedback record in **Rating API** (`rating`, **Azure Cosmos DB** `ratingdb`/`feedbacks`) fails to project onto a book in **Catalog API** (**PostgreSQL** `catalogdb`). This compensation path removes an orphaned review for a missing book; never communicate it to customers as a manual customer deletion.
+## Trigger / Symptom & Blast Radius
 
-## Prerequisites
-
-- Read access to **Catalog API** (`GET /catalog/api/v1/books/{id}`) or read-only SQL access to `catalogdb` (PostgreSQL).
-- Read access to **Azure Cosmos DB** Data Explorer (locally via Cosmos emulator or in Azure) for database `ratingdb`, container `feedbacks`.
-- Read access to **Aspire Dashboard** (locally) or **Azure Log Analytics** for `catalog` and `rating` logs and OpenTelemetry traces.
-- Read access to **Kafka UI** (locally) or **Confluent Cloud** for rating topics and dead-letter queues (DLQs).
-
-## Steps
-
-<Steps>
-<Step title="Record failure identifiers before making any change">
-
-Capture the `FeedbackId` from `BookUpdatedRatingFailedIntegrationEvent`, the CloudEvents `id`, W3C correlation/trace ID, environment (`<env>`), and failure UTC timestamp.
-
-<Admonition type="note">
-	`BookUpdatedRatingFailedIntegrationEvent` carries only `FeedbackId`—it does not include `BookId`.
-	Resolve `BookId` in Step 2 from Catalog logs (`FeedbackCreatedIntegrationEvent`) or from the
-	`Feedback` document in Cosmos DB `ratingdb`/`feedbacks`.
-</Admonition>
-
-</Step>
-<Step title="Confirm whether the book is actually missing in Catalog">
-
-Inspect `catalog` logs for the originating `FeedbackCreatedIntegrationEvent` matching `<feedback-id>` to obtain `<book-id>` and confirm why projection failed (missing book vs. transient `catalogdb` or Kafka fault). Then verify book existence via Catalog API:
-
-<CodeGroup>
-
-```bash
-curl -sS -o /dev/null -w "%{http_code}\n" \
-  "https://<gateway-host>/catalog/api/v1/books/<book-id>"
-```
-
-</CodeGroup>
-
-Where:
-
-- `<gateway-host>`: API Gateway hostname (or local Aspire gateway address).
-- `<book-id>`: UUID of the book referenced by the feedback.
-
-- If the response is **`404 Not Found`**, the book is absent and compensation is valid. Continue to Step 3.
-- If the response is **`200 OK`**, **stop immediately**. Do not delete the feedback record—this indicates a transient database failure, malformed event, or contract defect. Escalate with Catalog logs and event metadata to Catalog/Reviews maintainers or platform infrastructure owners.
-
-</Step>
-<Step title="Inspect the feedback document in Cosmos DB (`ratingdb` / `feedbacks`)">
-
-Query the `feedbacks` container in Azure Cosmos DB (`ratingdb`) by `id` (and `bookId` partition key when known) to check whether the orphaned document still exists:
-
-<CodeGroup>
-
-```sql
-SELECT c.id, c.bookId, c.rating, c.createdAt
-FROM c
-WHERE c.id = "<feedback-id>"
-```
-
-</CodeGroup>
-
-Where:
-
-- `<feedback-id>`: Exact `FeedbackId` from `BookUpdatedRatingFailedIntegrationEvent`.
+[[service|catalog-api]] publishes [[event|BookUpdatedRatingFailedIntegrationEvent]] on <ResourceLink id="bookworm.{env}.catalog.book-update-rating-failed" type="channel">`bookworm.{env}.catalog.book-update-rating-failed`</ResourceLink>, or a created [[entity|feedback]] record in [[service|rating-api]] fails to project onto a [[entity|book]] in [[service|catalog-api]]. Blast radius is limited to orphaned review cleanup for a missing book; never communicate this compensation to customers as a manual deletion.
 
 <Admonition type="danger">
 	Never delete feedback records by `bookId` alone. Compensation targets only the exact `FeedbackId`
-	reported by `BookUpdatedRatingFailedIntegrationEvent`.
+	reported by [[event|BookUpdatedRatingFailedIntegrationEvent]].
 </Admonition>
 
+## Pre-Flight Check
+
+Capture `FeedbackId`, correlation ID, and `<ENV>` from the failure event, then verify whether `<BOOK_ID>` exists in [[service|catalog-api]] and query [[container|rating-database]]:
+
+```bash
+curl -sS -o /dev/null -w "%{http_code}\n" "https://<GATEWAY_HOST>/catalog/api/v1/books/<BOOK_ID>"
+```
+
+```sql
+SELECT c.id, c.bookId, c.rating, c.createdAt FROM c WHERE c.id = "<FEEDBACK_ID>";
+```
+
+## Quick Recovery Procedure
+
+<Steps>
+<Step title="Confirm the book is actually missing">
+
+If the Catalog check returns **`404 Not Found`**, the book is absent and compensation is valid. Continue to Step 2.
+
+If the Catalog check returns **`200 OK`**, **stop immediately**. Do not delete the feedback record—this indicates a transient database or contract fault. Escalate to [[team|catalog-experience-team]].
+
 </Step>
-<Step title="Check Kafka consumer health and dead-letter queues">
+<Step title="Inspect Kafka consumer lag and dead-letter queues">
 
-Inspect consumer lag and DLQ depth for:
+Check lag and DLQ depth across <ResourceLink id="bookworm.{env}.rating.feedback-create" type="channel">`bookworm.{env}.rating.feedback-create`</ResourceLink>, <ResourceLink id="bookworm.{env}.catalog.book-update-rating-failed" type="channel">`bookworm.{env}.catalog.book-update-rating-failed`</ResourceLink>, <ResourceLink id="bookworm.{env}.catalog.dead-letter-queue" type="channel">`bookworm.{env}.catalog.dead-letter-queue`</ResourceLink>, and <ResourceLink id="bookworm.{env}.rating.dead-letter-queue" type="channel">`bookworm.{env}.rating.dead-letter-queue`</ResourceLink>. Stream [[service|rating-api]] logs for Cosmos DB or Redis errors:
 
-- `bookworm.<env>.rating.feedback-create` (Catalog consumer)
-- `bookworm.<env>.catalog.book-update-rating-failed` (Rating compensation consumer)
-- `bookworm.<env>.catalog.dead-letter-queue` and `bookworm.<env>.rating.dead-letter-queue`
-
-Check `rating` logs for `BookUpdatedRatingFailedIntegrationEventHandler` errors (such as Cosmos DB throttling/connectivity or Redis `IIntegrationEventIdempotencyGuard` faults).
+```bash
+az containerapp logs show --name <SERVICE_NAME> --resource-group <RESOURCE_GROUP> --tail 150
+```
 
 </Step>
 <Step title="Run recovery through the standard compensation handler">
 
-- If `rating`, Cosmos DB, Redis, or Kafka experienced a transient outage, restore the unhealthy dependency and let `BookUpdatedRatingFailedIntegrationEventHandler` process (or replay from `bookworm.<env>.rating.dead-letter-queue` using approved broker tooling).
-- The handler looks up `<feedback-id>` in Cosmos DB `ratingdb`/`feedbacks`:
-  - If present, it calls `feedback.Revert()` (invalidating the Redis list cache tag without emitting `FeedbackDeletedIntegrationEvent`) and deletes the document.
-  - If already absent, it completes as an idempotent no-op.
-- Do not issue `DELETE /api/v1/feedbacks/<feedback-id>` as a substitute unless the compensation pipeline is unavailable and authorized by the Reviews owner, because manual API deletion publishes `FeedbackDeletedIntegrationEvent` back to Catalog.
+Restore any unhealthy dependency ([[container|rating-database]], Redis, or Kafka) and replay recoverable messages from <ResourceLink id="bookworm.{env}.rating.dead-letter-queue" type="channel">`bookworm.{env}.rating.dead-letter-queue`</ResourceLink>. The compensation handler deletes the orphaned document and invalidates [[container|rating-cache]] without emitting [[event|FeedbackDeletedIntegrationEvent]].
 
 </Step>
 </Steps>
 
 ## Verification
 
-Confirm that the orphaned review is removed and both domains are healthy:
+Re-run the [[container|rating-database]] query for `<FEEDBACK_ID>` and confirm `0` documents are returned while DLQ depth stops growing:
 
-1. Re-run the Cosmos DB query in `ratingdb`/`feedbacks` for `<feedback-id>` and confirm it returns `0` documents.
-2. Confirm no unrelated feedback documents for `<book-id>` were modified.
-3. Confirm consumer lag on `bookworm.<env>.catalog.book-update-rating-failed` and `bookworm.<env>.rating.feedback-create` is `0`, and neither `bookworm.<env>.rating.dead-letter-queue` nor `bookworm.<env>.catalog.dead-letter-queue` is growing.
-4. Confirm in `rating` logs that `<feedback-id>` correlates cleanly to the `BookUpdatedRatingFailedIntegrationEvent` compensation completion.
+```sql
+SELECT VALUE COUNT(1) FROM c WHERE c.id = "<FEEDBACK_ID>";
+```
 
-## Troubleshooting
+Expected output:
 
-| Symptom                                                                                     | Cause                                                                                                      | Fix                                                                                            |
-| :------------------------------------------------------------------------------------------ | :--------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------- |
-| `GET /catalog/api/v1/books/<book-id>` returns `200 OK`, yet failure event fired             | Transient `catalogdb` error, race condition, or malformed event payload—not a missing book                 | Stop compensation immediately; preserve logs and escalate to Catalog/Reviews maintainers       |
-| `BookUpdatedRatingFailedIntegrationEvent` sits in `bookworm.<env>.rating.dead-letter-queue` | Transient Cosmos DB (`ratingdb`), Redis idempotency, or `rating` worker outage exhausted Wolverine retries | Restore Cosmos DB / Redis / `rating` health, verify book is `404`, then replay the DLQ message |
-| Feedback document is already gone in Cosmos DB when replaying the failure event             | Earlier compensation or admin deletion already removed `<feedback-id>`                                     | Safe no-op; `BookUpdatedRatingFailedIntegrationEventHandler` exits cleanly without error       |
-| List API still displays the removed review briefly after compensation                       | Stale 10-minute FusionCache entry in Redis if `FeedbackRevertedEvent` cache invalidation failed            | Verify Redis connectivity and allow cache TTL expiration or invalidate the `BookId` cache tag  |
+```json
+[0]
+```
+
+## Rollback / Escalation
+
+- **Rollback:** Compensation deletes only confirmed orphaned reviews for `404` books; if a book was restored, the customer must re-submit their review.
+- **Escalation:** Escalate `200 OK` false-failure events or persistent DLQ errors to [[team|catalog-experience-team]].
 
 ## Related documentation
 
-- Feedback lifecycle — How Cosmos DB reviews project to Catalog PostgreSQL and compensate.
-- Reviews feedback contracts and integration reference — Exact API, Cosmos DB, and Kafka contracts.
-- [[doc|platform/006-api-and-contracts]] — Consolidated event and channel reference.
+- [[flow|feedback-publication]] — End-to-end review projection and compensation flow.
+- [[adr|adr-003-compensate-invalid-feedback-after-catalog-rejection]] — Compensation decision record.

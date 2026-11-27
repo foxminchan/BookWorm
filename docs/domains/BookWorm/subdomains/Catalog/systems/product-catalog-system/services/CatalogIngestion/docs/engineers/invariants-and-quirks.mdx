@@ -1,0 +1,13 @@
+---
+title: Engineering Invariants and Quirks
+summary: Unprefixed Kafka batch trigger, Qdrant upsert idempotency, and PostgreSQL pending-queue semantics for Catalog Ingestion.
+version: 1.0.0
+---
+
+Engineering invariants and known contract quirks for [[service|catalog-ingestion]].
+
+## Ingestion & Vector Indexing Invariants
+
+- **Unprefixed batch trigger topic:** [[service|catalog-ingestion]] is triggered by [[event|ProcessVectorBatchIntegrationEvent]] on [[channel|scheduler.process-vector-batch]]. Unlike `bookworm.{env}.*` domain topics, this topic name is intentionally unprefixed and shared across the scheduler-to-ingestion boundary.
+- **Idempotent Qdrant batch upsert:** Pending book records are read from [[container|catalog-database]], embedded, and upserted into [[container|catalog-vector]] (Qdrant) using deterministic book identifiers so replayed batch triggers safely overwrite existing vectors without creating duplicates.
+- **Queue-backed resilience:** Because pending embedding state remains in PostgreSQL until marked processed, transient batch failures do not require a separate Kafka dead-letter queue—the next scheduled trigger picks up remaining pending rows.

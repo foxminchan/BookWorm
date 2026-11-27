@@ -6,9 +6,9 @@ summary: Notification owns durable email records in PostgreSQL and marks them se
 status: superseded
 date: 2026-11-01
 owners:
-  - contributor-team
+  - platform-engineering-team
 decisionMakers:
-  - contributor-team
+  - platform-engineering-team
 appliesTo:
   - type: system
     id: notification-system
@@ -20,12 +20,9 @@ badges:
     textColor: blue
 ---
 
-<Admonition type="note">
-	This architectural decision record has status **superseded** and documents the Notification
-	persistence model as implemented at the time of recording. See
-	[[adr|adr-002-durable-outbox-and-bounded-retries]] for the relationship to earlier stronger outbox
-	guarantees.
-</Admonition>
+:::warning
+This ADR is **Superseded**. [[service|notification-api]] now operates as a stateless Kafka consumer with Redis idempotency and dead-letter queues rather than a PostgreSQL email outbox. See [[adr|adr-001-notification-kafka-command-intake]] and [[adr|adr-002-durable-outbox-and-bounded-retries]].
+:::
 
 ## 1. Context & Problem
 
@@ -59,7 +56,7 @@ External email providers can fail or time out after an email has already been fo
 ## 5. Technical Reference
 
 - **Status & Context:** `superseded` (`2026-11-01`). Complements/contrasts with [[adr|adr-002-durable-outbox-and-bounded-retries]], which described bounded lifetime retries, terminal failures, provider-outcome recording, and an exactly-once local transition that are not fully implemented by this persistence model.
-- **Authoritative Store:** [[container|notification-database]] (PostgreSQL) stores application email [[entity|outbox]] records separately from Wolverine's durable incoming and outgoing message envelopes, even though both reside in the Notification database.
+- **Authoritative Store:** The Notification PostgreSQL database stores application email outbox records separately from Wolverine's durable incoming and outgoing message envelopes, even though both reside in the Notification database.
 - **Outbox & Sender Symbols:**
   - `EmailOutboxService` saves recipient details, subject, and rendered body before calling `IEmailSender`.
   - On `IEmailSender` success, it sets `is_sent`, updates the submission timestamp, and saves again.

@@ -2,59 +2,67 @@
 title: AI Governance
 summary: Input screening, privacy middleware, policy enforcement, and tool boundaries for BookWorm's AI workflows.
 owners:
-  - contributor-team
+  - ai-capabilities-team
 badges:
   - content: Cross-cutting Concept
     backgroundColor: purple
     textColor: purple
 ---
 
-BookWorm governs its AI workflows across **Chat API**, **Rating API**, and **MCP Tools** using layered controls from `BookWorm.Chassis.AI`, `Microsoft.AgentGovernance.Extensions.*` (`5.0.0`), **Presidio**, and **Microsoft Entra Agent Identities**. Every AI request is screened before reaching a language model, anonymized for PII across model boundaries, isolated per user identity, and constrained by declarative deny-by-default YAML tool policies.
+## Purpose and Scope
 
-## Defense-in-depth AI governance pipeline
+AI governance constrains prompts, models, agents, tool calls, and generated results across conversational discovery, review intelligence, and tool catalog capabilities. It applies wherever user text or external content crosses a model boundary or can trigger a state-changing action.
 
-This flowchart shows the five sequential governance layers applied to customer prompts, agent handoffs, and tool invocations.
+## Visual Reference
+
+**AI Governance Guardrails**
 
 <MermaidFileLoader file="mermaids/005-ai-governance-diagram-1.mmd" />
 
-## Five governance layers
+## Core Rules and Standards
 
-1. **Pre-agent input screening (`InputValidationExecutor`):** Before any specialist agent runs, **Chat API** trims empty messages, enforces maximum prompt length, checks suspicious injection patterns, and invokes `GovernancePromptSafetyEvaluator`. Rejected prompts terminate immediately without consuming model tokens.
-2. **Scoped routing and human-in-the-loop (HITL) disambiguation:** `DecisionRouterExecutor` calls **Microsoft Foundry** `MicrosoftDecision1` (`IDecisionClient`) to verify English language and bookstore domain scope. Low-confidence in-scope prompts pause at `RequestPort` for customer disambiguation rather than guessing a specialist route.
-3. **Privacy anonymization and untrusted-content isolation:** **Chat API** and **Rating API** wrap model clients with **Presidio** `PIIMiddleware` (anonymizing PII before prompts reach **Microsoft Foundry** `ModelRouter` and filtering outputs on return) and `GuardrailMiddleware` (marking user prompts and tool outputs as untrusted to separate them from system instructions).
-4. **Agent identity and tenant isolation:** **Chat API** enforces `UseClaimsBasedAgentIsolation()` so session state and tool calls stay bound to the authenticated caller's claims. Cross-service agent calls (`Chat` → `Rating` over A2A gRPC) authenticate using **Microsoft Entra Agent Identities** (`blueprintAppId`, `chatAgentId`, `ratingAgentId` provisioned via `entra-agent-identities.bicep`) with federated credentials.
-5. **Declarative deny-by-default policy enforcement:** `GovernanceKernel` loads `BookWorm.Chassis` `Policies/default.yaml` plus service-specific policy files using a `deny-overrides` conflict strategy, security rings, `DecisionToolSelectionMiddleware`, and a failure circuit breaker.
+1. **Screen before routing.** Validate prompt shape, length, language, domain scope, and known injection patterns before invoking a specialist agent or tool.
+2. **Protect PII at model boundaries.** Anonymize sensitive data before external model calls and remove or redact sensitive content in returned results.
+3. **Isolate untrusted content.** Treat prompts, retrieved passages, tool output, and external documents as untrusted data rather than instructions.
+4. **Apply deny-by-default policies.** Every agent and tool must declare an allow rule; mutations and destructive operations require a specific policy grant.
+5. **Bind actions to identity.** Session state and tool authorization must remain tied to authenticated caller claims and approved workload identity.
+6. **Require human review for ambiguity.** Low-confidence or out-of-domain requests pause for clarification instead of guessing or escalating privilege.
+7. **Record consequential decisions.** Preserve policy outcome, model and tool identifiers, correlation, redaction status, and human disposition for auditable events.
 
-## Per-service governance policies
+<Admonition type="warning">
+	Prompt screening and PII detection reduce risk but do not guarantee safety. Novel prompt attacks,
+	detector bypasses, or policy gaps require a human review and rapid rollback mechanism.
+</Admonition>
 
-| Service                                  | Policy file                  | Default action | Key enforced rules & thresholds                                                                                                                                                                                                                                                                                                                                                                 |
-| :--------------------------------------- | :--------------------------- | :------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Shared baseline** (`BookWorm.Chassis`) | `Policies/default.yaml`      | `deny`         | `deny-overrides` conflict resolution, security rings, injection detection, circuit breaker                                                                                                                                                                                                                                                                                                      |
-| **Chat API** (`BookWorm.Chat`)           | `Policies/chat-agents.yaml`  | `deny`         | Per-agent DID allowlists (`did:mesh:bookworm:book`, `book-catalog-researcher`, `book-recommendation-researcher`, `qa`); explicitly denies catalog tools to `qa` (priority `70`); **Conversation Guardian** (`max_conversation_turns: 30`, `max_retry_cycles: 3`, `loop_window_seconds: 300`, escalation/offensive composite break at `0.8`); multi-turn injection detection                     |
-| **Rating API** (`BookWorm.Rating`)       | `Policies/rating-agent.yaml` | `deny`         | Blocks all write/mutation tools (priority `100`); blocks destructive SQL DDL/DML (`DROP`, `TRUNCATE`, `INSERT`, `UPDATE`, `DELETE`, `EXEC`, priority `95`); allows read tools (priority `50`); rate-limits `GetCustomerReviews` to `30/minute`; regex PII detection for email, phone, and credit cards                                                                                          |
-| **MCP Tools** (`BookWorm.McpTools`)      | `Policies/mcp-tools.yaml`    | `deny`         | Blocks dangerous tools (shell, file write/delete, raw HTTP, priority `100`); allows read-only catalog tools (`search_catalog`, `get_book`, `list_categories`, `list_authors`, priority `50`); rate-limits to `100/minute`; **MCP tool-poisoning detection** (invisible Unicode, hidden Markdown comments, hidden instructions, base64/hex encoded payloads, exfiltration, privilege escalation) |
+## Mechanism / How It Works
 
-:::note
-**Explicit opt-in scope:** Governance policies and Presidio PII middleware are wired into **Chat API**, **Rating API**, and **MCP Tools** (Presidio on Chat and Rating; MCP governance on MCP Tools). New AI features or model integrations do not inherit these controls automatically unless registered at startup.
-:::
+| Governance Stage  | Required Behavior                                                                     |
+| :---------------- | :------------------------------------------------------------------------------------ |
+| Input admission   | Reject malformed, oversized, unsafe, or out-of-scope requests                         |
+| Context isolation | Mark external text and tool output as data, never instructions                        |
+| Privacy           | Anonymize PII and minimize retained conversation and prompt content                   |
+| Routing           | Classify purpose and domain before selecting an agent or model                        |
+| Policy            | Evaluate tool and operation permissions with deny-overrides semantics                 |
+| Execution         | Use least-privilege tools, bounded retries, and session isolation                     |
+| Review            | Escalate ambiguity, policy conflicts, or consequential actions to a responsible human |
 
-## Developer change checklist
+## Evaluation and Fallback
 
-When adding or modifying an AI agent, model integration, or MCP tool:
+- Evaluate prompt safety, domain classification, PII detection, tool authorization, output quality, and refusal behavior.
+- Use deterministic tests for policy allow/deny decisions and adversarial tests for prompt and tool poisoning patterns.
+- Fall back to a safe clarification or human handoff when routing confidence is low or policy state is uncertain.
+- Disallow silent retries that change policy scope or expand tool permissions.
+- Maintain an approved model, prompt, policy, and tool baseline for every release.
 
-1. Grant each agent only the minimum tools and data required, and declare explicit `allow` rules under `default_action: deny` in the service's YAML policy.
-2. Keep untrusted user input and external tool outputs separated from system instructions via `GuardrailMiddleware`.
-3. Register **Presidio** `PIIMiddleware` on every chat client whose prompts or responses cross an external model boundary.
-4. Add unit tests covering allow, deny, rate-limit, prompt-injection, and circuit-breaker failure cases for every new tool.
-5. Verify policy file copy-to-output paths and startup validation whenever editing `Policies/*.yaml`.
+## Verification and Governance
 
-## Trade-offs and operational limits
+- Test allow, deny, rate-limit, prompt-injection, PII, circuit-breaker, and human-handoff cases for every agent or tool change.
+- Review policy coverage when a model or integration gains new data or mutation access.
+- Verify that policy files and identity bindings load at runtime, not only during development.
+- Define rollback criteria for quality regressions, privacy incidents, elevated false refusal rates, or unexpected tool use.
 
-- **Defense-in-depth reduces risk but is not absolute:** Pattern matching, `MicrosoftDecision1` scope checks, and Presidio detectors cannot catch every novel adversarial prompt or obfuscated PII string. Review policy files and agent tool lists before every production release.
-- **Read-only commerce invariant:** No AI agent or MCP tool holds write permissions against **Catalog API**, **Basket API**, or **Ordering API**. Preserving this boundary prevents conversational ambiguity from triggering unintended purchases.
+## Related Documentation
 
-## Related documentation
-
-- [[doc|arc42/06-runtime-view/004-conversational-book-discovery]] — Runtime sequence for `chat-workflow`, HITL `RequestPort`, MCP Tools, and A2A gRPC.
-- [[doc|arc42/08-crosscutting-concepts/001-security-and-privacy]] — Microsoft Entra ID roles, Agent Identities, and STRIDE threat model.
-- [[doc|misc/001-ms-decisions-model-use-case-and-lessons-learned]] — Rationale for routing with `MicrosoftDecision1`.
+- [[doc|arc42/08-crosscutting-concepts/001-security-and-privacy]] — Identity and PII boundaries.
+- [[doc|arc42/06-runtime-view/004-conversational-book-discovery]] — Conversational decision and tool flow.
+- [[doc|misc/001-ms-decisions-model-use-case-and-lessons-learned]] — Model-routing rationale.

@@ -6,75 +6,55 @@ summary: Share orchestration and technical host configuration without moving bus
 status: proposed
 date: 2026-11-07
 owners:
-  - platform-team
+  - platform-engineering-team
 appliesTo:
   - type: domain
-    id: BookWorm
+    id: bookworm
 related:
   - id: adr-bw-002-dotnet-platform-foundation
   - id: adr-bw-013-opentelemetry-observability
   - id: adr-bw-015-explicit-environment-configuration
 decisionMakers:
-  - platform-team
+  - platform-engineering-team
 x-scope: "Whole system"
 ---
 
-## Context and problem statement
+| Field                  | Value                                                                                                                                                   |
+| :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Status**             | Proposed                                                                                                                                                |
+| **Date**               | 2026-11-07                                                                                                                                              |
+| **Owners**             | [[team\|platform-engineering-team]]                                                                                                                     |
+| **Affected Resources** | [[domain\|bookworm]]                                                                                                                                    |
+| **Related ADRs**       | [[adr\|adr-bw-002-dotnet-platform-foundation]], [[adr\|adr-bw-013-opentelemetry-observability]], [[adr\|adr-bw-015-explicit-environment-configuration]] |
 
-Ten backend projects and three frontend applications require consistent startup wiring, service discovery, outbound HTTP resilience, rate limiting, Kestrel limits, OpenAPI setup, and OpenTelemetry export. Reimplementing these technical defaults inside every service host causes configuration drift and slows cross-cutting maintenance.
+## Context & Problem Statement
 
-BookWorm needs a shared orchestration and host-default layer that standardizes technical plumbing while keeping domain rules and explicit overrides inside each owning service.
+BookWorm's services and microfrontends require consistent service discovery, health probes, rate limiting, resilience defaults, and telemetry wiring. Re-implementing this plumbing per service invites configuration drift, while centralizing domain logic in shared host defaults violates service ownership.
 
-## Decision drivers
+## Decision Drivers
 
-- **Consistency:** Apply uniform telemetry, service discovery, Kestrel limits, and outbound HTTP resilience defaults across services.
-- **Maintainability:** Eliminate duplicated technical host setup across independent service projects.
-- **Boundary preservation:** Keep shared infrastructure free of domain rules so services retain full business ownership.
+- **Operational consistency:** Enforce uniform health, telemetry, and resilience baselines.
+- **Reduced boilerplate:** Eliminate repeated technical host configuration across services.
+- **Boundary preservation:** Keep shared defaults strictly technical and domain-agnostic.
 
-## Considered options
+## Options Considered
 
-1. Use Aspire orchestration and `BookWorm.ServiceDefaults` for shared technical configuration
-2. Maintain standalone host configuration independently in every service
-3. Move shared business execution into a central platform service
-4. Treat local Aspire orchestration topology as an implicit production topology specification
+| Option                                                     | Pros                                                                               | Cons                                                                       |
+| :--------------------------------------------------------- | :--------------------------------------------------------------------------------- | :------------------------------------------------------------------------- |
+| **Shared technical defaults + Aspire local orchestration** | Uniform discovery, telemetry, and resilience; services opt in to optional features | Shared-default defects can impact multiple services simultaneously         |
+| **Per-service custom host setup**                          | Zero shared-package coupling                                                       | Telemetry, health probes, and rate limits drift over time                  |
+| **Centralized business-logic host**                        | Shared rules visible in one place                                                  | Couples unrelated domains and breaks bounded-context ownership             |
+| **Treat local Aspire setup as production**                 | Single topology to maintain                                                        | Local emulators lack production durability, scaling, and security controls |
 
-## Decision outcome
+## Decision & Consequences
 
-Chosen option: **Use Aspire orchestration and `BookWorm.ServiceDefaults` for shared technical configuration**, because it provides repeatable local development, standardized Azure Container Apps publishing via Aspire 17, and uniform technical defaults without leaking business rules into shared code.
+**Chosen Option:** Reuse Aspire orchestration and shared technical service defaults for discovery, OpenTelemetry, health checks, resilience, and rate limiting. Each service retains ownership of its domain behavior and may override technical defaults where justified.
 
-`src/Aspire/BookWorm.AppHost/AppHost.cs` wires resources, backing stores, YARP gateway routes, and environment-specific provisioning (`aspire start` locally, `aspire deploy` for Azure Container Apps). `src/Aspire/BookWorm.ServiceDefaults/` supplies OpenTelemetry instrumentation, budgeted HTTP retries, Kestrel HTTP/2 limits, development-only `/health` and `/alive` endpoints, OpenAPI transformers, and rate-limiting policies. Each service host explicitly calls the registration helpers it requires and defines its own domain behavior and configuration overrides.
+- **Positive:** New services inherit production-grade observability and resilience defaults immediately.
+- **Negative:** Changes to shared defaults require cross-service regression testing.
 
-### Consequences
+### Compliance Criteria
 
-- **Positive:** New and existing services gain consistent diagnostics, service discovery, resilience defaults, and local emulator wiring with minimal boilerplate.
-- **Negative:** Changes to `BookWorm.ServiceDefaults` affect every registered service and require regression verification across the solution.
-- **Follow-up:** Keep environment-specific deployment behavior documented explicitly under ADR-BW-015 because defining a helper in `BookWorm.ServiceDefaults` does not activate it unless the host registers it.
-
-## Pros and cons of the options
-
-### Use Aspire orchestration and `BookWorm.ServiceDefaults` for shared technical configuration
-
-- **Good**, because service discovery, OpenTelemetry, and HTTP resilience follow one verified convention across hosts.
-- **Good**, because services keep local control over which optional capabilities they register and override.
-- **Bad**, because a defect in shared service defaults can impact multiple services simultaneously.
-
-### Maintain standalone host configuration independently in every service
-
-- **Good**, because every service has zero coupling to a shared defaults assembly.
-- **Bad**, because telemetry schemas, timeout budgets, and security headers drift across hosts over time.
-
-### Move shared business execution into a central platform service
-
-- **Good**, because common orchestration logic lives in one runtime process.
-- **Bad**, because it violates capability-aligned ownership established in ADR-BW-001.
-
-### Treat local Aspire orchestration topology as an implicit production topology specification
-
-- **Good**, because teams maintain only one topology description.
-- **Bad**, because local emulators (Azurite, Mailpit, Cosmos DB emulator, Durable Task Scheduler emulator) differ materially from production Azure resources and SLAs.
-
-## Verification and links
-
-- **Verified against:** `aspire.config.json`, `src/Aspire/BookWorm.AppHost/AppHost.cs`, `src/Aspire/BookWorm.ServiceDefaults/Extensions.cs`, `src/Aspire/BookWorm.ServiceDefaults/Kestrel/RateLimiterExtensions.cs`
-- **Related architecture:** [[doc|arc42/05-building-block-view]], [[doc|arc42/07-deployment-view]], [[doc|arc42/08-crosscutting-concepts/004-observability]]
-- **Related ADRs:** ADR-BW-002, ADR-BW-013, ADR-BW-015, [[doc|arc42/09-architecture-decisions]]
+- Every backend service must register the shared service defaults for health checks and telemetry.
+- Shared defaults must remain free of domain entities, business rules, and capability-specific endpoints.
+- Local Aspire emulator settings must not be assumed identical to live Azure environment configuration.

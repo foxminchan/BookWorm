@@ -8,7 +8,7 @@ badges:
     textColor: green
 summary: Returns a filterable collection of books with pricing, availability, relationships, and rating summaries.
 owners:
-  - contributor-team
+  - catalog-experience-team
 schemaPath: schema.json
 operation:
   method: QUERY
@@ -18,68 +18,71 @@ sidebar:
   badge: "QUERY"
 ---
 
-`ListBooks` queries **Catalog API** (`QUERY /api/v1/books`) with an optional JSON request body to search, filter, sort, and paginate catalog books. The endpoint is publicly readable, uses hybrid vector search (Microsoft Foundry embeddings + Qdrant) when `search` is supplied, caches results in FusionCache, and emits total counts and navigation links in HTTP response headers.
+`ListBooks` queries [[service|catalog-api]] (`QUERY /catalog/api/v1/books`) with an optional JSON request body to search, filter, sort, and paginate catalog books. The endpoint is publicly readable, uses hybrid vector search when `search` is supplied, caches results, and emits total counts and navigation links in HTTP response headers.
 
 ## Overview
 
-| Property                          | Value                                                                                                                                                                                                                       |
-| :-------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**                         | Catalog bounded context (**Catalog API**, Aspire resource `catalog`)                                                                                                                                                        |
-| **Source**                        | `src/Services/Catalog/BookWorm.Catalog/Features/Books/List/ListBooksEndpoint.cs`, `ListBooksQuery.cs`, `ListBooksValidator.cs`                                                                                              |
-| **Protocol / format**             | HTTP `QUERY /api/v1/books` (via API Gateway: `QUERY /catalog/api/v1/books`), `ApiVersions.V1`, JSON (`application/json`)                                                                                                    |
-| **Authentication**                | None required (public read endpoint)                                                                                                                                                                                        |
-| **Rate limiting**                 | `PerUserRateLimit` token bucket (30 token limit, 20 tokens per 10 seconds, queue limit 5) plus global IP/concurrency limiters                                                                                               |
-| **Persistence, search & caching** | PostgreSQL (`catalogdb`, EF Core) + Qdrant (`vectordb`) hybrid search when `search` is non-empty; FusionCache L1/L2 caches search IDs for `5 minutes` (`BookSearchTag`) and filtered pages for `60 seconds` (`BookListTag`) |
-| **Contract version**              | `1.0.0`                                                                                                                                                                                                                     |
+| Property                           | Value                                                                                                                                                                                     |
+| :--------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Bounded Context**                | Catalog                                                                                                                                                                                   |
+| **Owner Service**                  | [[service\|catalog-api]]                                                                                                                                                                  |
+| **Protocol / Format**              | HTTP `QUERY`, `application/json` request and response                                                                                                                                     |
+| **Gateway Endpoint**               | `QUERY /catalog/api/v1/books` (service path `/api/v1/books`)                                                                                                                              |
+| **Authentication & Authorization** | None required (public read endpoint)                                                                                                                                                      |
+| **Idempotency / Concurrency**      | Read-only and naturally idempotent                                                                                                                                                        |
+| **Rate Limit / Caching**           | Global concurrency (`100`), per-IP fixed-window (`30 req/min`), and per-user token bucket (`30` limit, `20` per `10s`, queue `5`); caches search IDs (`5 min`) and filtered pages (`60s`) |
+| **Contract Version**               | `1.0.0` (`ApiVersions.V1`)                                                                                                                                                                |
 
-## Parameters and fields
+## Request & Response Contract
 
-### Request body (`ListBooksQuery`, optional)
+### Request Body (`application/json`, optional)
 
-The JSON request body is optional; omitting it applies all defaults below.
+Omitting the request body applies all defaults below.
 
-| Name           | Type               | Required | Default  | Constraints                                 | Description                                                                                                                         |
-| :------------- | :----------------- | :------- | :------- | :------------------------------------------ | :---------------------------------------------------------------------------------------------------------------------------------- |
-| `pageIndex`    | `integer`          | No       | `1`      | `> 0` (`ListBooksValidator`)                | 1-based page number to retrieve                                                                                                     |
-| `pageSize`     | `integer`          | No       | `20`     | `> 0` (`ListBooksValidator`)                | Maximum number of books per page (also caps vector search candidate count)                                                          |
-| `orderBy`      | `string \| null`   | No       | `"Name"` | Property name supported by `BookFilterSpec` | Field used to sort results                                                                                                          |
-| `isDescending` | `boolean`          | No       | `false`  | `true` or `false`                           | Sorts descending when `true` and ascending when `false`                                                                             |
-| `search`       | `string \| null`   | No       | `null`   | Trimmed, lowercased for cache key           | Free-text query executed via hybrid search against Qdrant (`vectordb`); returns an empty page immediately if zero vector hits match |
-| `minPrice`     | `number \| null`   | No       | `null`   | Decimal                                     | Inclusive minimum price filter                                                                                                      |
-| `maxPrice`     | `number \| null`   | No       | `null`   | Decimal                                     | Inclusive maximum price filter                                                                                                      |
-| `categoryId`   | `string[] \| null` | No       | `null`   | Array of UUIDs                              | Restricts results to books matching any supplied category ID                                                                        |
-| `publisherId`  | `string[] \| null` | No       | `null`   | Array of UUIDs                              | Restricts results to books matching any supplied publisher ID                                                                       |
-| `authorIds`    | `string[] \| null` | No       | `null`   | Array of UUIDs                              | Restricts results to books associated with any supplied author ID                                                                   |
+| Name           | Type               | Required | Constraints                                                                               | Description                                                                                     |
+| :------------- | :----------------- | :------- | :---------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------- |
+| `pageIndex`    | `integer`          | No       | Default `1`; must be `> 0`                                                                | 1-based page number to retrieve                                                                 |
+| `pageSize`     | `integer`          | No       | Default `20`; must be `> 0`                                                               | Maximum number of books per page (also caps vector search candidate count)                      |
+| `orderBy`      | `string \| null`   | No       | Default `"Name"`; supports `Name`, `Price.OriginalPrice`, `Price.DiscountPrice`, `Status` | Field used to sort results (unknown values fall back to `Name`; ties ordered by ID)             |
+| `isDescending` | `boolean`          | No       | Default `false`                                                                           | Sorts descending when `true` and ascending when `false`                                         |
+| `search`       | `string \| null`   | No       | Trimmed, lowercased for cache key                                                         | Free-text query executed via hybrid vector search; returns empty page if zero vector hits match |
+| `minPrice`     | `number \| null`   | No       | Decimal                                                                                   | Inclusive minimum price filter                                                                  |
+| `maxPrice`     | `number \| null`   | No       | Decimal                                                                                   | Inclusive maximum price filter                                                                  |
+| `categoryId`   | `string[] \| null` | No       | Array of UUIDs                                                                            | Restricts results to books matching any supplied category ID                                    |
+| `publisherId`  | `string[] \| null` | No       | Array of UUIDs                                                                            | Restricts results to books matching any supplied publisher ID                                   |
+| `authorIds`    | `string[] \| null` | No       | Array of UUIDs                                                                            | Restricts results to books associated with any supplied author ID                               |
 
-`orderBy` recognizes `Name`, `Price.OriginalPrice`, `Price.DiscountPrice`, and `Status`. Any other value falls back to `Name`; ties are ordered by book ID.
+### Response Headers (`200 OK`)
 
-### Response headers
+| Name               | Type     | Required | Constraints                               | Description                                                                                 |
+| :----------------- | :------- | :------- | :---------------------------------------- | :------------------------------------------------------------------------------------------ |
+| `Pagination-Count` | `string` | Yes      | Integer string (e.g., `84`)               | Total number of books matching the active filters across all pages                          |
+| `Link`             | `string` | Yes      | Comma-separated `<uri>;rel=<rel>` entries | Navigation URIs with `first`, `self`, `last`, and conditional `previous` / `next` relations |
 
-`ListBooksEndpoint` applies `WithPaginationHeaders()` (`PaginationHeaderFilter`), which appends two headers on `200 OK` responses:
+### Success Response (`200 OK`)
 
-| Header             | Format                                    | Description                                                                                 |
-| :----------------- | :---------------------------------------- | :------------------------------------------------------------------------------------------ |
-| `Pagination-Count` | Integer string (for example, `84`)        | Total number of books matching the active filters across all pages                          |
-| `Link`             | Comma-separated `<uri>;rel=<rel>` entries | Navigation URIs with `first`, `self`, `last`, and conditional `previous` / `next` relations |
+Returns a JSON array of book objects (`[]` when no books match). Each item matches the response schema documented in [[query|GetBook]].
 
-### Response schema (`BookDto[]`)
+## Behavior & Side Effects
 
-A `200 OK` response body serializes `PagedResult<BookDto>` as a JSON array of `BookDto` objects (returns `[]` when no books match). See [[query|GetBook]] for the full field-by-field `BookDto` schema (`id`, `name`, `description`, `imageUrl`, `price`, `priceSale`, `status`, `category`, `publisher`, `authors`, `averageRating`, `totalReviews`).
+- **Hybrid vector search:** When `search` is non-empty, executes a hybrid vector search against Qdrant and filters matching book IDs from PostgreSQL.
+- **Two-tier caching:** Caches vector search ID lists for 5 minutes and filtered page results for 60 seconds; invalidated on catalog mutations.
+- **No state mutation:** Pure read query with no database writes or integration events.
 
-## Error responses
+## Error Responses
 
-| Code / status           | Condition                                                                                                                                               | Recovery behavior                                   |
-| :---------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------ | :-------------------------------------------------- |
-| `400 Bad Request`       | `pageIndex <= 0`, `pageSize <= 0`, malformed UUID in filter arrays, or invalid JSON payload (`application/problem+json` `HttpValidationProblemDetails`) | Fix request body values; do not retry unchanged     |
-| `429 Too Many Requests` | Caller exceeded `PerUserRateLimit` or global rate limit (`application/problem+json` + `Retry-After` header)                                             | Wait for the `Retry-After` duration before retrying |
+| Status / Code           | Condition                                                                                   | Client Recovery Action                              |
+| :---------------------- | :------------------------------------------------------------------------------------------ | :-------------------------------------------------- |
+| `400 Bad Request`       | `pageIndex <= 0`, `pageSize <= 0`, malformed UUID in filter arrays, or invalid JSON payload | Fix request body values; do not retry unchanged     |
+| `429 Too Many Requests` | Rate limit quota exceeded (`Retry-After` header included)                                   | Wait for the `Retry-After` duration before retrying |
 
-## Related documentation
+## Related Documentation
 
-- [[service|catalog-api]] — Service overview, PostgreSQL/Qdrant persistence, and endpoints.
+- [[service|catalog-api]] — Service overview, persistence, and endpoints.
+- [[entity|book]] — Book entity model.
 - [[query|GetBook]] — Retrieve a single book projection by ID.
 - [[query|ListBooksGrpc]] — Internal gRPC book search endpoint used by MCP Tools.
-- [[entity|book]] — Domain model for catalog books.
 
 <NodeGraph />
 
-<SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />
+<SchemaViewer file="schema.json" title="List books schema" maxHeight="500" search="true" />

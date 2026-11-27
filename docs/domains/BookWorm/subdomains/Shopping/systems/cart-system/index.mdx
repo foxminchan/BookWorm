@@ -8,7 +8,7 @@ summary: |
   checkout cleanup coordination.
 scope: internal
 owners:
-  - contributor-team
+  - commerce-fulfillment-team
 services:
   - id: basket-api
     version: 1.0.0
@@ -27,6 +27,11 @@ actors:
 containers:
   - id: basket-database
     version: 1.0.0
+entities:
+  - id: basket
+    version: 1.0.0
+  - id: basket-item
+    version: 1.0.0
 badges:
   - content: Internal
     backgroundColor: gray
@@ -34,96 +39,54 @@ badges:
     icon: LockClosedIcon
 ---
 
-## 1. Context & Problem
+## System Purpose & Boundary
 
-Customers browsing BookWorm need a dedicated, personal workspace to collect the books they plan to buy, adjust quantities, and review up-to-date titles and prices before committing to an order.
+The Cart System owns transient, customer-scoped shopping [[entity|basket]] state throughout the pre-order journey within the [[domain|shopping]] domain. It serves **Customers** creating, viewing, replacing, and clearing their active [[entity|basket-item]] selections. Product metadata and pricing ([[domain|catalog]]), accepted order history ([[domain|ordering]]), and post-checkout orchestration ([[system|finance-system]]) are explicitly out of scope.
 
-Without a dedicated Cart System, temporary shopping activity would either clutter order-processing records with abandoned sessions or force the storefront to track unvalidated selections locally—leading to stale pricing, inconsistent quantities, and confusion when an order is finally placed. The Cart System solves this by owning mutable, pre-order shopping intent for each authenticated customer while leaving product metadata and accepted order fulfillment to their respective domains.
+:::note
+[[container|basket-database]] is authoritative only for active pre-order shopping intent—never for reconstructing accepted orders. Basket updates replace the entire item list rather than merging partial edits, and read responses enrich items with live Catalog titles and prices.
+:::
 
-## 2. Business Value
+## Contained Capabilities
 
-- **Accurate storefront pricing**: Customers see current book titles, regular prices, and sale prices fetched from the Catalog whenever they review their basket, preventing surprises at checkout.
-- **Faster, more resilient operations**: Isolating active shopping activity from historical order reads keeps day-to-day browsing responsive and unaffected by order-reporting workloads.
-- **Safer checkout handoffs**: Explicit cleanup confirmation after order submission prevents a completed basket from being accidentally reused, while explicit failure reporting gives operations and workflows a clear recovery path.
-- **Stronger customer privacy**: Every basket is strictly tied to the verified customer identity, ensuring shopping state is never shared across accounts.
+| Service / Agent         | Role in System                                                                                            | Primary Data Store             | Interaction Style (Sync / Async) |
+| :---------------------- | :-------------------------------------------------------------------------------------------------------- | :----------------------------- | :------------------------------- |
+| [[service\|basket-api]] | Serves customer HTTP basket endpoints, internal gRPC basket snapshots, and post-checkout cleanup handlers | [[container\|basket-database]] | Sync (HTTP/gRPC) & Async (Kafka) |
 
-## 3. How It Works
+## External Interactions & Trust Boundaries
 
-The Cart System manages the [[entity|basket]] throughout a customer's pre-order journey:
+- **Customer entry point:** Authenticated customers manage their own basket through the API Gateway, with ownership derived strictly from the [[system|identity-provider]] token.
+- **Catalog & Ordering sync calls:** [[service|basket-api]] batch-resolves book titles and prices from [[service|catalog-api]] over gRPC on read, and serves basket snapshots to [[service|order-api]] over gRPC during checkout.
+- **Post-checkout cleanup:** Consumes [[command|PlaceOrderCommand]] from [[system|finance-system]] over Kafka and publishes [[event|BasketDeletedCompleteIntegrationEvent]] or [[event|BasketDeletedFailedIntegrationEvent]] so Finance and Ordering can track cleanup outcomes.
 
-1. **Creating a basket**: An authenticated customer starts a basket by selecting one or more [[entity|book]] items with positive quantities. Empty baskets are rejected at creation time so only meaningful shopping intent is stored.
-2. **Storing shopping intent**: The system stores the customer's selected book identifiers and requested quantities in [[container|basket-database]]. It owns only shopping intent—not product descriptions or completed orders.
-3. **Viewing and enriching items**: When a customer retrieves their basket, the system resolves the unique book identifiers against [[domain|catalog]] and enriches the view with each book's current name, regular price, and sale price whenever those records are available.
-4. **Updating or clearing the basket**: Updates replace the basket's entire item collection rather than merging partial changes, ensuring quantities stay positive and consistent. A customer may also explicitly delete their basket to clear it.
-5. **Checkout handoff and cleanup**: At checkout, the basket is submitted to [[domain|ordering]], which takes ownership of the accepted order. Afterward, the Cart System deletes the submitted basket and emits an explicit outcome indicating whether cleanup succeeded or failed so downstream workflows can confirm completion or trigger recovery.
+<Accordion title="Enrichment & Cleanup Notes">
+	- **Read-time enrichment:** Distinct book IDs are batched into a single Catalog lookup; missing
+	catalog items remain in the basket response without inventing metadata. - **Explicit cleanup
+	outcomes:** Reporting deletion success or failure explicitly prevents stale baskets from being
+	reused after checkout.
+</Accordion>
 
-### Core Capabilities
-
-| Capability            | Responsibility                                                                              |
-| --------------------- | ------------------------------------------------------------------------------------------- |
-| Basket creation       | Create a customer basket with at least one item.                                            |
-| Basket retrieval      | Return the current basket and enrich items with current Catalog data when available.        |
-| Basket replacement    | Replace the complete item set rather than merge arbitrary state.                            |
-| Basket deletion       | Clear the customer basket as an explicit lifecycle operation.                               |
-| Checkout coordination | Support the handoff that removes a submitted basket and reports cleanup success or failure. |
-
-## 4. Trade-offs & Lessons Learned
-
-- **Full replacement vs. partial merges**: Replacing the entire item list on updates avoids conflicting partial edits and keeps client state simple, at the cost of requiring callers to submit the full desired item collection on each update.
-- **Transient basket state vs. durable order history**: Treating [[container|basket-database]] as authoritative only for active pre-order state keeps the system lightweight and focused, meaning it must never be used to reconstruct accepted orders.
-- **Read-time Catalog enrichment vs. duplicated product data**: Fetching book names and prices on read preserves [[domain|catalog]] as the single source of truth without transferring ownership to Shopping, while requiring distinct-item lookups to keep latency low.
-- **Explicit error and cleanup outcomes vs. silent defaults**: Returning explicit validation and missing-basket outcomes (instead of silently returning an empty basket) and reporting cleanup failures explicitly (instead of assuming deletion succeeded) prevents hidden data drift and accidental basket reuse.
-
-## 5. Technical Reference
-
-### Service & Persistence Boundary
-
-- **Service**: [[service|basket-api]]
-- **Data store**: [[container|basket-database]]
-- **Related domains**: [[domain|catalog]] (book metadata, names, regular and sale prices), [[domain|ordering]] (accepted orders after checkout)
-- **Integration events**: [[event|BasketDeletedCompleteIntegrationEvent]] and [[event|BasketDeletedFailedIntegrationEvent]]
-
-### Interaction Surface
-
-[[service|basket-api]] exposes the version 1 HTTP contract at `/api/v1/baskets`:
-
-| Operation | Behavior                                                  | Successful response                                       |
-| --------- | --------------------------------------------------------- | --------------------------------------------------------- |
-| `POST`    | Create a basket for a customer from an initial item list. | `201 Created` with the customer identifier.               |
-| `GET`     | Retrieve the customer's current basket.                   | `200 OK` with basket items and available Catalog details. |
-| `PUT`     | Replace the basket's complete item list.                  | `204 No Content`.                                         |
-| `DELETE`  | Delete the customer's basket.                             | `204 No Content`.                                         |
-
-The service also exposes a gRPC contract for internal service-to-service access. HTTP validation and not-found responses are represented through the versioned API contract rather than silently returning an empty basket.
-
-### Operational Considerations
-
-| Concern      | Expectation                                                                          |
-| ------------ | ------------------------------------------------------------------------------------ |
-| Security     | Scope basket access to the authenticated customer identity.                          |
-| Availability | Keep basket reads and writes independent from order-history reads.                   |
-| Consistency  | Treat replacement and deletion as deliberate state transitions.                      |
-| Resilience   | Monitor cleanup failure outcomes and provide a recovery path in the order workflow.  |
-| Performance  | Keep the storefront path low-latency; enrich only the distinct book IDs in a basket. |
-
-### Context Diagram
-
-The Cart System's context diagram shows its interactions with human actors and other system components.
-
-<ContextDiagram />
+## System Visualizations
 
 ### System Context
 
+<ContextDiagram />
+
+### Cart Context
+
 <LikeC4View viewId="basketContext" project="basket" />
 
-### Architecture Graph
-
-The graph shows the service and persistence boundary owned by the Cart System.
+### Component Topology
 
 <NodeGraph mode="full" search="false" legend="false" />
 
 ### Architecture Decisions
 
-The key decisions that shaped this system. Search, filter by status, or sort by clicking a column.
-
 <ADRTable />
+
+## Related Documentation
+
+- [[flow|user-checkout]] — End-to-end checkout and basket cleanup flow.
+- [[diagram|checkout-interaction]] — Interaction between Shopping, Ordering, and Finance.
+- [[doc|domains/bookworm/subdomains/shopping/engineering/basket-api-contracts]] — Basket API contracts and boundaries.
+- [[doc|domains/bookworm/subdomains/shopping/guides/checkout-lifecycle]] — Pre-order to checkout handoff guide.

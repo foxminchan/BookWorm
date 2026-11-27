@@ -6,9 +6,9 @@ summary: Chat agents use Presidio middleware to analyze and anonymize sensitive 
 status: accepted
 date: 2026-11-04
 owners:
-  - contributor-team
+  - ai-capabilities-team
 decisionMakers:
-  - contributor-team
+  - ai-capabilities-team
 appliesTo:
   - type: system
     id: chat-system
@@ -17,7 +17,7 @@ appliesTo:
   - type: system
     id: data-privacy
   - type: service
-    id: PresidioAPI
+    id: presidio-api
   - type: command
     id: AnalyzeText
   - type: command
@@ -64,6 +64,6 @@ Filtering only incoming requests would still leave sensitive content generated i
 
 - **Decision status**: `accepted` (`2026-11-04`)
 - **Coverage**: All five Chat agents use the shared PII middleware, either registered directly or through the Book Agent's wrapped client inherited by its delegated researchers.
-- **Privacy service integration**: For non-empty text, the middleware calls [[service|PresidioAPI]] in [[system|data-privacy]] to analyze content via [[command|AnalyzeText]] and, when PII is detected, anonymize it via [[command|AnonymizeText]].
+- **Privacy service integration**: For non-empty text, the middleware calls [[service|presidio-api]] in [[system|data-privacy]] to analyze content via [[command|AnalyzeText]] and, when PII is detected, anonymize it via [[command|AnonymizeText]].
 - **Execution behavior**: Applies symmetrically to model input and output; streaming output is buffered until output filtering completes, then emitted; failures propagate (fail-closed) rather than bypassing privacy processing.
 - **Scope note**: Governs the shared model-call middleware; does not imply 100% detection recall or irreversibility of anonymized text.

@@ -1,0 +1,20 @@
+---
+title: Engineering Invariants and Quirks
+summary: Durable Functions saga keying, LIFO compensation semantics, and Kafka trigger error handling for Order Orchestration.
+version: 1.0.0
+---
+
+Engineering invariants and known contract quirks for [[service|order-orchestration]].
+
+## Saga & Compensation Invariants
+
+- **Deterministic instance keying:** Consumes [[event|UserCheckedOutIntegrationEvent]] and starts a Durable Functions orchestration keyed by `OrderId` so duplicate event deliveries do not spawn parallel sagas.
+- **LIFO compensation:** Dispatches [[command|PlaceOrderCommand]] to [[service|basket-api]] and [[service|notification-api]]. If [[service|basket-api]] emits [[event|BasketDeletedFailedIntegrationEvent]], the saga issues [[command|DeleteBasketFailedCommand]] to [[service|order-api]] to compensate; otherwise [[event|BasketDeletedCompleteIntegrationEvent]] advances the workflow via [[command|DeleteBasketCompleteCommand]].
+- **Order lifecycle notifications:** Consumes [[event|OrderStatusChangedToCompleteIntegrationEvent]] and [[event|OrderStatusChangedToCancelIntegrationEvent]] to dispatch [[command|CompleteOrderCommand]] and [[command|CancelOrderCommand]] respectively.
+- **Nullable contact tolerance:** Customer `email` and `fullName` may be `null` on checkout events; the saga still executes basket cleanup and delegates email-skipping to [[service|notification-api]].
+
+## Runtime & Dead-Letter Behavior
+
+:::note
+[[service|order-orchestration]] runs on Azure Functions Kafka triggers rather than Wolverine's Kafka transport. Failed trigger executions are retried by the Functions host and recorded in the Durable Task Hub rather than routed to a dedicated Finance Kafka dead-letter topic.
+:::

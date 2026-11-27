@@ -2,69 +2,43 @@
 id: order-lifecycle
 name: Order Lifecycle
 version: 1.0.0
-summary: |
-  State machine showing Order creation and the permitted transitions from
-  New to the terminal Completed or Cancelled states.
+summary: Business status lifecycle of an accepted Order showing creation in the New state and irreversible transitions to Completed or Cancelled.
 owners:
-  - business-strategy
+  - commerce-fulfillment-team
+badges:
+  - content: State Lifecycle
+    backgroundColor: purple
+    textColor: purple
 ---
 
-## 1. Context & Problem
+## Purpose & Scope
 
-During checkout, several independent activities happen around an order: basket cleanup, payment settlement, shipping, finance workflow coordination, and customer email notifications. If all of those downstream steps are conflated with the order's core business status, teams and support staff cannot tell whether an order is actually open, completed, or cancelled—especially when a cleanup step fails or times out.
+This lifecycle view defines the authoritative business states of an [[entity|order]] owned by [[service|order-api]] within the [[domain|ordering]] subdomain. Engineering, product, and operations teams should use this reference to distinguish core order status transitions from downstream [[service|order-orchestration]] coordination, email delivery, and technical soft deletion.
 
-This lifecycle defines the strict business states owned by the [[domain|ordering]] context and separates them from post-checkout coordination and soft deletion.
-
-## 2. Business Value
-
-- **Unambiguous order truth:** Gives business stakeholders, operations, and customers one authoritative definition of whether an order is `New`, `Completed`, or `Cancelled`.
-- **Audit and data integrity:** Prevents completed or cancelled orders from being reopened or overwritten by unrelated background steps.
-- **Faster incident triage:** Separates core order status from Finance coordination, basket cleanup, and email delivery so support teams know exactly where a failure occurred.
-
-## 3. How It Works
-
-An Order starts in the **New** state when checkout creates the purchase record from the customer's basket and current catalog prices. From **New**, only [[domain|ordering]] can transition the Order to one of two final states: **Completed** or **Cancelled**.
+## Visual Reference
 
 <MermaidFileLoader file="mermaids/order-lifecycle.mmd" />
 
-### What each state means
+_Authoritative Order Status Transitions_
 
-- **New:** The Order has been recorded with its buyer and purchase-time items. Being in **New** does not confirm that the shopping basket was cleared or that payment settled.
-- **Completed:** Ordering has accepted an explicit completion action. No further status transitions are possible, though this state alone does not prove external shipping or confirmation emails succeeded.
-- **Cancelled:** Ordering has accepted an explicit cancellation action. No further status transitions are possible. A cancelled Order is distinct from a cancelled Finance workflow or a soft-deleted Order.
+## Key Takeaways & Boundaries
 
-Once an Order reaches **Completed** or **Cancelled**, it cannot be reopened, and a completed Order cannot later be cancelled through this state machine.
+- **Single status authority**: Only [[service|order-api]] transitions an [[entity|order]] from **New** (created via [[command|CreateOrder]]) to **Completed** ([[command|CompleteOrder]]) or **Cancelled** ([[command|CancelOrder]]).
+- **Irreversible terminal states**: Once an order reaches **Completed** or **Cancelled**, it cannot be reopened; any subsequent adjustment requires a separate compensating process.
+- **Explicit integration events**: Accepting an order emits [[event|UserCheckedOutIntegrationEvent]], while terminal transitions emit [[event|OrderStatusChangedToCompleteIntegrationEvent]] or [[event|OrderStatusChangedToCancelIntegrationEvent]].
+- **Decoupled orchestration and notifications**: [[service|order-orchestration]] and [[service|notification-api]] react to order events but never own or mutate business order status.
 
-### Why Finance coordination and soft deletion are separate
+:::warning
+**Do not conflate orchestration timeouts, email delivery, or soft deletion with a Cancelled order.**
 
-- **Finance coordination is a separate workflow:** Checkout starts a Finance workflow to coordinate basket cleanup and notifications. Successful basket cleanup is logged by Ordering without completing the Order. If Finance reaches its timeout retry limit, it can finalize its own workflow as cancelled and trigger a cancellation email—without cancelling the Order in Ordering. Therefore, receiving a cancellation email is not proof that the Order itself is **Cancelled**; the true status must always be read from Ordering.
-- **Soft deletion is a flag, not a status:** If basket cleanup fails, Ordering can mark the Order as soft-deleted while preserving its existing business status and without recording an Order cancellation.
+- When [[service|order-orchestration]] exhausts its bounded retry budget, it cancels its own coordination workflow and may request a cancellation email via [[command|CancelOrderCommand]]—without cancelling the [[entity|order]] in [[service|order-api]].
+- When [[service|order-api]] handles [[command|DeleteBasketFailedCommand]], it soft-deletes the order record while preserving its existing **New** business status.
+  :::
 
-### Reading and troubleshooting guidance
+## Related Resources
 
-- Match Ordering and Finance records using the Order ID, but inspect each system's status independently.
-- Do not assume an order is completed just because the shopping basket was deleted.
-- Check the soft-delete flag separately when investigating basket cleanup failures, and distinguish Finance timeouts from explicit cancellations in Ordering.
-- Do not treat email submission or delivery as confirmation of an Order status transition.
-
-## 4. Trade-offs & Lessons Learned
-
-- **Strict domain isolation vs. single combined status:** Keeping Finance workflow progress, basket cleanup, and email delivery out of the Order state machine prevents transient integration failures from corrupting purchase history, at the cost of requiring operational dashboards and support playbooks to inspect Ordering and Finance independently.
-- **Irreversible terminal states:** Disallowing transitions out of **Completed** or **Cancelled** keeps the lifecycle simple and predictable, though any business exception after finalization must be handled through compensating processes rather than reopening the Order.
-- **Separate soft-delete flag:** Modeling deletion as a flag instead of a fourth status avoids mixing cleanup recovery with customer-facing cancellation semantics, but requires investigators to check that flag explicitly.
-
-## 5. Technical Reference
-
-- **State machine scope:** [[domain|ordering]] Order aggregate (`New` -> `Completed` or `Cancelled`; initial marker = creation, final markers = no further business-status transitions, not record deletion).
-- **Creation:** Authenticated checkout resolves prices from Catalog, creates the Order in `New`, and registers `OrderPlacedEvent` -> mapped to [[event|UserCheckedOutIntegrationEvent]] for Finance.
-- **Completion:** `PATCH /orders/{orderId}/complete` invokes `MarkAsCompleted()` (requires `New`), transitions to `Completed`, and registers `OrderCompletedEvent` -> mapped to [[event|OrderStatusChangedToCompleteIntegrationEvent]].
-- **Cancellation:** `PATCH /orders/{orderId}/cancel` invokes `MarkAsCanceled()` (requires `New`), transitions to `Cancelled`, and registers `OrderCancelledEvent` -> mapped to [[event|OrderStatusChangedToCancelIntegrationEvent]].
-- **Endpoint guards:** Both transition endpoints require authentication, an idempotency key, and per-user rate limiting; transitions are rejected when status is no longer `New`.
-- **Finance saga coordination** (`Placed`, `BasketDeletionFailed`, `Completed`, `Cancelled`):
-  - Checkout starts the Finance saga, which issues [[command|PlaceOrderCommand]] for basket cleanup and schedules a timeout.
-  - [[event|BasketDeletedCompleteIntegrationEvent]] -> Finance sends [[command|DeleteBasketCompleteCommand]]; Ordering logs it without completing the Order.
-  - [[event|BasketDeletedFailedIntegrationEvent]] -> Finance finalizes its saga as `BasketDeletionFailed` and sends [[command|DeleteBasketFailedCommand]] to Ordering.
-  - Timeout retries up to configured limit -> at limit, Finance finalizes its saga as `Cancelled` and can issue a cancellation email command without cancelling the Order.
-  - Ordering completion/cancellation events -> Finance finalizes its saga and can issue notification commands (require nonblank name and email).
-- **Soft deletion:** On [[command|DeleteBasketFailedCommand]], Ordering looks up the Order and, if found, sets `IsDeleted = true` and saves it while preserving business status and without registering an Order cancellation event (no-op if absent).
-- **Related references:** [[domain|ordering]], [[diagram|checkout-interaction]]
+- [[domain|ordering]] — Ordering bounded context
+- [[service|order-api]] — Authoritative owner of the [[entity|order]] lifecycle
+- [[service|order-orchestration]] — Post-checkout coordination workflow
+- [[flow|order-lifecycle]], [[diagram|checkout-interaction]] — End-to-end order lifecycle and checkout interactions
+- [[adr|adr-003-separate-order-status-from-finance-saga]], [[adr|adr-005-finance-separate-workflow-and-order-status]] — Architectural decisions separating order status from orchestration

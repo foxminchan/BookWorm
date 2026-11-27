@@ -2,50 +2,40 @@
 title: Crosscutting Concepts
 summary: Shared security, integration, resilience, observability, AI governance, and verification practices across BookWorm.
 owners:
-  - contributor-team
+  - architecture-enabling-team
 badges:
   - content: Architecture
     backgroundColor: blue
     textColor: blue
 ---
 
-BookWorm standardizes security, messaging, validation, resilience, observability, AI governance, and automated verification through shared libraries (`BookWorm.ServiceDefaults`, `BookWorm.Chassis`, `BookWorm.SharedKernel`, and frontend `@workspace/*` packages). Use this chapter to see which protections apply by default across all hosts and which require explicit per-service registration.
+These concepts establish conceptual integrity and uniform rules across every building block. They define the minimum trust, compatibility, failure, diagnostic, and delivery expectations that domain-specific designs and runtime scenarios must satisfy.
 
-## Scope and principles
+## Concept Index
 
-Four architectural rules govern all crosscutting mechanisms in BookWorm:
+| Concept                                                                      | Core Rule / Principle                                                               | Affected Building Blocks                                      | Related ADRs / Quality Goals                |
+| :--------------------------------------------------------------------------- | :---------------------------------------------------------------------------------- | :------------------------------------------------------------ | :------------------------------------------ |
+| [[doc\|arc42/08-crosscutting-concepts/001-security-and-privacy]]             | Authenticate every trust boundary; authorize explicitly; minimize and protect data. | Edge and frontends, capability APIs, AI workflows, operations | Identity, data protection, confidentiality  |
+| [[doc\|arc42/08-crosscutting-concepts/002-contracts-and-messaging]]          | Communicate through owned, versioned contracts and tolerate at-least-once delivery. | Every capability, integration edge, messaging infrastructure  | Interoperability, evolvability, reliability |
+| [[doc\|arc42/08-crosscutting-concepts/003-validation-errors-and-resilience]] | Reject invalid work at boundaries and bound all retryable operations.               | Public APIs, workers, external integrations                   | Robustness, availability, recoverability    |
+| [[doc\|arc42/08-crosscutting-concepts/004-observability]]                    | Produce correlated telemetry and prove health from signals, not assumptions.        | Frontends, APIs, workers, AI and data pipelines               | Traceability, operability, diagnosability   |
+| [[doc\|arc42/08-crosscutting-concepts/005-ai-governance]]                    | Apply privacy, policy, identity, and human decision controls before AI actions.     | Conversational discovery, review intelligence, tool catalog   | Responsible AI, privacy, human oversight    |
+| [[doc\|arc42/08-crosscutting-concepts/006-testing-and-change-safety]]        | Require evidence from every change and make releases reversible.                    | Shared foundations, every capability, frontends               | Testability, deployability, change safety   |
 
-1. **Keep domain ownership local:** Shared technical primitives support a bounded context without transferring ownership of its business data or rules (see [[doc|arc42/05-building-block-view]]).
-2. **Separate handoff from completion:** An HTTP acknowledgment, Kafka publish, Quartz trigger, or SMTP `250 OK` never proves downstream business completion (see [[doc|arc42/06-runtime-view]]).
-3. **Verify per-service opt-in:** Availability in `BookWorm.Chassis` does not mean every host enables a feature. Confirm startup registration on each service before relying on a safeguard.
-4. **Do not infer unstated SLAs:** Source-level timeouts, retry counts, and sampling probabilities are implementation defaults, not production availability or latency commitments.
+<Admonition type="info">
+	Shared mechanisms are defaults, not implicit guarantees. A team must explicitly register and
+	verify every control on the host or boundary that uses it.
+</Admonition>
 
-## Crosscutting concept guides
+## Conceptual Integrity Rules
 
-| Guide                                                                        | Primary focus                                                                                                                              | Shared building blocks                                                                                         |
-| :--------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------- |
-| [[doc\|arc42/08-crosscutting-concepts/001-security-and-privacy]]             | Microsoft Entra ID JWT auth, roles/scopes, Entra Agent Identities, Better Auth, HMAC log redaction, Presidio PII, STRIDE threat model      | `BookWorm.Chassis.Security`, `BookWorm.Chassis.Logging`, `BookWorm.Hosting.Presidio`, `@workspace/auth`        |
-| [[doc\|arc42/08-crosscutting-concepts/002-contracts-and-messaging]]          | REST/OpenAPI, gRPC/Buf, MCP Streamable HTTP, A2A gRPC, Kafka CloudEvents, Wolverine durability models, native DLQs                         | `BookWorm.Chassis.EventBus`, `BookWorm.Chassis.Endpoints`                                                      |
-| [[doc\|arc42/08-crosscutting-concepts/003-validation-errors-and-resilience]] | `Mediator.SourceGenerator` + `FluentValidation`, RFC 9457 exception handlers, rate limiting, Redis idempotency, Polly & FusionCache        | `BookWorm.Chassis.CQRS`, `BookWorm.Chassis.Exceptions`, `BookWorm.Chassis.Caching`, `BookWorm.ServiceDefaults` |
-| [[doc\|arc42/08-crosscutting-concepts/004-observability]]                    | OpenTelemetry traces/metrics/logs, log buffering, W3C correlation, health endpoints, Aspire Dashboard, Azure Log Analytics                 | `BookWorm.ServiceDefaults`, `BookWorm.Chassis.OpenTelemetry`, `@workspace/otel`                                |
-| [[doc\|arc42/08-crosscutting-concepts/005-ai-governance]]                    | Input screening, `MicrosoftDecision1` + HITL `RequestPort`, Presidio PII, YAML governance policies across Chat, Rating, and MCP Tools      | `BookWorm.Chassis.AI`, `Microsoft.AgentGovernance.Extensions.*`                                                |
-| [[doc\|arc42/08-crosscutting-concepts/006-testing-and-change-safety]]        | TUnit + MTP unit tests, Pact contract tests, ArchUnitNET rules, Buf `.proto` checks, Vitest, Playwright BDD + axe-core, `turbo boundaries` | `BookWorm.Testing`, `BookWorm.ArchTests`, `tests/pacts/`, `src/Clients`                                        |
+1. **Preserve domain ownership.** A shared library may provide technical primitives, but it must not own business data or replace an authoritative capability.
+2. **Separate acknowledgment from completion.** A successful network call or broker acceptance proves only that the handoff occurred, not that downstream work finished correctly.
+3. **Design for explicit opt-in.** Identity, resilience, privacy, and governance behavior must be visible in service configuration and tested at the relevant boundary.
+4. **Prefer reversible evolution.** Additive contract changes, staged rollouts, and retained observability reduce the cost of a correction.
 
-## Shared building-block adoption boundaries
+## Related Views
 
-| Capability                                      | Universal via `BookWorm.ServiceDefaults`?               | Opt-in per service / scope                                                                                                                                  |
-| :---------------------------------------------- | :------------------------------------------------------ | :---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **OpenTelemetry traces, metrics & OTLP export** | Yes (all .NET hosts; `@workspace/otel` in Next.js apps) | Messaging traces added by `UseEventFramework()`; handler metrics added per service                                                                          |
-| **Outbound HTTP resilience & Kestrel limits**   | Yes (`UseBudgetedRetries()`, HTTP/2 limits)             | MailKit Polly pipeline is specific to **Notification**                                                                                                      |
-| **Rate limiting** (`AddRateLimiting()`)         | Available in ServiceDefaults                            | Wired on public API hosts; `PerUserRateLimit` applied selectively (such as `/ag-ui`)                                                                        |
-| **Entra ID authentication & policies**          | Available in `BookWorm.Chassis`                         | Wired per API (`catalog`, `basket`, `ordering`, `rating`, `chatting`, `mcptools`, `quartz-dashboard`)                                                       |
-| **Wolverine Kafka + durability**                | No (only hosts with `broker` connection)                | PostgreSQL outbox (`catalog`, `catalog-ingestion`, `ordering`, `scheduler`); Cosmos DB persistence (`rating`); Redis idempotency (`basket`, `notification`) |
-| **HMAC log redaction** (`AddRedaction()`)       | Available in `BookWorm.Chassis`                         | Enabled on **Basket API**, **Ordering API**, and **Notification**                                                                                           |
-| **AI governance & Presidio PII**                | No                                                      | Wired on **Chat API**, **Rating API**, and **MCP Tools** (`Policies/*.yaml`; Presidio on Chat and Rating)                                                   |
-
-## Related documentation
-
-- [[doc|arc42/05-building-block-view]] — Static domain and container structure.
-- [[doc|arc42/06-runtime-view]] — End-to-end interaction scenarios across services.
-- [[doc|development/004-engineering-standards]] — Repository coding, contract, and CQRS conventions.
-- [[doc|arc42/09-architecture-decisions]] — Platform and system ADRs governing crosscutting choices.
+- [[doc|arc42/05-building-block-view]] — Building-block ownership and boundaries.
+- [[doc|arc42/06-runtime-view]] — End-to-end interactions governed by these concepts.
+- [[doc|arc42/09-architecture-decisions]] — Decisions that constrain these policies.

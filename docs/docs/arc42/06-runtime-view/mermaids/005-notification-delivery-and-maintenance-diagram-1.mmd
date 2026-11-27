@@ -1,35 +1,40 @@
-%%{init: {'theme': 'base', 'themeVariables': {'actorBkg': '#ffffff', 'actorBorder': '#2d3142', 'actorTextColor': '#2d3142', 'actorLineColor': '#bfc0c0', 'signalColor': '#4f5d75', 'signalTextColor': '#2d3142', 'labelBoxBkgColor': '#f5f5f5', 'labelBoxBorderColor': '#4f5d75', 'labelTextColor': '#2d3142', 'loopTextColor': '#4f5d75', 'noteBkgColor': '#fdf2ee', 'noteBorderColor': '#bf4520', 'noteTextColor': '#2d3142', 'activationBkgColor': '#ececec', 'activationBorderColor': '#4f5d75', 'fontFamily': 'Geist, system-ui, sans-serif'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': {'actorBkg': '#ffffff', 'actorBorder': '#2d3142', 'actorTextColor': '#2d3142', 'actorLineColor': '#bfc0c0', 'signalColor': '#4f5d75', 'signalTextColor': '#2d3142', 'fontFamily': 'Geist, system-ui, sans-serif'}}}%%
 sequenceDiagram
 	autonumber
-	participant Finance as Finance\n(Azure Durable Functions)
-	participant Kafka as Kafka Broker\n(CloudEvents JSON)
-	participant Notif as Notification\n(.NET 11 Worker)
-	participant Redis as Redis\n(Idempotency Guard)
-	participant Smtp as Mailpit / SendGrid\n(SMTP :587)
-	participant DLQ as Kafka DLQ\n(notification.dead-letter-queue)
+	participant Finance as Finance
+	participant Broker as Kafka Broker
+	participant Notification as Notification
+	participant Redis as Redis
+	participant SMTP as Mailpit or SendGrid
+	participant DLQ as Notification Dead-Letter Queue
 
-	Finance ->> Kafka: Publish PlaceOrder / CompleteOrder / CancelOrderCommand (key: OrderId)
-	Kafka ->> Notif: Deliver CloudEvents command
-	Notif ->> Redis: Atomic SET NX idempotency:{handler}:{eventId} (TTL 24h)
+	Finance -->> Broker: Asynchronous email command
+	Broker -->> Notification: Deliver command
+	Notification ->> Redis: Claim event idempotency key
 
-	alt Duplicate event ID
-		Redis -->> Notif: Key already exists (skip)
-	else New event ID
-		Redis -->> Notif: Lock acquired
+	alt Duplicate event identifier
+		Redis -->> Notification: Key already exists
+		Notification ->> Notification: Skip delivery
+	else New event identifier
+		Redis -->> Notification: Key acquired
 
-		alt Recipient email is null or blank
-			Notif ->> Notif: Skip email rendering and send
-		else Valid recipient email
-			Notif ->> Notif: Render Orders/OrderEmail.mjml + _Layout.mjml (Mjml.Net)
-			Notif ->> Smtp: MailKit SMTP submit (Polly circuit breaker + jitter retry + 30s timeout)
+		alt Recipient missing
+			Notification ->> Notification: Skip delivery
+		else Recipient available
+			Notification ->> Notification: Render email
+			Notification ->> SMTP: Synchronous SMTP submission
 
-			alt Transient SMTP failure after Polly retries
-				Smtp -->> Notif: Failure
-				Notif ->> Redis: Release idempotency key
-				Notif -->> Kafka: Wolverine retry (50ms / 250ms / 1s jitter)
-				Kafka ->> DLQ: Route exhausted message (7-day retention)
-			else Accepted by SMTP server
-				Smtp -->> Notif: 250 OK (SMTP accepted)
+			alt Accepted
+				SMTP -->> Notification: Relay accepted
+			else Transient failure
+				SMTP -->> Notification: Failure
+				Notification ->> Notification: Retry with bounded backoff
+
+				opt Retries exhausted
+					Notification ->> Redis: Release idempotency key
+					Notification -->> Broker: Retry or dead-letter
+					Broker ->> DLQ: Retain exhausted command
+				end
 			end
 		end
 	end

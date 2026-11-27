@@ -1,56 +1,49 @@
 ---
 title: Technical Context
-summary: Technical neighbors and interaction mechanisms at the BookWorm platform boundary.
+summary: External-facing channels and protocols that realize the BookWorm business context.
 owners:
-  - contributor-team
+  - architecture-enabling-team
 badges:
   - content: Architecture
     backgroundColor: blue
     textColor: blue
 ---
 
-BookWorm realizes its business context through an **Aspire** 17 distributed application consisting of a YARP **API Gateway**, three Next.js 16 microfrontends (MFEs), ten independently deployable .NET 11 backend projects, and managed cloud integrations. This page maps every verified protocol, transport, and technical neighbor across the platform boundary and flags remaining production network decisions.
+This view describes only the interfaces exposed across the BookWorm system boundary. It does not show internal communication, implementation components, or infrastructure topology.
 
-## Technical context diagram
-
-The diagram below maps the verified technical protocols connecting user browsers, BookWorm's edge and internal services, and external cloud providers.
+## Technical Context and Channel Diagram
 
 <MermaidFileLoader file="mermaids/003-technical-context-diagram-1.mmd" />
 
-## Technical neighbors and communication mechanisms
+## Business-to-Technical Mapping Table
 
-| Neighbor or mechanism                    | Verified technology and role                                                                                                                                | Protocol / channel                                                                                                                 | Scope notes                                                                                                                                                                                          |
-| :--------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **API Gateway** (`gateway`)              | YARP reverse proxy (`Aspire.Hosting.Yarp`), sole externally exposed ingress                                                                                 | HTTPS externally; HTTP internally; injects `X-Powered-By: BookWorm Gateway` and `X-Mfe-Zone`                                       | Routes 5 APIs (`/catalog`, `/basket`, `/ordering`, `/rating`, `/chatting`), `/entra`, and all 3 MFEs. Does **not** route `mcptools`, `notification`, `scheduler`, `finance`, or `catalog-ingestion`. |
-| **Web microfrontends**                   | **Storefront** (`/`), **Commerce** (`/basket`, `/checkout/*`, `/account/*`), **Backoffice** (`/backoffice/*`) on Next.js 16 + React 19 + Bun 1.4.4          | HTTPS via **API Gateway**; Better Auth OAuth2 callback `/api/auth/oauth2/callback/microsoft-entra-id`; AG-UI streaming for AI chat | **Storefront** and **Backoffice** own Entra ID auth sessions; **Commerce** shares the Storefront auth session (`WithoutEntraId()` in AppHost).                                                       |
-| **Synchronous service-to-service calls** | **Catalog API** (`book.v1.BookGrpcService`), **Basket API** (`basket.v1.BasketGrpcService`), **Rating API** (A2A gRPC `MapGrpcA2A`), **MCP Tools** (`/mcp`) | HTTP/2 gRPC (`edition = "2023"`), A2A gRPC, and MCP Streamable HTTP                                                                | **Basket**, **Ordering**, and **MCP Tools** call **Catalog** over gRPC; **Ordering** calls **Basket** over gRPC; **Chat** calls **Rating** over A2A gRPC and **MCP Tools** over MCP HTTP.            |
-| **Asynchronous messaging**               | **Wolverine** + **Kafka** (local Kafka container in dev; **Confluent Cloud** in Azure deploy)                                                               | CloudEvents JSON; topics `bookworm.{env}.{owner}.{topic}` (unprefixed `scheduler.process-vector-batch`); per-service native DLQs   | Retry cooldown `50ms / 250ms / 1s` with full jitter before DLQ; propagates W3C traceparent, `requestid`, and `UserId`.                                                                               |
-| **Microsoft Entra ID**                   | Identity provider and Entra Agent Identities (`blueprintAppId`, `chatAgentId`, `ratingAgentId`)                                                             | OAuth2 / OIDC, JWT bearer validation, User & Agent On-Behalf-Of (OBO) token exchange, Federated Managed Identity in Azure          | Protects APIs, **Storefront**, **Backoffice**, and Quartz Dashboard (`/quartz`, `admin` role).                                                                                                       |
-| **Microsoft Foundry**                    | Hosted AI models (`ModelRouter`, `MicrosoftDecision1`, Cohere `EmbedV40`)                                                                                   | HTTPS REST/SDK via `Aspire.Hosting.Foundry` with `CognitiveServicesUser` RBAC                                                      | Consumed by **Catalog API**, **Catalog Ingestion**, **Chat API**, and **Rating API**.                                                                                                                |
-| **Presidio sidecars**                    | Internal `presidio-analyzer` and `presidio-anonymizer` containers (`BookWorm.Hosting.Presidio`)                                                             | Container port `3000` (HTTPS with dev cert locally; internal HTTP in publish mode; `/health`)                                      | Internal PII detection and anonymization invoked by **Chat API** and **Rating API**.                                                                                                                 |
-| **SendGrid / Mailpit**                   | Outbound SMTP email relay (**Mailpit** locally; **SendGrid** `smtp://smtp.sendgrid.net:587` in cloud)                                                       | SMTP (port `587`) via `MailKit` + `Mjml.Net`                                                                                       | Consumed exclusively by stateless **Notification** worker.                                                                                                                                           |
-| **Qdrant vector store**                  | `vectordb` (local Qdrant container in dev; **Qdrant Cloud** connection string in Azure)                                                                     | Qdrant client API                                                                                                                  | Consumed by **Catalog API** (hybrid search) and **Catalog Ingestion** (batch vector upserts/deletes).                                                                                                |
-| **Payment & shipping providers**         | Not implemented in repository                                                                                                                               | —                                                                                                                                  | Conceptual external boundaries only; **Finance** executes post-checkout Durable Task orchestration, not payment processing.                                                                          |
+| External Partner            | Business Input/Output                                                                                                                              | Technical Channel & Protocol          | Data Format                          | Auth / Security                                            | Notes / SLA                                                                                   |
+| :-------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------ | :----------------------------------- | :--------------------------------------------------------- | :-------------------------------------------------------------------------------------------- |
+| **Customers**               | Submit searches, basket changes, checkout requests, questions, and reviews; receive catalog, basket, order, recommendation, and review information | HTTPS web channel, bidirectional      | HTML pages and JSON application data | Identity-provider authentication; secure sessions          | Proposed: `99.9%` availability; p95 up to `500 ms` for browse/basket and `2 s` for checkout   |
+| **Store Administrators**    | Submit catalog, order, and review decisions; receive worklists and status information                                                              | HTTPS web channel, bidirectional      | HTML pages and JSON application data | Authenticated administrative session with role checks      | Uses the customer interface capacity targets; no separate administrative SLA                  |
+| **Identity Provider**       | Receives sign-in requests and provides identity confirmation and user roles                                                                        | OAuth 2.0 / OpenID Connect over HTTPS | OIDC redirects and signed tokens     | Issuer, audience, signature, expiry, and role validation   | Provider availability and token lifetime follow the identity-provider tenant SLA              |
+| **AI Service**              | Receives book and feedback context; provides recommendations, conversation responses, and summaries                                                | HTTPS request-response                | JSON                                 | Credential or workload authentication; encrypted transport | Proposed timeout `30 s`; `3` attempts with capped backoff; output quality is not signed off   |
+| **Email Delivery Provider** | Receives order, account, and notification email content; may report delivery failures                                                              | SMTP over TLS                         | MIME email message                   | SMTP credentials or equivalent provider authentication     | Relay timeout `45 s`; transient submissions retry `3` times; inbox delivery SLA is unverified |
 
-## Business interface to technical channel mapping
+## Key Interface Notes
 
-| Business interaction                                         | Technical realization                                                                                                                                                                                                    |
-| :----------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Customer browsing, search, basket, checkout, orders, reviews | Browser → HTTPS → YARP **API Gateway** → **Storefront** / **Commerce** → REST `/api/v1/*` (`ApiVersions.V1`) on **Catalog**, **Basket**, **Ordering**, **Rating**                                                        |
-| Store administration and job monitoring                      | Browser → HTTPS → YARP **API Gateway** → **Backoffice** (`/backoffice/*`) → REST `/api/v1/*` (incl. SSE order dashboard); Quartz Dashboard (`/quartz`) via Entra ID OIDC (`admin` role)                                  |
-| Checkout validation and order enrichment                     | **Ordering API** → gRPC `basket.v1.BasketGrpcService.GetBasket` (**Basket API**) and `book.v1.BookGrpcService.GetBooks` (**Catalog API**)                                                                                |
-| Post-checkout orchestration and transactional email          | **Ordering API** → Kafka (`ordering.user-checked-out`) → **Finance** (Durable Task Scheduler) → Kafka (`finance.place-order` / `complete-order` / `cancel-order`) → **Basket** & **Notification** → SMTP (`587`)         |
-| Conversational AI book discovery and review synthesis        | **Storefront** → YARP `/chatting` → **Chat API** AG-UI (`/ag-ui`) → **Presidio** + **Microsoft Foundry** (`ModelRouter`, `MicrosoftDecision1`) + **MCP Tools** (`/mcp` → **Catalog** gRPC) + **Rating API** (A2A gRPC)   |
-| Rating summary projection and vector refresh                 | **Rating API** → Kafka (`rating.feedback-create` / `delete`) → **Catalog API**; **Scheduler** (cron every 5 min) → Kafka (`scheduler.process-vector-batch`) → **Catalog Ingestion** → **Microsoft Foundry** + **Qdrant** |
+### Web channels
 
-## Open production network boundaries
+- Customer operations target p95 browse/basket latency of `500 ms`, checkout latency of `2 s`, p99 at most `2x` p95, and unexpected errors below `1%`.
+- Apply load protection of `100` concurrent requests and `30 requests/minute per IP`; reject additional load with a clear retry message.
+- Administrative activity shares the web channel but has no separate measured SLA.
 
-While `AppHost.cs` and `.github/workflows/apphost-cd.yml` define the Azure Container Apps deployment model (`aspire deploy`), the following environment-specific edge controls remain outside repository code:
+### Identity and AI
 
-## Related architecture documentation
+- **Identity:** Microsoft Entra ID is the provider. Validate issuer, audience, signature, expiry, and role claims; allow `10 s` for sign-in or token validation. Provider downtime and token lifetime follow the provider's tenant policy.
+- **AI:** Microsoft Foundry is the provider. Allow `30 s` per request, use at most `3` attempts with capped backoff, and limit requests to `20/minute per IP` and `10` requests per `30 s` per user. Unsuitable or unavailable model output must use an explicit degraded result.
 
-- [[doc|arc42/03-context-and-scope/001-overview]] — Whole-platform scope and external neighbor boundaries.
-- [[doc|arc42/03-context-and-scope/002-business-context]] — Domain-level business exchanges.
-- [[doc|arc42/00-c4-overview]] — C4 Context and Container visual summary.
-- [[doc|arc42/07-deployment-view]] — Local containers and Azure Container Apps infrastructure mapping.
-- [[doc|arc42/08-crosscutting-concepts/002-contracts-and-messaging]] — Detailed gRPC, REST, and Kafka topic specifications.
+### Email
+
+- SendGrid is used in cloud environments and Mailpit in local environments.
+- A relay submission times out after `45 s`; retry transient failures up to `3` times with `1 s` exponential backoff.
+- Relay acceptance does not prove inbox delivery. Bounce handling and final delivery status remain unverified.
+
+### Other channels
+
+- No file drops, webhooks, hardware interfaces, or external message-broker integrations are defined for the current business context.

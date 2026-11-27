@@ -3,104 +3,61 @@ id: sendgrid-api
 name: SendGrid API
 version: 1.0.0
 summary: |
-  External provider API used by BookWorm to submit email messages and receive
-  provider responses for notification delivery.
+  External SMTP email delivery provider used by BookWorm to submit rendered
+  order notification emails over authenticated SMTP.
 externalSystem: true
 badges:
   - content: External
     backgroundColor: purple
     textColor: purple
-  - content: HTTP API
+  - content: SMTP
     backgroundColor: teal
     textColor: teal
 styles:
   icon: /icons/third-party/sendgrid.svg
 owners:
-  - contributor-team
-receives:
-  - id: CreateMailBatch
-    version: 1.0.0
-    group: Mail API Operations
-  - id: GetMailBatch
-    version: 1.0.0
-    group: Mail API Operations
-  - id: SendMail
-    version: 1.0.0
-    group: Mail API Operations
-specifications:
-  - type: openapi
-    path: https://raw.githubusercontent.com/twilio/sendgrid-oai/refs/heads/main/spec/yaml/tsg_mail_v3.yaml
-    name: OpenAPI V3
+  - platform-engineering-team
 ---
 
-SendGrid (`sendgrid-api`) is the external email delivery provider configured for BookWorm in Azure publish environments. At runtime, BookWorm's [[service|notification-api]] worker submits rendered MJML emails to SendGrid over **SMTP via MailKit** (`smtp://smtp.sendgrid.net:587`)—and to local **Mailpit** during development—rather than invoking SendGrid's HTTP v3 REST endpoints directly.
+## Integration Purpose & Boundary
 
-## Overview
-
-| Property                    | Value                                                                                                                           |
-| :-------------------------- | :------------------------------------------------------------------------------------------------------------------------------ |
-| **External provider**       | Twilio SendGrid (SMTP relay in publish mode; local Mailpit container in development)                                            |
-| **BookWorm consumer**       | [[service\|notification-api]] (`notification`) only                                                                             |
-| **Aspire wiring**           | `src/Aspire/BookWorm.AppHost/Extensions/Network/EmailExtensions.cs` (`mailpit` locally, `email` in publish mode)                |
-| **Active runtime protocol** | SMTP over TLS (port `587`) via MailKit `5.0.0` + `AddMailResiliencePipeline()`                                                  |
-| **Logical HTTP spec**       | SendGrid Mail Send OpenAPI v3 (`tsg_mail_v3.yaml` — modeled for contract completeness; not called over HTTP by current runtime) |
-| **Notification state**      | Kafka consumer + Redis 24-hour idempotency + Wolverine native DLQ — **no PostgreSQL email outbox**                              |
+SendGrid is BookWorm's external email delivery provider in publish environments, offloading internet mail routing, sender reputation, and downstream delivery. At runtime, only [[service|notification-api]] integrates with SendGrid to transmit rendered order lifecycle emails.
 
 :::note
-Notification does **not** maintain a PostgreSQL email outbox. When SendGrid SMTP rejects or times out on a submission, MailKit's resilience pipeline retries first, followed by Wolverine retry cooldown (`50ms`, `250ms`, `1s` with jitter) and dead-letter routing to `bookworm.{env}.notification.dead-letter-queue`.
+Although SendGrid's platform exposes a REST v3 HTTP API, BookWorm does **not** invoke SendGrid HTTP endpoints at runtime—[[service|notification-api]] submits rendered MIME messages exclusively over **authenticated SMTP** (using a local test inbox during development).
 :::
 
-## Runtime delivery architecture
+## Integration Profile
 
-Notification switches automatically between the local Mailpit container in development and SendGrid SMTP in publish/Azure mode based on `Environment.IsDevelopment()`.
+| Property                         | Value                                                                                                                                                                                    |
+| :------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Provider / Sidecar**           | Twilio SendGrid (SMTP relay in publish environments; local test inbox in development)                                                                                                    |
+| **BookWorm Consumers**           | [[service\|notification-api]] only                                                                                                                                                       |
+| **Runtime Transport & Protocol** | SMTP over TLS (port 587)                                                                                                                                                                 |
+| **Auth / Credential Boundary**   | API key injected via runtime secret configuration (`apikey` username); domain-authenticated sender identity recommended for production                                                   |
+| **Data / PII Sensitivity**       | High — carries customer recipient email addresses and order notification content; redact recipient metadata in logs and never log rendered email bodies                                  |
+| **Failure / Fallback Behavior**  | Bounded client retries followed by Kafka listener backoff and dead-letter routing on [[channel\|bookworm.&#123;env&#125;.notification.dead-letter-queue]]; no delivery webhooks ingested |
+
+## Visualizations & Specifications
+
+### Delivery Integration Context
 
 <MermaidFileLoader file="mermaids/SendGridAPI-diagram-1.mmd" />
 
-## Runtime SMTP configuration (publish / Azure)
+### Service Interactions
 
-`EmailExtensions.cs` and `.github/workflows/apphost-cd.yml` wire SendGrid SMTP through the following Aspire parameters and CI/CD secrets:
+<NodeGraph />
 
-| Aspire parameter       | CD secret / variable   | Default                        | Purpose                                                  |
-| :--------------------- | :--------------------- | :----------------------------- | :------------------------------------------------------- |
-| `email-smtp-endpoint`  | `EMAIL_SMTP_ENDPOINT`  | `smtp://smtp.sendgrid.net:587` | Target SMTP server endpoint                              |
-| `email-smtp-username`  | `EMAIL_SMTP_USERNAME`  | `apikey`                       | SendGrid SMTP authentication username                    |
-| `email-smtp-password`  | `EMAIL_SMTP_PASSWORD`  | —                              | SendGrid API key secret (never commit to source control) |
-| `email-sender-address` | `EMAIL_SENDER_ADDRESS` | —                              | Verified sender email address                            |
-| `email-sender-name`    | `EMAIL_SENDER_NAME`    | —                              | Optional sender display name                             |
+<Accordion title="Credential Rotation & Operational Boundaries">
+	- **Least-privilege API keys:** Provision SendGrid keys scoped strictly to mail-send permissions,
+	store them in the deployment secret store, and rotate or revoke keys immediately if exposed. -
+	**Submission vs. business truth:** SMTP acceptance confirms only provider handoff, not recipient
+	inbox delivery or order status.
+</Accordion>
 
-## SendGrid account and credential practices
-
-For production, use a verified sender and complete [domain authentication](https://www.twilio.com/docs/sendgrid/for-developers/sending-email/sender-identity); SendGrid recommends single-sender verification for testing, not production. Create an API key with only the permissions needed for this integration. SendGrid's SMTP guidance requires **Mail Send > Full Access** for mail submission; this is the Mail Send permission, not account-wide **Full Access**. For SMTP authentication, SendGrid requires the literal username `apikey` and the API key as the password.
-
-Store the key in the deployment's secret store, keep distinct keys for environments or workloads where practical, and revoke or replace keys when no longer needed or exposed. Enable two-factor authentication for SendGrid users. SendGrid displays a new key only once and cannot restore a lost key. See the official [API key guidance](https://www.twilio.com/docs/sendgrid/ui/account-and-settings/api-keys) and [SMTP integration guide](https://www.twilio.com/docs/sendgrid/for-developers/sending-email/integrating-with-the-smtp-api).
-
-## Logical OpenAPI v3 operations
-
-For teams evaluating or extending the provider contract beyond SMTP, the EventCatalog contract suite also models three SendGrid HTTP v3 operations:
-
-| Operation             | HTTP endpoint                   | Contract reference           | Runtime status                                 |
-| :-------------------- | :------------------------------ | :--------------------------- | :--------------------------------------------- |
-| **Send mail**         | `POST /v3/mail/send`            | [[command\|SendMail]]        | Logical model only (runtime uses MailKit SMTP) |
-| **Create mail batch** | `POST /v3/mail/batch`           | [[command\|CreateMailBatch]] | Logical model only (not invoked by BookWorm)   |
-| **Get mail batch**    | `GET /v3/mail/batch/{batch_id}` | [[query\|GetMailBatch]]      | Logical model only (not invoked by BookWorm)   |
-
-## Ownership boundaries and failure semantics
-
-- **Delivery status is not business status:** SMTP acceptance from SendGrid confirms only provider handoff, not recipient inbox delivery, and never determines whether an Order succeeded or failed.
-- **No delivery webhooks:** BookWorm does not currently ingest SendGrid bounce, drop, or delivery webhooks.
-- **Transient vs. permanent errors:** Transient SMTP timeouts and provider throttling trigger MailKit and Wolverine retries before moving the command to `bookworm.{env}.notification.dead-letter-queue`. Invalid credentials or unverified sender addresses fail every attempt until configuration is fixed.
-- **Privacy and secret hygiene:** Keep SendGrid API keys in runtime secrets, redact recipient metadata with `HMAC__Key`, and avoid logging rendered email HTML bodies.
-- **Sender identity:** Confirm the configured `email-sender-address` is verified, and complete domain authentication for production sending.
-
-## Messages
-
-<MessageTable format="all" limit={10} />
-
-## Related documentation
+## Related Documentation
 
 - [[doc|platform/006-api-and-contracts]] — Consolidated service, HTTP, gRPC, and Kafka directory.
 - [[service|notification-api]] — Consuming Kafka email worker.
-- How to resolve a notification delivery backlog — Triage for SendGrid SMTP failures and DLQ messages.
-- Platform integration boundaries — Platform service and external provider boundaries.
-
-<NodeGraph />
+- [[system|sendgrid]] — External SendGrid system boundary.
+- [[doc|domains/bookworm/subdomains/platform/engineering/platform-integration-boundaries]] — Platform service and external provider boundaries.

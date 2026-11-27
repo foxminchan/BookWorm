@@ -1,29 +1,27 @@
-%%{init: {'theme': 'base', 'themeVariables': {'background': '#f5f5f5', 'primaryColor': '#ffffff', 'primaryTextColor': '#2d3142', 'primaryBorderColor': '#2d3142', 'secondaryColor': '#ececec', 'secondaryBorderColor': '#4f5d75', 'tertiaryColor': '#fdf2ee', 'tertiaryBorderColor': '#bf4520', 'lineColor': '#4f5d75', 'textColor': '#2d3142', 'clusterBkg': '#f8f9fa', 'clusterBorder': '#bfc0c0', 'fontFamily': 'Geist, system-ui, sans-serif'}}}%%
-flowchart LR
-	user["Customer or staff\n(Browser)"]
-	fe["Storefront, Commerce, Backoffice\n(Next.js 16 + Better Auth)"]
-	entra["Microsoft Entra ID\n(entra app registration)"]
-	api["BookWorm APIs\n(.NET 11, JWT bearer)"]
-	agent["Chat and Rating agents\n(Entra Agent Identities)"]
-	mi["Managed Identities\n(user-assigned)"]
-	res["Azure resources\n(PostgreSQL, Redis, Cosmos DB, Storage, Foundry)"]
+architecture-beta
+	group clients(internet)[Users and Frontends]
+	service user(internet)[Customer or Staff] in clients
+	service fe(logos:nextjs-icon)[Storefront, Commerce, Backoffice] in clients
 
-	user -->|"OAuth2 / OIDC sign-in"| entra
-	fe --> |"Bearer token: scopes"| api
-	entra -->|"Callback via gateway"| fe
-	agent --> |"OBO token exchange: api://AzureADTokenExchange"| entra
-	api -->|"Agent tokens"| agent
-	api -->|"Workload identity"| mi
-	mi -->|"Azure RBAC"| res
+	group idp(logos:oauth)[Identity Provider]
+	service entra(logos:oauth)[Microsoft Entra ID] in idp
+	service agent_id(logos:microsoft-icon)[Entra Agent Identities] in idp
 
-	classDef focal fill:#fdf2ee,stroke:#bf4520,stroke-width:2px,color:#2d3142
-	classDef service fill:#ffffff,stroke:#2d3142,stroke-width:1.2px,color:#2d3142
-	classDef store fill:#ececec,stroke:#4f5d75,stroke-width:1.2px,color:#2d3142
-	classDef input fill:#eef1f6,stroke:#5a6580,stroke-width:1.2px,color:#2d3142
-	classDef ext fill:#f5f5f5,stroke:#949eb2,stroke-width:1px,stroke-dasharray:4 3,color:#4f5d75
-	class entra focal
-	class api service
-	class user,fe,mi input
-	class agent,res ext
-	linkStyle 0 stroke:#bf4520,stroke-width:2px
-	linkStyle 2 stroke:#bf4520,stroke-width:2px
+	group workloads(logos:dotnet)[Backend Services]
+	service apis(logos:dotnet)[BookWorm APIs] in workloads
+	service agents(logos:dotnet)[Chat and Rating Agents] in workloads
+	service mi(logos:azure-icon)[Managed Identities] in workloads
+
+	group resources(logos:azure-icon)[Protected Azure Resources]
+	service stores(logos:postgresql)[PostgreSQL, Redis, Cosmos, Storage] in resources
+	service foundry(logos:microsoft-icon)[Microsoft Foundry] in resources
+
+	user:R --> L: fe
+	fe:B --> T: entra
+	fe:R --> L: apis
+	apis:B --> T: agents
+	entra:R --> L: agents
+	agents:R --> L: agent_id
+	apis:R --> L: mi
+	mi:R --> L: stores
+	stores:B --> T: foundry

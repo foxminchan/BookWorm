@@ -6,7 +6,7 @@ summary: |
   Indicates that Basket successfully deleted the submitted basket during
   checkout cleanup.
 owners:
-  - contributor-team
+  - commerce-fulfillment-team
 schemaPath: schema.json
 badges:
   - content: Order Lifecycle
@@ -14,59 +14,62 @@ badges:
     textColor: blue
 ---
 
-`BasketDeletedCompleteIntegrationEvent` (v1.0.0) signals that Basket API removed a submitted customer basket during post-checkout cleanup. Finance consumes this event to advance the order orchestration saga; it confirms basket deletion only and does not imply order completion.
+`BasketDeletedCompleteIntegrationEvent` (v1.0.0) signals that [[service|basket-api]] removed a submitted customer basket during post-checkout cleanup. [[service|order-orchestration]] consumes this event to advance the order orchestration saga; it confirms basket deletion only and does not imply order completion.
 
 ## Overview
 
-| Property                      | Value                                                                                                   |
-| :---------------------------- | :------------------------------------------------------------------------------------------------------ |
-| **Owner**                     | Shopping bounded context (`Basket API`)                                                                 |
-| **Producer**                  | [[service\|basket-api]] (`PlaceOrderCommandHandler`)                                                    |
-| **Consumer**                  | [[service\|order-orchestration]] (`OrderOrchestrator`)                                                  |
-| **Source**                    | `src/Services/Basket/BookWorm.Basket/IntegrationEvents/Events/BasketDeletedCompleteIntegrationEvent.cs` |
-| **Protocol / format**         | Kafka + CloudEvents JSON (Wolverine)                                                                    |
-| **Kafka topic**               | `bookworm.{env}.basket.delete-complete` (where `{env}` is the kebab-case environment name)              |
-| **Message identity**          | `BookWorm.Contracts.BasketDeletedCompleteIntegrationEvent`                                              |
-| **Partition key**             | `OrderId` (preserves per-order saga ordering on Kafka)                                                  |
-| **Persistence / idempotency** | Redis-backed 24-hour idempotency guard (`idempotency:PlaceOrderCommandHandler:{orderId}`)               |
+| Property                             | Value                                                                                                                                                                                                                                           |
+| :----------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Bounded Context**                  | Shopping                                                                                                                                                                                                                                        |
+| **Producer**                         | [[service\|basket-api]]                                                                                                                                                                                                                         |
+| **Consumer(s)**                      | [[service\|order-orchestration]]                                                                                                                                                                                                                |
+| **Protocol / Format**                | Kafka + CloudEvents JSON (camelCase payload)                                                                                                                                                                                                    |
+| **Channel / Topic**                  | [[channel\|bookworm.&#123;env&#125;.basket.delete-complete]]                                                                                                                                                                                    |
+| **Dead-Letter Channel**              | None on consumer ([[service\|order-orchestration]] uses Azure Functions Kafka trigger retries and Durable Task Hub diagnostics; [[channel\|bookworm.&#123;env&#125;.basket.dead-letter-queue]] is for [[service\|basket-api]] inbound failures) |
+| **Partition Key**                    | `OrderId`                                                                                                                                                                                                                                       |
+| **Delivery / Idempotency Guarantee** | At-least-once delivery; producer deduplicates incoming [[command\|PlaceOrderCommand]] via Redis-backed 24-hour idempotency keyed by `OrderId`                                                                                                   |
 
-## Parameters and fields
+## Payload Fields & Envelope
 
-The schema below defines the camelCase JSON `data` payload carried inside the CloudEvents envelope (`additionalProperties: false` in JSON Schema).
+### Event Payload
 
-| Name           | Type                 | Required | Default                 | Constraints                                              | Description                                                     |
-| :------------- | :------------------- | :------- | :---------------------- | :------------------------------------------------------- | :-------------------------------------------------------------- |
-| `id`           | `string` (UUID)      | Yes      | `Guid.CreateVersion7()` | UUID v7 inherited from `IntegrationEvent`                | Unique identifier for this integration event instance.          |
-| `creationDate` | `string` (date-time) | Yes      | `DateTime.UtcNow`       | ISO 8601 UTC timestamp inherited from `IntegrationEvent` | UTC timestamp when Basket API created the event.                |
-| `orderId`      | `string` (UUID)      | Yes      | —                       | Valid UUID; also used as Kafka partition key             | Identifier of the order whose submitted basket was deleted.     |
-| `basketId`     | `string` (UUID)      | Yes      | —                       | Valid UUID                                               | Identifier of the Redis basket removed during checkout cleanup. |
-| `totalMoney`   | `number` (`decimal`) | Yes      | —                       | Non-negative monetary amount                             | Total purchase amount associated with the order.                |
+| Name           | Type                   | Required | Constraints                     | Description                                                    |
+| :------------- | :--------------------- | :------- | :------------------------------ | :------------------------------------------------------------- |
+| `id`           | `string` (`uuid`)      | Yes      | UUIDv7                          | Unique identifier for this integration event instance          |
+| `creationDate` | `string` (`date-time`) | Yes      | ISO 8601 UTC timestamp          | UTC timestamp when the event was created                       |
+| `orderId`      | `string` (`uuid`)      | Yes      | Valid UUID; Kafka partition key | Identifier of the order whose submitted basket was deleted     |
+| `basketId`     | `string` (`uuid`)      | Yes      | Valid UUID                      | Identifier of the Redis basket removed during checkout cleanup |
+| `totalMoney`   | `number`               | Yes      | Non-negative monetary amount    | Total purchase amount associated with the order                |
 
-### CloudEvents envelope headers
+### CloudEvents Envelope Headers
 
-Wolverine attaches standard CloudEvents metadata plus BookWorm envelope headers via `CloudEventHeaderPolicy`:
+| Header        | Value / Source                                             | Purpose                                                     |
+| :------------ | :--------------------------------------------------------- | :---------------------------------------------------------- |
+| `messagetype` | `BookWorm.Contracts.BasketDeletedCompleteIntegrationEvent` | Explicit message identity for cross-service deserialization |
+| `source`      | `urn:bookworm:bookworm-basket`                             | Identifies the producing service                            |
+| `requestid`   | Propagated from incoming [[command\|PlaceOrderCommand]]    | End-to-end correlation across HTTP and Kafka hops           |
 
-| Header        | Value / source                                             | Purpose                                                      |
-| :------------ | :--------------------------------------------------------- | :----------------------------------------------------------- |
-| `messagetype` | `BookWorm.Contracts.BasketDeletedCompleteIntegrationEvent` | Explicit message identity for cross-service deserialization. |
-| `source`      | `urn:bookworm:bookworm-basket`                             | Identifies the producing service.                            |
-| `requestid`   | Propagated from incoming `PlaceOrderCommand`               | End-to-end correlation across HTTP and Kafka hops.           |
+## Delivery Guarantees & Error Handling
 
-## Error handling and delivery guarantees
+| Condition                                                | System Behavior                                                                                      | Recovery / Compensation                                      |
+| :------------------------------------------------------- | :--------------------------------------------------------------------------------------------------- | :----------------------------------------------------------- |
+| Duplicate [[command\|PlaceOrderCommand]] within 24 hours | Producer detects the Redis idempotency key for `OrderId` and re-emits this event without re-deleting | Orchestration handles duplicate external events idempotently |
+| Transient broker or consumer error                       | Retried with cooldown (`50ms`, `250ms`, `1s`) and full jitter                                        | Exhausted messages route to the consumer dead-letter queue   |
+| Deserialization failure                                  | Routed immediately to the dead-letter queue without retries                                          | Inspect dead-letter payload against contract schema          |
 
-| Condition                                                     | Behavior                                                                                                                                             | Recovery behavior                                                                                      |
-| :------------------------------------------------------------ | :--------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------- |
-| Duplicate `PlaceOrderCommand` within 24 hours                 | `PlaceOrderCommandHandler` detects the Redis idempotency key for `OrderId` and re-emits `BasketDeletedCompleteIntegrationEvent` without re-deleting. | Finance handles duplicate external events idempotently within the Durable Task orchestration instance. |
-| Transient broker or consumer error                            | Wolverine retries with cooldown (`50ms`, `250ms`, `1s`) and full jitter.                                                                             | After retries are exhausted, Wolverine routes the message to the consumer dead-letter queue (DLQ).     |
-| Deserialization failure (`JsonException` / `FormatException`) | Routed immediately to the native Kafka DLQ without retries.                                                                                          | Inspect the payload against Pact contract `tests/pacts/Finance-Basket.json` before replaying.          |
+## Related Documentation
 
-## Related documentation
-
-- [[channel|bookworm.&#123;env&#125;.basket.delete-complete]] — Kafka channel specification for `bookworm.{env}.basket.delete-complete`.
-- [[event|BasketDeletedFailedIntegrationEvent]] — Companion failure event when Redis deletion returns `false`.
 - [[service|basket-api]] — Producer service contract and Redis storage details.
+- [[service|order-orchestration]] — Consumer orchestration service.
+- [[channel|bookworm.&#123;env&#125;.basket.delete-complete]] — Kafka channel specification.
+- [[event|BasketDeletedFailedIntegrationEvent]] — Companion failure event when Redis deletion returns `false`.
 - [[entity|basket]] — Redis basket data model.
 
 <NodeGraph />
 
-<SchemaViewer file="schema.json" title="Basket deletion completed schema" maxHeight="500" />
+<SchemaViewer
+	file="schema.json"
+	title="Basket deletion completed schema"
+	maxHeight="500"
+	search="true"
+/>

@@ -6,7 +6,7 @@ summary: Presidio's Analyze API identifies email addresses, phone numbers, and c
 status: accepted
 date: 2026-11-02
 owners:
-  - contributor-team
+  - platform-engineering-team
 badges:
   - content: Security
     backgroundColor: red
@@ -15,7 +15,7 @@ appliesTo:
   - type: system
     id: data-privacy
   - type: service
-    id: PresidioAPI
+    id: presidio-api
   - type: agent
     id: rating-agent
 related:
@@ -29,7 +29,7 @@ feedback and user-provided text that may contain personally identifiable
 information. Sending that text directly to a model risks exposing values that
 are not needed for summarization or conversation.
 
-[[service|PresidioAPI]] exposes `POST /analyze` to identify entities in text,
+[[service|presidio-api]] exposes `POST /analyze` to identify entities in text,
 returning entity types, text offsets, and confidence scores. Detection depends
 on the deployed recognizers, supported language, and request configuration;
 Presidio's ability to recognize an entity does not mean that entity is enabled

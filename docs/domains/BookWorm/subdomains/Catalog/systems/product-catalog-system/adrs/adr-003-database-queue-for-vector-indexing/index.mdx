@@ -6,9 +6,9 @@ summary: Database triggers enqueue changed books, and Catalog Ingestion drains t
 status: accepted
 date: 2026-10-20
 owners:
-  - platform-team
+  - catalog-experience-team
 decisionMakers:
-  - platform-team
+  - platform-engineering-team
 appliesTo:
   - type: system
     id: product-catalog-system
@@ -31,7 +31,7 @@ badges:
 
 Generating AI search embeddings is relatively slow and relies on external services. Performing embedding generation inside [[service|catalog-api]] while an administrator saves a product would add noticeable delay to every catalog edit—and worse, an outage in the embedding model or search store would cause product updates to fail.
 
-In addition, a [[entity|book]]'s searchable details do not change only when the book record itself is edited; they also change when an [[entity|author]], [[entity|category]], [[entity|publisher]], or [[entity|book-author]] link is updated. Relying on application code to remember every indirect path risks silent search drift. Catalog needed a durable handoff from committed database changes to the search projection without treating every intermediate edit as a separate event to replay.
+In addition, a [[entity|book]]'s searchable details do not change only when the book record itself is edited; they also change when an [[entity|author]], [[entity|category]], [[entity|publisher]], or `book_authors` link is updated. Relying on application code to remember every indirect path risks silent search drift. Catalog needed a durable handoff from committed database changes to the search projection without treating every intermediate edit as a separate event to replay.
 
 ## 2. Business Value
 
@@ -42,7 +42,7 @@ In addition, a [[entity|book]]'s searchable details do not change only when the 
 
 ## 3. How It Works
 
-1. **Capture pending work inside the save transaction:** Whenever changes are saved to [[entity|book]]s, [[entity|author]]s, [[entity|category]]s, [[entity|publisher]]s, or [[entity|book-author]] links in [[container|catalog-database]], automatic database rules record each affected book in a pending-work table as part of the exact same save.
+1. **Capture pending work inside the save transaction:** Whenever changes are saved to [[entity|book]]s, [[entity|author]]s, [[entity|category]]s, [[entity|publisher]]s, or `book_authors` links in [[container|catalog-database]], automatic database rules record each affected book in a pending-work table as part of the exact same save.
 2. **Coalesce repeated edits:** The queue keeps one pending entry per book. If a book changes multiple times before indexing runs, its existing waiting entry is updated with a fresh version marker so the worker reads only the latest product state rather than replaying every draft.
 3. **Process bounded batches on a schedule:** Every five minutes, [[service|catalog-ingestion]] claims an exclusive turn so only one batch runs at a time, reads up to 200 waiting books, prepares searchable text and embeddings, and updates or removes the corresponding entries in [[container|catalog-vector]].
 4. **Clear only matching versions:** After every search update in the batch succeeds, the worker removes each waiting entry—but only if its version marker still matches what was read at the start of the batch. If a newer edit arrived mid-batch, that entry stays queued for the next scheduled run.
@@ -63,7 +63,7 @@ In addition, a [[entity|book]]'s searchable details do not change only when the 
 
 ## 5. Technical Reference
 
-- **Queue mechanism ([[container|catalog-database]]):** PostgreSQL triggers on [[entity|book]], [[entity|author]], [[entity|category]], [[entity|publisher]], and [[entity|book-author]] tables insert or update rows in the pending-update table keyed by book ID with a revision token, sharing the PostgreSQL transaction boundary (see [[adr|adr-001-postgresql-system-of-record]]).
+- **Queue mechanism ([[container|catalog-database]]):** PostgreSQL triggers on [[entity|book]], [[entity|author]], [[entity|category]], [[entity|publisher]], and `book_authors` tables insert or update rows in the pending-update table keyed by book ID with a revision token, sharing the PostgreSQL transaction boundary (see [[adr|adr-001-postgresql-system-of-record]]).
 - **Worker ([[service|catalog-ingestion]]):** Azure Functions worker invoked on a five-minute Scheduler cadence.
 - **Concurrency control & batching:**
   - PostgreSQL advisory lock ensures only one batch processor executes at a time.

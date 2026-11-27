@@ -6,7 +6,7 @@ summary: Finance uses Azure Durable Task Scheduler (DTS) keyed by Order ID to co
 status: accepted
 date: 2026-11-03
 owners:
-  - contributor-team
+  - commerce-fulfillment-team
 badges:
   - content: Integration
     backgroundColor: orange
@@ -57,7 +57,7 @@ _Retrospective note: This ADR records the implemented architecture as of `2026-1
 
 - **Orchestration & persistence:**
   - Uses Wolverine's `OrderSaga` in [[service|order-orchestration]], started by [[event|UserCheckedOutIntegrationEvent]].
-  - Sets the saga ID to the Order ID and persists basket reference, recipient details, total, placement timestamp, workflow state (`Placed`, `BasketDeletionFailed`, `Completed`, `Cancelled`), and timeout retry count in [[container|finance-database]].
+  - Sets the saga ID to the Order ID and persists basket reference, recipient details, total, placement timestamp, workflow state (`Placed`, `BasketDeletionFailed`, `Completed`, `Cancelled`), and timeout retry count in the Finance PostgreSQL database.
 - **Handlers & completion:**
   - Uses explicit handlers for basket outcomes, Order status events, and the local scheduled timeout.
   - Terminal handlers call `MarkCompleted()`; basket deletion success alone does not finish the saga.

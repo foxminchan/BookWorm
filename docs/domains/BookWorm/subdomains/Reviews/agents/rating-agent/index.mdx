@@ -2,10 +2,9 @@
 id: rating-agent
 name: Rating Agent
 version: 1.0.0
-summary: Analyzes a book's feedback and classifies product quality as Best Seller, Good, Bad, or No Data, with metrics, justification, and confidence.
+summary: Read-only review intelligence specialist that summarizes customer feedback over A2A gRPC and map-reduce workflows while leaving final quality tier classification to deterministic service logic.
 owners:
-  - business-strategy
-  - contributor-team
+  - catalog-experience-team
 repository:
   language: C#
   url: https://github.com/foxminchan/BookWorm
@@ -13,11 +12,11 @@ tools:
   - name: GetCustomerReviews
     type: function
     icon: /icons/languages/dotnet.svg
-    description: In-process ReviewTool function that returns all raw reviews for a book (review ID, rating, comment) as JSON. Read-only; rate limited to 30/minute by governance policy.
+    description: Read-only in-process lookup returning raw customer reviews (review ID, rating, comment) for a book; rate-limited to 30 calls per minute.
   - name: get_book
     type: mcp
     icon: /icons/languages/dotnet.svg
-    description: Tool exposed by the BookWorm McpTools server that returns Catalog book metadata (title, authors, category, price, AverageRating, TotalReviews). Refreshed per call and always invoked before GetCustomerReviews.
+    description: Retrieves catalog book metadata (title, authors, category, price, average rating, total reviews) from the MCP Server before fetching reviews.
 sends:
   - id: AnalyzeText
     version: 1.0.0
@@ -25,6 +24,9 @@ sends:
     version: 1.0.0
 readsFrom:
   - id: rating-database
+    version: 1.0.0
+flows:
+  - id: agent-orchestration
     version: 1.0.0
 badges:
   - content: AI Agent
@@ -36,85 +38,98 @@ model:
   version: "2025-11-18"
 ---
 
-Rating Agent (`rating`) is the read-only review analysis and quality-signal specialist hosted inside [[service|rating-api]] in the Reviews bounded context. It serves two runtime paths: remote Agent-to-Agent (A2A) gRPC handoffs from [[service|chat-api]] and Rating API's local `RatingSummarizer` Map-Reduce workflow backing `SummarizeFeedback`. Rating Agent never writes to [[container|rating-database]] or [[container|catalog-database]], and final quality classifications are computed deterministically in C# code rather than by the language model.
+## Role & Autonomy Boundary
 
-## Overview
+Rating Agent is the read-only review analysis and quality-signal specialist hosted inside [[service|rating-api]] in the Reviews bounded context. It is triggered through two runtime paths: remote Agent-to-Agent (A2A) gRPC handoffs from [[service|chat-api]] (routed or handed off from [[agent|book-agent]]), and [[service|rating-api]]'s in-process map-reduce summarization pipeline backing [[query|SummarizeFeedback]].
 
-| Property             | Value                                                                                                                                                                                                                                                                                                                 |
-| :------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**            | Reviews bounded context — [[service\|rating-api]] (`rating`)                                                                                                                                                                                                                                                          |
-| **Agent name**       | `rating` (`Constants.Other.Agents.RatingAgent`)                                                                                                                                                                                                                                                                       |
-| **Source**           | `src/Services/Rating/BookWorm.Rating/Agents/rating-agent.yaml`, `src/Services/Rating/BookWorm.Rating/Infrastructure/AI/Extensions.cs`, `src/Services/Rating/BookWorm.Rating/Policies/rating-agent.yaml`, `src/Services/Rating/BookWorm.Rating/Infrastructure/Summarizer/Workflows/RatingSummarizerWorkflowFactory.cs` |
-| **Model deployment** | Shared Microsoft Foundry `chat` deployment (`FoundryModel.Microsoft.ModelRouter`)                                                                                                                                                                                                                                     |
-| **Protocols & auth** | Exposed externally to Chat API via A2A gRPC (`AddA2AServer()`, `MapGrpcA2A`, `rating_read` policy) with Microsoft Entra Agent Identity (`ratingAgentId`)                                                                                                                                                              |
-| **Data boundaries**  | Read-only consumer of [[container\|rating-database]] (`ratingdb`/`feedbacks`) via `ReviewTool` and [[service\|mcp-server]] (`get_book`)                                                                                                                                                                               |
+Rating Agent **never writes to [[container|rating-database]] or [[container|catalog-database]]**, never executes destructive queries, and never assigns final quality tiers—classifications (`No Data`, `Bad`, `Good`, `Top Rated`) are computed deterministically by service code rather than the language model.
 
-## Architecture and runtime paths
+## Agent Profile & Model Governance
 
-Rating Agent runs in-process inside Rating API. It does **not** call Chat API; instead, Chat API connects to Rating Agent over A2A gRPC (`RatingAgentRegistration.cs`, 2-minute HTTP timeout, agent token exchange).
+| Property                     | Value                                                                                                                                                          |
+| :--------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Bounded Context / Domain** | Reviews ([[domain\|bookworm]])                                                                                                                                 |
+| **Owner Team**               | [[team\|catalog-experience-team]], [[team\|catalog-experience-team]]                                                                                           |
+| **Hosting Service**          | [[service\|rating-api]]                                                                                                                                        |
+| **LLM Provider & Model**     | Microsoft Foundry `model-router` (`2025-11-18`; `temperature: 0.4`, `maxOutputTokens: 1500`, `reasoningEffort: medium`)                                        |
+| **Interaction Protocol**     | Remote A2A gRPC server (`rating_read` policy, Entra Agent Identity); in-process workflow invocation; MCP Streamable HTTP (outbound to [[service\|mcp-server]]) |
+| **Memory / Context Scope**   | Stateless per-request with four-stage context compaction; summarized results cached by [[service\|rating-api]] in [[container\|rating-cache]]                  |
+| **Fallback Behavior**        | Re-runs reduction up to configured iteration limits when confidence is low; fails closed on PII or write-policy violations                                     |
 
-The diagram shows both invocation paths into Rating Agent alongside its read-only tools, Presidio privacy middleware, and Cosmos DB source.
+## Tools & Capabilities
+
+<AgentTools />
+
+| Capability / Tool    | Access Level | Target Resource                | Guardrail / Constraint                                                                   |
+| :------------------- | :----------- | :----------------------------- | :--------------------------------------------------------------------------------------- |
+| `GetCustomerReviews` | Read         | [[container\|rating-database]] | Read-only partition query; rate-limited to `30/minute` by governance policy              |
+| `get_book`           | Read         | [[service\|mcp-server]]        | Always invoked before `GetCustomerReviews` to refresh catalog metadata and review counts |
+
+## Data, Messaging & Handoff Boundaries
+
+- **Data Stores:** Read-only consumer of [[container|rating-database]] via `GetCustomerReviews`. Generated summaries and quality signals are never persisted back to [[container|rating-database]] by the agent; [[service|rating-api]] caches [[query|SummarizeFeedback]] outputs in [[container|rating-cache]].
+- **Messages:** Screens all inputs and outputs via [[service|presidio-api]] using [[command|AnalyzeText]] and [[command|AnonymizeText]]. Stored customer reviews in [[container|rating-database]] remain unmodified.
+- **Delegation & Handoffs:** Receives remote A2A gRPC requests from [[service|chat-api]] (typically handed off by [[agent|book-agent]] after resolving a single book identifier). It never calls [[service|chat-api]] or peer conversational agents.
+
+<Steps>
+<Step title="Partition and map review batches">
+
+For [[query|SummarizeFeedback]], the summarization workflow partitions customer reviews into bounded batches and fans out parallel structured summarization calls to Rating Agent.
+
+</Step>
+<Step title="Reduce and assess quality signals">
+
+A reduce stage merges batch outputs into unified sentiment, recurring themes, strengths, weaknesses, and confidence-scored quality signals, repeating reduction if confidence falls below threshold.
+
+</Step>
+<Step title="Apply deterministic tier classification">
+
+Deterministic service logic evaluates review count, average rating, and dominant negative pattern flags to assign `No Data`, `Bad`, `Good`, or `Top Rated`—never delegated to the LLM.
+
+</Step>
+</Steps>
+
+## Safety, Privacy & AI Governance
+
+- **Fail-Closed PII Redaction:** [[service|presidio-api]] (`AnalyzeText` and `AnonymizeText`) screens model inputs and outputs alongside regex PII patterns (`email`, `phone`, `credit_card`), ensuring reviewer personal details are masked before reaching the model or caller.
+- **Default-Deny & Write Protection:** High-priority governance rules (`block-write-operations`, `block-destructive-sql`) block all mutations and non-`SELECT` SQL patterns, while capping `GetCustomerReviews` at `30/minute`.
+- **Dual Output Guardrails:** Combines shared prompt/response guardrails with Rating-specific output checks across both buffered and streaming responses.
+- **Four-Stage Context Compaction:** Applies tool-result compaction (`> 20` messages), LLM summarization (`> 3,000` tokens), sliding window (`> 12` turns), and hard truncation (`> 24,000` tokens) to prevent context overflow on large review sets.
+
+<Admonition type="warning">
+	Rating Agent is explicitly instructed never to emit a final quality classification or equate
+	review counts with sales volume. All write operations are denied by policy, and final quality
+	tiers are always computed deterministically outside the model.
+</Admonition>
+
+<Accordion title="Deterministic Classification Rules & Fallback Behavior">
+
+| Classification | Condition                                                                                              |
+| :------------- | :----------------------------------------------------------------------------------------------------- |
+| **No Data**    | Fewer than `3` reviews, or non-finite / out-of-range average rating                                    |
+| **Bad**        | Average rating `< 3.5`, or a dominant negative pattern is detected                                     |
+| **Top Rated**  | (`averageRating >= 4.5` and `reviewCount >= 50`) or (`averageRating >= 4.0` and `reviewCount >= 200`)  |
+| **Good**       | Remaining books with `reviewCount >= 3` and `averageRating >= 3.5` without a dominant negative pattern |
+
+- **Low-Confidence Refinement:** If parsed assessment confidence is below threshold, the workflow loops reduction up to its configured maximum iterations before deterministic classification.
+
+</Accordion>
+
+## Architecture Visualizations
+
+<NodeGraph />
+
+**Review Intelligence Invocation and Data Boundary**
 
 <MermaidFileLoader file="mermaids/rating-agent-diagram-1.mmd" />
 
-### `RatingSummarizer` workflow stages
+## Related Documentation
 
-For the `SummarizeFeedback` endpoint, `RatingSummarizerWorkflowFactory.Create(int reviewCount)` constructs a per-invocation Microsoft Agent Framework workflow:
-
-1. **`PartitionExecutor`:** Splits reviews into batches (`options.BatchSize`, bounded by `options.MaxConcurrency`).
-2. **`MapExecutor` (fan-out) → `MapResultsJoinExecutor` (fan-in barrier):** Summarizes review batches in parallel via `StructuredRatingResponseRunner` using MCP prompts (`McpRatingPromptProvider`).
-3. **`ReduceExecutor`:** Merges batch summaries into a unified structured summary (`OverallSentiment`, `RecurringThemes`, `ReportedStrengths`, `ReportedWeaknesses`, `ReviewBasedQualitySignals`, `DataLimitations`).
-4. **`QualityAssessExecutor`:** Produces `QualityAssessmentOutput` (`DominantNegativePattern`, `Evidence`, `Confidence`).
-5. **`RefineReductionExecutor` (conditional loop):** Re-runs reduction when `Iteration < options.MaxIterations` and parsed confidence is below `options.MinimumConfidence`.
-6. **`ClassifyExecutor`:** Applies deterministic C# thresholds (`RatingClassifier.Classify`) to produce the final `SummarizeResult`.
-
-## Deterministic classification rules
-
-`rating-agent.yaml` explicitly instructs the model **not** to return a classification and states that review counts and ratings are not evidence of sales volume. `RatingClassifier.Classify` (`src/Services/Rating/BookWorm.Rating/Infrastructure/Summarizer/Models/RatingClassification.cs`) assigns the final tier in order:
-
-| Classification (`RatingClassification`) | Display label | Deterministic rule                                                                                         |
-| :-------------------------------------- | :------------ | :--------------------------------------------------------------------------------------------------------- |
-| `NoData` (`0`)                          | **No Data**   | `reviewCount < 3`, or `averageRating` is non-finite, or `averageRating < 0` or `> 5`                       |
-| `Bad` (`1`)                             | **Bad**       | `averageRating < 3.5`, OR `dominantNegativePattern == true`                                                |
-| `TopRated` (`3`)                        | **Top Rated** | (`averageRating >= 4.5` AND `reviewCount >= 50`) OR (`averageRating >= 4.0` AND `reviewCount >= 200`)      |
-| `Good` (`2`)                            | **Good**      | All remaining books with `reviewCount >= 3` and `averageRating >= 3.5` without a dominant negative pattern |
-
-## Tools and runtime settings
-
-### Registered tools
-
-| Tool name            | Kind                               | Source                                | Constraints                                                                                                                                                                               |
-| :------------------- | :--------------------------------- | :------------------------------------ | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `GetCustomerReviews` | In-process function (`ReviewTool`) | `BookWorm.Rating/Tools/ReviewTool.cs` | Dispatches `ListFeedbacksQuery(bookId, 1, int.MaxValue)` and returns camelCase JSON (or `"No reviews found for this book"`). Read-only; rate-limited to `30/minute` by governance policy. |
-| `get_book`           | MCP tool                           | [[service\|mcp-server]]               | Returns Catalog book metadata (`title`, `authors`, `category`, `price`, `AverageRating`, `TotalReviews`).                                                                                 |
-
-### Runtime settings (`rating-agent.yaml` and `Extensions.cs`)
-
-| Setting                     | Value    |
-| :-------------------------- | :------- |
-| `temperature`               | `0.4`    |
-| `maxOutputTokens`           | `1500`   |
-| `reasoningEffort`           | `medium` |
-| `allowMultipleToolCalls`    | `true`   |
-| `AllowConcurrentInvocation` | `true`   |
-
-## Middleware, context compaction, and governance
-
-`BookWorm.Rating/Infrastructure/AI/Extensions.cs` wraps `IChatClient` and applies `Policies/rating-agent.yaml`:
-
-| Layer                                   | Component / rule                              | Behavior                                                                                                                                                                                                                                                                                                                                                                                                                                       |
-| :-------------------------------------- | :-------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Middleware 1**                        | `UsePIIMiddleware(sp)`                        | Calls [[service\|PresidioAPI]] (`AnalyzeText` then `AnonymizeText`) on input and output text; stored reviews in Cosmos DB remain unmodified                                                                                                                                                                                                                                                                                                    |
-| **Middleware 2**                        | `UseGuardrailMiddleware()`                    | Enforces shared prompt/response guardrails                                                                                                                                                                                                                                                                                                                                                                                                     |
-| **Middleware 3**                        | `RatingOutputGuardrailMiddleware`             | Enforces Rating-specific output checks on both buffered and streaming responses                                                                                                                                                                                                                                                                                                                                                                |
-| **Middleware 4**                        | `RatingCompactionPipelineFactory.Create(...)` | Four-stage compaction pipeline: tool-result compaction (`> 20` messages), LLM summarization (`> 3,000` tokens), sliding window (`> 12` turns), and hard truncation (`> 24,000` tokens)                                                                                                                                                                                                                                                         |
-| **Governance (`default_action: deny`)** | `Policies/rating-agent.yaml`                  | Priority `100`: `block-write-operations`; Priority `95`: `block-destructive-sql`; Priority `50`: `allow-read-tools`; Priority `30`: `rate-limit-review-reads` capping `GetCustomerReviews` at `30/minute`. Includes `sql_policy` (blocks `DROP`, `TRUNCATE`, `ALTER`, `GRANT`, `REVOKE`, `MERGE`, `INSERT`, `UPDATE`, `DELETE`, and execution/file patterns; allows `SELECT` only) and regex `pii_patterns` (`email`, `phone`, `credit_card`). |
-
-## Related documentation
-
-- [[service|rating-api]] — Hosting service, `SummarizeFeedback` endpoint, and A2A gRPC mapping.
-- [[container|rating-database]] — Authoritative Azure Cosmos DB store (`ratingdb`/`feedbacks`).
-- [[container|rating-cache]] — FusionCache L1 + Redis L2 caching for `SummarizeFeedback` results.
-- [[agent|book-agent]] — Chat specialist that resolves a single book ID before handing off to Rating Agent over A2A gRPC.
-
-<NodeGraph />
+- [[service|rating-api]] — Hosting service, [[query|SummarizeFeedback]] endpoint, and A2A gRPC server.
+- [[container|rating-database]] — Authoritative Azure Cosmos DB feedback store.
+- [[container|rating-cache]] — Caching layer for [[query|SummarizeFeedback]] results.
+- [[agent|book-agent]] — Conversational specialist that resolves a book ID before A2A handoff.
+- [[flow|agent-orchestration]] — Conversational workflow routing and A2A handoff flow.
+- [[doc|arc42/08-crosscutting-concepts/005-ai-governance]] — Cross-cutting AI governance rules and standards.
+- [[adr|adr-bw-014-composable-ai-governance]] — Shared governance composition across AI paths.
+- [[adr|adr-004-read-only-governed-feedback-summarization]] — Read-only governed feedback summarization decision.

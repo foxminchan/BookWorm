@@ -6,49 +6,210 @@ views {
   }
 
   view bookwormWhitebox of bookworm {
-    title 'BookWorm containers - system white-box'
-    include customer, staff
-    include bookworm.storefront, bookworm.commerce, bookworm.backoffice, bookworm.gateway
-    include bookworm.catalog, bookworm.catalogIngestion, bookworm.shopping, bookworm.ordering
-    include bookworm.finance, bookworm.rating, bookworm.chat, bookworm.mcp
-    include bookworm.scheduler, bookworm.notification
-    include bookworm.presidioAnalyzer, bookworm.presidioAnonymizer
+    title 'BookWorm white-box'
+    group "Edge" {
+      include bookworm.storefront, bookworm.commerce, bookworm.backoffice, bookworm.gateway
+    }
+    group "Catalog" {
+      include bookworm.catalog, bookworm.catalogIngestion
+    }
+    group "Shopping" {
+      include bookworm.shopping
+    }
+    group "Ordering" {
+      include bookworm.ordering, bookworm.finance
+    }
+    group "Reviews" {
+      include bookworm.rating
+    }
+    group "Conversational" {
+      include bookworm.chat, bookworm.mcp
+    }
+    group "Platform" {
+      include bookworm.scheduler, bookworm.notification
+    }
+    group "Shared Foundation" {
+      include bookworm.presidioAnalyzer, bookworm.presidioAnonymizer
+    }
     include kafka
+    exclude * -> *
+    include bookworm.gateway -> bookworm.storefront
+    include bookworm.gateway -> bookworm.commerce
+    include bookworm.gateway -> bookworm.backoffice
+    include bookworm.storefront -> bookworm.gateway
+    include bookworm.commerce -> bookworm.gateway
+    include bookworm.backoffice -> bookworm.gateway
+    include bookworm.gateway -> bookworm.catalog
+    include bookworm.gateway -> bookworm.shopping
+    include bookworm.gateway -> bookworm.ordering
+    include bookworm.gateway -> bookworm.rating
+    include bookworm.gateway -> bookworm.chat
+    include bookworm.ordering -> bookworm.shopping
+    include bookworm.shopping -> bookworm.catalog
+    include bookworm.ordering -> bookworm.catalog
+    include bookworm.catalog -> kafka
+    include bookworm.catalogIngestion -> kafka
+    include bookworm.shopping -> kafka
+    include bookworm.ordering -> kafka
+    include bookworm.finance -> kafka
+    include bookworm.rating -> kafka
+    include bookworm.scheduler -> kafka
+    include bookworm.notification -> kafka
+    autoLayout TopBottom
+  }
+
+  view bookwormFrontendTopology of bookworm {
+    title 'Frontend Application Topology'
+    include customer, staff, identity
+    group "Edge" {
+      include bookworm.gateway
+    }
+    group "Customer Surfaces" {
+      include bookworm.storefront, bookworm.commerce
+    }
+    group "Staff Surface" {
+      include bookworm.backoffice
+    }
+    group "Capability APIs" {
+      include bookworm.catalog, bookworm.shopping, bookworm.ordering, bookworm.rating, bookworm.chat
+    }
+    exclude * -> *
+    include customer -> bookworm.gateway
+    include staff -> bookworm.gateway
+    include bookworm.gateway -> bookworm.storefront
+    include bookworm.gateway -> bookworm.commerce
+    include bookworm.gateway -> bookworm.backoffice
+    include bookworm.storefront -> bookworm.gateway
+    include bookworm.commerce -> bookworm.gateway
+    include bookworm.backoffice -> bookworm.gateway
+    include bookworm.storefront -> identity
+    include bookworm.backoffice -> identity
+    include bookworm.gateway -> bookworm.catalog
+    include bookworm.gateway -> bookworm.shopping
+    include bookworm.gateway -> bookworm.ordering
+    include bookworm.gateway -> bookworm.rating
+    include bookworm.gateway -> bookworm.chat
     autoLayout LeftRight
   }
 
   view bookwormCommerceContainers of bookworm {
-    title 'BookWorm containers - edge and commerce'
+    title 'Commerce and Data Ownership'
     include customer, staff
-    include bookworm.gateway, bookworm.storefront, bookworm.commerce, bookworm.backoffice
-    include bookworm.catalog, bookworm.shopping, bookworm.ordering, bookworm.finance
-    include bookworm.catalogDb, bookworm.orderingDb, bookworm.redis, bookworm.durableTaskScheduler
-    include identity, kafka
+    group "Edge" {
+      include bookworm.gateway, bookworm.storefront, bookworm.commerce, bookworm.backoffice
+    }
+    group "Catalog" {
+      include bookworm.catalog, bookworm.catalogDb
+    }
+    group "Shopping" {
+      include bookworm.shopping
+    }
+    group "Ordering" {
+      include bookworm.ordering, bookworm.orderingDb
+    }
+    group "Shared Data" {
+      include bookworm.redis
+    }
     autoLayout LeftRight
   }
 
   view bookwormAIAndPlatformContainers of bookworm {
-    title 'BookWorm containers - AI, Reviews, and Platform'
+    title 'Discovery and Reviews'
     include customer
-    include bookworm.chat, bookworm.rating, bookworm.mcp
-    include bookworm.catalog, bookworm.catalogIngestion
-    include bookworm.scheduler, bookworm.notification
-    include bookworm.presidioAnalyzer, bookworm.presidioAnonymizer
-    include bookworm.ratingDb, bookworm.redis, bookworm.schedulerDb, bookworm.blobStorage
-    include qdrant, kafka, identity, foundry, smtp
-    autoLayout LeftRight
+    group "Catalog" {
+      include bookworm.catalog, qdrant
+    }
+    group "Conversational" {
+      include bookworm.chat, bookworm.mcp, bookworm.blobStorage
+    }
+    group "Reviews" {
+      include bookworm.rating, bookworm.ratingDb
+    }
+    group "Privacy" {
+      include bookworm.presidioAnalyzer, bookworm.presidioAnonymizer
+    }
+    group "External Providers" {
+      include foundry, identity
+    }
+    autoLayout TopBottom
+  }
+
+  view bookwormOrderingAndOperations of bookworm {
+    title 'Ordering and Operations'
+    group "Ordering" {
+      include bookworm.ordering, bookworm.finance, bookworm.durableTaskScheduler, bookworm.redis
+    }
+    group "Platform" {
+      include bookworm.notification, bookworm.scheduler, bookworm.schedulerDb
+    }
+    group "Catalog Maintenance" {
+      include bookworm.catalogIngestion, bookworm.catalogDb, qdrant
+    }
+    group "External Services" {
+      include kafka, smtp
+    }
+    autoLayout TopBottom
   }
 
   view financeComponents of bookworm.finance {
-    title 'Finance components'
-    include *
+    title 'Finance internal structure'
+    group "Inbound" {
+      include bookworm.finance.triggers
+    }
+    group "Workflow" {
+      include bookworm.finance.orchestrator, bookworm.finance.decider, bookworm.finance.workflowSteps
+    }
+    group "Outbound" {
+      include bookworm.finance.publishActivities
+    }
     include kafka, bookworm.ordering, bookworm.shopping, bookworm.notification
     include bookworm.durableTaskScheduler
-    autoLayout LeftRight
+    autoLayout TopBottom
   }
 
   deployment view bookwormDeployment {
-    title 'BookWorm Azure deployment'
-    include azure.**, external.**
+    title 'Production Infrastructure Topology'
+    include azure
+    include azure.aca
+    include azure.managed
+    include external
+    exclude * -> *
+    autoLayout TopBottom
+  }
+
+  deployment view bookwormApplicationRuntime {
+    title 'Application Runtime Environment'
+    include azure
+    include azure.aca
+    include azure.aca.externalIngress
+    include azure.aca.externalIngress.gateway
+    include azure.aca.externalIngress.dashboard
+    include azure.aca.internalIngress
+    include azure.aca.internalIngress.storefront
+    include azure.aca.internalIngress.catalog
+    include azure.aca.backgroundWorkers
+    include azure.aca.backgroundWorkers.catalogIngestion
+    include azure.aca.backgroundWorkers.finance
+    include azure.managed
+    include azure.managed.postgres.catalogDb
+    include azure.managed.managedRedis.redis
+    include azure.managed.dts.durableTaskScheduler
+    include azure.managed.foundryService.foundry
+    include external
+    include external.kafka
+    include external.qdrant
+    include external.identity
+    exclude * -> *
+    include azure.aca.externalIngress.gateway -> azure.aca.internalIngress.storefront
+    include azure.aca.externalIngress.gateway -> azure.aca.internalIngress.catalog
+    include azure.aca.externalIngress.dashboard -> external.identity
+    include azure.aca.internalIngress.catalog -> azure.managed.postgres.catalogDb
+    include azure.aca.internalIngress.catalog -> azure.managed.managedRedis.redis
+    include azure.aca.internalIngress.catalog -> external.qdrant
+    include azure.aca.internalIngress.catalog -> azure.managed.foundryService.foundry
+    include azure.aca.backgroundWorkers.catalogIngestion -> external.kafka
+    include azure.aca.backgroundWorkers.catalogIngestion -> external.qdrant
+    include azure.aca.backgroundWorkers.finance -> azure.managed.dts.durableTaskScheduler
+    autoLayout TopBottom 100 60 ortho
   }
 }

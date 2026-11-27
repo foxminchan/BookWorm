@@ -2,11 +2,19 @@
 id: bookworm.{env}.finance.cancel-order
 name: Order Cancellation Command Channel
 version: 1.0.0
+type: topic
 summary: |
-  Kafka topic carrying Finance's shared order-cancellation command, consumed
-  by Notification to submit a canceled-order email.
+  Kafka topic owned by the contributor team carrying Finance order-cancellation
+  commands consumed by Notification API to send cancellation emails.
 owners:
-  - contributor-team
+  - commerce-fulfillment-team
+badges:
+  - content: Kafka
+    backgroundColor: blue
+    textColor: blue
+  - content: Topic
+    backgroundColor: teal
+    textColor: teal
 address: bookworm.{env}.finance.cancel-order
 parameters:
   env:
@@ -15,9 +23,12 @@ parameters:
       - staging
       - production
     default: development
+    examples:
+      - development
+      - staging
+      - production
     description: BookWorm deployment environment.
 deliveryGuarantee: at-least-once
-type: stream
 protocols:
   - kafka
 deadLetterChannel:
@@ -25,119 +36,49 @@ deadLetterChannel:
   version: 1.0.0
 ---
 
-`bookworm.{env}.finance.cancel-order` (v1.0.0) is the Kafka topic owned by Finance that delivers `CancelOrderCommand` messages to Notification for canceled-order emails. Finance publishes this command from the `OrderOrchestrator` Durable Task saga; Notification consumes it to render an MJML email and submit it over SMTP. This channel belongs to Finance and does not represent order-state confirmation in Ordering API.
+## Purpose & Scope
 
-## Channel information
+This topic transports order-cancellation notification commands published by [[service|order-orchestration]] after an order transitions to cancelled. [[service|notification-api]] consumes these commands to submit a cancellation email when valid customer contact details are present. No delivery confirmation is sent back to Finance.
+
+## Channel Specification
+
+| Property                               | Value                                                                       |
+| :------------------------------------- | :-------------------------------------------------------------------------- |
+| **Bounded Context / Owner**            | [[domain\|ordering]] / [[team\|commerce-fulfillment-team]]                  |
+| **Channel Type**                       | Topic                                                                       |
+| **Address Pattern**                    | `bookworm.{env}.finance.cancel-order`                                       |
+| **Parameters**                         | `env` (`development`, `staging`, `production`; default: `development`)      |
+| **Protocol & Envelope Format**         | Kafka + CloudEvents JSON (`application/json`)                               |
+| **Partition Key & Ordering Guarantee** | Keyed by `orderId`; preserves per-order command ordering within a partition |
+| **Delivery Semantics**                 | At-least-once                                                               |
+| **Dead-Letter Channel**                | [[channel\|bookworm.&#123;env&#125;.notification.dead-letter-queue]]        |
+
+## Messages & Participants
+
+| Message                         | Type    | Producer                         | Consumer(s)                   | Consumer Group                |
+| :------------------------------ | :------ | :------------------------------- | :---------------------------- | :---------------------------- |
+| [[command\|CancelOrderCommand]] | Command | [[service\|order-orchestration]] | [[service\|notification-api]] | Notification service consumer |
+
+## Ordering, Retries & Failure Handling
+
+- **Partition-key ordering:** Keying by `orderId` preserves ordering for lifecycle notification commands targeting the same order.
+- **Transient retries:** [[service|notification-api]] applies bounded SMTP client retries and Kafka listener cooldowns on transient mail-provider failures.
+- **Immediate DLQ routing:** Malformed payloads, rendering errors, or exhausted retries route to [[channel|bookworm.&#123;env&#125;.notification.dead-letter-queue]].
+- **Consumer idempotency:** [[service|notification-api]] deduplicates by message ID for 24 hours; blank email addresses are skipped safely, and operators must check [[service|sendgrid-api]] activity before replaying.
+
+## Channel Details & Visualization
 
 <ChannelInformation />
 
-## Overview
-
-| Property                | Value                                                                                                                                                                                                                                                                                     |
-| :---------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**               | Ordering bounded context (**Finance**, Aspire resource `finance`)                                                                                                                                                                                                                         |
-| **Topic pattern**       | `bookworm.{env}.finance.cancel-order` (`AppendPrefix = true`)                                                                                                                                                                                                                             |
-| **Producer**            | [[service\|order-orchestration]] (`PublishCancelOrderActivity` via Wolverine)                                                                                                                                                                                                             |
-| **Consumer**            | [[service\|notification-api]] (`CancelOrderCommandHandler` via Wolverine)                                                                                                                                                                                                                 |
-| **Message contract**    | [[command\|CancelOrderCommand]] (`BookWorm.Contracts.CancelOrderCommand`)                                                                                                                                                                                                                 |
-| **Protocol / format**   | Kafka stream, CloudEvents JSON (`application/json`, camelCase via `JsonSerializerDefaults.Web`)                                                                                                                                                                                           |
-| **Partition key**       | `OrderId` (configured via `opts.MessagePartitioning.ByPropertyNamed("OrderId")` in Finance)                                                                                                                                                                                               |
-| **Delivery guarantee**  | At-least-once                                                                                                                                                                                                                                                                             |
-| **Dead-letter channel** | [[channel\|bookworm.&#123;env&#125;.notification.dead-letter-queue]]                                                                                                                                                                                                                      |
-| **Source**              | `src/Services/Finance/BookWorm.Finance/Contracts/IntegrationCommands/CancelOrderCommand.cs`, `src/Services/Notification/BookWorm.Notification/IntegrationEvents/EventHandlers/CancelOrderCommandHandler.cs`, `src/BuildingBlocks/BookWorm.Chassis/EventBus/Wolverine/KafkaTopicRouter.cs` |
-
-## Parameters and fields
-
-### Topic parameters
-
-`KafkaTopicRouter.CreateTopicName` resolves the topic name using the host project prefix (`bookworm`), kebab-case environment name, owning service (`finance`), and topic (`cancel-order`).
-
-| Parameter | Type     | Required | Default       | Allowed values                         | Description                                                                   |
-| :-------- | :------- | :------- | :------------ | :------------------------------------- | :---------------------------------------------------------------------------- |
-| `{env}`   | `string` | Yes      | `development` | `development`, `staging`, `production` | Kebab-case Aspire host environment name (`IHostEnvironment.EnvironmentName`). |
-
-### Payload fields
-
-The CloudEvents `data` object carries the camelCase JSON representation of `CancelOrderCommand`.
-
-| Name           | Type                 | Required | Default                 | Constraints                               | Description                                                              |
-| :------------- | :------------------- | :------- | :---------------------- | :---------------------------------------- | :----------------------------------------------------------------------- |
-| `id`           | `string` (UUID)      | Yes      | `Guid.CreateVersion7()` | UUID v7 inherited from `IntegrationEvent` | Unique message identifier used by Notification for idempotency tracking. |
-| `creationDate` | `string` (date-time) | Yes      | `DateTime.UtcNow`       | ISO 8601 UTC timestamp                    | UTC timestamp when Finance created the command.                          |
-| `orderId`      | `string` (UUID)      | Yes      | —                       | Valid UUID; Kafka partition key           | Identifier of the canceled order.                                        |
-| `fullName`     | `string \| null`     | No       | `null`                  | Nullable string                           | Customer display name; Notification defaults `null` to `"Customer"`.     |
-| `email`        | `string \| null`     | No       | `null`                  | Nullable email address                    | Recipient address; Notification skips delivery if null or whitespace.    |
-| `totalMoney`   | `number` (`decimal`) | Yes      | —                       | Non-negative decimal                      | Order total displayed in the canceled-order email.                       |
-
-### Headers and envelope metadata
-
-Wolverine attaches CloudEvents attributes and Kafka headers through `CloudEventHeaderPolicy`, `UserIdEnvelopeMiddleware`, and `CloudEventsOnlyKafkaMapper`.
-
-| Header / attribute     | Location            | Value / source                                 | Description                                                                                               |
-| :--------------------- | :------------------ | :--------------------------------------------- | :-------------------------------------------------------------------------------------------------------- |
-| `specversion`          | CloudEvents JSON    | `"1.0"`                                        | CloudEvents specification version written by Wolverine's `CloudEventsMapper`.                             |
-| `type` / `messagetype` | CloudEvents JSON    | `BookWorm.Contracts.CancelOrderCommand`        | Message identity resolved from `Type.FullName` (no `[MessageIdentity]` override on `CancelOrderCommand`). |
-| `source`               | CloudEvents JSON    | `urn:bookworm:book-worm.finance`               | Producer URN formatted as `urn:bookworm:{applicationName.ToKebabCase()}`.                                 |
-| `traceparent`          | Kafka header & JSON | W3C Trace Context                              | Propagates OpenTelemetry distributed traces from Finance to Notification.                                 |
-| `requestid`            | Envelope header     | Propagated from upstream request               | Correlates checkout and cancellation logs across services.                                                |
-| `x-user-id` / `userid` | Envelope header     | Propagated `NameIdentifier` claim when present | Carries user identity across async hops when available.                                                   |
-
-## Delivery, partitioning, and consumer behavior
-
-- **Publication triggers:** Finance dispatches `CancelOrderCommand` via `PublishCancelOrderActivity` (Durable Task activity retry policy: `3` attempts, `5s` initial delay, `2.0x` backoff) only when `Order.CanSendNotification` is true (both `FullName` and `Email` are non-blank). Dispatch occurs on explicit `OrderCancelledStep`, on `CancelDueToMaxRetriesAsync` after exceeding `OrderStateMachine.MaxAttempts` (default `3`), or during LIFO saga compensation on `TaskFailedException` or `FinanceDomainException`.
-- **Partitioning and ordering:** Finance partitions messages by `OrderId`, preserving per-order ordering within this topic. Ordering is not guaranteed across separate lifecycle topics such as `bookworm.{env}.finance.place-order` and `bookworm.{env}.finance.cancel-order`.
-- **Stateless email processing with Redis idempotency:** Notification has no SQL database or email outbox table. `CancelOrderCommandHandler` acquires a 24-hour Redis/FusionCache lock via `IIntegrationEventIdempotencyGuard` (`idempotency:CancelOrderCommandHandler:{id:N}`), skips blank `email` values, renders the embedded `Orders/OrderEmail` MJML template with subject `"BookWorm: Your Order Has Been Canceled - Important Information"`, and sends via `MailKitSender` (Mailpit locally on port `587`, SendGrid SMTP in cloud).
-- **Duplicate semantics:** Duplicate Kafka deliveries of the same `id` are suppressed for 24 hours by the Redis idempotency guard. Reissued commands carrying a new `id` are processed as new messages and can send another email. No delivery confirmation event is published back to Finance or Ordering API.
-
-## Error responses and dead-letter behavior
-
-| Condition                                                                                                                                         | Handling behavior                                                                                                                                                                                    | Recovery behavior                                                                                                            |
-| :------------------------------------------------------------------------------------------------------------------------------------------------ | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------- |
-| `email` is `null` or whitespace                                                                                                                   | `OrderNotificationHelper.SendAsync` returns immediately without rendering or calling SMTP.                                                                                                           | Expected no-op; no retry or dead-lettering occurs.                                                                           |
-| Transient SMTP failure (`CommandException` transient, `ProtocolException`, `IOException`, `TimeoutException`, `TimeoutRejectedException`)         | `MailKitSender` executes inside the `Notification` Polly resilience pipeline (circuit breaker, exponential retry with jitter, `30s` timeout).                                                        | If SMTP recovers within the pipeline window, email delivery succeeds without moving to DLQ.                                  |
-| Exhausted SMTP retries or MJML rendering failure                                                                                                  | `MailKitSender` wraps non-cancellation exceptions in `NotificationException` and rethrows; `IIntegrationEventIdempotencyGuard.ExecuteAsync` releases the Redis key so retries or replays can re-run. | Wolverine routes unhandled `NotificationException` to [[channel\|bookworm.&#123;env&#125;.notification.dead-letter-queue]].  |
-| Transient Wolverine listener exceptions (`TimeoutException`, `HttpRequestException`, `DbUpdateConcurrencyException`, transient `NpgsqlException`) | `WolverineHostExtensions.ConfigureDefaultErrorHandling` retries with `50ms`, `250ms`, and `1s` cooldown intervals plus full jitter.                                                                  | After retries exhaust, Wolverine moves the envelope to [[channel\|bookworm.&#123;env&#125;.notification.dead-letter-queue]]. |
-| `JsonException` or `FormatException`                                                                                                              | Immediately moved to [[channel\|bookworm.&#123;env&#125;.notification.dead-letter-queue]] with zero retries.                                                                                         | Fix producer schema drift before replaying.                                                                                  |
-
-`NotificationException` is not matched by the explicit BookWorm policies. BookWorm does not configure a catch-all `MaximumAttempts` rule, so Wolverine 6.65.1's unmatched-exception fallback moves it to the native DLQ on the first failure. See the [version-pinned continuation fallback](https://github.com/JasperFx/wolverine/blob/V6.65.1/src/Wolverine/ErrorHandling/FailureRuleCollection.cs) and [dead-letter guide](https://github.com/JasperFx/wolverine/blob/V6.65.1/docs/tutorials/dead-letter-queues.md#when-does-a-message-get-dead-lettered).
-
-## Examples
-
-### CloudEvents Kafka message
-
-Kafka key: `0193f1a2-1111-7d8e-9f01-23456789abcd` (`orderId`)  
-Kafka header: `traceparent: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01`
-
-<CodeGroup>
-
-```json
-{
-	"specversion": "1.0",
-	"id": "0193f1a2-9c01-7d8e-9f01-23456789abcd",
-	"type": "BookWorm.Contracts.CancelOrderCommand",
-	"source": "urn:bookworm:book-worm.finance",
-	"time": "2026-11-25T16:20:00Z",
-	"datacontenttype": "application/json",
-	"messagetype": "BookWorm.Contracts.CancelOrderCommand",
-	"data": {
-		"id": "0193f1a2-9c01-7d8e-9f01-23456789abcd",
-		"creationDate": "2026-11-25T16:20:00Z",
-		"orderId": "0193f1a2-1111-7d8e-9f01-23456789abcd",
-		"fullName": "Alex Reader",
-		"email": "reader@example.com",
-		"totalMoney": 59.98
-	}
-}
-```
-
-</CodeGroup>
-
-## Related documentation
-
-- [[command|CancelOrderCommand]] — Command payload specification and consumer handling.
-- [[channel|bookworm.&#123;env&#125;.notification.dead-letter-queue]] — Native Kafka DLQ receiving failed `CancelOrderCommand` envelopes.
-- [[channel|bookworm.&#123;env&#125;.ordering.order-status-change-to-cancel]] — Upstream event channel triggering Finance cancellation.
-- [[service|notification-api]] — SMTP email worker architecture and resilience settings.
-- [[service|order-orchestration]] — Durable Functions saga coordinating order workflows.
-
 <NodeGraph />
+
+## Related Documentation
+
+- [[channel|bookworm.&#123;env&#125;.notification.dead-letter-queue]] — Consumer dead-letter queue
+- [[channel|bookworm.&#123;env&#125;.ordering.order-status-change-to-cancel]] — Upstream order cancellation event topic
+- [[channel|bookworm.&#123;env&#125;.finance.complete-order]] — Paired order completion command topic
+- [[service|order-orchestration]] — Command producer
+- [[service|notification-api]] — Email consumer
+- [[flow|notification-delivery]] — Notification delivery workflow
+- [[flow|order-lifecycle]] — End-to-end order lifecycle flow
+- [[doc|arc42/08-crosscutting-concepts/002-contracts-and-messaging]] — Messaging standards and idempotency rules

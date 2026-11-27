@@ -1,57 +1,38 @@
 ---
 title: Building Block View Level 3
-summary: Level-3 white-box view of Finance orchestration.
+summary: Level-3 view of Finance workflow coordination.
 owners:
-  - contributor-team
+  - architecture-enabling-team
 badges:
   - content: Architecture
     backgroundColor: blue
     textColor: blue
 ---
 
-This Level-3 view opens `Finance` (`src/Services/Finance/BookWorm.Finance/`), the only building block expanded beyond Level 2 because its durable workflow coordinates post-checkout outcomes across Ordering, Shopping, and Platform. `Finance` runs as an isolated Azure Functions worker (`Azure.Functions.Sdk`) backed by Azure Durable Task Scheduler (`finance-taskhub`) and coordinates basket cleanup and order lifecycle emails—it does not process payments and uses no PostgreSQL database.
+Finance merits a deeper view because its post-checkout workflow must reconcile asynchronous basket deletion, authoritative order completion or cancellation, timeout retries, and compensating actions. Correctness depends on legal terminal-state transitions and safe recovery when a side effect succeeds but its confirmation is delayed.
 
-## Level-3 component diagram
+## Structure
 
-This diagram shows how inbound Kafka triggers enter `OrderOrchestrator`, apply domain decisions and workflow steps, persist orchestration state in Durable Task Scheduler, and publish outbound commands over Kafka.
+The first view captures stable domain and workflow relationships; the second locates those responsibilities within Finance and its external partners.
+
+<MermaidFileLoader file="mermaids/003-level-3-diagram-1.mmd" />
 
 <LikeC4View viewId="financeComponents" project="deployment" />
 
-## Internal components
+## Core Elements
 
-| Component                                | Responsibility                                                                                                                                                                                                                                                                       | Source path (`src/Services/Finance/BookWorm.Finance/`)                                     |
-| :--------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------- |
-| **Kafka trigger functions**              | Consume Kafka integration events (`UserCheckedOutTrigger`, `OrderCompletedTrigger`, `OrderCancelledTrigger`, and basket deletion outcome triggers) and start or signal the correlated orchestration instance                                                                         | `Features/Orders/PlaceOrder/`, `OrderCompletion/`, `OrderCancellation/`, `BasketDeletion/` |
-| **OrderOrchestrator and workflow steps** | Drive deterministic durable orchestration per `OrderId` using `IOrderWorkflowStep` implementations (`BasketDeletedCompleteStep`, `BasketDeletedFailedStep`, `OrderCompletedStep`, `OrderCancelledStep`, `PlaceOrderTimeoutStep`) and `OrderSagaCompensations`                        | `Features/Orders/Orchestration/` (`Models/`, `Saga/`, `Steps/`)                            |
-| **Order aggregate and decider**          | Encapsulate pure workflow state transitions (`Order`, `OrderLifecycleDecider`, `OrderStatus`, `CustomerContact`, `Money`) and domain events (`OrderPlacedEvent`, `BasketDeletedEvent`, `OrderTimeoutRetriedEvent`, `OrderCompletedEvent`, `OrderCancelledEvent`, `OrderFailedEvent`) | `Domain/AggregatesModel/OrderAggregate/`, `Domain/Events/`                                 |
-| **Publish activities**                   | Execute side-effecting outbound Kafka command publication through Wolverine (`PublishPlaceOrderActivity`, `PublishCompleteOrderActivity`, `PublishCancelOrderActivity`, and basket outcome reporting activities)                                                                     | `Features/Orders/PlaceOrder/`, `OrderCompletion/`, `OrderCancellation/`                    |
-| **Integration contracts**                | Define the five inbound integration events and five outbound integration commands partitioned by `OrderId`                                                                                                                                                                           | `Contracts/IntegrationEvents/`, `Contracts/IntegrationCommands/`                           |
-| **Durable Task Scheduler state**         | Persist orchestration history, timers, and external event queues in `durable-task-scheduler` (`finance-taskhub`) plus Azure Storage host state (`storage`)                                                                                                                           | `src/Aspire/BookWorm.AppHost/Infra/durable-task-scheduler.bicep`                           |
+| Class / Interface                             | Role & Invariants                                                                                                                                                                                                                                                   | Extension / Modification Point                                                                                                               |
+| :-------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`Order`**                                   | Workflow-local aggregate for basket, customer contact, total, retry count, and coordination status. Identifiers must be non-empty, the retry limit positive, and terminal states cannot transition again. Ordering remains authoritative for official order status. | Route lifecycle changes through `OrderLifecycleDecider`; keep Finance coordination status distinct from Ordering's business status.          |
+| **`OrderLifecycleDecider` / `OrderStatus`**   | Enforces legal state transitions, prevents duplicate basket-deletion completion, and bounds retry-driven cancellation.                                                                                                                                              | Add lifecycle actions and terminal-state rules here so every transition follows the same invariant checks.                                   |
+| **`OrderOrchestrator`**                       | Starts placement, waits for external outcomes, delegates each outcome to a workflow step, and ends on a terminal result or exhausted retry limit.                                                                                                                   | Change sequencing and timeout policy here; keep orchestration replay-safe and domain rules in the aggregate and decider.                     |
+| **`IOrderWorkflowStep` / `OrderStepContext`** | Provides the strategy boundary for handling a winning event or timer with access to the current workflow state and recovery actions. The timeout step is the fallback and must not shadow specific event handlers.                                                  | Add a focused step for a new outcome and preserve dispatch precedence, especially the fallback timeout behavior.                             |
+| **`OrderSagaCompensations`**                  | Registers recovery actions before forward side effects and executes them in reverse order when coordination fails. A failed compensation is logged without preventing remaining actions.                                                                            | Pair each new reversible side effect with its recovery action; preserve completion semantics for normal, exhausted-retry, and failure paths. |
+| **`Money` / `CustomerContact`**               | `Money` rejects negative totals. Notifications are eligible only when both a customer name and email are available.                                                                                                                                                 | Keep amount and contact eligibility rules in these value objects rather than scattering them through workflow steps.                         |
 
-## Contract boundary summary
+## Related Resources
 
-| Direction | Message contract                               | Kafka topic (`bookworm.{env}.*`)           | Peer service                 |
-| :-------- | :--------------------------------------------- | :----------------------------------------- | :--------------------------- |
-| Inbound   | `UserCheckedOutIntegrationEvent`               | `ordering.user-checked-out`                | `Ordering API`               |
-| Inbound   | `OrderStatusChangedToCompleteIntegrationEvent` | `ordering.order-status-change-to-complete` | `Ordering API`               |
-| Inbound   | `OrderStatusChangedToCancelIntegrationEvent`   | `ordering.order-status-change-to-cancel`   | `Ordering API`               |
-| Inbound   | `BasketDeletedCompleteIntegrationEvent`        | `basket.delete-complete`                   | `Basket API`                 |
-| Inbound   | `BasketDeletedFailedIntegrationEvent`          | `basket.delete-failed`                     | `Basket API`                 |
-| Outbound  | `PlaceOrderCommand`                            | `finance.place-order`                      | `Basket API`, `Notification` |
-| Outbound  | `CompleteOrderCommand`                         | `finance.complete-order`                   | `Notification`               |
-| Outbound  | `CancelOrderCommand`                           | `finance.cancel-order`                     | `Notification`               |
-| Outbound  | `DeleteBasketCompleteCommand`                  | `finance.delete-basket-complete`           | `Ordering API`               |
-| Outbound  | `DeleteBasketFailedCommand`                    | `finance.delete-basket-failed`             | `Ordering API`               |
-
-## Authority and boundary rules
-
-- **Coordination state is separate from business status:** `Finance` persists orchestration progress per `OrderId` in Durable Task Scheduler, while `Ordering API` remains the sole authority for official order status (`New`, `Cancelled`, `Completed`).
-- **Timeouts are coordination outcomes:** A `PlaceOrderTimeoutStep` timeout or compensation inside `Finance` records a coordination outcome; it never mutates `Ordering API` status directly without an explicit message contract.
-- **Command publication does not prove email delivery:** Publishing `PlaceOrderCommand`, `CompleteOrderCommand`, or `CancelOrderCommand` transfers responsibility to `Notification`, which enforces Redis idempotency and SMTP submission independently.
-- **No payment processing:** Despite the service name, `Finance` handles post-checkout workflow orchestration rather than payment gateway execution.
-
-## Related documentation and architecture decisions
-
-- [[doc|arc42/06-runtime-view/001-checkout-and-order-coordination]] — Step-by-step runtime sequence for checkout, retries, and compensation.
-- ADR-Finance-Durable-Task-Scheduler — Superseding decision moving Finance orchestration from PostgreSQL to Azure Durable Task Scheduler.
-- ADR-BW-005: Kafka integration backbone — Shared CloudEvents messaging over Kafka.
+- [[service\|order-orchestration]] — Finance ownership and integration boundary.
+- [[event\|UserCheckedOutIntegrationEvent]], [[event\|BasketDeletedCompleteIntegrationEvent]], [[event\|BasketDeletedFailedIntegrationEvent]], [[event\|OrderStatusChangedToCompleteIntegrationEvent]], and [[event\|OrderStatusChangedToCancelIntegrationEvent]] — workflow inputs.
+- [[adr\|adr-005-finance-separate-workflow-and-order-status]] — separates Finance coordination outcomes from authoritative Ordering status.
+- [[doc\|arc42/06-runtime-view/001-checkout-and-order-coordination]] — checkout coordination sequence.

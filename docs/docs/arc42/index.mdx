@@ -1,59 +1,62 @@
 ---
 title: arc42 Architecture Overview
-summary: System-wide entry point to BookWorm's arc42 architecture documentation.
+summary: Entry point to BookWorm's architecture, key boundaries, and supporting documentation.
 owners:
-  - contributor-team
+  - architecture-enabling-team
 badges:
   - content: Architecture
     backgroundColor: blue
     textColor: blue
 ---
 
-This overview is the navigation hub for BookWorm's system-wide arc42 architecture documentation. BookWorm is a .NET 11, Aspire 17, and Next.js 16 microservices bookstore decomposed into six backend bounded contexts behind a YARP `API Gateway` and three customer and staff microfrontends (MFEs).
+Use this page to navigate BookWorm's architecture and find the view that answers your question. BookWorm is organized around six business capabilities, a customer and staff edge, and a shared technical foundation; the chapters describe their boundaries, interactions, deployment, and quality requirements.
 
 :::tip
-If you want a single-page visual summary before reading individual arc42 chapters, start with the [[doc|arc42/00-c4-overview]].
+For a visual orientation to the system boundary and its internal building blocks, start with the [[doc|arc42/00-c4-overview]].
 :::
 
-## Architectural framing
+## Architectural orientation
 
-BookWorm decomposes by business capability and data ownership rather than by technical layer or shared database. Every bounded context owns its domain rules, authoritative persistence, and public contracts.
+BookWorm groups business rules and authoritative data by capability rather than by technical layer. Capabilities collaborate through explicit interfaces and events, keeping ownership visible while allowing independently owned parts to evolve.
 
-This diagram shows how external web traffic enters BookWorm's edge tier and connects to the six backend bounded contexts.
+The view below summarizes the capability boundaries and selected interactions. Use the context, building-block, runtime, and deployment chapters for the corresponding details.
 
 <MermaidFileLoader file="mermaids/arc42-diagram-1.mmd" />
 
-| Layer or bounded context | Authoritative responsibility                                                                                                               | Primary cross-context relationships                                                                                        |
-| :----------------------- | :----------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------- |
-| **Edge and Frontends**   | Public ingress (`API Gateway`), customer discovery (`Storefront`), basket/checkout (`Commerce`), and staff management (`Backoffice`)       | Routes browser traffic over HTTPS to backend APIs and proxies Microsoft Entra ID                                           |
-| **Catalog**              | Authoritative book metadata, authors, categories, publishers, pricing, hybrid search, and derived rating summary                           | Supplies product facts via REST/gRPC; updates Qdrant vectors from Scheduler triggers; projects ratings from Reviews events |
-| **Shopping**             | Customer-scoped mutable pre-order baskets in Redis                                                                                         | Reads Catalog book details via gRPC; deletes baskets on Finance Kafka commands                                             |
-| **Ordering**             | Accepted orders, purchase-time item snapshots, order status (`New`, `Cancelled`, `Completed`), and post-checkout orchestration (`Finance`) | Reads Basket and Catalog via gRPC at checkout; coordinates cleanup and emails via Durable Task Scheduler and Kafka         |
-| **Reviews**              | Individual customer `Feedback` records in Cosmos DB and AI review summarization                                                            | Publishes feedback events to Catalog; exposes read-only Agent-to-Agent (A2A) summaries to Conversational                   |
-| **Conversational**       | AI-assisted customer discovery and Q&A (`Chat API` + `MCP Tools`)                                                                          | Calls Catalog read-only via Model Context Protocol (MCP) and Rating via A2A gRPC; never mutates baskets or orders          |
-| **Platform**             | Recurring job scheduling (`Scheduler`) and transactional order email delivery (`Notification`)                                             | Triggers Catalog Ingestion via Kafka; consumes Finance email commands without owning business outcomes                     |
+| Boundary rule                               | Architectural consequence                                                                                                                 |
+| :------------------------------------------ | :---------------------------------------------------------------------------------------------------------------------------------------- |
+| **Capability-owned state**                  | Each business capability is authoritative for its records; other capabilities use its contracts instead of accessing its stores directly. |
+| **Explicit integration**                    | Synchronous calls serve interactions that need an immediate result; asynchronous events coordinate work that can complete later.          |
+| **Separate business and delivery outcomes** | Order status belongs to Ordering. A failed job or email attempt does not, by itself, reverse an accepted order.                           |
+| **Derived data can lag**                    | Search indexes and rating summaries are projections of authoritative data, so updates may become visible after the source change.         |
+| **Read-only conversational assistance**     | Discovery and chat can use catalog and review information, but do not change baskets or orders.                                           |
+
+These rules are reflected in the prioritized goals in [[doc|arc42/01-introduction-and-goals/003-quality-goals]], the solution strategy in [[doc|arc42/04-solution-strategy]], and the runtime scenarios in [[doc|arc42/06-runtime-view]].
 
 ## arc42 chapter map
 
-Choose the chapter that matches your current question. Chapters 1 through 11 live under this directory; Architecture Decisions (Chapter 9) and the consolidated Glossary (Chapter 12) live at their canonical paths below.
+Choose a chapter by the question you need to answer. The overview and context chapters establish the system purpose and boundaries; the remaining chapters explain its design, behavior, operation, and terminology.
 
-| Chapter                          | Document                                   | Primary question answered                                                               | Target audience          |
-| :------------------------------- | :----------------------------------------- | :-------------------------------------------------------------------------------------- | :----------------------- |
-| **1. Introduction and goals**    | [[doc\|arc42/01-introduction-and-goals]]   | What business capabilities, quality goals, and stakeholders drive BookWorm?             | Architects, contributors |
-| **2. Architecture constraints**  | [[doc\|arc42/02-architecture-constraints]] | Which technical, organizational, and convention constraints bound design choices?       | Architects, contributors |
-| **3. Context and scope**         | [[doc\|arc42/03-context-and-scope]]        | Which actors and external systems sit outside BookWorm's boundary?                      | Architects, operators    |
-| **4. Solution strategy**         | [[doc\|arc42/04-solution-strategy]]        | Which core architectural patterns satisfy the top quality goals?                        | Architects               |
-| **5. Building block view**       | [[doc\|arc42/05-building-block-view]]      | How does BookWorm decompose statically across Levels 1, 2, and 3?                       | Architects, contributors |
-| **6. Runtime view**              | [[doc\|arc42/06-runtime-view]]             | How do checkout, search indexing, ratings, chat, and notifications execute at runtime?  | Architects, contributors |
-| **7. Deployment view**           | [[doc\|arc42/07-deployment-view]]          | How do all 16 Container Apps and backing stores deploy locally and on Azure?            | Operators, architects    |
-| **8. Crosscutting concepts**     | [[doc\|arc42/08-crosscutting-concepts]]    | How do security, messaging, resilience, observability, AI governance, and testing work? | Contributors, operators  |
-| **9. Architecture decisions**    | [[doc\|arc42/09-architecture-decisions]]   | Why were platform and system choices made, and which legacy ADRs were superseded?       | Architects, contributors |
-| **10. Quality requirements**     | [[doc\|arc42/10-quality-requirements]]     | What measurable quality scenarios verify reliability, security, and modifiability?      | Architects, operators    |
-| **11. Risks and technical debt** | [[doc\|arc42/11-risks-and-technical-debt]] | Which known operational gaps, architectural risks, and debt items remain open?          | Architects, operators    |
-| **12. Glossary**                 | [[doc\|arc42/12-glossary]]                 | What are the canonical definitions of domain and platform terms?                        | All audiences            |
+| Chapter                          | Primary question answered                                                                   | Intended readers                               |
+| :------------------------------- | :------------------------------------------------------------------------------------------ | :--------------------------------------------- |
+| **1. Introduction and goals**    | What business purpose, requirements, quality goals, and stakeholders shape BookWorm?        | Product stakeholders, architects, contributors |
+| **2. Architecture constraints**  | Which technical and organizational constraints limit design choices?                        | Architects, contributors                       |
+| **3. Context and scope**         | Which people and external systems interact across the BookWorm boundary?                    | Product stakeholders, architects, operators    |
+| **4. Solution strategy**         | Which architectural approaches address the primary goals and constraints?                   | Architects, contributors                       |
+| **5. Building block view**       | How is BookWorm decomposed into capabilities, services, and supporting elements?            | Architects, contributors                       |
+| **6. Runtime view**              | How do representative checkout, discovery, feedback, and delivery scenarios execute?        | Architects, contributors, operators            |
+| **7. Deployment view**           | Where do applications and supporting infrastructure run in each environment?                | Operators, architects                          |
+| **8. Crosscutting concepts**     | How are shared concerns such as security, messaging, observability, and testing handled?    | Contributors, operators                        |
+| **9. Architecture decisions**    | Why were significant platform and system choices made, and which decisions were superseded? | Architects, contributors                       |
+| **10. Quality requirements**     | Which measurable scenarios define and verify required system qualities?                     | Architects, operators                          |
+| **11. Risks and technical debt** | Which known exposures and compromises need mitigation or remediation?                       | Architects, operators                          |
+| **12. Glossary**                 | What do domain and architecture terms mean in this documentation?                           | All readers                                    |
 
-## Related documentation
+## Related architecture documentation
 
-- [[doc|arc42/00-c4-overview]] — Single-page System Context and Container visual summary.
-- [[doc|arc42/09-architecture-decisions]] — All 18 platform ADRs and 55 system ADRs (with superseded infrastructure records flagged).
-- [[doc|development/004-engineering-standards]] — Repository coding, CQRS, and package conventions.
+- [[doc|arc42/00-c4-overview]] — System boundary and container views.
+- [[doc|arc42/01-introduction-and-goals]] — Business purpose, requirements, stakeholders, and quality goals.
+- [[doc|arc42/09-architecture-decisions]] — Decision records and their rationale.
+- [[doc|arc42/10-quality-requirements]] — Quality attributes and measurable scenarios.
+- [[doc|arc42/11-risks-and-technical-debt]] — Prioritized risks and known technical debt.
+- [[doc|arc42/12-glossary]] — Canonical domain and technical terminology.

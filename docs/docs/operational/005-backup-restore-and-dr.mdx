@@ -1,0 +1,153 @@
+---
+title: Backup, Restore & Disaster Recovery (DR)
+summary: Operator runbook for PostgreSQL point-in-time restore, Cosmos DB failover verification, Blob Storage recovery, and Qdrant vector index rebuilds.
+owners:
+  - platform-engineering-team
+badges:
+  - content: SRE / Incident
+    backgroundColor: red
+    textColor: red
+---
+
+## When to Use & Blast Radius
+
+Use this runbook during data corruption, accidental deletion, regional Azure outages, or scheduled disaster recovery drills. Restores provision new database instances or overwrite derived indexes and can incur temporary service downtime until connection bindings are updated.
+
+<Admonition type="danger" title="Authoritative Data Protection">
+
+Never restore directly over a live `Production` database. Always restore PostgreSQL or Cosmos DB
+into a new target resource, validate data integrity first, and then cut over service bindings.
+
+</Admonition>
+
+### Backup and Recovery Topology
+
+<MermaidFileLoader file="mermaids/005-backup-restore-and-dr-diagram-1.mmd" />
+
+## Pre-Flight Check
+
+Verify Azure CLI context and inspect current backup and replication status for authoritative stores:
+
+```bash
+az account set --subscription "<SUBSCRIPTION_ID>"
+az postgres flexible-server show --name "<POSTGRES_SERVER>" --resource-group "<RESOURCE_GROUP>" \
+  --query "{State:state, BackupRetentionDays:backup.backupRetentionDays, GeoRedundant:backup.geoRedundantBackup, HaState:highAvailability.state}" -o table
+az cosmosdb show --name "<COSMOS_ACCOUNT>" --resource-group "<RESOURCE_GROUP>" \
+  --query "{BackupPolicy:backupPolicy.type, Locations:locations[].{Region:locationName, Priority:failoverPriority}}" -o table
+```
+
+## Procedure
+
+<Steps>
+<Step title="Execute PostgreSQL point-in-time restore (Catalog, Ordering, Scheduler)">
+
+Restore the PostgreSQL Flexible Server to a known-good UTC timestamp (`<RESTORE_TIMESTAMP>`, e.g., `2026-11-27T12:00:00Z`) into a new server instance:
+
+```bash
+az postgres flexible-server restore \
+  --resource-group "<RESOURCE_GROUP>" \
+  --name "<POSTGRES_SERVER>-restored" \
+  --source-server "<POSTGRES_SERVER>" \
+  --restore-time "<RESTORE_TIMESTAMP>"
+```
+
+</Step>
+
+<Step title="Re-apply Entra ID admin and Managed Identity access on the restored PostgreSQL server">
+
+Ensure passwordless Entra ID authentication is enabled for **Catalog Service**, **Catalog Ingestion**, **Ordering Service**, and **Scheduler Service**:
+
+```bash
+az postgres flexible-server ad-admin create \
+  --resource-group "<RESOURCE_GROUP>" \
+  --server-name "<POSTGRES_SERVER>-restored" \
+  --display-name "<ADMIN_GROUP_OR_PRINCIPAL>" \
+  --object-id "<PRINCIPAL_ID>" \
+  --type Group
+```
+
+</Step>
+
+<Step title="Verify or trigger Azure Cosmos DB failover (Rating database)">
+
+Inspect failover priorities and trigger a manual failover only if the primary write region is unavailable:
+
+```bash
+az cosmosdb failover-priority-change \
+  --name "<COSMOS_ACCOUNT>" \
+  --resource-group "<RESOURCE_GROUP>" \
+  --failover-policies "<SECONDARY_REGION>=0" "<PRIMARY_REGION>=1"
+```
+
+</Step>
+
+<Step title="Recover deleted blobs in Azure Storage (Catalog assets & Chat sessions)">
+
+Verify soft-delete retention and restore soft-deleted blobs in `<STORAGE_ACCOUNT>`:
+
+```bash
+az storage blob undelete \
+  --account-name "<STORAGE_ACCOUNT>" \
+  --container-name "<CONTAINER_NAME>" \
+  --name "<BLOB_NAME>" \
+  --auth-mode login
+```
+
+</Step>
+
+<Step title="Rebuild the Qdrant Cloud vector index from authoritative Catalog data">
+
+Because the vector index is derived from the Catalog database, trigger a batch re-index through **Quartz Dashboard** (`https://quartz-dashboard.<DOMAIN>/quartz`) and monitor **Catalog Ingestion** logs until all catalog records are re-embedded:
+
+```bash
+az containerapp logs show --name catalog-ingestion --resource-group "<RESOURCE_GROUP>" --type console --follow
+```
+
+</Step>
+
+</Steps>
+
+## Verification
+
+Confirm the restored PostgreSQL server is `Ready`, Cosmos DB write region is active, and **Catalog Ingestion** reports zero errors:
+
+```bash
+az postgres flexible-server show --name "<POSTGRES_SERVER>-restored" --resource-group "<RESOURCE_GROUP>" \
+  --query "{Name:name, State:state, Fqdn:fullyQualifiedDomainName}" -o table
+az cosmosdb show --name "<COSMOS_ACCOUNT>" --resource-group "<RESOURCE_GROUP>" \
+  --query "writeLocations[].{Region:locationName, Status:provisioningState}" -o table
+```
+
+Expected output:
+
+```text
+Name                       State    Fqdn
+-------------------------  -------  -------------------------------------------
+<POSTGRES_SERVER>-restored Ready    <POSTGRES_SERVER>-restored.postgres.database.azure.com
+
+Region            Status
+----------------  ---------
+<TARGET_REGION>   Succeeded
+```
+
+## Rollback / Escape Hatch
+
+If a restored PostgreSQL server fails data validation, keep the original `<POSTGRES_SERVER>` untouched and delete the scratch restore instance:
+
+```bash
+az postgres flexible-server delete --name "<POSTGRES_SERVER>-restored" --resource-group "<RESOURCE_GROUP>" --yes
+```
+
+<Accordion title="Geo-Restore During Full Regional Outage">
+
+If the primary Azure region is unreachable, use geo-restore to recover the PostgreSQL server into `<SECONDARY_REGION>` from geo-redundant backups:
+
+```bash
+az postgres flexible-server geo-restore \
+  --resource-group "<DR_RESOURCE_GROUP>" \
+  --name "<POSTGRES_SERVER>-dr" \
+  --source-server "<POSTGRES_SERVER>" \
+  --location "<SECONDARY_REGION>"
+```
+
+</Accordion>

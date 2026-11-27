@@ -8,7 +8,7 @@ badges:
     textColor: blue
 summary: Replaces a basket's item collection with the supplied items.
 owners:
-  - contributor-team
+  - commerce-fulfillment-team
 schemaPath: schema.json
 operation:
   method: PUT
@@ -18,76 +18,65 @@ sidebar:
   badge: "PUT"
 ---
 
-`UpdateBasket` (`PUT /api/v1/baskets`) replaces the entire item collection of the authenticated customer's existing **Basket** in Redis and returns `204 No Content`. It requires an active basket to exist and rejects requests targeting a missing basket with `404 Not Found`.
+`UpdateBasket` replaces the entire item collection of the authenticated customer's existing [[entity|basket]] in [[service|basket-api]] (`PUT /basket/api/v1/baskets`) and returns `204 No Content`. It requires an active basket to exist and rejects requests targeting a missing basket with `404 Not Found`.
 
 ## Overview
 
-| Property                 | Value                                                                                                                                                                                               |
-| :----------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**                | Shopping bounded context (**Basket API**, Aspire resource `basket`)                                                                                                                                 |
-| **Source**               | `src/Services/Basket/BookWorm.Basket/Features/Update/UpdateBasketEndpoint.cs`, `UpdateBasketCommand.cs`, `UpdateBasketValidator.cs`, `src/Services/Basket/BookWorm.Basket/Domain/CustomerBasket.cs` |
-| **Protocol / format**    | HTTP `PUT`, `application/json` request body, empty `204` response                                                                                                                                   |
-| **Direct endpoint**      | `PUT /api/v1/baskets` (local ports: HTTP `5052`, HTTPS `7155`)                                                                                                                                      |
-| **API Gateway endpoint** | `PUT /basket/api/v1/baskets` (YARP strips `/basket`)                                                                                                                                                |
-| **Authentication**       | Microsoft Entra ID JWT bearer token; default policy requires role `customer` and scopes `basket_read` and `basket_write`                                                                            |
-| **Rate limit**           | `PerUserRateLimit` token bucket (30 tokens, +20 per 10 s, queue 5) plus global concurrency (100) and per-IP fixed-window (30 req/min) limiters                                                      |
-| **Contract version**     | `1.0.0` (`ApiVersions.V1`)                                                                                                                                                                          |
+| Property                           | Value                                                                                                                                                            |
+| :--------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Bounded Context**                | Shopping                                                                                                                                                         |
+| **Owner Service**                  | [[service\|basket-api]]                                                                                                                                          |
+| **Protocol / Format**              | HTTP `PUT`, `application/json` request, empty response (`204 No Content`)                                                                                        |
+| **Gateway Endpoint**               | `PUT /basket/api/v1/baskets` (service path `/api/v1/baskets`)                                                                                                    |
+| **Authentication & Authorization** | Microsoft Entra ID JWT — `customer` role plus scopes `basket_read`, `basket_write`                                                                               |
+| **Idempotency / Concurrency**      | Naturally idempotent full-list replacement (last write wins)                                                                                                     |
+| **Rate Limit / Caching**           | Global concurrency (`100`), per-IP fixed-window (`30 req/min`), and per-user token bucket (`30` tokens, `+20` per `10s`, queue `5`); stored in Redis with no TTL |
+| **Contract Version**               | `1.0.0` (`ApiVersions.V1`)                                                                                                                                       |
 
-## Parameters and fields
+## Request & Response Contract
 
-### Request headers
+### Request Body (`application/json`)
 
-| Name            | Type     | Required | Default | Constraints             | Description                                                                                                                             |
-| :-------------- | :------- | :------- | :------ | :---------------------- | :-------------------------------------------------------------------------------------------------------------------------------------- |
-| `Authorization` | `string` | Yes      | —       | `Bearer <access-token>` | Microsoft Entra ID JWT with role `customer`, scopes `basket_read` and `basket_write`, and a non-empty `ClaimTypes.NameIdentifier` claim |
-| `Content-Type`  | `string` | Yes      | —       | `application/json`      | JSON request media type                                                                                                                 |
+| Name               | Type       | Required | Constraints      | Description                                                  |
+| :----------------- | :--------- | :------- | :--------------- | :----------------------------------------------------------- |
+| `items`            | `object[]` | Yes      | Non-empty array  | Complete replacement list of items for the customer's basket |
+| `items[].id`       | `string`   | Yes      | Non-empty string | Identifier of the Catalog book                               |
+| `items[].quantity` | `integer`  | Yes      | `>= 1`           | Updated unit quantity for the book                           |
 
-### Request body (`UpdateBasketCommand`)
+### Success Response (`204 No Content`)
 
-| Name               | Type                  | Required | Default | Constraints                                                                                                                                           | Description                                                  |
-| :----------------- | :-------------------- | :------- | :------ | :---------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------- |
-| `items`            | `BasketItemRequest[]` | Yes      | —       | Non-empty array (`NotEmpty`)                                                                                                                          | Complete replacement list of items for the customer's basket |
-| `items[].id`       | `string`              | Yes      | —       | Non-empty string (`NotEmpty`); annotated with GUID syntax hint (`[StringSyntax(GuidFormat)]`), though UUID format is not enforced by FluentValidation | Identifier of the Catalog book                               |
-| `items[].quantity` | `integer` (`int32`)   | Yes      | —       | Greater than `0` (`>= 1`)                                                                                                                             | Updated unit quantity for the book                           |
+Empty response body confirms the basket items were replaced.
 
-### Success response (`204 No Content`)
+## Behavior & Side Effects
 
-Returns HTTP `204 No Content` with an empty response body.
-
-## Behavior and side effects
-
-- **Full-list replacement (last write wins):** `UpdateBasketHandler` resolves `userId` from `ClaimTypes.NameIdentifier`, loads `basket:{userId}` from Redis via `GetBasketAsync`, and calls `Guard.Against.NotFound(basket, userId)`. It then invokes `CustomerBasket.Update(...)`, which clears the existing item list and inserts the submitted items, writing the serialized JSON back to Redis via `StringSetAsync` with no TTL.
-- **No implicit creation:** Updating a customer who has no active basket returns `404 Not Found`. Call `POST /api/v1/baskets` to create a basket first, or call `DELETE /api/v1/baskets` to remove all items.
-- **No synchronous Catalog lookup:** `UpdateBasket` stores only book IDs and quantities; titles and prices are resolved on read in `GetBasket`.
-- **No Kafka integration events:** HTTP basket updates do not publish any Kafka or Wolverine integration events.
+- **Full-list replacement:** Replaces all existing items in Redis (`basket:{userId}`) with the submitted items (last write wins, no TTL).
+- **No implicit creation:** Returns `404 Not Found` if no active basket exists; call [[command|CreateBasket]] first or [[command|DeleteBasket]] to remove all items.
+- **Deferred catalog enrichment:** Stores only book IDs and quantities; titles and prices are resolved on read via [[query|GetBasket]].
+- **No integration events:** HTTP basket updates do not publish any Kafka integration events.
 
 :::note
-OpenAPI metadata (`ProducesPut()`) declares `404 Not Found` as `application/problem+json` (`ProblemDetails`), but at runtime `NotFoundExceptionHandler` (`src/BuildingBlocks/BookWorm.Chassis/Exceptions/NotFoundExceptionHandler.cs`) returns `application/json` with `{ "detail": "The requested resource was not found." }`.
+OpenAPI metadata declares `404 Not Found` as `application/problem+json`, whereas runtime responses return `application/json` with `{ "detail": "The requested resource was not found." }`.
 :::
 
-## Error responses
+## Error Responses
 
-| Code / status               | Condition                                                                                                                                                                                      | Recovery behavior                                                                 |
-| :-------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------- |
-| `400 Bad Request`           | Missing `items`, empty `items` array, empty `items[].id`, `items[].quantity <= 0`, or malformed JSON (`ValidationExceptionHandler`, `application/problem+json` `HttpValidationProblemDetails`) | Fix the failing fields reported in `errors` and resubmit                          |
-| `401 Unauthorized`          | Missing, expired, or invalid Entra ID bearer token                                                                                                                                             | Acquire a valid Entra ID access token and retry                                   |
-| `403 Forbidden`             | Valid token missing the `customer` role or the `basket_read`/`basket_write` scopes                                                                                                             | Request a token with the required role and scopes                                 |
-| `404 Not Found`             | No active basket exists in Redis for the authenticated customer (`NotFoundExceptionHandler` returns `application/json` `{ "detail": "The requested resource was not found." }`)                | Create a basket via `POST /api/v1/baskets` before updating                        |
-| `429 Too Many Requests`     | `PerUserRateLimit` or global rate limiter exceeded (`ProblemDetails` with `Retry-After` header in seconds)                                                                                     | Wait for the `Retry-After` interval before retrying                               |
-| `500 Internal Server Error` | Unexpected Redis or server failure (`GlobalExceptionHandler`, `ProblemDetails` with `traceId`)                                                                                                 | Retry with exponential backoff; inspect Basket API and Redis logs using `traceId` |
+| Status / Code               | Condition                                                                                            | Client Recovery Action                                               |
+| :-------------------------- | :--------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------- |
+| `400 Bad Request`           | Missing `items`, empty `items` array, empty `items[].id`, `items[].quantity <= 0`, or malformed JSON | Fix the failing fields and resubmit                                  |
+| `401 Unauthorized`          | Missing, expired, or invalid Entra ID bearer token                                                   | Acquire a valid Entra ID access token and retry                      |
+| `403 Forbidden`             | Valid token missing the `customer` role or `basket_read`/`basket_write` scopes                       | Request a token with the required role and scopes                    |
+| `404 Not Found`             | No active basket exists in Redis for the authenticated customer                                      | Create a basket via [[command\|CreateBasket]] before updating        |
+| `429 Too Many Requests`     | Rate limit quota exceeded (`Retry-After` header included)                                            | Wait for the `Retry-After` interval before retrying                  |
+| `500 Internal Server Error` | Unexpected Redis or server failure (`traceId` included)                                              | Retry with exponential backoff; inspect service logs using `traceId` |
 
-## Related documentation
+## Related Documentation
 
 - [[service|basket-api]] — Service overview, Redis storage, and authorization policy.
-- [[command|CreateBasket]] — Initialize a new basket (`POST /api/v1/baskets`).
-- [[command|DeleteBasket]] — Delete an active basket (`DELETE /api/v1/baskets`).
-- [[query|GetBasket]] — Retrieve the current basket enriched with Catalog data (`GET /api/v1/baskets`).
+- [[entity|basket]] — Basket entity model.
+- [[command|CreateBasket]] — Initialize a new basket.
+- [[command|DeleteBasket]] — Delete an active basket.
+- [[query|GetBasket]] — Retrieve the current basket enriched with Catalog data.
 
 <NodeGraph />
 
-<SchemaViewer
-	file="schema.json"
-	title="UpdateBasketCommand JSON Schema"
-	maxHeight="500"
-	search="true"
-/>
+<SchemaViewer file="schema.json" title="Update basket schema" maxHeight="500" search="true" />

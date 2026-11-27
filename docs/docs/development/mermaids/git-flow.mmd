@@ -1,13 +1,15 @@
 ---
-title: Git flow
+title: Branching and Change Flow
 ---
 %%{init: {'theme': 'base', 'themeVariables': {'git0': '#2d3142', 'git1': '#bf4520', 'git2': '#2e5aa8', 'git3': '#4f5d75', 'gitBranchLabel0': '#ffffff', 'gitBranchLabel1': '#ffffff', 'gitBranchLabel2': '#ffffff', 'commitLabelColor': '#2d3142', 'commitLabelBackground': '#f5f5f5', 'fontFamily': 'Geist, system-ui, sans-serif'}}}%%
 gitGraph
-	commit id: "Previous commit"
-	commit id: "Base branch"
-	branch feature/add-book-search
-	commit id: "Implement change"
-	commit id: "Run relevant tests"
+	commit id: "main: starting point"
+	branch feature
+	commit id: "Implement focused change"
+	commit id: "Run targeted checks"
 	checkout main
-	merge feature/add-book-search id: "Approved PR"
-	commit id: "Some other change"
+	commit id: "main advances"
+	checkout feature
+	merge main id: "Sync and recheck"
+	checkout main
+	merge feature id: "Approved pull request"

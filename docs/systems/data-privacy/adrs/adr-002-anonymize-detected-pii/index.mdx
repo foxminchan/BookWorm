@@ -6,7 +6,7 @@ summary: Detected PII is anonymized through Presidio before feedback is sent to 
 status: accepted
 date: 2026-11-02
 owners:
-  - contributor-team
+  - platform-engineering-team
 badges:
   - content: Security
     backgroundColor: red
@@ -15,7 +15,7 @@ appliesTo:
   - type: system
     id: data-privacy
   - type: service
-    id: PresidioAPI
+    id: presidio-api
   - type: agent
     id: rating-agent
 related:
@@ -32,7 +32,7 @@ released to a caller.
 
 ## Decision
 
-Use [[service|PresidioAPI]]'s Anonymize API with the original text and the
+Use [[service|presidio-api]]'s Anonymize API with the original text and the
 analysis results to transform text before it reaches a model and before it is
 returned. Apply the configured anonymization operators to the detected
 entities; do not assume that detection or anonymization changes the original

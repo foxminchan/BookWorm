@@ -1,27 +1,25 @@
 %%{init: {'theme': 'base', 'themeVariables': {'background': '#f5f5f5', 'primaryColor': '#ffffff', 'primaryTextColor': '#2d3142', 'primaryBorderColor': '#2d3142', 'secondaryColor': '#ececec', 'secondaryBorderColor': '#4f5d75', 'tertiaryColor': '#fdf2ee', 'tertiaryBorderColor': '#bf4520', 'lineColor': '#4f5d75', 'textColor': '#2d3142', 'clusterBkg': '#f8f9fa', 'clusterBorder': '#bfc0c0', 'fontFamily': 'Geist, system-ui, sans-serif'}}}%%
 flowchart LR
-	ui["Feature Slices\n(React 19 + Formisch + Valibot)"]
-	rq["TanStack Query\n(@workspace/api-hooks)"]
-	jotai["Jotai Atoms\n(Auth flag, basket badge, feature flags)"]
-	client["ApiClient & SSE\n(@workspace/api-client + Axios + p-retry)"]
-	copilot["CopilotKit Runtime\n(/api/copilotkit, Storefront only)"]
-	gateway["API Gateway\n(YARP Reverse Proxy)"]
-	apis["Backend Services\n(Catalog, Basket, Ordering, Rating, Chat)"]
+	ui["Feature Slices\n(Catalog, Shopping, Ordering, Reviews)"]
+	rq["Server Query Cache\n(Normalized Keys & Hydration)"]
+	jotai["Ephemeral Client State\n(Auth Flag, Basket Badge, Toggles)"]
+	client["Resilient Transport & SSE\n(Retries, ETags, Backoff)"]
+	copilot["Conversational Runtime\n(Storefront AI Assistant)"]
+	gateway["API Gateway\n(Reverse Proxy)"]
+	apis["Backend Capability APIs\n(Catalog, Basket, Ordering, Rating, Chat)"]
 
-	ui -->|"Hooks & SSR Hydration"| rq
-	ui -->|"Ephemeral UI / auth state"| jotai
-	jotai -->|"atomWithQuery (enabled when signed in)"| rq
+	ui -->|"Reads & mutates domain data"| rq
+	ui -->|"Reads ephemeral UI state"| jotai
+	jotai -->|"Auth-gated basket sync"| rq
 	rq -->|"Typed requests + ETag headers"| client
-	ui -->|"Streaming AI chat"| copilot
-	client -->|"HTTPS JSON / QUERY / SSE"| gateway
+	ui -->|"Streams AI responses"| copilot
+	client -->|"HTTPS JSON & SSE"| gateway
 	copilot -->|"HTTPS AG-UI + Bearer token"| gateway
-	gateway -->|"HTTP / Internal routes"| apis
+	gateway -->|"Internal service routing"| apis
 
 	classDef focal fill:#fdf2ee,stroke:#bf4520,stroke-width:2px,color:#2d3142
 	classDef service fill:#ffffff,stroke:#2d3142,stroke-width:1.2px,color:#2d3142
-	classDef store fill:#ececec,stroke:#4f5d75,stroke-width:1.2px,color:#2d3142
 	classDef input fill:#eef1f6,stroke:#5a6580,stroke-width:1.2px,color:#2d3142
-	classDef ext fill:#f5f5f5,stroke:#949eb2,stroke-width:1px,stroke-dasharray:4 3,color:#4f5d75
 	class ui focal
 	class rq,jotai,client,gateway,apis service
 	class copilot input

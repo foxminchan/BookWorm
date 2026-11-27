@@ -1,0 +1,58 @@
+---
+title: Rendering & Caching Strategy
+summary: Server versus client rendering boundaries, streaming SSR, component caching profiles, cache invalidation, and gateway interaction patterns.
+owners:
+  - catalog-experience-team
+badges:
+  - content: Architecture
+    backgroundColor: purple
+    textColor: purple
+  - content: Reference
+    backgroundColor: blue
+    textColor: blue
+---
+
+## Purpose & Scope
+
+This reference defines the rendering and caching architecture across **Storefront**, **Commerce**, and **Backoffice**. It establishes where Server Components, streaming SSR, component caching, and Client Components are used, how server-prefetched data hydrates the browser cache, and how cache invalidation operates across public and private surfaces.
+
+## Rendering and Data Hydration Flow
+
+The visual below illustrates how initial page requests render on the server, dehydrate prefetched data into the client query cache, and hand off interactive mutations and streams through the **API Gateway**.
+
+<MermaidFileLoader file="mermaids/010-rendering-and-caching-strategy-diagram-1.mmd" />
+
+## Architectural Principles & Rules
+
+- **Server-first rendering:** Routes default to Server Components for initial layout, SEO metadata, and data prefetching. Client Components are pushed to interactive leaf islands (filters, forms, basket controls, and conversational AI).
+- **Surface-level caching isolation:** **Storefront** enables component-level caching for public catalog and editorial content. **Commerce** and **Backoffice** disable component caching entirely so personalized basket, checkout, order, and administrative views always render fresh per request.
+- **Per-request server query isolation:** Server rendering creates an isolated query client per incoming HTTP request and dehydrates settled and pending queries to the browser, preventing cross-user data leakage while avoiding client-side loading waterfalls.
+- **Mutation-driven cache invalidation:** Client mutations invalidate domain-scoped query keys upon success, while **Backoffice** pairs conditional reads with `ETag` preconditions to avoid serving stale edits.
+
+<Admonition type="warning" title="Strict Prohibition on Caching Private Surfaces">
+	Never enable shared component caching or static route caching on **Commerce** or **Backoffice**
+	routes. User-specific basket, order, and staff data must always bypass shared server caches.
+</Admonition>
+
+## Patterns & Boundaries
+
+| Concern / Surface                  | Architectural Approach                                                    | Responsibility Boundary                                                                              | Key Trade-off                                                                           |
+| :--------------------------------- | :------------------------------------------------------------------------ | :--------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------- |
+| **Public Discovery (Storefront)**  | Server-rendered pages with component caching and structured SEO metadata  | **Storefront** owns public cache lifetimes; **Catalog API** owns authoritative book data             | Brief eventual staleness on public listings, traded for low latency and high throughput |
+| **Transactional Flows (Commerce)** | Dynamic per-request SSR with zero shared caching and client hydration     | **Commerce** enforces uncached dynamic rendering; **Basket API** and **Ordering API** own live state | Higher per-request compute cost, required for strict user data privacy                  |
+| **Staff Operations (Backoffice)**  | Dynamic SSR shell + live SSE dashboard updates + conditional `ETag` reads | **Backoffice** owns interactive admin views; backend APIs enforce preconditions                      | Conditional checks add header round-trips, preventing silent concurrent overwrites      |
+| **Streaming & Suspense**           | Route-level loading skeletons and streaming server boundaries             | Route entrypoints define suspense fallbacks; feature slices render streamed content                  | Requires carefully designed skeleton layouts to prevent cumulative layout shift         |
+
+<Accordion title="Cache Invalidation & Stale-Time Strategy">
+
+- **Short Stale Windows:** The shared query cache uses a 60-second stale window on both server hydration and browser clients, balancing rapid navigation responsiveness with fresh catalog and order views.
+- **Server Retry Suppression:** During SSR, failed queries do not retry automatically so slow upstream APIs fail fast into error boundaries rather than blocking server response times.
+- **Conditional Revalidation:** **Backoffice** detail views send conditional `If-None-Match` headers and retain cached payloads on `304 Not Modified`, minimizing redundant payload transfers.
+
+</Accordion>
+
+## Quality & Operational Impact
+
+- **Fast Perceived Performance:** Server prefetching with streaming hydration eliminates client-side fetch waterfalls on initial page load.
+- **Zero Cross-User Leakage:** Per-request server query clients and **Commerce**'s uncached rendering profile guarantee strict tenant and shopper data isolation.
+- **SEO & Conversion:** Static optimization and component caching on **Storefront** deliver fast Time to First Byte (TTFB) for search crawlers and shoppers alike.

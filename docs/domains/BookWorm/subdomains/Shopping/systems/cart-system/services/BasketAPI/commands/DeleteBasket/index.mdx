@@ -8,7 +8,7 @@ badges:
     textColor: blue
 summary: Deletes the current basket.
 owners:
-  - contributor-team
+  - commerce-fulfillment-team
 schemaPath: schema.json
 operation:
   method: DELETE
@@ -18,69 +18,58 @@ sidebar:
   badge: "DELETE"
 ---
 
-`DeleteBasket` (`DELETE /api/v1/baskets`) removes the authenticated customer's active **Basket** from Redis and returns `204 No Content`. This endpoint handles customer-initiated deletion only; post-checkout basket cleanup runs asynchronously over Kafka via `PlaceOrderCommand` rather than calling this HTTP operation.
+`DeleteBasket` removes the authenticated customer's active [[entity|basket]] from Redis in [[service|basket-api]] (`DELETE /basket/api/v1/baskets`) and returns `204 No Content`. This endpoint handles customer-initiated deletion only; post-checkout basket cleanup runs asynchronously over Kafka via [[command|PlaceOrderCommand]].
 
 ## Overview
 
-| Property                 | Value                                                                                                                                                                                          |
-| :----------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**                | Shopping bounded context (**Basket API**, Aspire resource `basket`)                                                                                                                            |
-| **Source**               | `src/Services/Basket/BookWorm.Basket/Features/Delete/DeleteBasketEndpoint.cs`, `DeleteBasketCommand.cs`, `src/Services/Basket/BookWorm.Basket/Infrastructure/Repositories/BasketRepository.cs` |
-| **Protocol / format**    | HTTP `DELETE`, empty request body                                                                                                                                                              |
-| **Direct endpoint**      | `DELETE /api/v1/baskets` (local ports: HTTP `5052`, HTTPS `7155`)                                                                                                                              |
-| **API Gateway endpoint** | `DELETE /basket/api/v1/baskets` (YARP strips `/basket`)                                                                                                                                        |
-| **Authentication**       | Microsoft Entra ID JWT bearer token; default policy requires role `customer` and scopes `basket_read` and `basket_write`                                                                       |
-| **Rate limit**           | `PerUserRateLimit` token bucket (30 tokens, +20 per 10 s, queue 5) plus global concurrency (100) and per-IP fixed-window (30 req/min) limiters                                                 |
-| **Contract version**     | `1.0.0` (`ApiVersions.V1`)                                                                                                                                                                     |
+| Property                           | Value                                                                                                                               |
+| :--------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------- |
+| **Bounded Context**                | Shopping                                                                                                                            |
+| **Owner Service**                  | [[service\|basket-api]]                                                                                                             |
+| **Protocol / Format**              | HTTP `DELETE`, empty request and response (`204 No Content`)                                                                        |
+| **Gateway Endpoint**               | `DELETE /basket/api/v1/baskets` (service path `/api/v1/baskets`)                                                                    |
+| **Authentication & Authorization** | Microsoft Entra ID JWT — `customer` role plus scopes `basket_read`, `basket_write`                                                  |
+| **Idempotency / Concurrency**      | Not idempotent across retries; repeat calls return `404 Not Found`                                                                  |
+| **Rate Limit / Caching**           | Global concurrency (`100`), per-IP fixed-window (`30 req/min`), and per-user token bucket (`30` tokens, `+20` per `10s`, queue `5`) |
+| **Contract Version**               | `1.0.0` (`ApiVersions.V1`)                                                                                                          |
 
-## Parameters and fields
+## Request & Response Contract
 
-### Request headers
+### Request Parameters
 
-| Name            | Type     | Required | Default | Constraints             | Description                                                                                                                             |
-| :-------------- | :------- | :------- | :------ | :---------------------- | :-------------------------------------------------------------------------------------------------------------------------------------- |
-| `Authorization` | `string` | Yes      | —       | `Bearer <access-token>` | Microsoft Entra ID JWT with role `customer`, scopes `basket_read` and `basket_write`, and a non-empty `ClaimTypes.NameIdentifier` claim |
+Accepts no path parameters, query parameters, or request body.
 
-### Request parameters and body
+### Success Response (`204 No Content`)
 
-`DELETE /api/v1/baskets` accepts no path parameters, query parameters, or request body.
+Empty response body confirms the basket was deleted.
 
-### Success response (`204 No Content`)
+## Behavior & Side Effects
 
-Returns HTTP `204 No Content` with an empty response body.
-
-## Behavior and side effects
-
-- **Existence check before deletion:** `DeleteBasketHandler` extracts `userId` from `ClaimTypes.NameIdentifier`, reads `basket:{userId}` from Redis via `GetBasketAsync`, and calls `Guard.Against.NotFound(basket, userId)`. If no active basket exists, the endpoint fails with `404 Not Found` (non-idempotent on repeated calls).
-- **Redis deletion:** When a basket exists, `BasketRepository.DeleteBasketAsync` removes the `basket:{userId}` key via `KeyDeleteAsync`.
-- **No Kafka integration events:** HTTP `DELETE /api/v1/baskets` does not publish `BasketDeletedCompleteIntegrationEvent` or `BasketDeletedFailedIntegrationEvent`. Post-checkout deletion is handled separately by `PlaceOrderCommandHandler` (`src/Services/Basket/BookWorm.Basket/IntegrationEvents/EventHandlers/PlaceOrderCommandHandler.cs`) consuming `bookworm.{env}.finance.place-order` with a 24-hour Redis idempotency guard.
+- **Existence check before deletion:** Checks for an active basket under the authenticated user's ID in Redis and returns `404 Not Found` if none exists.
+- **No integration events:** HTTP deletion does not publish [[event|BasketDeletedCompleteIntegrationEvent]] or [[event|BasketDeletedFailedIntegrationEvent]]; post-checkout cleanup is handled separately via [[command|PlaceOrderCommand]].
 
 :::note
-OpenAPI metadata (`ProducesDelete()`) declares `404 Not Found` as `application/problem+json` (`ProblemDetails`), but at runtime `NotFoundExceptionHandler` (`src/BuildingBlocks/BookWorm.Chassis/Exceptions/NotFoundExceptionHandler.cs`) returns `application/json` with `{ "detail": "The requested resource was not found." }`.
+OpenAPI metadata declares `404 Not Found` as `application/problem+json`, whereas runtime responses return `application/json` with `{ "detail": "The requested resource was not found." }`.
 :::
 
-## Error responses
+## Error Responses
 
-| Code / status               | Condition                                                                                                                                                                       | Recovery behavior                                                                   |
-| :-------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :---------------------------------------------------------------------------------- |
-| `401 Unauthorized`          | Missing, expired, or invalid Entra ID bearer token                                                                                                                              | Acquire a valid Entra ID access token and retry                                     |
-| `403 Forbidden`             | Valid token missing the `customer` role or the `basket_read`/`basket_write` scopes                                                                                              | Request a token with the required role and scopes                                   |
-| `404 Not Found`             | No active basket exists in Redis for the authenticated customer (`NotFoundExceptionHandler` returns `application/json` `{ "detail": "The requested resource was not found." }`) | Treat the basket as already cleared or refresh client state; do not retry unchanged |
-| `429 Too Many Requests`     | `PerUserRateLimit` or global rate limiter exceeded (`ProblemDetails` with `Retry-After` header in seconds)                                                                      | Wait for the `Retry-After` interval before retrying                                 |
-| `500 Internal Server Error` | Unexpected Redis or server failure (`GlobalExceptionHandler`, `ProblemDetails` with `traceId`)                                                                                  | Retry with exponential backoff; inspect Basket API and Redis logs using `traceId`   |
+| Status / Code               | Condition                                                                      | Client Recovery Action                                                              |
+| :-------------------------- | :----------------------------------------------------------------------------- | :---------------------------------------------------------------------------------- |
+| `401 Unauthorized`          | Missing, expired, or invalid Entra ID bearer token                             | Acquire a valid Entra ID access token and retry                                     |
+| `403 Forbidden`             | Valid token missing the `customer` role or `basket_read`/`basket_write` scopes | Request a token with the required role and scopes                                   |
+| `404 Not Found`             | No active basket exists in Redis for the authenticated customer                | Treat the basket as already cleared or refresh client state; do not retry unchanged |
+| `429 Too Many Requests`     | Rate limit quota exceeded (`Retry-After` header included)                      | Wait for the `Retry-After` interval before retrying                                 |
+| `500 Internal Server Error` | Unexpected Redis or server failure (`traceId` included)                        | Retry with exponential backoff; inspect service logs using `traceId`                |
 
-## Related documentation
+## Related Documentation
 
 - [[service|basket-api]] — Service overview, Redis storage, and authorization policy.
-- [[command|CreateBasket]] — Initialize a basket (`POST /api/v1/baskets`).
-- [[command|UpdateBasket]] — Replace all items in an existing basket (`PUT /api/v1/baskets`).
-- [[query|GetBasket]] — Retrieve the current basket (`GET /api/v1/baskets`).
+- [[entity|basket]] — Basket entity model.
+- [[command|CreateBasket]] — Initialize a basket.
+- [[command|UpdateBasket]] — Replace all items in an existing basket.
+- [[query|GetBasket]] — Retrieve the current basket.
 
 <NodeGraph />
 
-<SchemaViewer
-	file="schema.json"
-	title="Empty request body contract"
-	maxHeight="500"
-	search="true"
-/>
+<SchemaViewer file="schema.json" title="Delete basket schema" maxHeight="500" search="true" />

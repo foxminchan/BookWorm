@@ -1,6 +1,6 @@
 ---
 id: CreateBuyer
-name: Create Buyer
+name: Create buyer
 version: 1.0.0
 badges:
   - content: Customer Management
@@ -8,7 +8,7 @@ badges:
     textColor: orange
 summary: Creates a Buyer profile for the authenticated customer from the supplied address.
 owners:
-  - contributor-team
+  - commerce-fulfillment-team
 schemaPath: schema.json
 operation:
   method: POST
@@ -18,77 +18,74 @@ sidebar:
   badge: "POST"
 ---
 
-The `CreateBuyer` command (`POST /api/v1/buyers`) creates a `Buyer` profile in **Ordering API** (v1.0.0) using the supplied shipping address while deriving the buyer's identifier and name from the authenticated Microsoft Entra ID token. External callers reach this endpoint through the YARP **API Gateway** at `/ordering/api/v1/buyers`.
+`CreateBuyer` creates a [[entity|buyer]] profile in [[service|order-api]] (`POST /ordering/api/v1/buyers`) using the supplied shipping address while deriving the buyer's identifier and display name from the authenticated Microsoft Entra ID token.
 
 ## Overview
 
-| Property                    | Value                                                                                                                                              |
-| :-------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**                   | Ordering bounded context (**Ordering API**, Aspire resource `ordering`)                                                                            |
-| **Source**                  | `src/Services/Ordering/BookWorm.Ordering/Features/Buyers/Create/CreateBuyerEndpoint.cs`, `CreateBuyerCommand.cs`, `CreateBuyerValidator.cs`        |
-| **Protocol / format**       | HTTP `POST`, `application/json` request and response (API version `v1`)                                                                            |
-| **Gateway endpoint**        | `POST /ordering/api/v1/buyers`                                                                                                                     |
-| **Direct service endpoint** | `POST /api/v1/buyers` (local ports: HTTP `5244`, HTTPS `7203`)                                                                                     |
-| **Authentication**          | Microsoft Entra ID JWT — default policy: role `customer` or `admin` plus scopes `ordering_read` and `ordering_write`                               |
-| **Idempotency**             | Required `x-request-id` header (`IdempotencyEndpointFilter`, Redis key `POST:{path}:{x-request-id}`, 3600s TTL)                                    |
-| **ETag**                    | Not used                                                                                                                                           |
-| **Rate limit**              | `PerUserRateLimit` token bucket (30 burst, 20 tokens / 10s, queue limit 5) plus global concurrency (100) and IP fixed-window (30 req/min) limiters |
+| Property                           | Value                                                                                                                             |
+| :--------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------- |
+| **Bounded Context**                | Ordering                                                                                                                          |
+| **Owner Service**                  | [[service\|order-api]]                                                                                                            |
+| **Protocol / Format**              | HTTP `POST`, `application/json` request and response                                                                              |
+| **Gateway Endpoint**               | `POST /ordering/api/v1/buyers` (service path `/api/v1/buyers`)                                                                    |
+| **Authentication & Authorization** | Microsoft Entra ID JWT — `customer` or `admin` role plus scopes `ordering_read`, `ordering_write`                                 |
+| **Idempotency / Concurrency**      | Required `x-request-id` header (Redis-backed 3600s TTL; returns `409 Conflict` on duplicate)                                      |
+| **Rate Limit / Caching**           | Global concurrency (`100`), per-IP fixed-window (`30 req/min`), and per-user token bucket (`30` burst, `20` per `10s`, queue `5`) |
+| **Contract Version**               | `1.0.0` (`ApiVersions.V1`)                                                                                                        |
 
-## Parameters and fields
+## Request & Response Contract
 
-### Request headers
+### Request Headers
 
-| Name           | Type     | Required | Default | Constraints               | Description                                                         |
-| :------------- | :------- | :------- | :------ | :------------------------ | :------------------------------------------------------------------ |
-| `x-request-id` | `string` | Yes      | —       | Non-empty, non-whitespace | Client-generated idempotency key tracked in Redis for 3600 seconds. |
+| Name           | Type     | Required | Constraints               | Description                                                        |
+| :------------- | :------- | :------- | :------------------------ | :----------------------------------------------------------------- |
+| `x-request-id` | `string` | Yes      | Non-empty, non-whitespace | Client-generated idempotency key tracked in Redis for 3600 seconds |
 
-### Request body (`application/json`, `CreateBuyerCommand`)
+### Request Body (`application/json`)
 
-| Name       | Type     | Required | Default | Constraints                                                                  | Description                     |
-| :--------- | :------- | :------- | :------ | :--------------------------------------------------------------------------- | :------------------------------ |
-| `street`   | `string` | Yes      | —       | Non-empty, max 50 chars (`DataSchemaLength.Medium`); redacted as `[PIIData]` | Street address of the buyer.    |
-| `city`     | `string` | Yes      | —       | Non-empty, max 50 chars (`DataSchemaLength.Medium`); redacted as `[PIIData]` | City or district of the buyer.  |
-| `province` | `string` | Yes      | —       | Non-empty, max 50 chars (`DataSchemaLength.Medium`); redacted as `[PIIData]` | Province or state of the buyer. |
+| Name       | Type     | Required | Constraints                                          | Description                    |
+| :--------- | :------- | :------- | :--------------------------------------------------- | :----------------------------- |
+| `street`   | `string` | Yes      | Non-empty, max `50` characters; PII-redacted in logs | Street address of the buyer    |
+| `city`     | `string` | Yes      | Non-empty, max `50` characters; PII-redacted in logs | City or district of the buyer  |
+| `province` | `string` | Yes      | Non-empty, max `50` characters; PII-redacted in logs | Province or state of the buyer |
 
-### Response (`201 Created`)
+### Success Response (`201 Created`)
 
-| Location          | Type                | Required | Default | Constraints                                             | Description                                                      |
-| :---------------- | :------------------ | :------- | :------ | :------------------------------------------------------ | :--------------------------------------------------------------- |
-| `Location` header | `string` (URI path) | Yes      | —       | Resolved via `GetBuyerEndpoint` (`/api/v1/buyers/{id}`) | Relative path to fetch the created buyer profile.                |
-| Response body     | `string` (UUID)     | Yes      | —       | `BuyerId` UUID matching caller's `NameIdentifier` claim | Newly created buyer identifier serialized as a JSON UUID string. |
+| Name              | Type              | Required | Constraints                             | Description                            |
+| :---------------- | :---------------- | :------- | :-------------------------------------- | :------------------------------------- |
+| `Location` header | `string`          | Yes      | Relative path `/api/v1/buyers/{id}`     | URI to fetch the created buyer profile |
+| Root body         | `string` (`uuid`) | Yes      | Matches caller's `NameIdentifier` claim | Newly created buyer identifier         |
 
-## Behavior and side effects
+## Behavior & Side Effects
 
-- **Identity derivation:** `CreateBuyerHandler` extracts `BuyerId` from `ClaimTypes.NameIdentifier` (must be a valid GUID) and `Name` from `ClaimConstants.Name` (`"name"` claim), falling back to `"anonymous"` if the name claim is absent. `BuyerConfiguration` constrains the `name` column to 20 characters (`DataSchemaLength.Small`).
-- **Persistence:** Persists the `Buyer` aggregate and its owned `Address` value object to PostgreSQL (`orderingdb`) inside a `[Transactional]` unit of work. Emits no domain events or Kafka integration events.
-- **PII redaction:** `Street`, `City`, and `Province` carry `[property: PIIData]` so structured logging redacts address fields automatically.
-- **Idempotency key lifecycle:** `IdempotencyEndpointFilter` claims `POST:{path}:{x-request-id}` in Redis for 3600 seconds. Reusing the same `x-request-id` returns `409 Conflict`. On HTTP `5xx` or an unhandled exception, the filter deletes the key so retries can proceed.
+- **Identity derivation:** Extracts the buyer ID from the `NameIdentifier` claim (must be a valid UUID) and the display name from the `name` claim (falling back to `"anonymous"` if absent; stored max length `20` characters).
+- **Transactional persistence:** Persists the [[entity|buyer]] aggregate and address value object inside a database transaction; emits no domain or integration events.
+- **PII redaction:** Address fields (`street`, `city`, `province`) are automatically redacted in structured logs.
+- **Idempotency key lifecycle:** Claims `x-request-id` in Redis for 3600 seconds (`409 Conflict` on replay) and deletes the key if the operation fails with `5xx`.
 
-`CreateBuyerHandler` derives the buyer ID from the authenticated user's ID, so a second request for that user can collide with the existing primary key even when its `x-request-id` is new. `GlobalExceptionHandler` does not map PostgreSQL/EF persistence exceptions specially; an unhandled database exception falls through to HTTP `500` with the generic problem title. This is inferred from the source exception mapping, not a live database test.
+:::warning
+Because the buyer ID is derived directly from the authenticated user's token, a second `CreateBuyer` call for the same user with a new `x-request-id` collides with the existing primary key and fails with `500 Internal Server Error`. Use [[command|UpdateAddress]] to update an existing profile.
+:::
 
-## Error responses
+## Error Responses
 
-| Code / status               | Condition                                                                                                                                                                           | Recovery behavior                                                                                    |
-| :-------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------- |
-| `400 Bad Request`           | Missing `x-request-id` header, empty/whitespace address field, field exceeding 50 characters (`ValidationProblemDetails`), or non-GUID `NameIdentifier` claim (`ArgumentException`) | Fix headers, payload fields, or token claims; do not retry unchanged.                                |
-| `401 Unauthorized`          | Missing, expired, or invalid Entra ID bearer token                                                                                                                                  | Acquire a fresh Entra ID access token and retry.                                                     |
-| `403 Forbidden`             | Authenticated caller lacks `customer`/`admin` role or `ordering_read`/`ordering_write` scopes                                                                                       | Request the required Entra ID role and scopes before retrying.                                       |
-| `409 Conflict`              | `x-request-id` was already processed for this path within the 3600-second Redis TTL (`ProblemDetails`)                                                                              | Treat as a duplicate submission and fetch the buyer profile with `GET /ordering/api/v1/buyers/{id}`. |
-| `429 Too Many Requests`     | Caller exceeded `PerUserRateLimit` or global rate limits                                                                                                                            | Wait for the `Retry-After` header interval before retrying.                                          |
-| `500 Internal Server Error` | Unhandled persistence error (such as duplicate `BuyerId` primary key or `Name` exceeding 20 characters)                                                                             | Inspect Ordering API logs and verify whether the buyer profile already exists.                       |
+| Status / Code               | Condition                                                                                                                          | Client Recovery Action                                                        |
+| :-------------------------- | :--------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------- |
+| `400 Bad Request`           | Missing `x-request-id` header, empty/whitespace address field, field exceeding `50` characters, or non-UUID `NameIdentifier` claim | Fix headers, payload fields, or token claims; do not retry unchanged          |
+| `401 Unauthorized`          | Missing, expired, or invalid Entra ID bearer token                                                                                 | Acquire a fresh Entra ID access token and retry                               |
+| `403 Forbidden`             | Caller lacks `customer`/`admin` role or `ordering_read`/`ordering_write` scopes                                                    | Request the required Entra ID role and scopes before retrying                 |
+| `409 Conflict`              | Duplicate `x-request-id` for this path within the 3600-second TTL                                                                  | Treat as a duplicate submission and fetch the profile via [[query\|GetBuyer]] |
+| `429 Too Many Requests`     | Rate limit quota exceeded (`Retry-After` header included)                                                                          | Wait for the `Retry-After` interval before retrying                           |
+| `500 Internal Server Error` | Duplicate buyer profile for the authenticated user, display name exceeding `20` characters, or unhandled persistence error         | Inspect service logs and verify whether the buyer profile already exists      |
 
-## Related documentation
+## Related Documentation
 
 - [[service|order-api]] — Service architecture, persistence, and endpoints.
+- [[entity|buyer]] — Buyer aggregate schema and address value object.
 - [[command|UpdateAddress]] — Update the authenticated customer's address.
 - [[command|DeleteBuyer]] — Administrative permanent removal of a buyer profile.
-- [[entity|buyer]] — Buyer aggregate schema and address value object.
+- [[query|GetBuyer]] — Retrieve a buyer profile.
 
 <NodeGraph />
 
-<SchemaViewer
-	file="schema.json"
-	title="CreateBuyerCommand JSON Schema"
-	maxHeight="500"
-	search="true"
-/>
+<SchemaViewer file="schema.json" title="Create buyer schema" maxHeight="500" search="true" />

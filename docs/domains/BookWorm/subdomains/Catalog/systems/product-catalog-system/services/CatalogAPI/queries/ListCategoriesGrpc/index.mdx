@@ -8,78 +8,64 @@ badges:
     textColor: green
 summary: Returns all Catalog categories through the book.v1 gRPC contract.
 owners:
-  - contributor-team
+  - catalog-experience-team
 schemaPath: schema.proto
 sidebar:
   badge: "gRPC"
 ---
 
-`ListCategoriesGrpc` invokes the internal `book.v1.BookGrpcService/ListCategories` gRPC unary RPC on **Catalog API** to return all registered book categories (`CategoryItem`) without pagination. **MCP Tools** calls this RPC to power its `list_categories` tool.
+`ListCategoriesGrpc` invokes the internal `book.v1.BookGrpcService/ListCategories` gRPC unary RPC on [[service|catalog-api]] to return all registered book categories without pagination. [[service|mcp-server]] calls this RPC to power its `list_categories` tool.
 
 ## Overview
 
-| Property                | Value                                                                                                                                         |
-| :---------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner (gRPC server)** | Catalog bounded context (**Catalog API**, Aspire resource `catalog`)                                                                          |
-| **Primary caller**      | **MCP Tools** (`mcptools`, `list_categories` tool)                                                                                            |
-| **Source**              | `src/Services/Catalog/BookWorm.Catalog/Grpc/Protos/book/v1/book.proto`, `src/Services/Catalog/BookWorm.Catalog/Grpc/Services/BookService.cs`  |
-| **Protocol / format**   | gRPC unary RPC (`book.v1.BookGrpcService/ListCategories`), Protobuf `edition = "2023"`, `csharp_namespace = "BookWorm.Catalog.Grpc.Services"` |
-| **Authentication**      | `[AllowAnonymous]` (internal service-to-service public catalog read)                                                                          |
-| **Caching**             | Dispatches `ListCategoriesQuery`, backed by PostgreSQL (`catalogdb`) and FusionCache (L1 + Redis L2, key `CatalogCacheKeys.Categories`)       |
-| **Contract version**    | `1.0.0`                                                                                                                                       |
+| Property                           | Value                                                                                    |
+| :--------------------------------- | :--------------------------------------------------------------------------------------- |
+| **Bounded Context**                | Catalog                                                                                  |
+| **Owner Service**                  | [[service\|catalog-api]]                                                                 |
+| **Protocol / Format**              | gRPC unary RPC (`book.v1.BookGrpcService/ListCategories`), Protobuf `edition = "2023"`   |
+| **Gateway Endpoint**               | Internal gRPC RPC `book.v1.BookGrpcService/ListCategories` (not exposed via API Gateway) |
+| **Authentication & Authorization** | Internal service-to-service anonymous read                                               |
+| **Idempotency / Concurrency**      | Read-only and naturally idempotent                                                       |
+| **Rate Limit / Caching**           | Backed by PostgreSQL and cached in L1 + Redis L2                                         |
+| **Contract Version**               | `1.0.0`                                                                                  |
 
-## Parameters and fields
+## Request & Response Contract
 
-### Request message (`ListCategoriesRequest`)
+### Request Message (`ListCategoriesRequest`)
 
-`ListCategoriesRequest` is an empty Protobuf message with no fields.
+Empty Protobuf message with no fields.
 
-### Response message (`ListCategoriesResponse`)
+### Success Response (`ListCategoriesResponse`)
 
-| Field               | Protobuf type           | Tag | Description                                                               |
-| :------------------ | :---------------------- | :-- | :------------------------------------------------------------------------ |
-| `categories`        | `repeated CategoryItem` | `1` | All catalog categories (empty collection if none exist)                   |
-| `categories[].id`   | `string`                | `1` | Category UUID                                                             |
-| `categories[].name` | `string`                | `2` | Category display name (mapped to empty string `""` if null in source DTO) |
+| Name                | Type              | Required | Constraints                    | Description                                             |
+| :------------------ | :---------------- | :------- | :----------------------------- | :------------------------------------------------------ |
+| `categories`        | `CategoryItem[]`  | Yes      | Tag `1` (`repeated`)           | All catalog categories (empty collection if none exist) |
+| `categories[].id`   | `string` (`uuid`) | Yes      | Tag `1`                        | Category UUID                                           |
+| `categories[].name` | `string`          | Yes      | Tag `2` (empty string if null) | Category display name                                   |
 
-### Protobuf contract
+## Behavior & Side Effects
 
-<CodeGroup>
+- **Read-through caching:** Serves the category taxonomy from L1/Redis L2 cache, shared with [[query|ListCategories]].
+- **No state mutation:** Pure read RPC with no database writes or integration events.
 
-```protobuf
-edition = "2023";
+## Error Responses
 
-package book.v1;
-
-service BookGrpcService {
-  rpc ListCategories (ListCategoriesRequest) returns (ListCategoriesResponse);
-}
-
-message ListCategoriesRequest {}
-
-message ListCategoriesResponse {
-  repeated CategoryItem categories = 1;
-}
-
-message CategoryItem {
-  string id = 1;
-  string name = 2;
-}
-```
-
-</CodeGroup>
-
-## Error responses
-
-| Code / status        | Condition                  | Recovery behavior                           |
+| Status / Code        | Condition                  | Client Recovery Action                      |
 | :------------------- | :------------------------- | :------------------------------------------ |
 | `Unavailable` (`14`) | Catalog API is unreachable | Retry within the budgeted resilience policy |
 
-## Related documentation
+## Related Documentation
 
-- [[service|catalog-api]] — Service overview, PostgreSQL persistence, and gRPC services.
+- [[service|catalog-api]] — Service overview, persistence, and gRPC services.
 - [[service|mcp-server]] — Primary caller exposing the `list_categories` MCP tool.
-- [[query|ListCategories]] — Public HTTP endpoint (`GET /api/v1/categories`).
-- [[entity|category]] — Domain model for catalog categories.
+- [[entity|category]] — Category entity model.
+- [[query|ListCategories]] — Public HTTP endpoint (`GET /catalog/api/v1/categories`).
 
 <NodeGraph />
+
+<SchemaViewer
+	file="schema.proto"
+	title="List categories over gRPC schema"
+	maxHeight="500"
+	search="true"
+/>

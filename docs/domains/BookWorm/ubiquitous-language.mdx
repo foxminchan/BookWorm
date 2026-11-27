@@ -56,13 +56,34 @@ dictionary:
       Conversational agents route or answer a request. The request may discuss
       a Book or Order, but those records remain owned by their contexts.
     icon: MessageCircle
-  - id: Email Outbox Item
-    name: Email Outbox Item
-    summary: A stored customer email awaiting delivery or already sent.
+  - id: Idempotency Guard
+    name: Idempotency Guard
+    summary: Time-bounded deduplication guard for incoming notification commands.
     description: |
-      Platform stores recipient, subject, body, and delivery state so email
-      delivery can be retried and tracked.
-    icon: Mail
+      Platform tracks processed notification message identifiers for 24 hours so
+      duplicate deliveries do not trigger duplicate customer emails.
+    icon: ShieldCheck
+  - id: Dead-Letter Queue
+    name: Dead-Letter Queue
+    summary: Message channel holding commands that exhausted delivery retries.
+    description: |
+      Exhausted message failures route to a service's dead-letter queue
+      for operator inspection and replay.
+    icon: AlertTriangle
+  - id: Email Template
+    name: Email Template
+    summary: Responsive email markup compiled to HTML at runtime for order emails.
+    description: |
+      Platform compiles responsive email templates into HTML messages before
+      submitting them through the external email relay.
+    icon: FileCode
+  - id: Vector Batch Job
+    name: Vector Batch Job
+    summary: Scheduled work that asks Catalog ingestion to refresh vector search data.
+    description: |
+      Platform triggers a recurring vector-batch job on a five-minute cadence
+      to request search index refreshes without owning book records.
+    icon: Database
 ---
 
 ## 1. Context & Problem
@@ -84,7 +105,7 @@ The BookWorm domain vocabulary connects six core capability areas:
 - **Catalog & Reviews (`Book`, `Feedback`):** A **Book** is a title represented in the bookstore catalog with descriptive, pricing, availability, and classification details owned by Catalog, while other contexts reference it only by identifier. **Feedback** captures a customer's rating and optional comment about a book; Reviews owns individual submissions, whereas Catalog maintains only an aggregate rating summary.
 - **Shopping (`Basket`):** A **Basket** is a customer's changeable collection of book references and quantities before purchase, representing mutable shopping intent rather than an order or an inventory reservation.
 - **Checkout & Ordering (`Checkout`, `Buyer`, `Order`, `Order Item`):** **Checkout** is the cross-context process that coordinates transitioning a checked-out basket into the order workflow—it is a process, not another name for an order. A **Buyer** is the person associated with an order in Ordering (holding a name and delivery address, and not automatically sharing the same identifier used for a shopping basket). An **Order** is the durable purchase record with a lifecycle status, composed of **Order Items** that record the book identifier, quantity, and price used for that purchase rather than live catalog pricing.
-- **Conversational Support & Platform (`Chat Request`, `Email Outbox Item`):** A **Chat Request** is a customer question routed or answered by conversational agents that may discuss a book or order without taking ownership of those records. An **Email Outbox Item** is a stored customer email awaiting delivery or already sent, recording recipient, subject, body, and delivery state so email delivery can be retried and tracked.
+- **Conversational Support & Platform (`Chat Request`, `Idempotency Guard`, `Dead-Letter Queue`, `Email Template`, `Vector Batch Job`):** A **Chat Request** is a customer question routed or answered by conversational agents that may discuss a book or order without taking ownership of those records. Platform executes stateless notifications using **Email Template** rendering, **Idempotency Guard** deduplication, and **Dead-Letter Queue** routing on exhausted retries, while **Vector Batch Job** triggers periodic Catalog vector indexing.
 
 ## 4. Trade-offs & Lessons Learned
 
@@ -98,14 +119,17 @@ The BookWorm domain vocabulary connects six core capability areas:
 
 The YAML `dictionary` frontmatter above defines the authoritative domain-wide glossary entries rendered by EventCatalog:
 
-| Dictionary ID       | Summary                                                      | Ownership & Boundary Notes                                                                | Icon             |
-| ------------------- | ------------------------------------------------------------ | ----------------------------------------------------------------------------------------- | ---------------- |
-| `Book`              | A title represented in the bookstore catalog.                | Owned by Catalog (descriptive, pricing, availability, classification); referenced by ID.  | `BookOpen`       |
-| `Basket`            | A customer's changeable collection of books before purchase. | Mutable shopping intent (book IDs + quantities); not an `Order` or inventory reservation. | `ShoppingBasket` |
-| `Buyer`             | The person associated with an Order in Ordering.             | Holds name and delivery address; identifier is not automatically the Basket customer ID.  | `User`           |
-| `Order`             | The durable purchase record managed by Ordering.             | Contains `Order Item` records and lifecycle status; distinct from a preceding `Basket`.   | `ClipboardList`  |
-| `Order Item`        | One book, quantity, and price recorded on an Order.          | Captures purchase-time book ID, quantity, and price; not a live Catalog price copy.       | `ListOrdered`    |
-| `Feedback`          | A customer's rating and optional comment about a Book.       | Individual records owned by Reviews; Catalog maintains an aggregate rating summary.       | `MessageSquare`  |
-| `Checkout`          | The cross-context process that starts order placement.       | Coordinates transition from a checked-out `Basket` to the order workflow; not an `Order`. | `CreditCard`     |
-| `Chat Request`      | A customer question handled by Conversational agents.        | May discuss a `Book` or `Order`, but those records remain owned by their contexts.        | `MessageCircle`  |
-| `Email Outbox Item` | A stored customer email awaiting delivery or already sent.   | Platform stores recipient, subject, body, and delivery state for retry and tracking.      | `Mail`           |
+| Dictionary ID       | Summary                                                                   | Ownership & Boundary Notes                                                                | Icon             |
+| ------------------- | ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ---------------- |
+| `Book`              | A title represented in the bookstore catalog.                             | Owned by Catalog (descriptive, pricing, availability, classification); referenced by ID.  | `BookOpen`       |
+| `Basket`            | A customer's changeable collection of books before purchase.              | Mutable shopping intent (book IDs + quantities); not an `Order` or inventory reservation. | `ShoppingBasket` |
+| `Buyer`             | The person associated with an Order in Ordering.                          | Holds name and delivery address; identifier is not automatically the Basket customer ID.  | `User`           |
+| `Order`             | The durable purchase record managed by Ordering.                          | Contains `Order Item` records and lifecycle status; distinct from a preceding `Basket`.   | `ClipboardList`  |
+| `Order Item`        | One book, quantity, and price recorded on an Order.                       | Captures purchase-time book ID, quantity, and price; not a live Catalog price copy.       | `ListOrdered`    |
+| `Feedback`          | A customer's rating and optional comment about a Book.                    | Individual records owned by Reviews; Catalog maintains an aggregate rating summary.       | `MessageSquare`  |
+| `Checkout`          | The cross-context process that starts order placement.                    | Coordinates transition from a checked-out `Basket` to the order workflow; not an `Order`. | `CreditCard`     |
+| `Chat Request`      | A customer question handled by Conversational agents.                     | May discuss a `Book` or `Order`, but those records remain owned by their contexts.        | `MessageCircle`  |
+| `Idempotency Guard` | Time-bounded deduplication guard for incoming notification commands.      | 24-hour TTL deduplicating repeated notification deliveries.                               | `ShieldCheck`    |
+| `Dead-Letter Queue` | Message channel holding commands that exhausted delivery retries.         | Routes exhausted failures for operator inspection and replay.                             | `AlertTriangle`  |
+| `Email Template`    | Responsive email markup compiled to HTML at runtime for order emails.     | Compiles responsive templates into HTML messages for external relay delivery.             | `FileCode`       |
+| `Vector Batch Job`  | Scheduled work that asks Catalog ingestion to refresh vector search data. | Emits periodic refresh triggers without owning book data.                                 | `Database`       |

@@ -4,101 +4,68 @@ name: Basket Item
 version: 1.0.0
 identifier: bookId
 aggregateRoot: false
-summary: Requested item quantity within a customer's Basket.
+summary: Child entry within a Basket pairing a Catalog book identifier with a positive requested quantity.
 owners:
-  - contributor-team
+  - commerce-fulfillment-team
+badges:
+  - content: Child Entity
+    backgroundColor: teal
+    textColor: teal
 properties:
   - name: bookId
     type: UUID
     required: true
-    description: Identifier of the item requested in the basket.
+    description: Cross-context identifier of the requested Catalog Book.
     references: book
     referencesIdentifier: id
     relationType: references
   - name: quantity
-    type: int
+    type: integer
     required: true
-    description: Positive number of copies requested for the referenced book.
+    description: Positive number of copies requested (must be greater than zero).
 ---
 
-`BasketItem` is a child object of `CustomerBasket` that records one requested book and its quantity. Basket API stores it inside the parent basket's Redis JSON value and enriches it with Catalog data at read time.
+## Domain Role & Boundary
 
-## Overview
+**Basket Item** is a child object owned by the [[entity|basket]] Aggregate Root in the [[domain|shopping]] bounded context, recording a single requested book identifier and its desired quantity. Stored embedded inside the parent basket payload by [[service|basket-api]], it is enriched at read time with live titles and prices from [[service|catalog-api]]. It explicitly does **not** store or lock book titles, descriptions, or prices—those remain owned by [[domain|catalog]] until checkout locks them onto an [[entity|order-item]].
 
-| Property             | Value                                                                 |
-| :------------------- | :-------------------------------------------------------------------- |
-| **Owner**            | Shopping bounded context / **Basket API** (`basket`)                  |
-| **Parent aggregate** | [[entity\|basket]] (`CustomerBasket`)                                 |
-| **Source**           | `src/Services/Basket/BookWorm.Basket/Domain/BasketItem.cs`            |
-| **Backing store**    | Embedded in the Redis value at key `basket:{userId}`                  |
-| **Base type**        | Plain class implementing `IValidatableObject`; no identity of its own |
+## Entity Profile
 
-## Parameters and fields
+| Property                      | Value                                                                                               |
+| :---------------------------- | :-------------------------------------------------------------------------------------------------- |
+| **Bounded Context / Domain**  | [[domain\|shopping]]                                                                                |
+| **Owning Service**            | [[service\|basket-api]]                                                                             |
+| **DDD Role**                  | Child Entity / Value Object (embedded in [[entity\|basket]])                                        |
+| **Identifier Strategy**       | Scoped by Catalog `bookId` within parent [[entity\|basket]]                                         |
+| **Persistence Store**         | Embedded inside parent `basket:{customerId}` key-value payload                                      |
+| **Deletion Semantics**        | Removed by replacing parent `items` without the entry, or when parent [[entity\|basket]] is deleted |
+| **Concurrency Control**       | Governed by parent [[entity\|basket]] whole-set replacement                                         |
+| **PII / Data Classification** | Internal pre-order item reference (non-PII)                                                         |
 
-### Persisted fields
+## Attributes & Constraints
 
-| Name (JSON) | Type     | Required | Default | Constraints            | Description                             |
-| :---------- | :------- | :------- | :------ | :--------------------- | :-------------------------------------- |
-| `id`        | `string` | Yes      | —       | GUID format; not empty | Catalog `Book.id` of the requested book |
-| `quantity`  | `int`    | Yes      | —       | `> 0`                  | Number of copies requested              |
+<EntityPropertiesTable />
 
-### Enriched response fields (`BasketItemDto`)
+| Attribute  | Business Rule / Constraint                                                     | Sensitivity / Notes        |
+| :--------- | :----------------------------------------------------------------------------- | :------------------------- |
+| `bookId`   | Required non-empty UUID referencing a [[entity\|book]] in [[domain\|catalog]]. | Cross-context ID reference |
+| `quantity` | Required integer strictly greater than zero (`> 0`).                           | Domain invariant           |
 
-Basket API adds these fields when it returns a basket. They are not stored in Redis.
+## Domain Invariants & Lifecycle
 
-| Name (JSON) | Type      | Required | Default | Constraints | Description                             |
-| :---------- | :-------- | :------- | :------ | :---------- | :-------------------------------------- |
-| `name`      | `string`  | No       | `null`  | —           | Book title from Catalog API             |
-| `price`     | `decimal` | No       | `0`     | —           | Current original price from Catalog API |
-| `priceSale` | `decimal` | No       | `null`  | —           | Current sale price from Catalog API     |
+- **Positive quantity:** Zero or negative quantities are rejected; removing an item requires submitting the updated basket without that item.
+- **No persisted price snapshot:** Basket items intentionally omit prices so customers always see current [[domain|catalog]] pricing while browsing.
+- **Read-time enrichment:** When reading a basket, [[service|basket-api]] batches distinct `bookId` values into a single lookup against [[service|catalog-api]] to attach `name`, `price`, and `priceSale` to the response.
 
-The basket post-processor resolves missing display fields through Catalog API's `book.v1.BookGrpcService` read path and fills `Name`, `Price`, and `PriceSale` into the returned basket item.
+:::note
+If [[service|catalog-api]] returns no match for a `bookId` during read-time enrichment (for example, if the book was soft-deleted), the item remains in the basket response with unpopulated display fields rather than inventing metadata.
+:::
 
-## Invariants and behavior
+## Relationships & Associated Operations
 
-- **Positive quantity:** `Validate(...)` returns `"Quantity must be greater than zero."` when `quantity <= 0`. `BasketItemRules` also enforces `quantity > 0` and a non-empty `id`.
-- **Removal:** To remove a book, send the full basket without that item. Zero-quantity items are rejected.
-- **No price snapshot:** The item stores no price. Ordering captures purchase-time prices in [[entity|order-item]].
-
-## Relationships
-
-| Related entity     | Cardinality              | Mapping                           |
-| :----------------- | :----------------------- | :-------------------------------- |
-| [[entity\|basket]] | Many items to one basket | Embedded in the parent JSON value |
-| [[entity\|book]]   | Many items to one book   | `id` holds the Catalog book ID    |
-
-## Examples
-
-### Persisted item
-
-<CodeGroup>
-
-```json
-{
-	"id": "0193f1a2-7b4c-7d8e-9f01-23456789abcd",
-	"quantity": 2
-}
-```
-
-</CodeGroup>
-
-### Enriched item in a basket response
-
-<CodeGroup>
-
-```json
-{
-	"id": "0193f1a2-7b4c-7d8e-9f01-23456789abcd",
-	"quantity": 2,
-	"name": "Domain-Driven Design",
-	"price": 59.99,
-	"priceSale": 49.99
-}
-```
-
-</CodeGroup>
-
-## Related documentation
-
-- [[entity|basket]] — Parent aggregate and Redis key.
-- [[entity|book]] — Source of names and prices.
+| Category                     | Resource                                             | Role / Interaction                                              |
+| :--------------------------- | :--------------------------------------------------- | :-------------------------------------------------------------- |
+| **Parent Aggregate**         | [[entity\|basket]]                                   | Embedded child item within the customer's basket                |
+| **Cross-Context References** | [[entity\|book]]                                     | Referenced strictly by `bookId` for live price/title enrichment |
+| **Mutating Commands**        | [[command\|CreateBasket]], [[command\|UpdateBasket]] | Replaced as part of parent basket mutations                     |
+| **Read Queries**             | [[query\|GetBasket]], [[query\|GetBasketGrpc]]       | Returned enriched to storefront or raw to checkout              |

@@ -1,0 +1,28 @@
+---
+title: Ordering DLQ Inspection and Replay
+summary: CLI-first procedure to inspect and safely replay failed messages from the Ordering dead-letter queue.
+version: 1.0.0
+---
+
+Operational runbook for inspecting and replaying failed messages in [[channel|bookworm.&#123;env&#125;.ordering.dead-letter-queue]] for [[service|order-api]].
+
+:::warning
+Never replay poison records with invalid UUIDs or schema mismatches before fixing or filtering the payload. Always verify current [[entity|order]] status first.
+:::
+
+<Steps>
+  <Step title="Inspect dead-lettered records">
+    Read recent records and CloudEvents headers (`messagetype`, `requestid`, exception headers) from the Ordering DLQ:
+
+    ```bash
+    kcat -C -b "$KAFKA_BOOTSTRAP" -t "bookworm.${ENV}.ordering.dead-letter-queue" -o -20 -e -f '%t [%p] offset=%o key=%k headers=%h\n%s\n---\n'
+    ```
+
+  </Step>
+  <Step title="Verify order state before replay">
+    Confirm whether the target order is still in `New` status or has already transitioned (`Completed` or `Cancelled`) via [[query|GetOrder]] so compensation is not applied twice.
+  </Step>
+  <Step title="Replay valid records to the consumer topic">
+    For transient failures (database or broker timeout) on [[command|DeleteBasketCompleteCommand]] or [[command|DeleteBasketFailedCommand]], re-produce the validated JSON payload with its original `OrderId` partition key to the target topic (`bookworm.${ENV}.finance.delete-basket-complete` or `bookworm.${ENV}.finance.delete-basket-failed`).
+  </Step>
+</Steps>

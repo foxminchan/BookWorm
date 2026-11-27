@@ -4,87 +4,81 @@ name: Basket
 version: 1.0.0
 identifier: customerId
 aggregateRoot: true
-summary: Customer-scoped, pre-order collection of one or more requested books.
+summary: Customer-scoped, mutable pre-order collection of requested books and quantities managed prior to checkout.
 owners:
-  - contributor-team
+  - commerce-fulfillment-team
+badges:
+  - content: Aggregate Root
+    backgroundColor: blue
+    textColor: blue
 properties:
   - name: customerId
     type: string
     required: true
-    description: Identifier of the authenticated customer who owns the basket.
+    description: Authenticated customer identifier scoping the basket (one active basket per customer).
   - name: items
     type: array
     required: true
-    description: Current basket entries, replaced as a set when the basket is updated.
+    description: Requested book entries, replaced atomically as a complete set on update.
     references: basket-item
     referencesIdentifier: bookId
     relationType: contains
     items:
-      type: BasketItem
+      type: basket-item
+  - name: createdAt
+    type: datetime
+    required: true
+    description: UTC timestamp when the basket was created.
+  - name: lastModifiedAt
+    type: datetime
+    required: false
+    description: UTC timestamp of the most recent basket update.
 ---
 
-`CustomerBasket` is the Shopping aggregate for a customer's pre-order selection of books. Basket API owns it and stores it in Redis; Basket API has no SQL database.
+## Domain Role & Boundary
 
-## Overview
+**Basket** is the Aggregate Root in the [[domain|shopping]] bounded context representing an authenticated customer's mutable pre-purchase selection of books. Owned by [[service|basket-api]], it provides sub-millisecond read and write access during storefront browsing and supplies checkout snapshots to [[service|order-api]]. It explicitly does **not** own product pricing or availability (resolved dynamically from [[domain|catalog]]), inventory reservations, or accepted purchase records (owned by [[domain|ordering]]).
 
-| Property          | Value                                                                                                       |
-| :---------------- | :---------------------------------------------------------------------------------------------------------- |
-| **Owner**         | Shopping bounded context / **Basket API** (`basket`)                                                        |
-| **Source**        | `src/Services/Basket/BookWorm.Basket/Domain/CustomerBasket.cs`                                              |
-| **Repository**    | `src/Services/Basket/BookWorm.Basket/Infrastructure/Repositories/BasketRepository.cs` (`IBasketRepository`) |
-| **Backing store** | Redis string key `basket:{userId}` holding camelCase JSON (`BasketSerializationContext`)                    |
-| **Expiry**        | None set by `BasketRepository`                                                                              |
-| **Base type**     | `AuditableEntity<CustomerId>`                                                                               |
-| **Identifier**    | `CustomerId` (Vogen value object wrapping a GUID-formatted `string`)                                        |
+## Entity Profile
 
-## Parameters and fields
+| Property                      | Value                                                                                 |
+| :---------------------------- | :------------------------------------------------------------------------------------ |
+| **Bounded Context / Domain**  | [[domain\|shopping]]                                                                  |
+| **Owning Service**            | [[service\|basket-api]]                                                               |
+| **DDD Role**                  | Aggregate Root                                                                        |
+| **Identifier Strategy**       | Authenticated customer ID (GUID-formatted string, derived from access token)          |
+| **Persistence Store**         | Shopping key-value store (`basket:{customerId}`, no SQL database)                     |
+| **Deletion Semantics**        | Hard-delete (customer clear or idempotent post-checkout cleanup; no automatic TTL)    |
+| **Concurrency Control**       | Last-write-wins with whole-set replacement; idempotent message handling on cleanup    |
+| **PII / Data Classification** | Internal customer-scoped identifier (`customerId` only; no names or addresses stored) |
 
-| Name (JSON)      | Type                    | Required | Default           | Constraints                                | Description                                        |
-| :--------------- | :---------------------- | :------- | :---------------- | :----------------------------------------- | :------------------------------------------------- |
-| `id`             | `CustomerId` (`string`) | Yes      | —                 | GUID format; not null                      | Authenticated customer ID; one basket per customer |
-| `items`          | `BasketItem[]`          | Yes      | —                 | At least 1 item on create and update (API) | Requested books; see [[entity\|basket-item]]       |
-| `createdAt`      | `DateTime`              | Yes      | `DateTime.UtcNow` | UTC                                        | Inherited from `AuditableEntity<TId>`              |
-| `lastModifiedAt` | `DateTime`              | No       | —                 | UTC                                        | Inherited from `AuditableEntity<TId>`              |
-| `rowVersion`     | `uint`                  | —        | `0`               | Not used by Redis                          | Inherited from `AuditableEntity<TId>`              |
+## Attributes & Constraints
 
-`BasketSerializationContext` serializes the `CustomerBasket` JSON model with camel-case property names. The inherited auditable fields follow the same source-generated JSON contract as `CustomerBasket`; inspect a live Redis value only for environment-specific data content.
+<EntityPropertiesTable />
 
-## Invariants and behavior
+| Attribute                     | Business Rule / Constraint                                                                            | Sensitivity / Notes   |
+| :---------------------------- | :---------------------------------------------------------------------------------------------------- | :-------------------- |
+| `customerId`                  | Required; derived strictly from the authenticated customer token (one basket per customer).           | Customer-scoped key   |
+| `items`                       | Required; must contain at least one [[entity\|basket-item]] on create and update at the API boundary. | Whole-set replacement |
+| `createdAt`, `lastModifiedAt` | UTC audit timestamps serialized with the basket payload.                                              | Metadata              |
 
-- **Customer ID required:** The constructor throws `BasketDomainException("Customer ID cannot be null.")` for a null ID.
-- **Non-empty on create:** The constructor throws `BasketDomainException("Basket must contain at least one item.")` for an empty item list.
-- **Whole-set update:** `Update(items)` clears and replaces every item. The domain method accepts an empty list; `UpdateBasketValidator` rejects it at the API boundary.
-- **API validation:** `CreateBasketValidator` and `UpdateBasketValidator` apply `BasketItemRules`: `items` not empty, each `id` not empty, each `quantity > 0`.
-- **Checkout handoff:** Basket API deletes the basket when it handles `PlaceOrderCommand` from Finance, then publishes `BasketDeletedCompleteIntegrationEvent` or `BasketDeletedFailedIntegrationEvent`.
+## Domain Invariants & Lifecycle
 
-## Relationships
+- **Authenticated ownership:** A basket always belongs to a single authenticated customer; anonymous baskets are not persisted.
+- **Non-empty creation and update:** Creating or updating a basket via the API requires at least one valid [[entity|basket-item]]. To empty a basket, the customer explicitly deletes it.
+- **Whole-set replacement:** Updating a basket replaces the entire `items` collection rather than merging partial line-item diffs.
+- **Post-checkout cleanup:** Upon receiving [[command|PlaceOrderCommand]] from [[service|order-orchestration]], [[service|basket-api]] deletes the basket idempotently and publishes [[event|BasketDeletedCompleteIntegrationEvent]] or [[event|BasketDeletedFailedIntegrationEvent]].
 
-| Related entity          | Cardinality              | Mapping                               |
-| :---------------------- | :----------------------- | :------------------------------------ |
-| [[entity\|basket-item]] | One basket to many items | Embedded in the same Redis JSON value |
-| [[entity\|book]]        | Referenced through items | Cross-service reference by book ID    |
+:::warning
+A basket represents mutable shopping intent—never a confirmed order or an inventory hold. If a basket fails to delete after checkout, [[domain|ordering]] compensates rather than allowing stale basket state to be misread as an active order.
+:::
 
-## Examples
+## Relationships & Associated Operations
 
-### Redis value for `basket:0193f1a2-7b4c-7d8e-9f01-0000000e0001`
-
-<CodeGroup>
-
-```json
-{
-	"id": "0193f1a2-7b4c-7d8e-9f01-0000000e0001",
-	"items": [
-		{ "id": "0193f1a2-7b4c-7d8e-9f01-23456789abcd", "quantity": 2 },
-		{ "id": "0193f1a2-7b4c-7d8e-9f01-23456789abce", "quantity": 1 }
-	],
-	"createdAt": "2026-11-25T12:00:00Z",
-	"lastModifiedAt": null
-}
-```
-
-</CodeGroup>
-
-## Related documentation
-
-- [[entity|basket-item]] — Item schema and enriched response fields.
-- [[entity|order]] — Purchase record created at checkout.
+| Category                     | Resource                                                                                                        | Role / Interaction                                            |
+| :--------------------------- | :-------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------ |
+| **Related Entities**         | [[entity\|basket-item]]                                                                                         | Embedded collection of requested books and quantities         |
+| **Cross-Context References** | [[entity\|book]], [[entity\|order]]                                                                             | Items reference Catalog books; checkout hands off to Ordering |
+| **Mutating Commands**        | [[command\|CreateBasket]], [[command\|UpdateBasket]], [[command\|DeleteBasket]], [[command\|PlaceOrderCommand]] | Create, replace, or delete the customer's basket              |
+| **Read Queries**             | [[query\|GetBasket]], [[query\|GetBasketGrpc]]                                                                  | Enriched storefront read and internal checkout snapshot       |
+| **Emitted Events**           | [[event\|BasketDeletedCompleteIntegrationEvent]], [[event\|BasketDeletedFailedIntegrationEvent]]                | Report post-checkout cleanup outcome to Finance               |

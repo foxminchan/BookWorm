@@ -2,11 +2,11 @@
 id: platform
 name: Platform
 summary: |
-  Provides cross-cutting capabilities for scheduled processing and durable
-  email notification delivery across BookWorm.
+  Provides cross-cutting capabilities for recurring scheduled triggers and durable,
+  idempotent transactional email notification delivery across BookWorm.
 version: 1.0.0
 owners:
-  - platform-team
+  - platform-engineering-team
 systems:
   - id: scheduler-system
     version: 1.0.0
@@ -17,36 +17,7 @@ systems:
 flows:
   - id: notification-delivery
     version: 1.0.0
-entities:
-  - id: qrtz-job-details
-    version: 1.0.0
-  - id: qrtz-triggers
-    version: 1.0.0
-  - id: qrtz-simple-triggers
-    version: 1.0.0
-  - id: qrtz-simprop-triggers
-    version: 1.0.0
-  - id: qrtz-cron-triggers
-    version: 1.0.0
-  - id: qrtz-blob-triggers
-    version: 1.0.0
-  - id: qrtz-calendars
-    version: 1.0.0
-  - id: qrtz-paused-trigger-grps
-    version: 1.0.0
-  - id: qrtz-paused-job-grps
-    version: 1.0.0
-  - id: qrtz-fired-triggers
-    version: 1.0.0
-  - id: qrtz-scheduler-state
-    version: 1.0.0
-  - id: qrtz-locks
-    version: 1.0.0
-  - id: qrtz-execution-history
-    version: 1.0.0
-  - id: qrtz-misfire-history
-    version: 1.0.0
-  - id: qrtz-job-status
+  - id: product-ingestion
     version: 1.0.0
 badges:
   - content: Generic Domain
@@ -59,66 +30,55 @@ badges:
     icon: ArrowsRightLeftIcon
 ---
 
-Platform is BookWorm's Generic bounded context for cross-cutting background scheduling and transactional email delivery. It consists of two internal services—`Scheduler` (Quartz.NET backed by PostgreSQL `schedulerdb`) and `Notification` (a stateless Kafka + MailKit/Mjml.Net worker backed by Redis idempotency)—plus the external SMTP boundary (Mailpit locally, SendGrid SMTP in cloud). Neither service owns core business records from Catalog, Shopping, Ordering, or Reviews.
+## Business Purpose & Boundary
 
-## Scope and constraints
+[[domain|platform]] is BookWorm's Generic bounded context for cross-cutting background job scheduling and transactional email delivery. Through [[service|scheduler-service]] and [[service|notification-api]], it emits recurring operational triggers (such as catalog vector-batch refreshes) and renders and submits order lifecycle emails via [[service|sendgrid-api]]. Explicitly **out of scope** are owning books, baskets, orders, payments, or reviews; guaranteeing recipient inbox placement after SMTP handoff; and maintaining a relational email-outbox database.
 
-- **In scope:** Recurring Quartz.NET job triggers (`ProcessVectorBatchJob`, `HeartbeatJob`), Quartz Dashboard operational visibility (`/quartz`), Kafka order-notification command consumption, MJML email rendering, Redis 24-hour message deduplication, and SMTP submission.
-- **Out of scope:** Owning books, baskets, orders, payments, or reviews; guaranteeing recipient inbox placement after SMTP acceptance; persisting a relational email-outbox database (Notification uses **no PostgreSQL database**).
-- **Key constraints:** Platform delivery outcomes and job completion statuses never mutate authoritative business state in upstream domains.
+:::warning
+Platform delivery outcomes and scheduled job executions **never** mutate authoritative business state in upstream domains. A successful scheduler trigger confirms event publication only—not downstream indexing completion—and email delivery status never alters an [[entity|order]]'s lifecycle state.
+:::
 
-## Context and container view
+## Core Responsibilities & Capabilities
 
-This architecture view shows how administrators and Finance interact with Platform, and how Scheduler, Notification, Catalog, and the SMTP provider integrate.
+| Capability                                              | Owning Service / Agent         | Primary Entities                |
+| :------------------------------------------------------ | :----------------------------- | :------------------------------ |
+| **Recurring Job Scheduling & Operational History**      | [[service\|scheduler-service]] | — (Operational schedules only)  |
+| **Transactional Order Email Rendering & Deduplication** | [[service\|notification-api]]  | — (Stateless idempotency guard) |
+| **External SMTP Relay Boundary**                        | [[service\|sendgrid-api]]      | — (External delivery provider)  |
+
+## Cross-Domain Interactions (Context Map)
+
+| Neighboring Domain / System | Direction                            | Integration Mechanism | Business Data Exchanged                                                                                                        |
+| :-------------------------- | :----------------------------------- | :-------------------- | :----------------------------------------------------------------------------------------------------------------------------- |
+| **[[domain\|catalog]]**     | Upstream (`Platform` → `Catalog`)    | Async (Event)         | [[event\|ProcessVectorBatchIntegrationEvent]] triggers periodic vector embedding refreshes                                     |
+| **[[domain\|ordering]]**    | Downstream (`Ordering` → `Platform`) | Async (Commands)      | [[command\|PlaceOrderCommand]], [[command\|CompleteOrderCommand]], and [[command\|CancelOrderCommand]] trigger customer emails |
+| **[[system\|sendgrid]]**    | Downstream (`Platform` → `SendGrid`) | Sync (SMTP)           | Rendered MIME HTML order confirmation, completion, and cancellation emails                                                     |
+
+:::note
+**Idempotency & Dead-Letter Resilience:** Because [[service|notification-api]] operates statelessly without a relational outbox, it protects customers from duplicate emails using a 24-hour Redis idempotency guard. Commands with blank recipient addresses are skipped safely, and messages that exhaust transient delivery retries route to the notification dead-letter queue for operator triage.
+:::
+
+## Ubiquitous Language Highlights
+
+- **Vector Batch Job:** A recurring scheduled trigger that asks [[domain|catalog]] ingestion to refresh search embeddings without owning book records.
+- **Idempotency Guard:** A time-bounded deduplication check ensuring repeated notification commands do not send duplicate customer emails.
+- **Email Template:** Responsive email markup compiled into HTML at runtime for transactional order notifications.
+- **Dead-Letter Queue:** A dedicated message channel holding commands that exhausted transient delivery retries for inspection and replay.
+
+## Architecture Visualizations
+
+<NodeGraph />
+
+### Platform Context Overview
 
 <LikeC4View viewId="platformContext" project="platform" />
 
-## Building block view
+## Related Governance & Documentation
 
-| Building block                            | Bounded context | Technology                          | Owned state / responsibility                                                                                                                                                           | Source path                                       |
-| :---------------------------------------- | :-------------- | :---------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------ |
-| **Scheduler** (`scheduler`)               | Platform        | .NET 11 + Quartz.NET + Wolverine    | Persistent Quartz schedules and 30-day / 100,000-entry execution history in `schedulerdb`; configured with `.WithExplicitStart()` in local Aspire runs                                 | `src/Services/Scheduler/BookWorm.Scheduler`       |
-| **Quartz Dashboard** (`quartz-dashboard`) | Platform        | Containerized Quartz UI             | Operator web dashboard at `/quartz` protected by Microsoft Entra ID OIDC (`admin` role)                                                                                                | `src/Aspire/BookWorm.AppHost`                     |
-| **Notification** (`notification`)         | Platform        | .NET 11 Worker + MailKit + Mjml.Net | Consumes Finance order commands from Kafka, deduplicates via Redis 24-hour idempotency guard, renders `_Layout.mjml` / `Orders/OrderEmail.mjml`, and submits over SMTP (no PostgreSQL) | `src/Services/Notification/BookWorm.Notification` |
-
-### Configured Scheduler jobs (`jobs.json`)
-
-| Job                     | Cron schedule (UTC)                 | Action                                                                                                    |
-| :---------------------- | :---------------------------------- | :-------------------------------------------------------------------------------------------------------- |
-| `ProcessVectorBatchJob` | `0 0/5 * * * ?` (every 5 minutes)   | Publishes `ProcessVectorBatchIntegrationEvent` to unprefixed Kafka topic `scheduler.process-vector-batch` |
-| `HeartbeatJob`          | `0/30 * * * * ?` (every 30 seconds) | Executes operational liveness check                                                                       |
-
-## Runtime view
-
-- **Scheduled vector indexing:** Every 5 minutes, Scheduler publishes `ProcessVectorBatchIntegrationEvent` using its PostgreSQL Wolverine outbox. `Catalog Ingestion` validates and updates pending book vectors; a green Scheduler execution confirms publication only, not downstream indexing completion.
-- **Transactional email delivery:** Notification consumes `PlaceOrderCommand` (`bookworm.{env}.finance.place-order`), `CompleteOrderCommand` (`bookworm.{env}.finance.complete-order`), and `CancelOrderCommand` (`bookworm.{env}.finance.cancel-order`). It skips blank recipient addresses, guards against duplicate delivery for 24 hours in Redis (`IIntegrationEventIdempotencyGuard`), renders MJML templates, and submits MIME messages over SMTP using MailKit's resilience pipeline.
-- **Dead-letter handling:** Commands that fail JSON deserialization or exhaust Wolverine retry cooldowns (`50ms`, `250ms`, `1s` with jitter) route to `bookworm.{env}.notification.dead-letter-queue`.
-
-## Deployment and cross-cutting concerns
-
-- **Hosting and ingress:** Neither `scheduler` nor `notification` is routed through the YARP API Gateway; both expose `/health` and `/alive` endpoints in Development only. `quartz-dashboard` exposes an external HTTP endpoint secured by Entra ID OIDC (`admin` role).
-- **Security and privacy:** Scheduler uses a user-assigned Managed Identity (`scheduler-identity`) for passwordless PostgreSQL (`schedulerdb`) access. Notification carries no Azure Managed Identity and authenticates to external Kafka and SMTP relays via deployment parameters (`email-smtp-endpoint`, `email-smtp-username`, `email-smtp-password`, `email-sender-address`) plus `HMAC__Key`.
-- **Observability and resilience:** OpenTelemetry traces Quartz executions, Wolverine listeners, and MailKit SMTP operations; Scheduler retains up to 30 days (100k entries) of Quartz execution history in `schedulerdb`.
-
-## Quality scenarios and known risks
-
-| Quality attribute / risk | Scenario or exposure                                          | Current mitigation or gap                                                                   |
-| :----------------------- | :------------------------------------------------------------ | :------------------------------------------------------------------------------------------ |
-| **Reliability**          | Temporary SMTP relay latency or transient errors              | MailKit resilience pipeline + Wolverine jittered retries + `notification.dead-letter-queue` |
-| **Idempotency**          | Duplicate Kafka delivery or upstream saga retries             | Redis 24-hour `IIntegrationEventIdempotencyGuard` deduplicates repeated commands            |
-| **Local dev ergonomics** | Scheduler does not auto-start in Aspire (`WithExplicitStart`) | Start `scheduler` explicitly in the Aspire Dashboard when testing scheduled vector batches  |
-
-## Related architecture decisions
-
-| ADR                                      | Decision summary                                                                                   | Status   |
-| :--------------------------------------- | :------------------------------------------------------------------------------------------------- | :------- |
-| ADR: Notification stateless Kafka worker | Deliver order emails via stateless Kafka + MailKit + Redis idempotency without a PostgreSQL outbox | Accepted |
-| ADR-BW-005: Kafka integration backbone   | Standardize asynchronous integration on Wolverine and Kafka CloudEvents                            | Proposed |
-
-## Related documentation
-
-- [[flow|notification-delivery]] — End-to-end Finance-to-SMTP email delivery sequence.
-- [[flow|product-ingestion]] — Scheduler-to-Catalog Ingestion vector batch flow.
-- [[doc|arc42/12-glossary]] — Platform terminology (`Vector batch job`, `Heartbeat job`, `Integration event idempotency guard`).
-
-<NodeGraph mode="full" search="false" legend="false" />
+- [[system|scheduler-system]] — Recurring job scheduling boundary and [[service|scheduler-service]].
+- [[system|notification-system]] — Stateless email rendering and [[service|notification-api]].
+- [[system|sendgrid]] — External SMTP relay boundary.
+- [[flow|notification-delivery]] — End-to-end order notification delivery workflow.
+- [[flow|product-ingestion]] — Scheduled vector batch trigger to Catalog ingestion.
+- [[adr|adr-bw-005-kafka-integration-backbone]] — Standardized asynchronous messaging backbone.
+- [[doc|arc42/12-glossary]] — Shared platform and operational terminology.

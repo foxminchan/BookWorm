@@ -8,7 +8,7 @@ badges:
     textColor: blue
 summary: Marks an existing Order as Cancelled when its current status is New.
 owners:
-  - contributor-team
+  - commerce-fulfillment-team
 schemaPath: schema.json
 operation:
   method: PATCH
@@ -18,81 +18,75 @@ sidebar:
   badge: "PATCH"
 ---
 
-The `CancelOrder` command (`PATCH /api/v1/orders/{orderId}/cancel`) transitions an existing `Order` from `New` to `Cancelled` in **Ordering API** (v1.0.0) and triggers downstream cancellation orchestration through Kafka. External callers reach this endpoint through the YARP **API Gateway** at `/ordering/api/v1/orders/{orderId}/cancel`.
+`CancelOrder` transitions an existing order from `New` to `Cancelled` in [[service|order-api]] (`PATCH /ordering/api/v1/orders/{orderId}/cancel`) and triggers downstream cancellation orchestration through Kafka.
 
 ## Overview
 
-| Property                    | Value                                                                                                                                                              |
-| :-------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**                   | Ordering bounded context (**Ordering API**, Aspire resource `ordering`)                                                                                            |
-| **Source**                  | `src/Services/Ordering/BookWorm.Ordering/Features/Orders/Cancel/CancelOrderEndpoint.cs`, `CancelOrderCommand.cs`, `Domain/AggregatesModel/OrderAggregate/Order.cs` |
-| **Protocol / format**       | HTTP `PATCH`, JSON response (`application/json`, API version `v1`)                                                                                                 |
-| **Gateway endpoint**        | `PATCH /ordering/api/v1/orders/{orderId}/cancel`                                                                                                                   |
-| **Direct service endpoint** | `PATCH /api/v1/orders/{orderId}/cancel` (local ports: HTTP `5244`, HTTPS `7203`)                                                                                   |
-| **Authentication**          | Microsoft Entra ID JWT — default policy: role `customer` or `admin` plus scopes `ordering_read` and `ordering_write`                                               |
-| **Idempotency**             | Required `x-request-id` header (`IdempotencyEndpointFilter`, Redis key `PATCH:{path}:{x-request-id}`, 3600s TTL)                                                   |
-| **ETag**                    | Not used                                                                                                                                                           |
-| **Rate limit**              | `PerUserRateLimit` token bucket (30 burst, 20 tokens / 10s, queue limit 5) plus global concurrency (100) and IP fixed-window (30 req/min) limiters                 |
+| Property                           | Value                                                                                                                                                        |
+| :--------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Bounded Context**                | Ordering                                                                                                                                                     |
+| **Owner Service**                  | [[service\|order-api]]                                                                                                                                       |
+| **Protocol / Format**              | HTTP `PATCH`, `application/json` response                                                                                                                    |
+| **Gateway Endpoint**               | `PATCH /ordering/api/v1/orders/{orderId}/cancel` (service path `/api/v1/orders/{orderId}/cancel`)                                                            |
+| **Authentication & Authorization** | Microsoft Entra ID JWT — `customer` or `admin` role plus scopes `ordering_read`, `ordering_write`                                                            |
+| **Idempotency / Concurrency**      | Required `x-request-id` header (Redis-backed 3600s TTL; returns `409 Conflict` on duplicate); optimistic concurrency (`412 Precondition Failed` on conflict) |
+| **Rate Limit / Caching**           | Global concurrency (`100`), per-IP fixed-window (`30 req/min`), and per-user token bucket (`30` burst, `20` per `10s`, queue `5`)                            |
+| **Contract Version**               | `1.0.0` (`ApiVersions.V1`)                                                                                                                                   |
 
-## Parameters and fields
+## Request & Response Contract
 
-### Request parameters and headers
+### Path Parameters & Headers
 
-`CancelOrder` accepts no request body.
+Accepts no request body.
 
-| Name           | Type            | Required | Default | Constraints                            | Description                                                         |
-| :------------- | :-------------- | :------- | :------ | :------------------------------------- | :------------------------------------------------------------------ |
-| `orderId`      | `string` (UUID) | Yes      | —       | Path parameter; valid `OrderId` UUID   | Unique identifier of the order to cancel.                           |
-| `x-request-id` | `string`        | Yes      | —       | HTTP header; non-empty, non-whitespace | Client-generated idempotency key tracked in Redis for 3600 seconds. |
+| Name           | Type              | Required | Constraints                            | Description                                                        |
+| :------------- | :---------------- | :------- | :------------------------------------- | :----------------------------------------------------------------- |
+| `orderId`      | `string` (`uuid`) | Yes      | Path parameter; valid UUID             | Unique identifier of the order to cancel                           |
+| `x-request-id` | `string`          | Yes      | HTTP header; non-empty, non-whitespace | Client-generated idempotency key tracked in Redis for 3600 seconds |
 
-### Response body (`200 OK`, `OrderDetailDto`)
+### Success Response (`200 OK`)
 
-| Name               | Type                 | Required | Default | Constraints                                          | Description                                                                                                                               |
-| :----------------- | :------------------- | :------- | :------ | :--------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------- |
-| `id`               | `string` (UUID)      | Yes      | —       | `OrderId` UUID                                       | Unique identifier of the canceled order.                                                                                                  |
-| `date`             | `string` (date-time) | Yes      | —       | ISO 8601 UTC timestamp                               | Creation timestamp (`Order.CreatedAt`).                                                                                                   |
-| `total`            | `number` (`decimal`) | Yes      | —       | Rounded to 2 decimal places (`DecimalJsonConverter`) | Sum of `quantity * price` across all order items.                                                                                         |
-| `status`           | `string` (enum)      | Yes      | —       | `"Cancelled"` on success                             | Current lifecycle status serialized as string (`Status.Cancelled`).                                                                       |
-| `items`            | `OrderItemDto[]`     | Yes      | —       | Array of line items                                  | Purchased items belonging to the order.                                                                                                   |
-| `items[].id`       | `string` (UUID)      | Yes      | —       | `OrderItem` UUID                                     | Line item identifier.                                                                                                                     |
-| `items[].quantity` | `integer`            | Yes      | —       | `> 0`                                                | Purchased quantity for the item.                                                                                                          |
-| `items[].price`    | `number` (`decimal`) | Yes      | —       | `>= 0`, rounded to 2 decimal places                  | Unit price captured at order creation.                                                                                                    |
-| `items[].name`     | `string \| null`     | No       | `null`  | —                                                    | Book title. `CancelOrderHandler` calls `Order.ToOrderDetailDto()` without enriching titles from **Catalog API**, so this field is `null`. |
+| Name               | Type                   | Required | Constraints                         | Description                                                                      |
+| :----------------- | :--------------------- | :------- | :---------------------------------- | :------------------------------------------------------------------------------- |
+| `id`               | `string` (`uuid`)      | Yes      | Valid UUID                          | Unique identifier of the cancelled order                                         |
+| `date`             | `string` (`date-time`) | Yes      | ISO 8601 UTC timestamp              | Creation timestamp                                                               |
+| `total`            | `number`               | Yes      | Rounded to 2 decimal places         | Sum of `quantity * price` across all order items                                 |
+| `status`           | `string`               | Yes      | `"Cancelled"` on success            | Current lifecycle status                                                         |
+| `items`            | `object[]`             | Yes      | Array of line items                 | Purchased items belonging to the order                                           |
+| `items[].id`       | `string` (`uuid`)      | Yes      | Valid UUID                          | Line item identifier                                                             |
+| `items[].quantity` | `integer`              | Yes      | `> 0`                               | Purchased quantity for the item                                                  |
+| `items[].price`    | `number`               | Yes      | `>= 0`, rounded to 2 decimal places | Unit price captured at order creation                                            |
+| `items[].name`     | `string \| null`       | No       | Nullable                            | Book title (`null` in this response because catalog enrichment is not performed) |
 
-## Behavior and side effects
+## Behavior & Side Effects
 
-- **Access scoping:** Callers with the Entra ID `admin` role query orders using `OrderFilterSpec(orderId, Status.New)`. Callers without `admin` (customers) query using `OrderFilterSpec(orderId, buyerId)`, where `buyerId` is parsed as a GUID from `ClaimTypes.NameIdentifier`.
-- **State transition:** `Order.MarkAsCanceled()` invokes `OrderLifecycleDecider` to transition `Status.New` to `Status.Cancelled` and raises `OrderCancelledEvent`. Orders already in `Status.Cancelled` or `Status.Completed` cannot transition again: admins receive `404 Not Found` (filtered out by `OrderFilterSpec`), whereas customers hitting their own non-`New` order trigger `OrderingDomainException`.
-- **Event store and Kafka outbox:** Inside the `[Transactional]` unit of work on PostgreSQL (`orderingdb`), `OrderEventHandler` appends `OrderCancelledEvent` to the Marten `OrderSummary` stream. Marten's Async Daemon (`MartenEventPublisher`) maps it via `EventMapper` to `OrderStatusChangedToCancelIntegrationEvent` and publishes it through the Wolverine PostgreSQL outbox (`wolverine` schema) to Kafka topic `bookworm.{env}.ordering.order-status-change-to-cancel` (partitioned by `OrderId`).
-- **Idempotency key lifecycle:** `IdempotencyEndpointFilter` claims `PATCH:{path}:{x-request-id}` in Redis with `When.NotExists` for 3600 seconds. Duplicate requests within that window return `409 Conflict`. If the handler returns HTTP `5xx` or throws an exception, the filter deletes the Redis key so the client can safely retry.
+- **Access scoping:** Administrators can target any `New` order; customers can only target orders matching their authenticated buyer ID.
+- **State transition:** Transitions `New` to `Cancelled`. Orders already in `Cancelled` or `Completed` status cannot transition again (admins receive `404 Not Found`; customers targeting their own non-`New` order receive `500 Internal Server Error`).
+- **Event publishing:** Appends the cancellation event to the event store and publishes [[event|OrderStatusChangedToCancelIntegrationEvent]] via transactional outbox to [[channel|bookworm.&#123;env&#125;.ordering.order-status-change-to-cancel]] (partitioned by `OrderId`).
+- **Idempotency key lifecycle:** Claims the `x-request-id` key in Redis for 3600 seconds (`409 Conflict` on replay) and deletes the key if the operation fails with `5xx` so retries can proceed.
 
-## Error responses
+## Error Responses
 
-| Code / status               | Condition                                                                                                                                         | Recovery behavior                                                                         |
-| :-------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------ | :---------------------------------------------------------------------------------------- |
-| `400 Bad Request`           | Missing or whitespace `x-request-id` header (`ValidationException`), or non-GUID `NameIdentifier` claim (`ArgumentException`)                     | Provide a non-empty `x-request-id` header and valid token claims; do not retry unchanged. |
-| `401 Unauthorized`          | Missing, expired, or invalid Entra ID bearer token                                                                                                | Acquire a fresh Entra ID access token and retry.                                          |
-| `403 Forbidden`             | Authenticated caller lacks `customer`/`admin` role or `ordering_read`/`ordering_write` scopes                                                     | Request the required Entra ID role and scopes before retrying.                            |
-| `404 Not Found`             | Order does not exist, is soft-deleted, belongs to another buyer, or (for `admin`) is not in `New` status                                          | Verify the `orderId` and current order status; do not retry unchanged.                    |
-| `409 Conflict`              | `x-request-id` was already processed for this path within the 3600-second Redis TTL (`ProblemDetails`)                                            | Treat as a duplicate submission and query the order status before taking further action.  |
-| `412 Precondition Failed`   | Concurrent PostgreSQL (`DbUpdateConcurrencyException`) or Marten (`ConcurrencyException`) update conflict                                         | Refresh the order state and retry with a new `x-request-id` if the order is still `New`.  |
-| `429 Too Many Requests`     | Caller exceeded `PerUserRateLimit` or global rate limits                                                                                          | Wait for the `Retry-After` header interval before retrying.                               |
-| `500 Internal Server Error` | Customer attempted to cancel an owned order already in `Cancelled` or `Completed` status (`OrderingDomainException`), or unhandled server failure | Inspect the order's current status; do not retry non-`New` transitions.                   |
+| Status / Code               | Condition                                                                                                             | Client Recovery Action                                                                   |
+| :-------------------------- | :-------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------- |
+| `400 Bad Request`           | Missing or whitespace `x-request-id` header, or invalid user identifier claim                                         | Provide a non-empty `x-request-id` header and valid token claims; do not retry unchanged |
+| `401 Unauthorized`          | Missing, expired, or invalid Entra ID bearer token                                                                    | Acquire a fresh Entra ID access token and retry                                          |
+| `403 Forbidden`             | Caller lacks `customer`/`admin` role or `ordering_read`/`ordering_write` scopes                                       | Request the required Entra ID role and scopes before retrying                            |
+| `404 Not Found`             | Order does not exist, is soft-deleted, belongs to another buyer, or (for `admin`) is not in `New` status              | Verify the `orderId` and current order status; do not retry unchanged                    |
+| `409 Conflict`              | Duplicate `x-request-id` for this path within the 3600-second TTL                                                     | Treat as a duplicate submission and query order status before taking further action      |
+| `412 Precondition Failed`   | Concurrent update conflict on the order or event stream                                                               | Refresh order state and retry with a new `x-request-id` if still `New`                   |
+| `429 Too Many Requests`     | Rate limit quota exceeded (`Retry-After` header included)                                                             | Wait for the `Retry-After` interval before retrying                                      |
+| `500 Internal Server Error` | Customer attempted to cancel an owned order already in `Cancelled` or `Completed` status, or unhandled server failure | Inspect the order's current status; do not retry non-`New` transitions                   |
 
-## Related documentation
+## Related Documentation
 
 - [[service|order-api]] — Service architecture, persistence, and endpoints.
+- [[entity|order]] — Order aggregate invariants and lifecycle statuses.
 - [[event|OrderStatusChangedToCancelIntegrationEvent]] — Kafka event emitted on cancellation.
 - [[channel|bookworm.&#123;env&#125;.ordering.order-status-change-to-cancel]] — Kafka topic specification.
 - [[command|CompleteOrder]] — Transition a `New` order to `Completed`.
 - [[command|DeleteOrder]] — Administrative soft-delete without status transition.
-- [[entity|order]] — Order aggregate invariants and lifecycle statuses.
 
 <NodeGraph />
 
-<SchemaViewer
-	file="schema.json"
-	title="Request parameter JSON Schema"
-	maxHeight="500"
-	search="true"
-/>
+<SchemaViewer file="schema.json" title="Cancel order schema" maxHeight="500" search="true" />

@@ -6,75 +6,55 @@ summary: Carry stable integration identity and request context for routing and d
 status: proposed
 date: 2026-11-07
 owners:
-  - platform-team
+  - platform-engineering-team
 appliesTo:
   - type: domain
-    id: BookWorm
+    id: bookworm
 related:
   - id: adr-bw-005-kafka-integration-backbone
   - id: adr-bw-013-opentelemetry-observability
   - id: adr-003-finance-kafka-order-correlation
 decisionMakers:
-  - platform-team
+  - platform-engineering-team
 x-scope: "Whole system"
 ---
 
-## Context and problem statement
+| Field                  | Value                                                                                                                                             |
+| :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Status**             | Proposed                                                                                                                                          |
+| **Date**               | 2026-11-07                                                                                                                                        |
+| **Owners**             | [[team\|platform-engineering-team]]                                                                                                               |
+| **Affected Resources** | [[domain\|bookworm]]                                                                                                                              |
+| **Related ADRs**       | [[adr\|adr-bw-005-kafka-integration-backbone]], [[adr\|adr-bw-013-opentelemetry-observability]], [[adr\|adr-003-finance-kafka-order-correlation]] |
 
-A single customer action—such as placing an order or submitting a book review—spans the API Gateway, synchronous gRPC lookups, asynchronous Kafka messages, Azure Durable Functions orchestrations, and outbound SMTP delivery. Without stable message identities and propagated correlation metadata, operators cannot trace failures across service boundaries, and uncoordinated contract renames disrupt Kafka routing.
+## Context & Problem Statement
 
-BookWorm needs a system-wide correlation rule that connects distributed telemetry while preventing unverified correlation headers from being mistaken for security credentials.
+Customer journeys such as checkout and review projection span microfrontends, HTTP/gRPC boundaries, Kafka topics, and background workers. Without stable correlation and message identifiers, operators cannot trace failures end to end, yet correlation headers must never be trusted as authentication or authorization proof.
 
-## Decision drivers
+## Decision Drivers
 
-- **Interoperability:** Preserve stable contract namespaces, topic routing metadata, and CloudEvents message identifiers across producers and consumers.
-- **Diagnosability:** Correlate logs and spans across HTTP, gRPC, and Kafka hops without logging raw business payloads or sensitive personal data.
-- **Security isolation:** Keep diagnostic correlation context strictly separate from Microsoft Entra ID authentication and authorization.
+- **End-to-end traceability:** Connect spans and logs across HTTP, gRPC, and Kafka hops.
+- **PII-safe diagnostics:** Correlate journeys via opaque IDs without logging personal data.
+- **Security isolation:** Keep correlation metadata strictly separate from Entra ID auth claims.
 
-## Considered options
+## Options Considered
 
-1. Propagate W3C trace context, `x-request-id`, and CloudEvents message metadata across all boundaries while enforcing Entra ID authorization independently
-2. Generate isolated correlation identifiers independently at each service hop
-3. Infer causal relationships from business payload fields or log timestamps
-4. Reuse propagated `UserId` correlation headers as authorization credentials
+| Option                                                       | Pros                                                                   | Cons                                                   |
+| :----------------------------------------------------------- | :--------------------------------------------------------------------- | :----------------------------------------------------- |
+| **Propagate trace/message IDs + enforce auth independently** | Unified tracing across sync and async paths; zero privilege escalation | Every hop must preserve correlation headers/envelopes  |
+| **Generate isolated IDs per service**                        | Zero upstream propagation required                                     | Breaks end-to-end failure correlation                  |
+| **Correlate by timestamp or customer email**                 | No extra headers needed                                                | Unreliable under load and leaks PII into logs          |
+| **Trust correlation/user IDs as auth credentials**           | Fewer token checks downstream                                          | Vulnerable to header spoofing and privilege escalation |
 
-## Decision outcome
+## Decision & Consequences
 
-Chosen option: **Propagate W3C trace context, `x-request-id`, and CloudEvents message metadata across all boundaries while enforcing Entra ID authorization independently**, because it delivers end-to-end distributed traceability without weakening security boundaries.
+**Chosen Option:** Propagate W3C trace context, request IDs, and stable CloudEvents message identities across all synchronous and asynchronous hops while verifying authentication and authorization independently at each boundary.
 
-`BookWorm.ServiceDefaults` configures W3C `ActivityIdFormat` for OpenTelemetry tracing across ASP.NET Core, HttpClient, and gRPC calls, while `BookWorm.Constants` defines the `x-request-id` correlation header. On Kafka, `BookWorm.Chassis` uses `CloudEventsOnlyKafkaMapper` to serialize CloudEvents JSON envelopes carrying stable message IDs, W3C trace headers, `requestid`, and `UserId` context, with partition keys (`OrderId`, `BookId`, `FeedbackId`) preserving entity ordering. Correlation metadata serves strictly for routing and diagnostics; services never accept `UserId` or `x-request-id` headers in place of validated Entra ID JWTs or agent identities.
+- **Positive:** Operators can trace a single request across [[service|order-api]], [[service|order-orchestration]], [[service|basket-api]], and [[service|notification-api]] without exposing PII.
+- **Negative:** Changing event names or omitting envelope propagation breaks trace continuity.
 
-### Consequences
+### Compliance Criteria
 
-- **Positive:** Operators trace checkout, feedback, and ingestion chains end to end in the Aspire Dashboard and Azure Application Insights without exposing sensitive payloads in logs.
-- **Negative:** Renaming an integration-event type, namespace, or topic-routing attribute becomes a breaking contract change requiring consumer coordination under ADR-BW-017, and missing upstream headers leave explicit correlation gaps.
-- **Follow-up:** Verify message envelope compatibility through Pact contract tests and inspect Finance's Durable Task instance-ID correlation (`OrderId`) during saga changes.
-
-## Pros and cons of the options
-
-### Propagate W3C trace context, `x-request-id`, and CloudEvents message metadata across all boundaries while enforcing Entra ID authorization independently
-
-- **Good**, because W3C standards integrate natively with OpenTelemetry, YARP, gRPC, Wolverine, and Next.js `@workspace/otel`.
-- **Good**, because keeping correlation separate from authorization prevents header-spoofing privilege escalation.
-- **Bad**, because every custom trigger (such as Azure Functions Kafka triggers in Finance and Catalog Ingestion) must preserve context explicitly.
-
-### Generate isolated correlation identifiers independently at each service hop
-
-- **Good**, because individual hosts require no incoming header parsing.
-- **Bad**, because operators cannot connect a failed Notification email or Finance saga retry back to the originating checkout request.
-
-### Infer causal relationships from business payload fields or log timestamps
-
-- **Good**, because services avoid envelope metadata conventions.
-- **Bad**, because timestamp matching fails under concurrency and tempts teams to log sensitive customer data.
-
-### Reuse propagated `UserId` correlation headers as authorization credentials
-
-- **Good**, because downstream consumers avoid validating tokens.
-- **Bad**, because unverified metadata can be spoofed and violates defense-in-depth authorization requirements.
-
-## Verification and links
-
-- **Verified against:** `src/BuildingBlocks/BookWorm.Constants/`, `src/BuildingBlocks/BookWorm.Chassis/EventBus/Wolverine/KafkaTopicRouter.cs`, `src/BuildingBlocks/BookWorm.Chassis/EventBus/Wolverine/WolverineHostExtensions.cs`, `src/Aspire/BookWorm.ServiceDefaults/Extensions.cs`
-- **Related architecture:** [[doc|arc42/08-crosscutting-concepts/002-contracts-and-messaging]], [[doc|arc42/08-crosscutting-concepts/004-observability]], [[doc|development/004-engineering-standards]]
-- **Related ADRs:** ADR-BW-005, ADR-BW-013, ADR-BW-017, [[doc|arc42/09-architecture-decisions]]
+- Integration events must carry stable message IDs and domain correlation keys (e.g., `OrderId`, `FeedbackId`).
+- Handlers and endpoints must derive caller identity exclusively from validated Entra ID tokens—never from correlation headers or payload fields.
+- Incident logs and traces must correlate via opaque IDs rather than customer emails or names.

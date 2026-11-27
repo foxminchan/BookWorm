@@ -6,10 +6,10 @@ summary: Treat search and rating projections as derived information with explici
 status: proposed
 date: 2026-11-07
 owners:
-  - contributor-team
+  - architecture-enabling-team
 appliesTo:
   - type: domain
-    id: BookWorm
+    id: bookworm
   - type: system
     id: product-catalog-system
   - type: system
@@ -20,73 +20,46 @@ related:
   - id: adr-006-reviews-rating-projection-on-book
   - id: adr-002-publish-feedback-events-for-catalog-projection
 decisionMakers:
-  - contributor-team
+  - architecture-enabling-team
 x-scope: "Whole system (especially Catalog and Reviews)"
 ---
 
-## Context and problem statement
+| Field                  | Value                                                                                                                                                                                                               |
+| :--------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Status**             | Proposed                                                                                                                                                                                                            |
+| **Date**               | 2026-11-07                                                                                                                                                                                                          |
+| **Owners**             | [[team\|architecture-enabling-team]]                                                                                                                                                                                |
+| **Affected Resources** | [[domain\|bookworm]], [[system\|product-catalog-system]], [[system\|rating-system]]                                                                                                                                 |
+| **Related ADRs**       | [[adr\|adr-bw-006-service-owned-business-state]], [[adr\|adr-002-hybrid-vector-search-qdrant]], [[adr\|adr-006-reviews-rating-projection-on-book]], [[adr\|adr-002-publish-feedback-events-for-catalog-projection]] |
 
-Book discovery requires fast hybrid vector search and precomputed book rating summaries, whereas authoritative product records live in Catalog's PostgreSQL database (`catalogdb`) and authoritative individual customer `Feedback` records live in Rating API's Azure Cosmos DB container (`ratingdb` / `feedbacks`). Treating a search index or aggregate summary as an authoritative system of record causes silent divergence during indexing lag or event failures.
+## Context & Problem Statement
 
-BookWorm needs a cross-system consistency principle that separates rebuildable derived views from authoritative sources of truth.
+Book discovery relies on fast semantic search in [[container|catalog-vector]] and pre-aggregated rating summaries on [[entity|book]] records, while authoritative product and review records live in [[container|catalog-database]] and [[container|rating-database]]. Treating derived caches or search projections as authoritative truth risks exposing stale prices or orphaned data.
 
-## Decision drivers
+## Decision Drivers
 
-- **Read independence:** Optimize discovery, vector search, and summary queries without transferring source-data ownership.
-- **Transactional correctness:** Ensure checkout and mutation flows validate against authoritative owners rather than stale projections.
-- **Operational transparency:** Make eventual-consistency lag and rebuild paths explicit to operators and consumers.
+- **Read performance:** Support rich search and fast browsing without overloading primary stores.
+- **Commercial accuracy:** Ensure checkout and mutations always read authoritative state.
+- **Rebuildability:** Allow derived views to be reconstructed from source data after drift or loss.
 
-## Considered options
+## Options Considered
 
-1. Maintain derived views separately from authoritative stores with explicit eventual-consistency semantics
-2. Treat search indexes and aggregate summaries as authoritative sources of truth
-3. Update all cross-domain projections synchronously inside every source write
-4. Query authoritative stores across domains on every discovery request
+| Option                                                        | Pros                                                        | Cons                                                           |
+| :------------------------------------------------------------ | :---------------------------------------------------------- | :------------------------------------------------------------- |
+| **Separate derived views with explicit eventual consistency** | High read throughput; derived stores can be rebuilt anytime | Users may see brief staleness windows during async propagation |
+| **Treat search index / projections as authoritative**         | Single read/write path                                      | Risks silent drift, lost history, and stale checkout pricing   |
+| **Synchronous two-phase updates to all views**                | Zero propagation lag                                        | Outages in search or projections block core writes             |
+| **Query primary stores for every search**                     | Always up to date                                           | Slow cross-service reads and poor semantic search capabilities |
 
-## Decision outcome
+## Decision & Consequences
 
-Chosen option: **Maintain derived views separately from authoritative stores with explicit eventual-consistency semantics**, because it isolates read scaling and specialized indexing from write availability while keeping source authority unambiguous.
+**Chosen Option:** Treat search indexes, read caches, and cross-domain projections as non-authoritative derived views updated asynchronously. Purchase validation and mutations must always resolve against the authoritative system of record.
 
-In BookWorm:
+- **Positive:** Derived stores scale independently and can be rebuilt from primary records without data loss.
+- **Negative:** UIs and operators must account for bounded eventual consistency windows.
 
-- **Catalog vector embeddings (Qdrant `vectordb`):** Derived from `catalogdb` via scheduled `ProcessVectorBatchIntegrationEvent` batches processed by Catalog Ingestion (`catalog-ingestion`).
-- **Catalog rating summary (average rating and review count on a book):** Derived asynchronously from Rating API's `FeedbackCreatedIntegrationEvent` and `FeedbackDeletedIntegrationEvent` events; mismatches trigger `BookUpdatedRatingFailedIntegrationEvent` compensation.
-- **Ordering read projections (Marten `OrderSummary`):** Derived from Ordering's authoritative order stream in `orderingdb`.
-- **AI rating summaries:** Generated on demand by Rating API from Cosmos DB `Feedback` records and never treated as authoritative review storage.
+### Compliance Criteria
 
-Purchase validation always queries authoritative owners over gRPC (`BookGrpcService`, `BasketGrpcService`) rather than relying on cached or derived discovery views.
-
-### Consequences
-
-- **Positive:** Discovery indexes, caches, and summaries can be rebuilt or re-indexed independently without altering authoritative domain stores.
-- **Negative:** Users can briefly observe stale search rankings or rating counts while Kafka consumers or scheduled ingestion jobs catch up.
-- **Follow-up:** Monitor projection lag, dead-letter queues, and scheduled ingestion runs; numeric freshness SLOs remain to be defined for production environments.
-
-## Pros and cons of the options
-
-### Maintain derived views separately from authoritative stores with explicit eventual-consistency semantics
-
-- **Good**, because read models use specialized engines (Qdrant, denormalized rating summary columns, FusionCache) without coupling source writes to downstream uptime.
-- **Good**, because rebuildable views keep recovery procedures clear when projection state drifts.
-- **Bad**, because consumers and UI surfaces must tolerate temporary staleness and handle missing-reference compensations.
-
-### Treat search indexes and aggregate summaries as authoritative sources of truth
-
-- **Good**, because reads and writes target a single projection store.
-- **Bad**, because specialized indexes and aggregate counters lack full domain lifecycle history and conflict-resolution guarantees.
-
-### Update all cross-domain projections synchronously inside every source write
-
-- **Good**, because projections reflect mutations immediately.
-- **Bad**, because an outage in Qdrant or a downstream service blocks primary catalog updates or feedback submissions.
-
-### Query authoritative stores across domains on every discovery request
-
-- **Good**, because results are always up to date.
-- **Bad**, because cross-service fan-out degrades browse latency and removes hybrid semantic search capabilities.
-
-## Verification and links
-
-- **Verified against:** `src/Services/Catalog/BookWorm.Catalog.Ingestion/`, `src/Services/Rating/BookWorm.Rating/Extensions/Extensions.cs`, `src/Services/Ordering/BookWorm.Ordering/Extensions/Extensions.cs`
-- **Related architecture:** [[doc|arc42/05-building-block-view]], [[doc|arc42/06-runtime-view/003-feedback-and-rating-projection]], [[doc|arc42/07-deployment-view]]
-- **Related ADRs:** ADR-BW-006, Rating Cosmos DB ADR, [[doc|arc42/09-architecture-decisions]]
+- Checkout price and availability checks must read from [[container|catalog-database]] (via [[service|catalog-api]]), never from [[container|catalog-vector]] or cache payloads.
+- Every derived view must document its authoritative source, expected lag, and rebuild/reconciliation procedure.
+- Derived projections must be read-only to external callers.

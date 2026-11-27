@@ -1,43 +1,19 @@
 ---
 title: Deployment View
-summary: Logical deployment view of BookWorm services, their stateful infrastructure, and external dependencies.
+summary: Hosting environments, infrastructure boundaries, and workload placement.
 owners:
-  - contributor-team
+  - platform-engineering-team
 badges:
   - content: Architecture
     backgroundColor: blue
     textColor: blue
 ---
 
-This chapter maps BookWorm's deployable applications, stateful Azure resources, identity boundaries, and external cloud providers from local development to Azure Container Apps. BookWorm uses **Aspire 17** (`aspire deploy`) as its sole cloud deployment mechanism—without `azure.yaml` or `azd up`—via `.github/workflows/apphost-cd.yml` targeting `Development`, `Staging`, and `Production` environments.
+BookWorm is cloud-hosted in Azure, with external managed providers for messaging, vector search, and email; local development uses containerized services and emulators instead of most cloud dependencies. Development, Staging, and Production retain the same logical workload placement while varying capacity and resilience settings. This model supports independent application scaling, managed stateful services, identity-based access, and a lower-cost local workflow; it is not an on-premises or hybrid deployment.
 
-## Chapter navigation
+## Chapter Contents
 
-| Level       | Document                                                     | Scope                                                                                                                                                                     |
-| :---------- | :----------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Level 1** | [[doc\|arc42/07-deployment-view/001-infrastructure-level-1]] | Logical cloud layout, inline deployment diagram, building-block-to-infrastructure mapping, and local vs. Azure substitution matrix                                        |
-| **Level 2** | [[doc\|arc42/07-deployment-view/002-infrastructure-level-2]] | Per-service execution dependencies, environment SKU matrix (`Development` / `Staging` / `Production`), required deployment parameters, and open production-hardening gaps |
-
-## Deployment footprint summary
-
-BookWorm organizes its published Azure footprint into four layers defined in `src/Aspire/BookWorm.AppHost/AppHost.cs`:
-
-- **Application compute (16 core Container Apps + Quartz Dashboard):** One Azure Container Apps environment (`aca`, `Consumption` workload profile) hosts the YARP `API Gateway`, three Next.js 16 microfrontends (`Storefront`, `Commerce`, `Backoffice`), ten .NET 11 backend services and Azure Functions workers, and two Presidio privacy containers, plus `quartz-dashboard` for scheduled job operations. Only `API Gateway` (and the Microsoft Entra ID-protected `quartz-dashboard`) expose external HTTP endpoints.
-- **Azure-managed data, orchestration, and AI:** Azure PostgreSQL Flexible Server (`catalogdb`, `orderingdb`, `schedulerdb`), Azure Cosmos DB (`ratingdb` / `feedbacks`), Azure Managed Redis (used by `catalog`, `basket`, `ordering`, `rating`, and `notification`), Azure Durable Task Scheduler (`finance-taskhub`), Azure Storage (`catalog-blob`, `chatting-blob`, and Functions host storage), and Microsoft Foundry (`ModelRouter`, `MicrosoftDecision1`, `Cohere.EmbedV40`)—all accessed via passwordless managed-identity RBAC.
-- **Identity and access:** Microsoft Entra ID app registration (`admin`, `business_user`, `customer` roles), per-service managed identities, and Entra Agent Identities (`entra-agent-identities.bicep`) for `chatAgentId` and `ratingAgentId`.
-- **External cloud providers:** Confluent Cloud / Kafka (`KAFKA_BROKER`), Qdrant Cloud (`QDRANT_CLOUD_CONNECTION`), and SendGrid SMTP (`EMAIL_SMTP_*`, replaced locally by Mailpit).
-
-## Separation of concerns
-
-This chapter specifies infrastructure placement, SKU tiers, and network exposure. For static software ownership see [[doc|arc42/05-building-block-view]]; for runtime delivery guarantees and retries see [[doc|arc42/06-runtime-view]]; for operator deployment steps see [[doc|operational/001-azure-deployment-guide]].
-
-## Related architecture decisions
-
-| ADR                                            | Decision summary                                                                 | Status   |
-| :--------------------------------------------- | :------------------------------------------------------------------------------- | :------- |
-| ADR-BW-003: Aspire shared service defaults     | Orchestrate local and Azure hosting from Aspire AppHost                          | Proposed |
-| ADR-BW-015: Explicit environment configuration | Separate logical topology from environment-specific secrets and scaling policies | Proposed |
-| ADR-Rating-Cosmos-DB                           | Host Rating feedback on Azure Cosmos DB                                          | Accepted |
-| ADR-Finance-Durable-Task-Scheduler             | Host Finance orchestration on Azure Durable Task Scheduler                       | Accepted |
-| ADR-Notification-Stateless-Kafka-Worker        | Run Notification without PostgreSQL using Redis idempotency and SMTP             | Accepted |
-| ADR-Chat-Blob-Sessions                         | Persist Chat AG-UI sessions in Azure Blob Storage                                | Accepted |
+| View                                                         | Focus                                                                      |
+| :----------------------------------------------------------- | :------------------------------------------------------------------------- |
+| [[doc\|arc42/07-deployment-view/001-infrastructure-level-1]] | Environment boundaries and placement of Section 5 building blocks          |
+| [[doc\|arc42/07-deployment-view/002-infrastructure-level-2]] | Selective detail of application ingress, compute, and operating boundaries |

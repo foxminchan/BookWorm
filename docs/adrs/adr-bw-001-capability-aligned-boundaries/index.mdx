@@ -6,74 +6,55 @@ summary: Align independently deployable building blocks with bounded contexts ra
 status: proposed
 date: 2026-11-07
 owners:
-  - contributor-team
+  - architecture-enabling-team
 appliesTo:
   - type: domain
-    id: BookWorm
+    id: bookworm
 related:
   - id: adr-bw-006-service-owned-business-state
   - id: adr-bw-017-compatible-contract-evolution
 decisionMakers:
-  - contributor-team
+  - architecture-enabling-team
 x-scope: "Whole system"
 ---
 
-## Context and problem statement
+| Field                  | Value                                                                                               |
+| :--------------------- | :-------------------------------------------------------------------------------------------------- |
+| **Status**             | Proposed                                                                                            |
+| **Date**               | 2026-11-07                                                                                          |
+| **Owners**             | [[team\|architecture-enabling-team]]                                                                |
+| **Affected Resources** | [[domain\|bookworm]]                                                                                |
+| **Related ADRs**       | [[adr\|adr-bw-006-service-owned-business-state]], [[adr\|adr-bw-017-compatible-contract-evolution]] |
 
-Catalog, Shopping, Ordering, Reviews, Conversational, and Platform evolve for distinct business reasons and at different paces. Organizing BookWorm around a shared business model or technical layers forces routine changes across ownership boundaries and obscures accountability for business outcomes.
+## Context & Problem Statement
 
-BookWorm requires a whole-system decomposition rule that keeps business logic with its owning capability while allowing shared libraries to supply technical mechanisms.
+Book discovery, shopping, ordering, reviews, conversations, and platform operations evolve at different cadences and serve distinct business goals. Sharing a single business layer or mutable data model across these areas creates hidden coupling and forces coordinated releases. [[domain|bookworm]] needs a consistent structural boundary so each business capability owns its rules and outcomes independently.
 
-## Decision drivers
+## Decision Drivers
 
-- **Modifiability:** Keep each business-rule change confined to a single owning capability.
-- **Deployability:** Release compatible changes independently without coordinating a platform-wide deployment.
-- **Correctness:** Assign unambiguous responsibility for every accepted business outcome.
+- **Change isolation:** Keep domain rule changes localized to the owning capability.
+- **Independent deployability:** Ship compatible improvements without synchronized cross-team releases.
+- **Clear accountability:** Assign each business outcome to one owning service and team.
+- **Shared technical leverage:** Reuse infrastructure defaults without leaking domain rules into shared libraries.
 
-## Considered options
+## Options Considered
 
-1. Retain capability-aligned bounded contexts with independently deployable services
-2. Consolidate into a single deployable monolith
-3. Refactor into a modular monolith
-4. Split services by technical layer
+| Option                                                  | Pros                                                                 | Cons                                                                |
+| :------------------------------------------------------ | :------------------------------------------------------------------- | :------------------------------------------------------------------ |
+| **Decompose by business capability (bounded contexts)** | Rules and data stay with the owning team; areas evolve independently | Cross-area journeys require explicit contracts and async recovery   |
+| **Single unified application**                          | Fast in-process calls; simpler local debugging                       | Changes couple all domains; failures blast across the entire system |
+| **Modular monolith (logical modules, single deploy)**   | Clear logical boundaries without network overhead                    | All capabilities deploy together and share runtime availability     |
+| **Split by technical layer (frontend, API, DB teams)**  | Deep functional specialization                                       | Every customer feature spans multiple teams, blurring ownership     |
 
-## Decision outcome
+## Decision & Consequences
 
-Chosen option: **Retain capability-aligned bounded contexts with independently deployable services**, because it aligns service ownership, data authority, and release boundaries directly with BookWorm's six business domains.
+**Chosen Option:** Decompose [[domain|bookworm]] by business capability. Each subdomain (Catalog, Shopping, Ordering, Reviews, Conversational, and Platform) owns its rules, persistence, and public contracts, communicating exclusively through explicit APIs and events. Shared building blocks provide technical plumbing only and never encode domain-specific logic.
 
-Each bounded context owns its domain model, persistence, and runtime behavior, exposing explicit HTTP, gRPC, or Kafka contracts to other contexts. Shared packages under `src/BuildingBlocks/` provide technical mechanisms rather than a shared business layer. This record governs whole-system decomposition, not the internal design of any individual service.
+- **Positive:** Teams release independently, isolate failures, and trace incorrect behavior to a single owning service.
+- **Negative:** Cross-boundary workflows (such as checkout and rating projection) require explicit contracts, correlation, and compensation.
 
-### Consequences
+### Compliance Criteria
 
-- **Positive:** Impact analysis, code ownership, and domain evolution follow clear business capabilities across all 10 backend services and 3 frontend applications.
-- **Negative:** Cross-context workflows require explicit contracts, failure compensation, and distributed correlation, increasing operational and diagnostic complexity.
-- **Follow-up:** Enforce bounded-context dependency rules continuously through `tests/BookWorm.ArchTests` and confirm formal acceptance status with platform maintainers.
-
-## Pros and cons of the options
-
-### Retain capability-aligned bounded contexts with independently deployable services
-
-- **Good**, because business rules and schema changes stay with one accountable owner.
-- **Good**, because services can scale and deploy independently when contracts remain compatible.
-- **Bad**, because distributed execution adds network latency, partial failure modes, and observability overhead.
-
-### Consolidate into a single deployable monolith
-
-- **Good**, because in-process calls eliminate network hops and simplify local transactions.
-- **Bad**, because it conflicts with BookWorm's established independent-service architecture and couples release cycles across all domains.
-
-### Refactor into a modular monolith
-
-- **Good**, because logical modules preserve domain boundaries with lower infrastructure overhead.
-- **Bad**, because it reverses the established microservices deployment model and still shares a single release unit and runtime failure domain.
-
-### Split services by technical layer
-
-- **Good**, because teams can specialize in isolated technical tiers.
-- **Bad**, because a single business feature spans multiple services and blurs accountability for domain invariants.
-
-## Verification and links
-
-- **Verified against:** `BookWorm.slnx`, `src/Aspire/BookWorm.AppHost/AppHost.cs`, `tests/BookWorm.ArchTests/BookWorm.ArchTests.csproj`
-- **Related architecture:** [[doc|arc42/04-solution-strategy]], [[doc|arc42/05-building-block-view]], [[doc|arc42/00-c4-overview]]
-- **Related ADRs:** ADR-BW-006, ADR-BW-017, [[doc|arc42/09-architecture-decisions]]
+- New features must map to an existing bounded context or justify a new capability boundary.
+- Shared libraries must not reference domain entities, business rules, or capability-specific state.
+- Cross-capability communication must use documented HTTP, gRPC, or Kafka contracts—never direct database or internal handler calls.

@@ -17,7 +17,7 @@ BookWorm is organized around several bounded contexts:
 - Conversational: AI-assisted customer experiences
 - Platform: shared infrastructure, notifications, and scheduled work
 
-The domain model is expressed in the catalog under `domains/BookWorm`, while the concrete technical architecture and message contracts live in the generated catalog resources under `systems/`, `services/`, `channels/`, `flows/`, `teams/`, and `users/`.
+The domain model is expressed in the catalog under `domains/BookWorm`, while the concrete technical architecture and message contracts live in the catalog resources under `systems/`, `channels/`, `flows/`, `teams/`, `users/`, and subdomain `services/` directories.
 
 ## Quick start
 
@@ -26,7 +26,7 @@ bun install
 bun run dev
 ```
 
-Then open http://localhost:3000.
+Then open http://localhost:3000/BookWorm.
 
 Useful commands:
 

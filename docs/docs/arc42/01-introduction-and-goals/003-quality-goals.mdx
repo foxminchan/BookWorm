@@ -2,40 +2,40 @@
 title: Quality Goals
 summary: Prioritized, scenario-based quality goals for BookWorm and the current status of their acceptance targets.
 owners:
-  - contributor-team
+  - architecture-enabling-team
 badges:
   - content: Architecture
     backgroundColor: blue
     textColor: blue
 ---
 
-BookWorm ranks its top five architectural quality goals in strict priority order: **Correctness**, **Interoperability**, **Deployability**, **Modifiability**, and **Operability**. These scenario-based goals guide design trade-offs across all six bounded contexts; detailed measurable criteria and additional qualities (reliability, security, performance, usability) live in [[doc|arc42/10-quality-requirements]].
+BookWorm prioritizes **correctness**, **interoperability**, **deployability**, **modifiability**, and **operability**. These goals guide decisions across the platform.
 
 :::note
-These five priorities represent the architectural baseline derived from BookWorm's domain invariants and codebase practices. Numerical latency, throughput, availability, and recovery budgets remain proposed pending formal stakeholder sign-off.
+The priorities describe the current architectural baseline. Numerical service targets require formal stakeholder approval.
 :::
 
 ## Prioritized quality goals
 
-| Priority | Quality goal         | Scenario and expected response                                                                                                                                                                                           | What it protects                                                                    | Verification evidence and mechanisms                                                                                                                                                                                             | Detailed scenarios |
-| :------- | :------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------- |
-| **1**    | **Correctness**      | When a customer checks out, **Ordering API** reads the persisted `Basket` and current **Catalog** facts over gRPC. A missing book blocks order creation; an accepted checkout creates one `Order` owned by **Ordering**. | Purchase accuracy, authoritative pricing, and single ownership of accepted orders   | **TUnit** unit tests (`BookWorm.Ordering.UnitTests`, `BookWorm.Basket.UnitTests`), checkout invariant assertions, and purchase-time snapshot validation                                                                          | `QR-01`, `QR-02`   |
-| **2**    | **Interoperability** | When one bounded context requires data or reactions from another, it uses an explicit, owned REST, gRPC, or Kafka contract reviewed for compatibility before consumers adopt changes.                                    | Producer/consumer accountability and safe cross-context evolution                   | **PactNet** contract tests (`tests/pacts/`, 8 pact files across 7 contract test projects), Protocol Buffer linting/compatibility checks, explicit `ApiVersions.V1` versioning                                                    | `QR-03`            |
-| **3**    | **Deployability**    | When a change stays inside one service and preserves contract compatibility, that service builds, tests, and deploys without forcing unrelated services to release in lockstep.                                          | Release independence and lower cross-team deployment coordination                   | Independent deployable service projects (`src/Services/`), **Aspire** 17 container definitions (`aspire deploy`), and affected-only frontend CI builds (`turbo` `--affected`)                                                    | `QR-04`            |
-| **4**    | **Modifiability**    | When a business rule changes, the owning context updates its behavior and schema without modifying another context's database or leaking domain logic across boundaries.                                                 | Bounded-context autonomy and localized change blast radius                          | Per-context data isolation, **BookWorm.ArchTests** (`TngTech.ArchUnitNET.TUnit`), and frontend `turbo boundaries` enforcement                                                                                                    | `QR-05`, `QR-17`   |
-| **5**    | **Operability**      | When a scheduled job, saga step, or email delivery fails, operators pinpoint the owning capability and actual execution state without misinterpreting delivery failures as failed business transactions.                 | Fast incident attribution and separation of delivery telemetry from business status | OpenTelemetry W3C traces (`x-request-id`), Quartz Dashboard execution history (`schedulerdb`), Durable Task orchestration state (`finance-taskhub`), PostgreSQL/Cosmos outboxes, and per-service Kafka dead-letter queues (DLQs) | `QR-06`            |
+| Priority | Quality goal         | Scenario and expected response                                                                                         | What it protects                                           | Verification evidence and mechanisms                  | Detailed scenarios |
+| :------- | :------------------- | :--------------------------------------------------------------------------------------------------------------------- | :--------------------------------------------------------- | :---------------------------------------------------- | :----------------- |
+| **1**    | **Correctness**      | Checkout verifies basket items against current catalog information. Missing or unavailable books block order creation. | Accurate purchases and one clear owner for accepted orders | Automated checkout tests and purchase-detail checks   | `QS-01`, `QS-02`   |
+| **2**    | **Interoperability** | One area communicates with another through a documented, compatible interface.                                         | Clear responsibility and safe independent changes          | Contract tests and compatibility checks               | `QS-03`            |
+| **3**    | **Deployability**    | A compatible change can be released without unnecessarily releasing unrelated areas.                                   | Independent releases and lower coordination cost           | Automated builds, tests, and deployment checks        | `QS-04`            |
+| **4**    | **Modifiability**    | A business rule changes within its owning area without changing another area's records or rules.                       | Localized changes and bounded responsibility               | Data separation and architecture checks               | `QS-05`, `QS-17`   |
+| **5**    | **Operability**      | Failed work is traceable to the responsible area and does not appear to reverse accepted business results.             | Faster diagnosis and clear incident ownership              | Execution history, traces, and failed-message records | `QS-06`            |
 
 ## Governing trade-offs
 
 - **Correctness over convenience:** Checkout never trusts client-supplied book prices or bypasses **Catalog** validation to reduce latency.
 - **Explicit contracts over shared state:** Separate persistence across **Catalog**, **Shopping**, **Ordering**, **Reviews**, **Conversational**, and **Platform** adds contract maintenance overhead, but keeps dependencies visible and independently testable.
-- **Delivery state is not business completion:** Background job failures in **Scheduler**, retry exhaustion in **Finance**, or SMTP errors in **Notification** (a stateless Kafka worker with Redis idempotency and a native DLQ) are operational telemetry—they do not silently rewrite an accepted `Order`'s business state.
-- **Current verification gap:** Automated unit tests (9 projects), Pact messaging contract tests (7 projects), architecture tests (`BookWorm.ArchTests`), and frontend unit/Playwright BDD tests exist in the repository, while backend `.IntegrationTests` projects are not yet implemented in `BookWorm.slnx`.
+- **Delivery state is not business completion:** A failed scheduled job or email does not, by itself, change an accepted order.
+- **Current verification gap:** Unit, contract, architecture, and frontend checks exist. Backend integration test coverage is still incomplete.
 
 ## Related architecture documentation
 
 - [[doc|arc42/01-introduction-and-goals/002-requirements-overview]] — Essential requirements (`BW-R1`-`BW-R8`) aligned to these goals.
 - [[doc|arc42/02-architecture-constraints]] — Engineering and boundary rules enforcing these goals.
 - [[doc|arc42/04-solution-strategy]] — Architectural approaches addressing Priorities 1-5.
-- [[doc|arc42/10-quality-requirements]] — Full quality tree and 17 measurable scenarios (`QR-01`-`QR-17`).
+- [[doc|arc42/10-quality-requirements]] — Quality attributes and 17 measurable scenarios (`QS-01`-`QS-17`).
 - [[doc|arc42/11-risks-and-technical-debt]] — Open exposures and missing verification evidence.

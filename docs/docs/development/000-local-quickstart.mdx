@@ -1,167 +1,58 @@
 ---
-title: "Run BookWorm locally"
-summary: "Clone BookWorm, install the toolchain with mise, start the Aspire AppHost, and verify the dashboard, Storefront, and API Gateway locally."
+title: Run BookWorm locally
+summary: The shortest path from a prepared machine to a responding local BookWorm application.
 owners:
-  - contributor-team
+  - architecture-enabling-team
 ---
 
-In this tutorial, you clone BookWorm, install its pinned toolchain with `mise`, launch the full distributed application through Aspire 17, and confirm that the Aspire Dashboard, Storefront, and API Gateway respond locally. Plan for 10 to 15 minutes on your first run while Docker pulls backing container images.
+Follow these five steps to start the application. With Docker ready and images cached, this path is designed to take under 10 minutes; first-time image downloads can take longer.
 
-:::note
-If you plan to contribute pull requests rather than run BookWorm for evaluation, follow [[doc|development/002-getting-started]] to configure a fork, `upstream` remote, and optional Protobuf/Copilot tools.
-:::
+<Admonition type="info" title="Before you begin">
+	Have Git, mise, and Docker Desktop (or a compatible container runtime) installed. Keep Docker
+	running while the application starts.
+</Admonition>
 
-## Prerequisites
+<Steps>
+<Step title="Clone the repository">
 
-- [Git](https://git-scm.com/) installed on your machine
-- [mise](https://mise.jdx.dev/) installed and activated in your shell
-- [Docker Desktop](https://www.docker.com/get-started/) (or a compatible container runtime) installed and **running**
-- At least 16 GB RAM recommended for local containers (the dev container specifies 8 CPUs, 32 GB RAM, 64 GB storage for full-stack runs)
-- Access to a Microsoft Entra ID tenant and Microsoft Foundry project if you want to exercise authenticated checkout or AI chat locally
-
-## 1. Clone the repository
-
-Clone BookWorm and move into the repository root:
-
-<CodeGroup>
+Replace the placeholders with your repository URL and preferred local directory:
 
 ```bash
-git clone https://github.com/foxminchan/BookWorm.git
-cd BookWorm
+git clone <repository-url>
+cd <repository-directory>
 ```
 
-</CodeGroup>
+</Step>
+<Step title="Install the pinned toolchain">
 
-Expected output:
-
-<CodeGroup>
-
-```text
-Cloning into 'BookWorm'...
-Receiving objects: 100% (...), done.
-```
-
-</CodeGroup>
-
-## 2. Install the pinned toolchain
-
-Use `mise` to install the repository's pinned tools defined in `mise.toml`, `global.json`, and `.bun-version` (.NET SDK `11.0.100`, Aspire CLI `17`, Bun `1.4.4`, Node `26`, `uv`, Azure CLI `2`, and GitHub CLI `2`):
-
-<CodeGroup>
+From the repository root, install the versions selected for the project:
 
 ```bash
 mise install
 ```
 
-</CodeGroup>
-
-Verify that the pinned .NET SDK, Aspire CLI, and Bun are active:
-
-<CodeGroup>
-
-```bash
-dotnet --version
-aspire --version
-bun --version
-```
-
-</CodeGroup>
-
-Expected output:
-
-<CodeGroup>
-
-```text
-11.0.100
-17.0.0
-1.4.4
-```
-
-</CodeGroup>
-
-## 3. Restore dependencies and initialize hooks
-
-Run the `prepare` task to restore NuGet packages, restore local .NET tools (`husky`, `csharpier`, `dotnet-ef`, `dotnet-outdated-tool`), and register the repository's Git hooks:
-
-<CodeGroup>
+</Step>
+<Step title="Prepare dependencies and Git hooks">
 
 ```bash
 mise run prepare
 ```
 
-</CodeGroup>
-
-Install frontend dependencies for the three Next.js 16 apps (`Storefront`, `Commerce`, and `Backoffice`):
-
-<CodeGroup>
-
-```bash
-cd src/Clients
-bun install
-cd ../..
-```
-
-</CodeGroup>
-
-**Verify:** Both commands exit with status `0` and create no error output.
-
-## 4. Start BookWorm with Aspire
-
-Confirm Docker is running, then start the Aspire AppHost from the repository root (`mise run run` executes `aspire start`):
-
-<CodeGroup>
+</Step>
+<Step title="Start the application">
 
 ```bash
 mise run run
 ```
 
-</CodeGroup>
+Wait for Aspire to finish starting the resources. The dashboard address is printed in the terminal.
 
-The AppHost uses local developer credentials for Microsoft Entra ID applications and generated defaults for the HMAC secrets used by `basket`, `ordering`, and `notification`. Run mode uses Mailpit rather than SMTP provider settings. Other parameters may depend on local configuration; the exact interactive prompt sequence and terminal output are not asserted here because this task does not run the app.
+</Step>
+<Step title="Verify the dashboard and application">
 
-Expected output (summary of the Aspire launch banner):
+Open the printed dashboard address, confirm the required resources report **Running**, then open the public application endpoint shown for the gateway. Confirm that the application responds.
 
-<CodeGroup>
+</Step>
+</Steps>
 
-```text
-Login to the dashboard at https://localhost:17290/login?t=<one-time-token>
-```
-
-</CodeGroup>
-
-Where:
-
-- `<one-time-token>`: Single-use login token printed by Aspire in your terminal for the local dashboard session.
-
-## 5. Verify the running services in the Aspire Dashboard
-
-1. Open the Aspire Dashboard URL printed in your terminal (default HTTPS port `17290`, or HTTP port `15061`).
-2. Confirm that backing infrastructure containers reach the **Running** state:
-   - **Data:** `postgres` (with pgAdmin), `redis` (with RedisInsight), `vectordb` (Qdrant), `cosmos` (Cosmos DB emulator), `storage` (Azurite + Azure Storage Explorer)
-   - **Messaging & email:** `broker` (Kafka + Kafka UI), `mailpit` (local SMTP test UI)
-   - **AI & privacy:** `presidio-analyzer`, `presidio-anonymizer`
-3. Confirm that backend services (`catalog`, `basket`, `ordering`, `rating`, `chatting`, `mcptools`, `notification`, `finance`, `catalog-ingestion`), `gateway`, and all three frontend apps (`storefront`, `commerce`, `backoffice`) report **Running**.
-
-:::note
-`scheduler` is configured with `.WithExplicitStart()` in `AppHost.cs` so background Quartz batch jobs do not start automatically. Click **Start** on `scheduler` in the Aspire Dashboard when you want to test scheduled vector ingestion.
-:::
-
-## 6. Open Storefront and explore API documentation
-
-1. In the Aspire Dashboard under the **edge** resource group, select the public **gateway** endpoint URL.
-2. Confirm that **Storefront** loads the BookWorm catalog homepage with seeded development books (seeded automatically by Catalog API in Development mode).
-3. In the Aspire Dashboard under the **tooling** group, open **Scalar** to inspect live OpenAPI v1 documentation for `catalog`, `basket`, `ordering`, `rating`, and `chatting`, or open **MCP Inspector** to inspect `mcptools`.
-
-**Verify:** You see the seeded book catalog in Storefront and can inspect `GET /api/v1/books` in Scalar with an `HTTP 200 OK` response.
-
-## What you learned
-
-- How `mise` pins .NET 11, Aspire 17, Bun 1.4.4, and Node 26 across the repository.
-- How `mise run run` starts all backing containers, 10 backend projects, API Gateway, and 3 Next.js microfrontends from one Aspire AppHost.
-- Where to inspect live service health, OpenAPI endpoints (Scalar), MCP tools (MCP Inspector), and local emails (Mailpit) in the Aspire Dashboard.
-
-## Next steps
-
-- [[doc|development/007-troubleshoot-local-dev]] — Resolve container, port, Entra ID, or Bun startup failures.
-- [[doc|development/002-getting-started]] — Configure a fork, `upstream` remote, and optional tools (`buf`, Copilot CLI).
-- [[doc|development/001-developer-onboarding]] — Learn how BookWorm's six bounded contexts and microservices fit together.
+If a step fails, start with [[doc|development/007-troubleshoot-local-dev]]. For tool choices, secrets, and workspace-specific setup, see [[doc|development/002-getting-started]].

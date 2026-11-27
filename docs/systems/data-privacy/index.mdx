@@ -7,9 +7,9 @@ summary: |
   information in the Reviews feedback-summarization and Chat agent pipelines.
 scope: external
 owners:
-  - contributor-team
+  - platform-engineering-team
 services:
-  - id: PresidioAPI
+  - id: presidio-api
     version: 1.0.0
 badges:
   - content: External
@@ -18,43 +18,42 @@ badges:
     icon: GlobeAltIcon
 ---
 
-## Context Diagram
+## System Purpose & Boundary
 
-The [[system|rating-system]] uses Presidio through its PII middleware to
-detect and redact sensitive text in the [[agent|rating-agent]] chat pipeline
-before it reaches the model or the output.
+The Data Privacy system provides external personally identifiable information (PII) detection and anonymization for BookWorm's AI agent pipelines using Microsoft Presidio. It serves internal AI-hosting systems—[[system|chat-system]] and [[system|rating-system]]—by screening prompts and model responses before they reach foundation models or end users. Owning customer feedback, storing conversation transcripts, and modifying persisted domain records are explicitly out of scope.
 
-The [[domain|conversational]] agents also use this middleware:
-[[agent|qa-agent]] and [[agent|book-agent]] register it directly, while
-[[agent|book-catalog-researcher]] and [[agent|book-recommendation-researcher]]
-reuse Book Agent's wrapped chat client.
+:::warning
+BookWorm's PII middleware executes **fail-closed**: any timeout, connection error, or non-success response from Presidio aborts the AI turn rather than sending unscreened text to foundation models or customers.
+:::
+
+## Contained Capabilities
+
+| Service / Agent           | Role in System                                                                      | Primary Data Store | Interaction Style (Sync / Async) |
+| :------------------------ | :---------------------------------------------------------------------------------- | :----------------- | :------------------------------- |
+| [[service\|presidio-api]] | External HTTP sidecar boundary exposing PII entity detection and text anonymization | None (Stateless)   | Sync (Internal HTTP)             |
+
+## External Interactions & Trust Boundaries
+
+- **AI pipeline consumers:** Invoked deterministically by PII middleware on behalf of [[agent|qa-agent]], [[agent|book-agent]], [[agent|book-catalog-researcher]], and [[agent|book-recommendation-researcher]] in [[system|chat-system]], and [[agent|rating-agent]] in [[system|rating-system]].
+- **Scoped runtime usage:** BookWorm's integration targets email addresses, phone numbers, and credit-card numbers; broader upstream Presidio capabilities do not imply all recognizers are enabled in BookWorm.
+- **No public exposure:** Presidio sidecars are internal-only and not routed through the public API Gateway; raw text and detected PII must never be written to routine logs.
+
+## System Visualizations
+
+### System Context
 
 <ContextDiagram />
 
-## Responsibilities and boundary
-
-Presidio provides PII detection and anonymization through
-[[service|PresidioAPI]]. The Reviews system retains ownership of
-[[entity|feedback]], its database, and the generated read-time summary.
-Privacy processing does not modify persisted feedback or Catalog's rating
-projection.
-
-The documented Reviews integration covers email addresses, phone numbers,
-and credit-card information. Presidio's broader API capabilities do not imply
-that all of them are enabled in BookWorm.
-
-## Operational considerations
-
-- Treat text sent for privacy processing as sensitive; do not log raw reviews,
-  chat text, or detected PII.
-- Configure the deployed Presidio endpoints independently of the example
-  servers in the upstream OpenAPI contract.
-- Monitor detection and anonymization failures without recording sensitive
-  payloads. Privacy-processing errors should remain explicit rather than
-  silently bypassing the middleware.
-- PII detection depends on configured recognizers and policies; it is not a
-  guarantee that every sensitive value will be identified.
-
-## Resource Diagram
+### Component Topology
 
 <NodeGraph />
+
+### Architecture Decisions
+
+<ADRTable />
+
+## Related Documentation
+
+- [[service|presidio-api]] — External sidecar endpoints, consumers, and fail-closed semantics.
+- [[system|chat-system]] — Conversational AI consumer of PII screening.
+- [[system|rating-system]] — Review summarization consumer of PII screening.

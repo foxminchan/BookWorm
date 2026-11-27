@@ -2,11 +2,11 @@
 id: ordering
 name: Ordering
 summary: |
-  Creates Orders from a buyer's current basket and owns order state changes
-  from New to Completed or Cancelled.
+  Creates durable Orders from a buyer's current basket, locks purchase-time pricing,
+  and owns order lifecycle transitions from New to Completed or Cancelled.
 version: 1.0.0
 owners:
-  - business-strategy
+  - commerce-fulfillment-team
 systems:
   - id: order-system
     version: 1.0.0
@@ -15,8 +15,12 @@ systems:
 flows:
   - id: order-lifecycle
     version: 1.0.0
+  - id: user-checkout
+    version: 1.0.0
 diagrams:
   - id: order-lifecycle
+    version: 1.0.0
+  - id: checkout-interaction
     version: 1.0.0
 entities:
   - id: order
@@ -36,76 +40,64 @@ badges:
     icon: ShieldCheckIcon
 ---
 
-Ordering is BookWorm's Core domain for committed customer purchases (`Buyer`, `Order`, `Order Item`) and their business lifecycle (`New` → `Completed` or `Cancelled`). It consists of two services: `Ordering API`, which owns authoritative order state in PostgreSQL (`orderingdb` with EF Core and Marten event sourcing), and `Finance`, an Azure Functions and Durable Task Scheduler saga coordinating post-checkout basket cleanup and customer email commands.
+## Business Purpose & Boundary
 
-## Scope and constraints
+[[domain|ordering]] is BookWorm's Core bounded context for committed customer purchases ([[entity|buyer]], [[entity|order]], [[entity|order-item]]) and their business lifecycle (`New` → `Completed` or `Cancelled`). It accepts checkouts by locking purchase-time pricing onto immutable order lines, maintains buyer profiles and delivery addresses, projects real-time order summaries, and orchestrates post-checkout basket cleanup and customer email triggers through [[service|order-orchestration]]. Explicitly **out of scope** are pre-order mutable baskets ([[domain|shopping]]), live catalog descriptions ([[domain|catalog]]), external payment settlement, physical shipping execution, and email rendering or transport ([[domain|platform]]).
 
-- **In scope:** Buyer profiles and delivery addresses, order creation from an authenticated basket with locked purchase-time pricing, order lifecycle state transitions, Marten `OrderSummary` dashboard projections, and post-checkout Finance orchestration.
-- **Out of scope:** Pre-order mutable baskets (`Shopping`), live book catalog descriptions (`Catalog`), external payment-provider settlement, physical shipping execution, and email rendering/transport (`Platform`).
-- **Key constraints:** Only explicit Ordering commands change an order's business status; Finance saga retries, timeouts, and Notification outcomes never mark an order `Completed` or `Cancelled`.
+:::warning
+Only explicit Ordering commands transition an [[entity|order]]'s business status. Post-checkout orchestration retries, timeouts, and [[domain|platform]] email delivery outcomes never mark an order `Completed` or `Cancelled`.
+:::
 
-## Context and container view
+## Core Responsibilities & Capabilities
 
-This architecture view shows how customers and administrators interact with Ordering and how Ordering coordinates with Shopping, Catalog, Finance, and Platform.
+| Capability                                 | Owning Service / Agent           | Primary Entities                          |
+| :----------------------------------------- | :------------------------------- | :---------------------------------------- |
+| **Order Creation & Lifecycle Transitions** | [[service\|order-api]]           | [[entity\|order]], [[entity\|order-item]] |
+| **Buyer & Delivery Address Management**    | [[service\|order-api]]           | [[entity\|buyer]]                         |
+| **Order Summary Projections**              | [[service\|order-api]]           | [[entity\|order]]                         |
+| **Post-Checkout Saga Orchestration**       | [[service\|order-orchestration]] | [[entity\|order]]                         |
+
+## Cross-Domain Interactions (Context Map)
+
+| Neighboring Domain       | Direction                            | Integration Mechanism     | Business Data Exchanged                                                                 |
+| :----------------------- | :----------------------------------- | :------------------------ | :-------------------------------------------------------------------------------------- |
+| **[[domain\|shopping]]** | Upstream (`Shopping` → `Ordering`)   | Sync (gRPC)               | Customer basket book IDs and quantities fetched at checkout                             |
+| **[[domain\|catalog]]**  | Upstream (`Catalog` → `Ordering`)    | Sync (gRPC)               | Current unit and promotional prices locked onto [[entity\|order-item]] lines            |
+| **[[domain\|shopping]]** | Downstream (`Ordering` → `Shopping`) | Async (Commands & Events) | [[command\|PlaceOrderCommand]] for basket cleanup; completion or failure outcome events |
+| **[[domain\|platform]]** | Downstream (`Ordering` → `Platform`) | Async (Commands)          | Order placement, completion, and cancellation email notification commands               |
+
+:::note
+**Checkout Consistency & Compensation:** Concurrent checkout submissions are serialized using buyer-scoped distributed locking and request idempotency keys. If post-checkout basket cleanup fails after bounded retries, [[service|order-orchestration]] issues a compensation command so [[service|order-api]] soft-deletes the order and suppresses confirmation emails.
+:::
+
+## Ubiquitous Language Highlights
+
+- **Buyer:** The named person associated with one or more orders, holding a delivery address distinct from [[domain|shopping]]'s customer identifier.
+- **Order:** The durable purchase record beginning in `New` and transitioning once to a terminal state (`Completed` or `Cancelled`).
+- **Order Item & Order Total:** Each line records a book identifier, positive quantity, and locked purchase-time price; the order total is strictly the sum of all line totals.
+- **New / Completed / Cancelled:** Explicit lifecycle states governing when orders are active versus terminally closed.
+
+## Architecture Visualizations
+
+<NodeGraph />
+
+<EntityMap />
+
+### Ordering Context Overview
 
 <LikeC4View viewId="orderingContext" project="ordering" />
 
-## Building block view
-
-| Building block                | Bounded context | Technology                                             | Owned state / responsibility                                                                                                                                                       | Source path                               |
-| :---------------------------- | :-------------- | :----------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------- |
-| **Ordering API** (`ordering`) | Ordering        | .NET 11 Minimal API + EF Core + Marten                 | Authoritative `Buyer`, `Order`, `Order Item` persistence (`orderingdb`), Marten `OrderSummary` projection, SSE dashboard (`/api/v1/dashboard`), gRPC clients to Basket and Catalog | `src/Services/Ordering/BookWorm.Ordering` |
-| **Finance** (`finance`)       | Ordering        | Azure Functions (`Azure.Functions.Sdk`) + Durable Task | `OrderOrchestrator` saga in `finance-taskhub` coordinating basket cleanup retries, failure compensations, and Notification email commands (no PostgreSQL database)                 | `src/Services/Finance/BookWorm.Finance`   |
-
-### API surface (`/api/v1`)
-
-| Route group         | Purpose                                                          | Authorization                                                                           |
-| :------------------ | :--------------------------------------------------------------- | :-------------------------------------------------------------------------------------- |
-| `/api/v1/orders`    | Create, list, retrieve, complete, cancel, and soft-delete orders | `customer` or `admin` + `ordering_read`/`ordering_write`; idempotency keys on mutations |
-| `/api/v1/buyers`    | Create, retrieve, list, delete buyers, and update buyer address  | Authenticated buyer or `admin` policy                                                   |
-| `/api/v1/dashboard` | Order summary metrics including SSE/streaming updates            | `admin` policy                                                                          |
-
-## Runtime view
-
-This sequence illustrates the checkout handoff and Finance basket-cleanup boundary.
+### Checkout Handoff & Cleanup Interaction
 
 <MermaidFileLoader file="mermaids/Ordering-diagram-2.mmd" />
 
-### Lifecycle invariants
+## Related Governance & Documentation
 
-- Every order contains one or more `Order Item` lines with positive quantities and non-negative purchase-time prices (sale price when active, otherwise regular price).
-- `Order Total` equals the sum of all item line totals (`price * quantity`).
-- Every order begins in `New` and transitions once to terminal `Completed` or `Cancelled`.
-- Moving an order to `Completed` or `Cancelled` publishes `OrderStatusChangedToCompleteIntegrationEvent` or `OrderStatusChangedToCancelIntegrationEvent`, prompting Finance to complete its saga and send `CompleteOrderCommand` or `CancelOrderCommand` to Notification when contact details exist.
-- If Finance exhausts basket-cleanup retries, Finance closes its own saga and can emit a cancellation email without setting the `Order`'s business status to `Cancelled`.
-
-## Deployment and cross-cutting concerns
-
-- **Hosting and ingress:** `ordering` runs behind YARP (`/ordering/{**remainder}`); `finance` runs as an internal Azure Functions Container App with no public HTTP endpoint, using Azure Storage Blob Data Owner for Functions host state and Durable Task Scheduler (`finance-taskhub`) for saga state.
-- **Security and privacy:** Microsoft Entra ID JWT policies enforce `customer` and `admin` access boundaries; HMAC key (`HMAC__Key`) protects internal signatures; Redis distributed locks (`order-cache`) and `IRequestManager` guard against duplicate order creation.
-- **Observability and resilience:** OpenTelemetry correlates HTTP, gRPC, Marten, Durable Task, and Kafka spans by `OrderId`; Wolverine routes exhausted Ordering listeners to `bookworm.{env}.ordering.dead-letter-queue`.
-
-## Quality scenarios and known risks
-
-| Quality attribute / risk | Scenario or exposure                              | Current mitigation or gap                                                                                                                                                                                           |
-| :----------------------- | :------------------------------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Consistency**          | Concurrent checkout clicks or retried requests    | Redis Buyer-scoped distributed locks + HTTP idempotency keys + Wolverine PostgreSQL outbox/inbox                                                                                                                    |
-| **Resilience**           | Basket deletion fails or times out after checkout | Bounded Finance saga retries + explicit `DeleteBasketFailedCommand` soft-delete compensation                                                                                                                        |
-| **Delivery SLAs**        | External shipping/carrier delivery targets        | The repository tracks `docs/domains/BookWorm/subdomains/Ordering/systems/order-system/services/OrderAPI/sla.yaml`; its status is `draft`, and the carrier terms are marked `proposed`. It is not formally approved. |
-
-## Related architecture decisions
-
-| ADR                                      | Decision summary                                                                          | Status   |
-| :--------------------------------------- | :---------------------------------------------------------------------------------------- | :------- |
-| ADR: Finance Durable Task Scheduler      | Run Finance checkout sagas on Azure Functions + Durable Task Scheduler without PostgreSQL | Accepted |
-| ADR-BW-006: Service-owned business state | Keep `orderingdb` exclusive to Ordering API                                               | Proposed |
-| ADR-BW-008: Durable message handoffs     | Persist Ordering broker handoffs through Wolverine PostgreSQL outbox/inbox                | Proposed |
-
-## Related documentation
-
-- [[flow|order-lifecycle]] — Detailed state-transition walkthrough.
-- [[flow|user-checkout]] — End-to-end checkout, cleanup, and notification sequence.
-- [[domain|shopping]] — Upstream mutable basket boundary.
-- [[doc|arc42/12-glossary]] — Canonical `Order`, `Buyer`, and status definitions.
-
-<ArchitectureGraph />
+- [[system|order-system]] — Authoritative order persistence and [[service|order-api]].
+- [[system|finance-system]] — Durable post-checkout workflow and [[service|order-orchestration]].
+- [[flow|order-lifecycle]] — Order state transitions and downstream triggers.
+- [[flow|user-checkout]] — End-to-end checkout, cleanup, and notification workflow.
+- [[diagram|order-lifecycle]] — Order status transition model.
+- [[adr|adr-bw-006-service-owned-business-state]] — Service-owned persistence isolation.
+- [[adr|adr-bw-008-durable-message-handoffs]] — Durable inbox/outbox message handoffs.
+- [[doc|arc42/12-glossary]] — Canonical order, buyer, and lifecycle definitions.

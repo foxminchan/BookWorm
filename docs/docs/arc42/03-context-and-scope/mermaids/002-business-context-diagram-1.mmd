@@ -1,27 +1,29 @@
-%%{init: {'theme': 'base', 'themeVariables': {'background': '#f5f5f5', 'primaryColor': '#ffffff', 'primaryTextColor': '#2d3142', 'primaryBorderColor': '#2d3142', 'secondaryColor': '#ececec', 'secondaryBorderColor': '#4f5d75', 'tertiaryColor': '#fdf2ee', 'tertiaryBorderColor': '#bf4520', 'lineColor': '#4f5d75', 'textColor': '#2d3142', 'clusterBkg': '#f8f9fa', 'clusterBorder': '#bfc0c0', 'fontFamily': 'Geist, system-ui, sans-serif'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': {'fontFamily': 'Geist, system-ui, sans-serif', 'primaryColor': '#ffffff', 'primaryTextColor': '#2d3142', 'primaryBorderColor': '#2d3142', 'secondaryColor': '#e4e8ef', 'secondaryBorderColor': '#5a6580', 'tertiaryColor': '#f1f3f7', 'tertiaryBorderColor': '#6b7690', 'lineColor': '#6b7690', 'textColor': '#2d3142', 'edgeLabelBackground': '#ffffff', 'clusterBkg': '#f1f3f7', 'clusterBorder': '#6b7690'}}}%%
 flowchart LR
-	customer["Customers\n(Shoppers)"]
-	admin["Store Administrators\n(Merchandising & Support)"]
-	bookworm["BookWorm Platform\n(Online Bookstore)"]
-	entra["Microsoft Entra ID\n(Identity Provider)"]
-	foundry["Microsoft Foundry\n(AI Model Provider)"]
-	smtp["SendGrid / Mailpit\n(Email Delivery Provider)"]
+	customer["Customer"]
+	staff["Store Administrator"]
+	identity["Identity Provider"]
+	ai["AI Service"]
+	email["Email Delivery Provider"]
 
-	customer -->|"Browse, basket, checkout,\nreviews, chat questions"| bookworm
-	bookworm -->|"Catalog facts, order outcomes,\nAI guidance, review summaries"| customer
-	admin -->|"Catalog edits, order status\nupdates, review moderation"| bookworm
-	bookworm -->|"Operational dashboards,\norder & job status"| admin
-	bookworm <-->|"Sign-in requests &\nidentity / role claims"| entra
-	bookworm <-->|"Prompts, book text &\nAI answers, decisions, vectors"| foundry
-	bookworm <-->|"Order emails &\nSMTP relay acceptance"| smtp
+	bookworm["BookWorm<br/>Online Bookstore"]
+
+	customer -->|"Searches, submits basket, places order, asks questions, and submits reviews"| bookworm
+	bookworm -->|"Provides catalog information, basket status, order outcomes, recommendations, and review summaries"| customer
+
+	staff -->|"Updates catalog, approves order outcomes, and moderates reviews"| bookworm
+	bookworm -->|"Provides catalog worklists, order status, and review queues"| staff
+
+	identity -->|"Confirms user identity and assigns user roles"| bookworm
+	bookworm -->|"Requests sign-in and access confirmation"| identity
+
+	ai -->|"Returns recommendations, conversation responses, and review summaries"| bookworm
+	bookworm -->|"Provides book and feedback context for guidance"| ai
+
+	email -->|"Reports email delivery status"| bookworm
+	bookworm -->|"Sends order and account email content"| email
 
 	classDef focal fill:#fdf2ee,stroke:#bf4520,stroke-width:2px,color:#2d3142
-	classDef service fill:#ffffff,stroke:#2d3142,stroke-width:1.2px,color:#2d3142
-	classDef store fill:#ececec,stroke:#4f5d75,stroke-width:1.2px,color:#2d3142
-	classDef input fill:#eef1f6,stroke:#5a6580,stroke-width:1.2px,color:#2d3142
-	classDef ext fill:#f5f5f5,stroke:#949eb2,stroke-width:1px,stroke-dasharray:4 3,color:#4f5d75
+	classDef neighbor fill:#ffffff,stroke:#5a6580,stroke-width:1.5px,color:#2d3142
 	class bookworm focal
-	class customer,admin input
-	class entra,foundry,smtp ext
-	linkStyle 0 stroke:#bf4520,stroke-width:2px
-	linkStyle 1 stroke:#bf4520,stroke-width:2px
+	class customer,staff,identity,ai,email neighbor

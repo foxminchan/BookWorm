@@ -1,127 +1,59 @@
 ---
 title: Building Block View Level 2
-summary: White-box structures for selected BookWorm capabilities and services.
+summary: Static responsibilities, interfaces, and data ownership within BookWorm's major capabilities.
 owners:
-  - contributor-team
+  - architecture-enabling-team
 badges:
   - content: Architecture
     backgroundColor: blue
     textColor: blue
 ---
 
-This Level-2 white-box view refines BookWorm's edge tier, six backend bounded contexts, and shared foundation into their internal services, dedicated persistence stores, and repository source directories. Every store is owned by a single bounded context, even when multiple logical databases share a managed Azure server.
+This view opens the Level-1 capability blocks into their applications, services, and owned data stores. It describes static responsibilities and interfaces without detailing internal classes or code layers.
 
-## Level-2 internal architecture diagrams
+## Overview
 
-To preserve readability, BookWorm's Level-2 internals are split across two diagrams: commerce and operations contexts, and AI, reviews, and platform contexts.
+Related components are grouped by the capability or concern they support, with people and external dependencies kept outside those groups. The tables below provide the complete building-block inventory.
 
-### Commerce and ordering internals
-
-This diagram shows how Catalog, Shopping, and Ordering separate transactional storage, caching, vector indexing, and durable workflow orchestration.
+### Commerce and Data Ownership
 
 <LikeC4View viewId="bookwormCommerceContainers" project="deployment" />
 
-### AI, reviews, and platform internals
-
-This diagram shows how Reviews, Conversational, and Platform map to Cosmos DB, Azure Blob Storage, Presidio, Quartz PostgreSQL, and stateless Redis-guarded email delivery.
+### Discovery and Reviews
 
 <LikeC4View viewId="bookwormAIAndPlatformContainers" project="deployment" />
 
-## 5.2.1 Edge and frontends
+### Ordering and Operations
 
-The edge tier isolates browser ingress and customer journeys into a single YARP reverse proxy and three Next.js 16 microfrontends (MFEs) backed by 16 shared workspace packages under `src/Clients/packages/`.
+<LikeC4View viewId="bookwormOrderingAndOperations" project="deployment" />
 
-| Internal building block                 | Responsibility                                                                                                                                                    | Source location                                 |
-| :-------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------- |
-| **API Gateway** (`gateway`)             | Single public HTTP ingress routing `/catalog`, `/basket`, `/ordering`, `/rating`, `/chatting`, `/entra`, `/backoffice`, Commerce routes, and Storefront catch-all | `src/Aspire/BookWorm.AppHost/Extensions/Proxy/` |
-| **Storefront** (`@bookworm/storefront`) | Public catalog discovery, product details, AI chat (CopilotKit + Agent-User Interaction (AG-UI)), and customer Better Auth session owner                          | `src/Clients/apps/storefront/`                  |
-| **Commerce** (`@bookworm/commerce`)     | Authenticated child microfrontend handling `/basket`, `/checkout/*`, and `/account/*` (`assetPrefix: commerce-assets`)                                            | `src/Clients/apps/commerce/`                    |
-| **Backoffice** (`@bookworm/backoffice`) | Staff administration dashboard mounted at `/backoffice` for catalog, orders, customers, and reviews                                                               | `src/Clients/apps/backoffice/`                  |
+## Motivation
 
-## 5.2.2 Catalog
+The system groups applications, services, and stores by the business capability that owns their behavior and data. This keeps changes and scaling needs localized while contracts make cross-capability dependencies explicit.
 
-Catalog owns canonical book, author, category, and publisher records, product discovery, and derived book rating summaries.
+## Contained Building Blocks
 
-| Internal building block                       | Responsibility                                                                                                                                                                                                    | Source location                                                                                                     |
-| :-------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------ |
-| **Catalog API** (`catalog`)                   | Serves REST `/api/v1/{books,authors,categories,publishers}` and gRPC `book.v1.BookGrpcService`; executes hybrid search (Microsoft Foundry `Cohere.EmbedV40` + Qdrant) and consumes Reviews events                 | `src/Services/Catalog/BookWorm.Catalog/` (`Features/`, `Domain/`, `Grpc/`, `Infrastructure/`, `IntegrationEvents/`) |
-| **Catalog persistence and supporting stores** | PostgreSQL `catalogdb` (authoritative catalog state + Wolverine outbox/inbox in `wolverine` schema); Redis (FusionCache + idempotency); Azure Blob `catalog-blob` (book images); Qdrant `vectordb` (vector index) | `src/Services/Catalog/BookWorm.Catalog/Infrastructure/`                                                             |
-| **Catalog Ingestion** (`catalog-ingestion`)   | Kafka-triggered Azure Function (`ProcessVectorBatch` on `scheduler.process-vector-batch`) that reads changed catalog records from `catalogdb`, generates embeddings via Foundry, and upserts vectors into Qdrant  | `src/Services/Catalog/BookWorm.Catalog.Ingestion/`                                                                  |
+| Building Block                 | Responsibility (Blackbox)                                                                                                       | Key Interfaces / Exposed APIs                                                                                                                                                                                                                                                       |
+| :----------------------------- | :------------------------------------------------------------------------------------------------------------------------------ | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Edge and Frontends**         | Provides the public entry point and the customer and staff experiences.                                                         | Gateway routes browser requests to storefront, commerce, back-office, and capability APIs.                                                                                                                                                                                          |
+| **[[domain\|catalog]]**        | Owns book, author, category, publisher, and pricing information and makes books discoverable.                                   | [[service\|catalog-api]] exposes versioned HTTP and book gRPC interfaces; [[service\|catalog-ingestion]] maintains the derived search index. Owned data: [[container\|catalog-database]], [[container\|catalog-cache]], [[container\|catalog-blob]], [[container\|catalog-vector]]. |
+| **[[domain\|shopping]]**       | Owns customer baskets before checkout and provides basket information to Ordering.                                              | [[service\|basket-api]] exposes versioned HTTP and basket gRPC interfaces. Owned data: [[container\|basket-database]].                                                                                                                                                              |
+| **[[domain\|ordering]]**       | Owns accepted orders, purchase details, and official order status; coordinates post-checkout work separately from order status. | [[service\|order-api]] exposes order and staff operations; [[service\|order-orchestration]] coordinates post-checkout outcomes. Owned data: [[container\|order-database]] and [[container\|order-cache]].                                                                           |
+| **[[domain\|reviews]]**        | Owns customer feedback and makes review information available to bookstore experiences.                                         | [[service\|rating-api]] exposes feedback operations and an agent interface. Owned data: [[container\|rating-database]] and [[container\|rating-cache]].                                                                                                                             |
+| **[[domain\|conversational]]** | Provides guided book discovery and store assistance using catalog and review information.                                       | [[service\|chat-api]] provides the customer conversation interface; [[service\|mcp-server]] provides read-only catalog tools. Conversation data is held in [[container\|chat-session-blob]].                                                                                        |
+| **[[domain\|platform]]**       | Provides scheduled work and transactional email delivery for the bookstore.                                                     | [[service\|scheduler-service]] initiates scheduled work; [[service\|notification-api]] submits customer email. Owned state includes [[container\|scheduler-database]] and the order workflow's durable state.                                                                       |
+| **Shared Foundation**          | Provides common hosting, identity integration, diagnostics, resilience, and privacy capabilities without owning business data.  | Shared technical libraries and hosting integrations used by applications and services.                                                                                                                                                                                              |
 
-Because indexing runs asynchronously in `Catalog Ingestion`, catalog writes commit to `catalogdb` immediately while Qdrant search vectors converge on the next batch cycle.
+## Important Interfaces
 
-## 5.2.3 Shopping
+- Synchronous cross-capability calls use owned, versioned HTTP or gRPC contracts; asynchronous work uses owned event and command contracts.
+- Each capability remains authoritative for its own business data. Other capabilities use its interfaces rather than reading its stores directly.
+- Search vectors and catalog rating summaries are derived data and may lag behind authoritative catalog and review updates.
+- AI-assisted discovery and review summaries are advisory; they do not create or change baskets or orders.
 
-Shopping owns customer-scoped mutable baskets before checkout acceptance.
+## Related Views
 
-| Internal building block              | Responsibility                                                                                                                                                                                                                                                         | Source location                                                             |
-| :----------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------- |
-| **Basket API** (`basket`)            | Handles authenticated REST `/api/v1/baskets` (`customer` role) and gRPC `basket.v1.BasketGrpcService`; enriches basket reads via gRPC to `Catalog API`                                                                                                                 | `src/Services/Basket/BookWorm.Basket/` (`Features/`, `Grpc/`)               |
-| **Basket domain**                    | Enforces customer-scoped basket ownership and item quantity invariants                                                                                                                                                                                                 | `src/Services/Basket/BookWorm.Basket/Domain/`                               |
-| **Basket persistence and messaging** | Stores authoritative basket state in Azure Managed Redis (`IBasketRepository`, FusionCache, Redis idempotency guard; no SQL DB); consumes `PlaceOrderCommand` and publishes `BasketDeletedCompleteIntegrationEvent` / `BasketDeletedFailedIntegrationEvent` over Kafka | `src/Services/Basket/BookWorm.Basket/Infrastructure/`, `IntegrationEvents/` |
-
-## 5.2.4 Ordering
-
-Ordering splits authoritative order management from post-checkout cross-context orchestration.
-
-| Internal building block            | Responsibility                                                                                                                                                                                                                       | Source location                                                                                    |
-| :--------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------- |
-| **Ordering API** (`ordering`)      | Serves REST `/api/v1/{orders,buyers,dashboard}` (including Server-Sent Events (SSE) dashboard streaming); validates baskets and book details over gRPC; owns order lifecycle statuses (`New`, `Cancelled`, `Completed`)              | `src/Services/Ordering/BookWorm.Ordering/` (`Features/`, `Domain/`, `Grpc/`, `IntegrationEvents/`) |
-| **Ordering persistence and cache** | PostgreSQL `orderingdb` combining EF Core, Wolverine outbox/inbox, and **Marten** event store (`OrderSummary` live aggregation and Async Daemon `DaemonLockId = 44444`); Redis for FusionCache, idempotency, and distributed locking | `src/Services/Ordering/BookWorm.Ordering/Infrastructure/`                                          |
-| **Finance** (`finance`)            | Azure Functions app (`Azure.Functions.Sdk`) hosting `OrderOrchestrator` to coordinate post-checkout basket cleanup and order lifecycle emails over Kafka (does not process payments)                                                 | `src/Services/Finance/BookWorm.Finance/` (`Contracts/`, `Domain/`, `Features/Orders/`)             |
-| **Finance orchestration state**    | Azure Durable Task Scheduler (`durable-task-scheduler` / `finance-taskhub`) plus Azure Storage host state; **no PostgreSQL database**                                                                                                | `src/Aspire/BookWorm.AppHost/Infra/durable-task-scheduler.bicep`                                   |
-
-See [[doc|arc42/05-building-block-view/003-level-3]] for the internal component breakdown of `Finance`.
-
-## 5.2.5 Reviews
-
-Reviews owns individual customer `Feedback` records and AI-generated review summaries.
-
-| Internal building block          | Responsibility                                                                                                                                                                                                                        | Source location                                                                       |
-| :------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :------------------------------------------------------------------------------------ |
-| **Rating API** (`rating`)        | Serves REST `/api/v1/feedbacks` and Agent-to-Agent (A2A) gRPC (`MapGrpcA2A` + `/agents`); publishes `FeedbackCreatedIntegrationEvent` and `FeedbackDeletedIntegrationEvent`; compensates on `BookUpdatedRatingFailedIntegrationEvent` | `src/Services/Rating/BookWorm.Rating/` (`Features/`, `Domain/`, `IntegrationEvents/`) |
-| **Rating persistence and cache** | **Azure Cosmos DB** (`ratingdb` / `feedbacks` container partitioned by `/bookId`, EF Core Cosmos provider + `WolverineFx.CosmosDb`; **no PostgreSQL**); Redis (FusionCache + idempotency)                                             | `src/Services/Rating/BookWorm.Rating/Infrastructure/`, `Extensions/`                  |
-| **Rating Agent** (`rating`)      | Declarative Microsoft Agent Framework agent (`Agents/rating-agent.yaml`) governed by `Policies/rating-agent.yaml`, Presidio PII middleware, Entra Agent Identity (`ratingAgentId`), and read-only `MCP Tools` lookups                 | `src/Services/Rating/BookWorm.Rating/` (`Agents/`, `Policies/`)                       |
-
-## 5.2.6 Conversational
-
-Conversational delivers read-only customer discovery and Q&A using a multi-agent workflow and scoped Model Context Protocol (MCP) tools.
-
-| Internal building block       | Responsibility                                                                                                                                                                                                                                                          | Source location                                                                                   |
-| :---------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------ |
-| **Chat API** (`chatting`)     | Hosts `chat-workflow` over AG-UI (`/ag-ui`, `/agents`): input validation, `Microsoft-Decision-1` routing with human-in-the-loop (HITL) `RequestPort` disambiguation, specialist handoffs (`book`, `qa`, remote A2A `rating`) + sub-researchers, and response formatting | `src/Services/Chat/BookWorm.Chat/` (`Orchestration/`, `Agents/`, `Policies/`, `Skills/`)          |
-| **Chat session storage**      | **Azure Blob Storage** (`chatting-blob`, `BlobNamePrefix = "ag-ui/"`) storing AG-UI conversation sessions; **no PostgreSQL, Redis, or Kafka**                                                                                                                           | `src/Services/Chat/BookWorm.Chat/Extensions/`                                                     |
-| **MCP Tools** (`mcptools`)    | Stateless Streamable HTTP MCP server (`/mcp`, not behind YARP) exposing governed read-only Catalog tools (`search_catalog`, `get_book`, `list_categories`, `list_authors`) and prompts via gRPC to `Catalog API`                                                        | `src/Services/McpTools/BookWorm.McpTools/` (`Tools/`, `Prompts/`, `Policies/`)                    |
-| **Presidio privacy sidecars** | Internal `presidio-analyzer` and `presidio-anonymizer` containers (port `3000`) providing PII detection and redaction for `Chat API` and `Rating API`                                                                                                                   | `src/Integrations/BookWorm.Hosting.Presidio/`, `src/BuildingBlocks/BookWorm.Chassis/AI/Presidio/` |
-
-## 5.2.7 Platform
-
-Platform isolates recurring job scheduling and outbound email delivery from business contexts.
-
-| Internal building block            | Responsibility                                                                                                                                                                                                                                                                              | Source location                                                                                                       |
-| :--------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :-------------------------------------------------------------------------------------------------------------------- |
-| **Scheduler** (`scheduler`)        | Runs Quartz.NET (`jobs.json`) executing `ProcessVectorBatchJob` (every 5 minutes UTC, publishing `ProcessVectorBatchIntegrationEvent` to unprefixed Kafka topic `scheduler.process-vector-batch`) and `HeartbeatJob` (every 30 seconds UTC); paired with Entra-protected `quartz-dashboard` | `src/Services/Scheduler/BookWorm.Scheduler/` (`Jobs/`, `IntegrationEvents/`)                                          |
-| **Scheduler persistence**          | PostgreSQL `schedulerdb` storing Quartz triggers, job state, 30-day execution history (up to 100,000 entries), and Wolverine outbox/inbox                                                                                                                                                   | `src/Services/Scheduler/BookWorm.Scheduler/Extensions/`                                                               |
-| **Notification** (`notification`)  | Stateless Kafka consumer (`PlaceOrderCommand`, `CompleteOrderCommand`, `CancelOrderCommand`) rendering MJML templates (`Mjml.Net`) and sending SMTP email via `MailKit` (Mailpit locally, SendGrid SMTP in cloud) with HMAC validation; **no PostgreSQL database**                          | `src/Services/Notification/BookWorm.Notification/` (`Domain/`, `Templates/`, `IntegrationEvents/`, `Infrastructure/`) |
-| **Notification idempotency store** | Azure Managed Redis (`FusionCache` + 24-hour `IIntegrationEventIdempotencyGuard`) preventing duplicate order emails across Kafka redeliveries                                                                                                                                               | `src/Services/Notification/BookWorm.Notification/Extensions/`                                                         |
-
-## 5.2.8 Shared technical foundation
-
-Shared projects standardize infrastructure without introducing a shared business domain layer.
-
-| Building block                 | Responsibility                                                                                                                                                    | Source location                                                                       |
-| :----------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------ |
-| **Aspire AppHost**             | Distributed application topology, local emulators, YARP gateway, and Azure provisioning (`aspire deploy`)                                                         | `src/Aspire/BookWorm.AppHost/`                                                        |
-| **Service Defaults**           | OpenTelemetry metrics/tracing/logging, Kestrel HTTP/2 limits, budgeted HTTP retries, rate limiting, and Dev health/OpenAPI endpoints                              | `src/Aspire/BookWorm.ServiceDefaults/`                                                |
-| **Chassis**                    | Reusable AI governance/Presidio, FusionCache, CQRS behaviors (`Mediator.SourceGenerator`), EF helpers, endpoint discovery, Wolverine/Kafka, and Entra ID security | `src/BuildingBlocks/BookWorm.Chassis/`                                                |
-| **Constants and SharedKernel** | Canonical resource/role/API-version constants and DDD primitives (`Entity`, `ValueObject`, `IAggregateRoot`, `Decider`)                                           | `src/BuildingBlocks/BookWorm.Constants/`, `src/BuildingBlocks/BookWorm.SharedKernel/` |
-| **Presidio Hosting**           | Custom Aspire integration for `presidio-analyzer` and `presidio-anonymizer` containers                                                                            | `src/Integrations/BookWorm.Hosting.Presidio/`                                         |
-
-## Related architecture decisions
-
-| ADR                                     | Decision summary                                                                                             | Status   |
-| :-------------------------------------- | :----------------------------------------------------------------------------------------------------------- | :------- |
-| ADR-Rating-Cosmos-DB                    | Persist Rating feedback in Azure Cosmos DB (`ratingdb`/`feedbacks`) instead of PostgreSQL                    | Accepted |
-| ADR-Finance-Durable-Task-Scheduler      | Persist Finance orchestration in Azure Durable Task Scheduler instead of PostgreSQL                          | Accepted |
-| ADR-Notification-Stateless-Kafka-Worker | Run Notification as a stateless Kafka + MailKit worker with Redis idempotency instead of a PostgreSQL outbox | Accepted |
-| ADR-Chat-Blob-Sessions                  | Persist Chat AG-UI sessions in Azure Blob Storage (`chatting-blob`)                                          | Accepted |
+- [[doc\|arc42/05-building-block-view/001-whitebox-overall-system]] — Level-1 capability overview.
+- [[doc\|arc42/05-building-block-view/003-level-3]] — Detailed decomposition of checkout orchestration.
+- [[doc\|arc42/06-runtime-view]] — Runtime interactions between building blocks.
+- [[doc\|arc42/07-deployment-view]] — Deployment and infrastructure placement.

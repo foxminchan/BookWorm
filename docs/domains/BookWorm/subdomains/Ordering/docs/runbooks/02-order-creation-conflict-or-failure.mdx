@@ -10,115 +10,77 @@ badges:
     textColor: orange
 ---
 
-Use this runbook when `POST /api/v1/orders` returns `409 Conflict`, times out with an ambiguous outcome, fails during concurrent buyer checkouts, or encounters **Redis** (`redis`) availability errors. Following this sequence prevents accidental duplicate orders while keeping customer personal data out of incident records.
+## Trigger / Symptom & Blast Radius
 
-## Prerequisites
-
-- Read access to **Ordering API** (`GET /api/v1/orders`) using an authorized administrator or customer Microsoft Entra ID token.
-- Read access to **Aspire Dashboard** (locally) or **Azure Log Analytics** (Azure Container Apps) for `ordering` logs and traces.
-- Read-only access to **RedisInsight** (locally) or Azure Managed Redis metrics for `redis`.
-
-## Steps
-
-<Steps>
-<Step title="Capture minimal privacy-safe incident context">
-
-Record the authenticated buyer ID, `x-request-id` header value, UTC timestamp, environment, and observed HTTP status code. Exclude buyer street addresses, email addresses, and other personal data from incident tickets.
-
-</Step>
-<Step title="Check the authoritative order record in PostgreSQL via Ordering API">
-
-Before retrying any checkout request, query Ordering API to verify whether the order was persisted in `orderingdb`:
-
-<CodeGroup>
-
-```bash
-curl -sS -H "Authorization: Bearer <admin-token>" \
-  "https://<gateway-host>/ordering/api/v1/orders?buyerId=<buyer-id>&pageIndex=1&pageSize=10"
-```
-
-</CodeGroup>
-
-Where:
-
-- `<admin-token>`: Valid Microsoft Entra ID bearer token with the `admin` role and `ordering_read` scope.
-- `<gateway-host>`: API Gateway hostname (or local Aspire gateway address).
-- `<buyer-id>`: Authenticated customer's buyer UUID.
-
-If the matching order already exists, return its `orderId` to the caller and stop. Do not submit another `POST /api/v1/orders` request.
-
-</Step>
-<Step title="Distinguish idempotency conflicts from write-lock contention and rate limits">
-
-Inspect `ordering` logs filtered by `<request-id>` and `<buyer-id>`:
-
-- **`409 Conflict` (`"You have already requested this operation."`):** `IdempotencyEndpointFilter` found an existing Redis marker at key `POST:/api/v1/orders:<request-id>` (3600-second / 1-hour TTL). The marker records that an attempt was received—it is not a cached response and does not prove persistence succeeded. Note that `IdempotencyEndpointFilter` automatically deletes this key on unhandled exceptions or `>= 500` responses; a lingering key with no order typically indicates an in-flight request or an abrupt process crash.
-- **`InvalidOperationException` (`"Other process is already creating an order"`):** Another concurrent checkout for `<buyer-id>` held the buyer-scoped Redis distributed lock (`order-create:<buyer-id>`, 1-minute TTL) around the PostgreSQL write phase (after Basket and Catalog gRPC reads).
-- **`400 Bad Request` (`x-request-id header is required`):** Caller omitted the `x-request-id` header required on `POST` and `PATCH` endpoints.
-- **`429 Too Many Requests`:** Caller exceeded `PerUserRateLimit` (`30` token limit, `20` per `10s`); honor the `Retry-After` header.
-
-</Step>
-<Step title="Check Redis health without flushing coordination keys">
-
-If `ordering` logs show Redis connection timeouts or lock acquisition errors, check `redis` health and connectivity in Aspire Dashboard or Azure Managed Redis monitoring.
+`POST /api/v1/orders` returns `409 Conflict`, times out with an ambiguous outcome, fails during concurrent buyer checkouts, or encounters [[container|order-cache]] connectivity errors. Blast radius is active checkout submissions; committed orders in [[container|order-database]] remain safe.
 
 <Admonition type="danger">
-Do not flush Redis or bulk-delete idempotency or lock keys. Clearing Redis during an incident removes active duplicate-request markers and buyer write locks (`order-create:<buyer-id>`), risking duplicate orders across concurrent checkouts.
+	Never flush [[container|order-cache]] or bulk-delete idempotency or lock keys during an incident.
+	Clearing Redis removes active duplicate-request markers and buyer write locks, risking duplicate
+	orders across concurrent checkouts.
 </Admonition>
 
-</Step>
-<Step title="Apply the safe recovery action">
+## Pre-Flight Check
 
-- **Order exists in `orderingdb`:** Use the existing order ID; take no further write action.
-- **Idempotency marker exists, no order exists yet:** Retain the original `<request-id>` and verify in logs whether the original request is still writing or crashed. Do not immediately retry with a brand-new `x-request-id`, because a new key bypasses duplicate protection if the first write succeeded. Wait for log confirmation or the 1-hour marker expiration before authorizing a fresh checkout attempt.
-- **Redis unavailable:** Restore `redis` connectivity first (`orderingdb` remains intact as the authoritative store for committed orders), then re-check Step 2 before advising the customer to retry.
-- **Ambiguous outcome persists:** Escalate with `<buyer-id>`, `<request-id>`, UTC timestamp, and observed HTTP status to the Ordering maintainers (for API/persistence faults) or platform infrastructure owners (for Redis outages).
+Before retrying any checkout, query [[service|order-api]] to verify whether the order was already persisted in [[container|order-database]], and check Redis responsiveness:
+
+```bash
+curl -sS -H "Authorization: Bearer <ADMIN_TOKEN>" "https://<GATEWAY_HOST>/ordering/api/v1/orders?buyerId=<BUYER_ID>&pageIndex=1&pageSize=10"
+redis-cli -u "<REDIS_URL>" PING
+```
+
+## Quick Recovery Procedure
+
+<Steps>
+<Step title="Capture privacy-safe correlation context">
+
+Record `<BUYER_ID>`, `x-request-id`, UTC timestamp, `<ENV>`, and HTTP status code. Exclude street addresses, emails, and other PII from incident tickets.
+
+</Step>
+<Step title="Classify the conflict or error in Ordering logs">
+
+Stream [[service|order-api]] logs filtered by `<REQUEST_ID>` and `<BUYER_ID>`:
+
+```bash
+az containerapp logs show --name <SERVICE_NAME> --resource-group <RESOURCE_GROUP> --tail 150
+```
+
+**`409 Conflict`:** A 1-hour idempotency marker already exists for `<REQUEST_ID>`. If the order exists in Step 1, return its `orderId`; if no order exists, verify whether the original request is still in flight before retrying.
+
+**Concurrent write lock error:** Another checkout for `<BUYER_ID>` holds the 1-minute buyer write lock. Wait for it to finish and re-query `GET /api/v1/orders`.
+
+**`400 Bad Request`:** Client omitted the required `x-request-id` header.
+
+**`429 Too Many Requests`:** Per-user rate limit exceeded; honor `Retry-After`.
+
+</Step>
+<Step title="Restore Redis connectivity if unavailable">
+
+If logs show Redis timeouts, restore Azure Managed Redis connectivity without flushing keys, then re-verify [[container|order-database]] before advising the customer to retry.
 
 </Step>
 </Steps>
 
 ## Verification
 
-Confirm that Ordering API and Redis coordination are healthy:
-
-<CodeGroup>
+Confirm [[service|order-api]] responds with HTTP `200` and only a single order exists for the checkout attempt:
 
 ```bash
-curl -sS -o /dev/null -w "%{http_code}\n" \
-  -H "Authorization: Bearer <admin-token>" \
-  "https://<gateway-host>/ordering/api/v1/orders?buyerId=<buyer-id>&pageIndex=1&pageSize=1"
+curl -sS -o /dev/null -w "%{http_code}\n" -H "Authorization: Bearer <ADMIN_TOKEN>" "https://<GATEWAY_HOST>/ordering/api/v1/orders?buyerId=<BUYER_ID>&pageIndex=1&pageSize=1"
 ```
 
-</CodeGroup>
-
 Expected output:
-
-<CodeGroup>
 
 ```text
 200
 ```
 
-</CodeGroup>
+## Rollback / Escalation
 
-Confirm in `ordering` logs that:
-
-- Redis connection errors and lock acquisition exceptions have ceased.
-- Only one order record exists in `orderingdb` for the customer's checkout attempt.
-
-## Troubleshooting
-
-| Symptom                                                            | Cause                                                                                            | Fix                                                                                                                                                   |
-| :----------------------------------------------------------------- | :----------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `409 Conflict` with `"You have already requested this operation."` | Redis key `POST:/api/v1/orders:<request-id>` exists (1-hour TTL)                                 | Query `GET /api/v1/orders` first; reuse existing order ID if created, or wait for investigation/expiration rather than inventing a new `x-request-id` |
-| `400 Bad Request` mentioning `x-request-id`                        | Client omitted required `x-request-id` header on `POST` or `PATCH`                               | Generate a unique UUID in the client and send it in the `x-request-id` header                                                                         |
-| Failure with `"Other process is already creating an order"`        | Concurrent checkout for the same buyer holds Redis lock `order-create:<buyer-id>` (1-minute TTL) | Wait for the active checkout to finish, query `GET /api/v1/orders`, and retry only if no order was persisted                                          |
-| `429 Too Many Requests`                                            | Caller exceeded `PerUserRateLimit` (`30` burst / `20` per `10s`)                                 | Back off for the duration specified in the `Retry-After` response header                                                                              |
-| `500` / Redis timeout during checkout                              | `redis` unavailable for idempotency markers or distributed locks                                 | Restore `redis` availability; verify `orderingdb` before allowing retries; never flush Redis broadly                                                  |
+- **Rollback:** Do not manually delete persisted orders; use standard administrative cancellation (`PATCH /api/v1/orders/{id}/cancel`) if a duplicate order was created externally.
+- **Escalation:** Escalate persistent Redis outages to [[team|platform-engineering-team]]; escalate idempotency or lock bugs to [[team|commerce-fulfillment-team]].
 
 ## Related documentation
 
-- Ordering consistency and data ownership reference — Redis key TTLs, lock scope, and PostgreSQL authority.
-- Create and manage orders — Checkout flow and idempotency rationale.
-- How to troubleshoot stalled or failed checkout basket cleanup — Post-creation basket cleanup recovery.
-- Ordering change checklist reference — Invariants governing idempotency and buyer locks.
+- [[flow|user-checkout]] — Checkout validation and snapshot locking.
+- [[adr|adr-001-postgresql-order-system-of-record]] — Authoritative role of [[container|order-database]].

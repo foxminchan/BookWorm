@@ -65,7 +65,7 @@ model {
     }
     gateway = container 'API gateway' {
       technology 'YARP'
-      description 'Sole external ingress; routes public, authenticated customer, and back-office traffic to the appropriate clients and APIs.'
+      description 'Primary public customer ingress; routes customer and back-office traffic to the appropriate clients and APIs. The administrative job dashboard is exposed separately.'
       style {
         icon bootstrap:signpost-split
       }
@@ -153,6 +153,10 @@ model {
       technology 'Quartz'
       style {
         icon bootstrap:clock
+      }
+
+      dashboard = component 'Quartz Dashboard' {
+        description 'Separately exposed administrative interface for viewing scheduled jobs and execution history; protected by Microsoft Entra ID.'
       }
     }
     notification = container 'Notification' {
@@ -258,13 +262,23 @@ model {
       icon azure:ai-studio
     }
   }
+  containerRegistry = system 'Azure Container Registry' {
+    description 'Stores container images used by the hosted application workloads.'
+  }
+  logAnalytics = system 'Log Analytics workspace' {
+    description 'Collects application and platform telemetry; retention varies by environment.'
+  }
 
   customer -> bookworm.gateway 'accesses Storefront'
   staff -> bookworm.gateway 'accesses Back office'
   customer -> bookworm 'uses the online bookstore'
   staff -> bookworm 'administers the platform'
+  staff -> bookworm.scheduler.dashboard 'views scheduled jobs'
   bookworm -> identity 'authenticates users and service requests' {
     technology 'OpenID Connect and OAuth 2.0'
+  }
+  bookworm.scheduler.dashboard -> identity 'authenticates administrators' {
+    technology 'OpenID Connect'
   }
   bookworm -> foundry 'uses AI inference and embedding services' {
     technology 'HTTPS'
@@ -339,8 +353,8 @@ model {
   bookworm.ordering -> kafka 'publishes Order events and consumes outcomes'
   bookworm.finance -> kafka 'consumes triggers and publishes commands'
   bookworm.rating -> kafka 'publishes feedback events'
-  bookworm.scheduler -> kafka 'publishes ProcessVectorBatchIntegrationEvent'
-  bookworm.catalogIngestion -> kafka 'consumes ProcessVectorBatchIntegrationEvent'
+  bookworm.scheduler -> kafka 'publishes vector batch events'
+  bookworm.catalogIngestion -> kafka 'consumes vector batch events'
   bookworm.notification -> kafka 'consumes notification commands'
 
   bookworm.catalog -> identity 'verifies caller identity'
@@ -354,94 +368,108 @@ model {
 }
 
 deployment {
-  environment azure 'Azure (published by the Aspire AppHost)' {
+  environment azure 'Azure deployments (Development, Staging, Production)' {
     style {
       icon azure:resource-groups
     }
 
-    cloudPlatform aca 'Azure Container Apps environment (Consumption, min 1 replica)' {
+    cloudPlatform aca 'Azure Container Apps environment (Consumption)' {
       style {
         icon azure:container-apps-environments
       }
 
-      workloadGroup edge 'Client and gateway container apps' {
+      workloadGroup externalIngress 'Public application ingress' {
+        instanceOf bookworm.gateway
+        instanceOf bookworm.scheduler.dashboard
+      }
+
+      workloadGroup internalIngress 'Internal application ingress' {
         instanceOf bookworm.storefront
         instanceOf bookworm.commerce
         instanceOf bookworm.backoffice
-        instanceOf bookworm.gateway
-      }
-
-      workloadGroup services 'Service container apps' {
         instanceOf bookworm.catalog
-        instanceOf bookworm.catalogIngestion
         instanceOf bookworm.shopping
         instanceOf bookworm.ordering
-        instanceOf bookworm.finance
         instanceOf bookworm.rating
         instanceOf bookworm.chat
         instanceOf bookworm.mcp
         instanceOf bookworm.scheduler
+      }
+
+      workloadGroup backgroundWorkers 'Triggered and scheduled workers' {
+        instanceOf bookworm.catalogIngestion
+        instanceOf bookworm.finance
         instanceOf bookworm.notification
       }
 
-      workloadGroup supporting 'Supporting container apps' {
+      workloadGroup privacyServices 'Internal privacy services' {
         instanceOf bookworm.presidioAnalyzer
         instanceOf bookworm.presidioAnonymizer
       }
     }
 
-    managedService postgres 'Azure Database for PostgreSQL flexible server (Standard_D4ds_v5, ZoneRedundant HA)' {
-      style {
-        icon azure:azure-database-postgre-sql-server
+    cloudPlatform managed 'Azure-managed services' {
+      managedService postgres 'Azure Database for PostgreSQL Flexible Server' {
+        style {
+          icon azure:azure-database-postgre-sql-server
+        }
+
+        instanceOf bookworm.catalogDb
+        instanceOf bookworm.orderingDb
+        instanceOf bookworm.schedulerDb
       }
 
-      instanceOf bookworm.catalogDb
-      instanceOf bookworm.orderingDb
-      instanceOf bookworm.schedulerDb
-    }
+      managedService cosmos 'Azure Cosmos DB' {
+        style {
+          icon azure:azure-cosmos-db
+        }
 
-    managedService cosmos 'Azure Cosmos DB' {
-      style {
-        icon azure:azure-cosmos-db
+        instanceOf bookworm.ratingDb
       }
 
-      instanceOf bookworm.ratingDb
-    }
+      managedService dts 'Azure Durable Task Scheduler' {
+        style {
+          icon azure:function-apps
+        }
 
-    managedService dts 'Azure Durable Task Scheduler' {
-      style {
-        icon azure:function-apps
+        instanceOf bookworm.durableTaskScheduler
       }
 
-      instanceOf bookworm.durableTaskScheduler
-    }
+      managedService managedRedis 'Azure Managed Redis' {
+        style {
+          icon azure:azure-managed-redis
+        }
 
-    managedService managedRedis 'Azure Managed Redis' {
-      style {
-        icon azure:azure-managed-redis
+        instanceOf bookworm.redis
       }
 
-      instanceOf bookworm.redis
-    }
+      managedService storageAccount 'Azure Storage account' {
+        style {
+          icon azure:storage-accounts
+        }
 
-    managedService storageAccount 'Azure Storage account' {
-      style {
-        icon azure:storage-accounts
+        instanceOf bookworm.blobStorage
       }
 
-      instanceOf bookworm.blobStorage
-    }
+      managedService foundryService 'Microsoft Foundry' {
+        style {
+          icon azure:ai-studio
+        }
 
-    managedService foundryService 'Microsoft Foundry' {
-      style {
-        icon azure:ai-studio
+        instanceOf foundry
       }
 
-      instanceOf foundry
+      managedService registry 'Azure Container Registry' {
+        instanceOf containerRegistry
+      }
+
+      managedService telemetry 'Log Analytics workspace' {
+        instanceOf logAnalytics
+      }
     }
   }
 
-  externalSystems external 'Provided outside the AppHost' {
+  externalSystems external 'External providers' {
     style {
       icon bootstrap:globe
     }
@@ -451,4 +479,5 @@ deployment {
     instanceOf identity
     instanceOf smtp
   }
+
 }

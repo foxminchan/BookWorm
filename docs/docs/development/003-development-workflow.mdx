@@ -1,167 +1,55 @@
 ---
 title: Development Workflow
-summary: A practical workflow for making changes and using BookWorm's development agent skills.
+summary: The daily branch, implementation, verification, formatting, and synchronization loop for BookWorm changes.
 owners:
-  - contributor-team
+  - architecture-enabling-team
 badges:
-  - content: Onboarding
+  - content: Workflow
     backgroundColor: teal
     textColor: teal
 ---
 
-Use this workflow for every backend, frontend, or documentation change so your branch stays cleanly scoped, passes Husky pre-commit checks, and merges with minimal review friction.
+Keep each branch focused on one cohesive change. Use this loop for backend, frontend, and documentation work; the standards and test guides define the detailed rules for each area.
 
-## Prerequisites
+_Branching and Change Flow_
 
-- A prepared local workspace from [[doc|development/002-getting-started]] (`mise run prepare` completed so `.husky` hooks are active)
-- Familiarity with the bounded context you plan to modify (see [[doc|development/001-developer-onboarding]])
+<MermaidFileLoader file="mermaids/git-flow.mmd" />
 
-## Steps
+## Create a focused branch
 
-<Steps>
-<Step title="Sync `main` and create a focused branch">
-
-Update your local `main` branch from `upstream` and create a short-lived branch using `<type>/<short-description>` (`feature/`, `fix/`, or `docs/` in lowercase kebab-case):
-
-<CodeGroup>
+After configuring the `upstream` remote, update `main` and branch from it:
 
 ```bash
 git fetch upstream
-git checkout main
+git switch main
 git merge --ff-only upstream/main
-git checkout -b <branch-type>/<short-description>
+git switch -c feature/<short-description>
 ```
 
-</CodeGroup>
+Replace `<short-description>` with a concise lowercase-kebab-case name. Use `feature/`, `fix/`, or `docs/` to identify the change type.
 
-Where:
+## Implement and verify in small steps
 
-- `<branch-type>`: One of `feature`, `fix`, or `docs`.
-- `<short-description>`: Concise lowercase kebab-case summary (for example, `add-book-search`).
+1. Confirm the owning service, frontend, or documentation area before editing.
+2. Make one cohesive change and add or update focused tests when behavior changes.
+3. Run the smallest relevant build, test, and formatting tasks. See [[doc|development/005-testing]] for test commands and [[doc|development/004-engineering-standards]] for enforced rules.
+4. For rapid iteration, use `dotnet watch` from the relevant .NET project workspace or `bun run dev` from the relevant frontend workspace.
 
-</Step>
-<Step title="Review owning boundaries and repository instructions">
+Useful formatting tasks include `mise run format:cs`, `mise run format:fe`, and `mise run format:docs`. Use `mise run format` when you want to format every supported workspace.
 
-Before editing code:
+## Keep the branch current
 
-- Read `AGENTS.md` for repository-wide rules and check `.github/instructions/` for file-scoped rules.
-- Load any matching task skill from `.agents/skills/<skill-name>/SKILL.md` (for example, `tunit` when writing backend tests or `agent-framework-builder-dotnet` when modifying AI agents).
-- Confirm which bounded context owns the rule you are changing so you do not introduce direct cross-service dependencies.
-
-</Step>
-<Step title="Implement the change and run targeted checks">
-
-Follow [[doc|development/004-engineering-standards]]. During iteration, run the smallest relevant check for the files you modified rather than the full solution suite:
-
-- **Backend service change:** Run the target service's `.UnitTests` project (see [[doc|development/005-testing]]).
-- **Frontend change (`src/Clients`):** Run `bun run boundaries`, `bun run check-types`, `bun run lint`, and `bun run test` from `src/Clients` (see [[doc|frontend/004-testing-and-quality-gates]]).
-- **Documentation change (`docs/`):** Run `bun run check` and `bun run fitness` from `docs/`.
-
-<Admonition type="note">
-	Do not start the full Aspire AppHost (`mise run run`) for routine code or documentation edits
-	unless you need end-to-end runtime validation.
-</Admonition>
-
-</Step>
-<Step title="Format all modified files">
-
-From the repository root, run the unified formatter:
-
-<CodeGroup>
+When `main` advances, update your branch without discarding local work:
 
 ```bash
-mise run format
+git fetch upstream
+git merge upstream/main
 ```
 
-</CodeGroup>
+Resolve conflicts deliberately, rerun the affected checks, and push the branch to your fork. Do not reset a branch that contains work you have not confirmed is safe to discard.
 
-This runs `format:cs` (`dnx csharpier format .`), `format:fe` (`bun run format` in `src/Clients`), and `format:docs` (`bun run format` in `docs`).
+## Commit and hand off
 
-</Step>
-<Step title="Commit with a Conventional Commit message">
+Use a Conventional Commit prefix such as `feat:`, `fix:`, `docs:`, `refactor:`, `test:`, or `chore:` followed by a concise, imperative summary. Repository hooks run formatting, analyzers, and build checks on commit.
 
-Stage your changes and commit using a [Conventional Commit](https://www.conventionalcommits.org/) prefix (`feat:`, `fix:`, `docs:`, `refactor:`, `test:`, or `chore:`):
-
-<CodeGroup>
-
-```bash
-git add <changed-files>
-git commit -m "<type>: <concise imperative summary>"
-```
-
-</CodeGroup>
-
-Where:
-
-- `<changed-files>`: Explicit paths for the files belonging to this change.
-- `<type>`: One of `feat`, `fix`, `docs`, `refactor`, `test`, or `chore`.
-- `<concise imperative summary>`: Lowercase description of what the commit does.
-
-The Husky pre-commit hook (`.husky/task-runner.json`) automatically executes four gates in sequence:
-
-1. `dnx csharpier format .`
-2. `dnx csharpier check .`
-3. `dotnet format analyzers BookWorm.slnx --verify-no-changes`
-4. `dotnet build BookWorm.slnx --no-restore --configuration Release`
-
-</Step>
-<Step title="Push and open a pull request">
-
-Push your branch to `origin` and follow [[doc|development/006-pull-request-process]]:
-
-<CodeGroup>
-
-```bash
-git push -u origin <branch-type>/<short-description>
-```
-
-</CodeGroup>
-
-</Step>
-</Steps>
-
-## Verification
-
-Confirm your working tree is clean, formatted, and committed on your feature branch:
-
-<CodeGroup>
-
-```bash
-git status
-git log -1 --oneline
-```
-
-</CodeGroup>
-
-Expected output:
-
-<CodeGroup>
-
-```text
-On branch feature/add-book-search
-nothing to commit, working tree clean
-a1b2c3d feat: add book search filter to Catalog API
-```
-
-</CodeGroup>
-
-## Troubleshooting
-
-| Symptom                                                           | Cause                                                        | Fix                                                                                           |
-| :---------------------------------------------------------------- | :----------------------------------------------------------- | :-------------------------------------------------------------------------------------------- |
-| Pre-commit fails on `csharpier check`                             | Unformatted C# files remain unstaged                         | Run `mise run format:cs`, re-stage modified files, and re-run `git commit`                    |
-| Pre-commit fails on `dotnet format analyzers --verify-no-changes` | Roslyn code-style or analyzer violation in modified C# files | Run `dotnet format analyzers BookWorm.slnx`, inspect the diff, re-stage, and commit           |
-| Pre-commit fails on `dotnet build ... --configuration Release`    | Compiler warning or error (`TreatWarningsAsErrors: true`)    | Run `mise run build` to inspect full diagnostics, fix all warnings/errors, and retry          |
-| `dotnet husky` tool not found on commit                           | Local .NET tools were not restored                           | Run `mise run prepare` from the repository root                                               |
-| `git merge --ff-only upstream/main` fails                         | Local `main` diverged from `upstream/main`                   | Run `git reset --hard upstream/main` on `main` (after ensuring no unpushed work is on `main`) |
-
-## Related documentation
-
-- [[doc|development/002-getting-started]] — Initial fork, `mise`, and hook setup.
-- [[doc|development/005-testing]] — Full test commands and Pact contract verification.
-- [[doc|development/006-pull-request-process]] — PR checklist, CI gates, and maintainer review.
-- [[doc|development/004-engineering-standards]] — C#, Protobuf, integration event, and frontend rules.
-
-## Git flow
-
-<MermaidFileLoader file="mermaids/git-flow.mmd" />
+When the change is ready, follow [[doc|development/006-pull-request-process]]. Do not start the full Aspire application for routine code or documentation checks.

@@ -2,16 +2,19 @@
 sequenceDiagram
 	autonumber
 	participant Browser as Customer Browser
-	participant Gateway as API Gateway (YARP)
-	participant Storefront as Storefront (Next.js 16)
-	participant Commerce as Commerce (Next.js 16)
+	participant Gateway as API Gateway
+	participant Commerce as Commerce Zone
+	participant Storefront as Storefront Zone
+	participant Entra as Microsoft Entra ID
 
-	Browser ->> Gateway: HTTPS GET /basket
-	Gateway ->> Commerce: HTTP GET /basket
-	Commerce -->> Browser: 307 Redirect /login?callbackUrl=/basket
-	Browser ->> Gateway: HTTPS GET /login?callbackUrl=/basket
-	Gateway ->> Storefront: HTTP GET /login?callbackUrl=/basket
-	Storefront -->> Browser: Better Auth + Microsoft Entra ID sign-in
-	Browser ->> Gateway: HTTPS GET /basket (with session cookie)
-	Gateway ->> Commerce: HTTP GET /basket
-	Commerce -->> Browser: 200 OK (X-Mfe-Zone: commerce)
+	Browser ->> Gateway: Request protected shopping route
+	Gateway ->> Commerce: Forward to Commerce zone
+	Commerce -->> Browser: Redirect to sign-in with return URL
+	Browser ->> Gateway: Request customer sign-in
+	Gateway ->> Storefront: Forward to Storefront auth handler
+	Storefront ->> Entra: OAuth2 / OIDC authentication handoff
+	Entra -->> Storefront: Identity tokens and claims
+	Storefront -->> Browser: Origin-scoped session cookie + redirect
+	Browser ->> Gateway: Retry protected route with session cookie
+	Gateway ->> Commerce: Forward authenticated request
+	Commerce -->> Browser: Render protected Commerce page

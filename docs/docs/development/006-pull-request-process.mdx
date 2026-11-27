@@ -1,151 +1,67 @@
 ---
 title: Pull Request Process
-summary: Prepare a BookWorm pull request, meet review requirements, and find help.
+summary: Prepare a focused draft, satisfy automated checks and review, and merge a contribution safely.
 owners:
-  - contributor-team
+  - architecture-enabling-team
 badges:
-  - content: Onboarding
+  - content: Workflow
     backgroundColor: teal
     textColor: teal
 ---
 
-Use this guide to package a verified branch into a clean pull request that passes BookWorm's path-filtered CI pipelines and maintainer review on the first pass.
+Open a pull request when the change is understandable, scoped, and locally verified. Keep it in draft while implementation or validation is still in progress.
 
-## Prerequisites
+_Pull Request Lifecycle_
 
-- Changes committed on a focused branch following [[doc|development/003-development-workflow]]
-- Relevant unit, contract, frontend, or documentation checks passing locally
-- GitHub CLI (`gh`) installed via `mise install` (optional; you can also open the PR in the GitHub web UI)
+<MermaidFileLoader file="mermaids/pull-request-process.mmd" />
 
-## Steps
+## Before opening
+
+- Keep the change to one cohesive outcome. Split unrelated work; discuss unusually broad changes before investing in them.
+- Format changed files and run the relevant checks from [[doc|development/005-testing]].
+- Use a Conventional Commit-style title, such as `fix: prevent duplicate checkout`.
+- Include the user-visible or technical outcome, relevant context, test evidence, and any rollout or compatibility notes in the description.
+
+## Move from draft to review
 
 <Steps>
-<Step title="Run final local formatting and verification">
+<Step title="Open a draft pull request">
 
-Format all touched areas from the repository root:
-
-<CodeGroup>
+Push your branch and create a draft with the GitHub CLI or web interface. Link related work and state what remains before review.
 
 ```bash
-mise run format
+gh pr create --draft --title "<type>: <summary>" --body "<change, rationale, and verification>"
 ```
 
-</CodeGroup>
+</Step>
+<Step title="Complete the change and mark it ready">
 
-Then run the checks matching your changed paths:
-
-- **Backend (`src/`, `tests/`):** `mise run test`
-- **Frontend (`src/Clients/`):** From `src/Clients`, run `bun run boundaries`, `bun run check-types`, `bun run lint`, `bun run test`, and `bun run build`
-- **Documentation (`docs/`):** From `docs/`, run `bun run check` and `bun run fitness`
+Address unfinished work, update documentation when behavior or contracts change, and mark the pull request ready for review.
 
 </Step>
-<Step title="Push your branch to your fork">
+<Step title="Resolve automated checks">
 
-<CodeGroup>
+Required checks depend on changed areas. They can include backend formatting and analyzers, backend tests and contracts, frontend boundaries/types/lint/build/tests, documentation lint/fitness/build, and dependency review.
 
-```bash
-git push -u origin <branch-name>
-```
-
-</CodeGroup>
-
-Where:
-
-- `<branch-name>`: Your local branch name (for example, `feat/add-book-search`).
-
-</Step>
-<Step title="Create the pull request with a Conventional Commit title">
-
-Use `<type>: <concise summary>` where `<type>` is one of `feat`, `fix`, `docs`, `refactor`, `test`, or `chore`. Fill out every section of `.github/pull_request_template.md`, link related issues, and update documentation if behavior or APIs changed:
-
-<CodeGroup>
-
-```bash
-gh pr create \
-  --base main \
-  --title "<type>: <concise summary>" \
-  --body-file .github/pull_request_template.md
-```
-
-</CodeGroup>
-
-Where:
-
-- `<type>`: Conventional Commit prefix (`feat`, `fix`, `docs`, `refactor`, `test`, or `chore`).
-- `<concise summary>`: Short imperative description of the change.
-
-</Step>
-<Step title="Monitor automated CI workflows">
-
-GitHub Actions runs path-filtered workflows automatically on every pull request:
-
-| Workflow file                                                | Triggered when           | What it checks                                                                                                                                                                        |
-| :----------------------------------------------------------- | :----------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `.github/workflows/pr-validation.yml`                        | Every PR                 | Path detection, `backend-shared.yml` (CSharpier format/style + analyzers), `frontend-shared.yml` (boundaries, types, lint, build, Vitest), Component Detection, and Dependency Review |
-| `.github/workflows/sonar.yml`                                | PRs touching source code | SonarCloud static analysis, `.trx` test results, backend MTP coverage XML, and frontend `lcov.info`                                                                                   |
-| `.github/workflows/docs.yml`                                 | PRs touching `docs/**`   | EventCatalog `bun run check`, `bun run fitness`, and static site build                                                                                                                |
-| `.github/workflows/contribution-guidelines-checker.lock.yml` | PRs                      | Validates contribution guideline compliance                                                                                                                                           |
-
-</Step>
-<Step title="Address review feedback and resolve conflicts">
-
-- Respond to maintainer comments and push follow-up commits to the same branch.
-- Rebase or merge `upstream/main` if merge conflicts appear.
-- Merging requires **at least one maintainer approval**, all required automated checks green, and zero merge conflicts.
-
-:::danger
-**Security vulnerabilities:** Do **not** open a public pull request or public GitHub issue for security bugs. Follow the private disclosure instructions in `.github/SECURITY.md`.
-:::
-
-</Step>
-</Steps>
-
-## Verification
-
-Check PR check status from the CLI:
-
-<CodeGroup>
+Check the current status with:
 
 ```bash
 gh pr checks
 ```
 
-</CodeGroup>
+Fix failures and push updates; changed commits rerun affected checks.
 
-Expected output:
+</Step>
+<Step title="Respond to review and merge">
 
-<CodeGroup>
+Address requested changes, keep the branch conflict-free, and request re-review when ready. Merge only after at least one maintainer approval and all required checks pass. Use the merge method enabled by the repository.
 
-```text
-All checks were successful
-```
+</Step>
+</Steps>
 
-</CodeGroup>
+<Admonition type="warning" title="Security reports">
+	Do not disclose a security vulnerability in a public pull request or issue. Use the project's
+	private security reporting channel.
+</Admonition>
 
-## Troubleshooting
-
-| Symptom                                                      | Cause                                                         | Fix                                                                                                                                                          |
-| :----------------------------------------------------------- | :------------------------------------------------------------ | :----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `backend-shared.yml` fails on formatting or analyzers        | CSharpier or Roslyn analyzer check failed                     | Run `mise run format:cs` and `dotnet format analyzers BookWorm.slnx`, commit, and push                                                                       |
-| `frontend-shared.yml` fails on `boundaries` or `check-types` | Invalid cross-tier package import or TypeScript error         | Run `bun run boundaries` and `bun run check-types` in `src/Clients`, fix violations, and push                                                                |
-| `docs.yml` fails on `check` or `fitness`                     | EventCatalog lint, Prettier, or architecture fitness failure  | Run `mise run format:docs`, then `bun run check` and `bun run fitness` in `docs/`                                                                            |
-| `sonar.yml` fails quality gate on coverage                   | New domain logic falls below the 80% coverage target          | Add targeted TUnit or Vitest tests covering uncovered branches and verify with `mise run test:coverage` or `bunx turbo run test:coverage` (in `src/Clients`) |
-| Dependency Review check fails                                | Added package has a known vulnerability or disallowed license | Upgrade to a patched package version in `Directory.Packages.props` / `Versions.props` or `src/Clients/package.json`                                          |
-
-## Getting help
-
-- **Bugs:** Open a [Bug Report](https://github.com/foxminchan/BookWorm/issues/new?template=bug-report.yml).
-- **Features:** Open a [Feature Request](https://github.com/foxminchan/BookWorm/issues/new?template=feature-request.yml).
-- **Accessibility barriers:** Open an [Accessibility Issue](https://github.com/foxminchan/BookWorm/issues/new?template=accessibility.yml).
-- **Questions and ideas:** Start a thread in [GitHub Discussions](https://github.com/foxminchan/BookWorm/discussions).
-
-## Related documentation
-
-- [[doc|development/003-development-workflow]] — Branch naming and Husky pre-commit checks.
-- [[doc|development/005-testing]] — Reproduce backend and docs checks locally.
-- [[doc|frontend/004-testing-and-quality-gates]] — Reproduce frontend checks locally.
-- [[team|business-strategy]] — Maintainer roles and governance channels.
-
-## Pull request process
-
-<MermaidFileLoader file="mermaids/pull-request-process.mmd" />
+For branch naming and synchronization, see [[doc|development/003-development-workflow]]. For test-layer selection and commands, see [[doc|development/008-testing-matrix]] and [[doc|development/005-testing]].

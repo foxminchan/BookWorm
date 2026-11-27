@@ -3,9 +3,9 @@ title: Order lifecycle
 ---
 %%{init: {'theme': 'base', 'themeVariables': {'background': '#f5f5f5', 'primaryColor': '#ffffff', 'primaryTextColor': '#2d3142', 'primaryBorderColor': '#2d3142', 'secondaryColor': '#ececec', 'secondaryBorderColor': '#4f5d75', 'tertiaryColor': '#fdf2ee', 'tertiaryBorderColor': '#bf4520', 'lineColor': '#4f5d75', 'textColor': '#2d3142', 'fontFamily': 'Geist, system-ui, sans-serif'}}}%%
 stateDiagram-v2
-	[*] --> New: Order created
-	New --> Completed: Complete order
-	New --> Cancelled: Cancel order
+	[*] --> New: Order accepted at checkout
+	New --> Completed: Explicit completion
+	New --> Cancelled: Explicit cancellation
 	Completed --> [*]
 	Cancelled --> [*]
 

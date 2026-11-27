@@ -8,7 +8,7 @@ badges:
     textColor: purple
 summary: Creates a feedback rating for a Catalog book and returns its generated UUID.
 owners:
-  - contributor-team
+  - catalog-experience-team
 schemaPath: schema.json
 operation:
   method: POST
@@ -18,75 +18,71 @@ sidebar:
   badge: "POST"
 ---
 
-`CreateFeedback` (`POST /api/v1/feedbacks`) creates an individual **Feedback** record for a Catalog book in **Rating API**, persists it to **Azure Cosmos DB** (`ratingdb`/`feedbacks`), publishes `FeedbackCreatedIntegrationEvent` to Kafka, and returns the generated UUIDv7 feedback identifier (`200 OK`).
+`CreateFeedback` creates an individual [[entity|feedback]] record for a Catalog book in [[service|rating-api]] (`POST /rating/api/v1/feedbacks`), persists it to Azure Cosmos DB, publishes [[event|FeedbackCreatedIntegrationEvent]] to Kafka, and returns the generated UUIDv7 feedback identifier (`200 OK`).
 
 ## Overview
 
-| Property                 | Value                                                                                                                                                                                                                                             |
-| :----------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Owner**                | Reviews bounded context (**Rating API**, Aspire resource `rating`)                                                                                                                                                                                |
-| **Source**               | `src/Services/Rating/BookWorm.Rating/Features/Create/CreateFeedbackEndpoint.cs`, `CreateFeedbackCommand.cs`, `CreateFeedbackValidator.cs`, `src/Services/Rating/BookWorm.Rating/Infrastructure/RatingDbContext.cs`                                |
-| **Protocol / format**    | HTTP `POST`, `application/json` request and response                                                                                                                                                                                              |
-| **Direct endpoint**      | `POST /api/v1/feedbacks` (local ports: HTTP `5278`, HTTPS `7003`)                                                                                                                                                                                 |
-| **API Gateway endpoint** | `POST /rating/api/v1/feedbacks` (YARP strips `/rating`)                                                                                                                                                                                           |
-| **Authentication**       | None enforced on `CreateFeedbackEndpoint` (no `.RequireAuthorization()` call and no fallback authorization policy in `BookWorm.Rating/Extensions/Extensions.cs`)                                                                                  |
-| **Rate limit**           | `PerUserRateLimit` token bucket (30 tokens, +20 per 10 s, queue 5; partitioned by `ClaimTypes.NameIdentifier` when authenticated, or client IP/`Host` when anonymous) plus global concurrency (100) and per-IP fixed-window (30 req/min) limiters |
-| **Contract version**     | `1.0.0` (`ApiVersions.V1`)                                                                                                                                                                                                                        |
+| Property                           | Value                                                                                                                                                                                   |
+| :--------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Bounded Context**                | Reviews                                                                                                                                                                                 |
+| **Owner Service**                  | [[service\|rating-api]]                                                                                                                                                                 |
+| **Protocol / Format**              | HTTP `POST`, `application/json` request and response                                                                                                                                    |
+| **Gateway Endpoint**               | `POST /rating/api/v1/feedbacks` (service path `/api/v1/feedbacks`)                                                                                                                      |
+| **Authentication & Authorization** | None enforced (optional Microsoft Entra ID JWT partitions per-user rate limiting when present)                                                                                          |
+| **Idempotency / Concurrency**      | Not idempotent; Cosmos DB ETag optimistic concurrency on persistence                                                                                                                    |
+| **Rate Limit / Caching**           | Global concurrency (`100`), per-IP fixed-window (`30 req/min`), and per-user token bucket (`30` tokens, `+20` per `10s`, queue `5`); invalidates feedback list and empty summary caches |
+| **Contract Version**               | `1.0.0` (`ApiVersions.V1`)                                                                                                                                                              |
 
-## Parameters and fields
+## Request & Response Contract
 
-### Request headers
+### Request Headers
 
-| Name            | Type     | Required | Default | Constraints             | Description                                                                                              |
-| :-------------- | :------- | :------- | :------ | :---------------------- | :------------------------------------------------------------------------------------------------------- |
-| `Content-Type`  | `string` | Yes      | —       | `application/json`      | JSON request media type                                                                                  |
-| `Authorization` | `string` | No       | —       | `Bearer <access-token>` | Optional Microsoft Entra ID JWT; when present, `ClaimTypes.NameIdentifier` partitions `PerUserRateLimit` |
+| Name            | Type     | Required | Constraints             | Description                                                    |
+| :-------------- | :------- | :------- | :---------------------- | :------------------------------------------------------------- |
+| `Content-Type`  | `string` | Yes      | `application/json`      | JSON request media type                                        |
+| `Authorization` | `string` | No       | `Bearer <access-token>` | Optional Entra ID JWT used to partition per-user rate limiting |
 
-### Request body (`CreateFeedbackCommand`)
+### Request Body (`application/json`)
 
-| Name        | Type                | Required | Default | Constraints                                                                                                      | Description                                                                                                                                         |
-| :---------- | :------------------ | :------- | :------ | :--------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `bookId`    | `string` (`uuid`)   | Yes      | —       | Non-empty UUID (`NotEmpty`; rejects `00000000-0000-0000-0000-000000000000`)                                      | Identifier of the Catalog book being reviewed; also used as the Cosmos DB partition key (`/bookId`)                                                 |
-| `firstName` | `string`            | Yes      | —       | Non-empty (`NotEmpty`), max `50` characters (`DataSchemaLength.Medium`); annotated `[PIIData]` for log redaction | Reviewer's first name (required by `CreateFeedbackValidator` despite nullable C# property in `openapi.yaml`)                                        |
-| `lastName`  | `string`            | Yes      | —       | Non-empty (`NotEmpty`), max `50` characters (`DataSchemaLength.Medium`); annotated `[PIIData]` for log redaction | Reviewer's last name (required by `CreateFeedbackValidator` despite nullable C# property in `openapi.yaml`)                                         |
-| `comment`   | `string` or `null`  | No       | `null`  | Max `1000` characters (`DataSchemaLength.Max`) when provided                                                     | Optional written review comment (present in OpenAPI `required` list because of C# positional record parameters, but accepts `null` or empty string) |
-| `rating`    | `integer` (`int32`) | Yes      | —       | Inclusive range `0`-`5` (`InclusiveBetween(0, 5)`)                                                               | Whole-number star rating for the book                                                                                                               |
+| Name        | Type              | Required | Constraints                                          | Description                                   |
+| :---------- | :---------------- | :------- | :--------------------------------------------------- | :-------------------------------------------- |
+| `bookId`    | `string` (`uuid`) | Yes      | Non-empty UUID; Cosmos DB partition key              | Identifier of the Catalog book being reviewed |
+| `firstName` | `string`          | Yes      | Non-empty, max `50` characters; PII-redacted in logs | Reviewer's first name                         |
+| `lastName`  | `string`          | Yes      | Non-empty, max `50` characters; PII-redacted in logs | Reviewer's last name                          |
+| `comment`   | `string \| null`  | No       | Max `1000` characters when provided                  | Optional written review comment               |
+| `rating`    | `integer`         | Yes      | Inclusive range `0`-`5`                              | Whole-number star rating for the book         |
 
-### Success response (`200 OK`)
+### Success Response (`200 OK`)
 
-| Name                           | Type              | Required | Default | Constraints                              | Description                                                |
-| :----------------------------- | :---------------- | :------- | :------ | :--------------------------------------- | :--------------------------------------------------------- |
-| Root JSON value (`FeedbackId`) | `string` (`uuid`) | Yes      | —       | Version 7 UUID (`Guid.CreateVersion7()`) | Generated unique identifier of the created feedback record |
+| Name       | Type              | Required | Constraints | Description                                                |
+| :--------- | :---------------- | :------- | :---------- | :--------------------------------------------------------- |
+| Root value | `string` (`uuid`) | Yes      | UUIDv7      | Generated unique identifier of the created feedback record |
 
-## Behavior and side effects
+## Behavior & Side Effects
 
-- **Azure Cosmos DB persistence (not PostgreSQL):** `CreateFeedbackHandler` creates a `Feedback` entity with a UUIDv7 ID and saves it through `RatingDbContext` (EF Core Cosmos provider) to Azure Cosmos DB database `ratingdb`, container `feedbacks`, partitioned by `/bookId`, using ETag optimistic concurrency.
-- **Kafka integration event:** After `SaveChangesAsync` completes, `EventDispatchInterceptor` dispatches `FeedbackCreatedEvent`. `FeedbackCreatedEventHandler` maps it via `EventMapper` to `FeedbackCreatedIntegrationEvent` (`BookId`, `Rating`, `FeedbackId`) and publishes it through **Wolverine** (with `WolverineFx.CosmosDb` persistence) to Kafka topic `bookworm.{env}.rating.feedback-create`, partitioned by `BookId` and `FeedbackId`. **Catalog API** consumes this event to update the book's derived rating summary.
-- **Compensating rollback:** If **Catalog API** fails to update the book's rating summary and publishes `BookUpdatedRatingFailedIntegrationEvent`, `BookUpdatedRatingFailedIntegrationEventHandler` in **Rating API** deletes the newly created feedback record and invalidates caches.
-- **Redis / FusionCache invalidation:** `FeedbackCacheInvalidationHandler` removes cached feedback list entries tagged for `bookId` and clears the cached AI rating summary if its cached `ReviewCount` is `0`.
-- **PII log redaction:** `FirstName` and `LastName` carry `[PIIData]` so structured logging redacts reviewer names.
+- **Azure Cosmos DB persistence:** Persists the [[entity|feedback]] document to Cosmos DB (`ratingdb`/`feedbacks`, partitioned by `/bookId`).
+- **Kafka integration event:** Publishes [[event|FeedbackCreatedIntegrationEvent]] to [[channel|bookworm.&#123;env&#125;.rating.feedback-create]] so [[service|catalog-api]] updates the book's derived rating summary.
+- **Compensating rollback:** If [[service|catalog-api]] cannot find the target book and emits [[event|BookUpdatedRatingFailedIntegrationEvent]], [[service|rating-api]] deletes the orphaned feedback record and invalidates caches.
+- **Cache invalidation:** Clears cached feedback list entries tagged for `bookId` and clears any cached AI summary whose `reviewCount` is `0`.
+- **PII log redaction:** `firstName` and `lastName` are automatically redacted in structured logs.
 
-## Error responses
+## Error Responses
 
-| Code / status               | Condition                                                                                                                                                                                                               | Recovery behavior                                                       |
-| :-------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------- |
-| `400 Bad Request`           | Empty `bookId`, empty or >50-char `firstName`/`lastName`, >1000-char `comment`, `rating` outside `0`-`5`, or malformed JSON (`ValidationExceptionHandler`, `application/problem+json` `HttpValidationProblemDetails`)   | Fix the failing fields in `errors` and resubmit                         |
-| `409 Conflict`              | Azure Cosmos DB conflict (`HttpStatusCode.Conflict`) or concurrency exception wrapped in `InvalidOperationException` (`RatingDbContext.SaveEntitiesAsync` -> `GlobalExceptionHandler`, `ProblemDetails` with `traceId`) | Refresh state or verify whether feedback already exists before retrying |
-| `429 Too Many Requests`     | `PerUserRateLimit` or global rate limiter exceeded (`ProblemDetails` with `Retry-After` header in seconds)                                                                                                              | Wait for the `Retry-After` interval before retrying                     |
-| `500 Internal Server Error` | Unexpected Cosmos DB, Kafka, or server failure (`GlobalExceptionHandler`, `ProblemDetails` with `traceId`)                                                                                                              | Retry with exponential backoff; inspect Rating API logs using `traceId` |
+| Status / Code               | Condition                                                                                                                       | Client Recovery Action                                                  |
+| :-------------------------- | :------------------------------------------------------------------------------------------------------------------------------ | :---------------------------------------------------------------------- |
+| `400 Bad Request`           | Empty `bookId`, empty or `>50`-char `firstName`/`lastName`, `>1000`-char `comment`, `rating` outside `0`-`5`, or malformed JSON | Fix the failing fields and resubmit                                     |
+| `409 Conflict`              | Cosmos DB conflict or concurrency exception                                                                                     | Refresh state or verify whether feedback already exists before retrying |
+| `429 Too Many Requests`     | Rate limit quota exceeded (`Retry-After` header included)                                                                       | Wait for the `Retry-After` interval before retrying                     |
+| `500 Internal Server Error` | Unexpected Cosmos DB, Kafka, or server failure (`traceId` included)                                                             | Retry with exponential backoff; inspect service logs using `traceId`    |
 
-## Related documentation
+## Related Documentation
 
-- [[service|rating-api]] — Service overview, Azure Cosmos DB storage, A2A gRPC server, and AI summarizer.
-- [[command|DeleteFeedback]] — Remove a feedback record as an administrator (`DELETE /api/v1/feedbacks/{id}`).
-- [[event|FeedbackCreatedIntegrationEvent]] — Kafka event published to `bookworm.{env}.rating.feedback-create`.
-- [[query|ListFeedbacks]] — Paginate feedback records for a book (`GET /api/v1/feedbacks`).
+- [[service|rating-api]] — Service overview, Azure Cosmos DB storage, and AI summarizer.
+- [[entity|feedback]] — Feedback document model.
+- [[command|DeleteFeedback]] — Remove a feedback record as an administrator.
+- [[event|FeedbackCreatedIntegrationEvent]] — Kafka event published on creation.
+- [[query|ListFeedbacks]] — Paginate feedback records for a book.
 
 <NodeGraph />
 
-<SchemaViewer
-	file="schema.json"
-	title="CreateFeedbackCommand JSON Schema"
-	maxHeight="500"
-	search="true"
-/>
+<SchemaViewer file="schema.json" title="Create feedback schema" maxHeight="500" search="true" />

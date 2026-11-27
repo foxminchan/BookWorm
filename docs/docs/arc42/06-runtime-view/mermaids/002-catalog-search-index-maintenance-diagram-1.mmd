@@ -1,27 +1,36 @@
-%%{init: {'theme': 'base', 'themeVariables': {'actorBkg': '#ffffff', 'actorBorder': '#2d3142', 'actorTextColor': '#2d3142', 'actorLineColor': '#bfc0c0', 'signalColor': '#4f5d75', 'signalTextColor': '#2d3142', 'labelBoxBkgColor': '#f5f5f5', 'labelBoxBorderColor': '#4f5d75', 'labelTextColor': '#2d3142', 'loopTextColor': '#4f5d75', 'noteBkgColor': '#fdf2ee', 'noteBorderColor': '#bf4520', 'noteTextColor': '#2d3142', 'activationBkgColor': '#ececec', 'activationBorderColor': '#4f5d75', 'fontFamily': 'Geist, system-ui, sans-serif'}}}%%
+%%{init: {'theme': 'base', 'themeVariables': {'actorBkg': '#ffffff', 'actorBorder': '#2d3142', 'actorTextColor': '#2d3142', 'actorLineColor': '#bfc0c0', 'signalColor': '#4f5d75', 'signalTextColor': '#2d3142', 'fontFamily': 'Geist, system-ui, sans-serif'}}}%%
 sequenceDiagram
 	autonumber
-	participant Cat as Catalog API\n(.NET 11 Minimal API)
-	participant PG as PostgreSQL\n(catalogdb)
-	participant Sched as Scheduler\n(Quartz.NET)
-	participant Kafka as Kafka Broker\n(scheduler.process-vector-batch)
-	participant Ingest as Catalog Ingestion\n(Azure Functions)
-	participant AI as Microsoft Foundry\n(Cohere EmbedV40)
-	participant Qdrant as Qdrant\n(vectordb)
+	participant Catalog as Catalog API
+	participant PostgreSQL as PostgreSQL
+	participant Scheduler as Scheduler
+	participant Broker as Kafka Broker
+	participant Ingestion as Catalog Ingestion
+	participant Foundry as Microsoft Foundry
+	participant Qdrant as Qdrant
 
-	Cat ->> PG: Commit book create / update / soft-delete
-	PG ->> PG: Trigger upserts pending_vector_updates (book_id, revision)
-	Sched ->> Kafka: Every 5 min UTC: ProcessVectorBatchIntegrationEvent
-	Kafka ->> Ingest: KafkaTrigger (group: catalog-ingestion)
-	Ingest ->> PG: SELECT pg_try_advisory_lock(740031001)
+	Catalog ->> PostgreSQL: Synchronous catalog change
+	PostgreSQL ->> PostgreSQL: Record pending revision
+	Scheduler -->> Broker: Scheduled batch trigger
+	Broker -->> Ingestion: Asynchronous batch request
+	Ingestion ->> PostgreSQL: Acquire exclusive batch access
 
-	alt Lock held by another run or queue empty
-		PG -->> Ingest: Lock busy / 0 pending rows (exit cleanly)
-	else Lock acquired with up to 200 rows
-		Ingest ->> PG: Read up to 200 pending_vector_updates joined with books
-		Ingest ->> AI: Generate embeddings for active books
-		AI -->> Ingest: Embedding vectors
-		Ingest ->> Qdrant: Upsert active TextSnippets & delete removed books
-		Ingest ->> PG: DELETE FROM pending_vector_updates WHERE book_id & revision match
-		Ingest ->> PG: SELECT pg_advisory_unlock(740031001)
+	alt Lock held or queue empty
+		PostgreSQL -->> Ingestion: Exit without work
+	else Lock acquired
+		Ingestion ->> PostgreSQL: Read at most 200 revisions
+
+		loop Active revisions
+			Ingestion ->> Foundry: Synchronous embedding request
+			Foundry -->> Ingestion: Embedding vector
+		end
+		Ingestion ->> Qdrant: Upsert active vectors
+		Ingestion ->> Qdrant: Delete vectors for removed books
+
+		alt Processing succeeds
+			Ingestion ->> PostgreSQL: Acknowledge only matching revisions
+		else Embedding or index fails
+			Ingestion -->> PostgreSQL: Leave revisions pending
+		end
+		Ingestion ->> PostgreSQL: Release exclusive access
 	end

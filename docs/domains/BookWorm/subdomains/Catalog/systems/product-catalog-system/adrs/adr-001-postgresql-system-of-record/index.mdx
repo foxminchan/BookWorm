@@ -6,9 +6,9 @@ summary: Catalog Database (PostgreSQL) is the single authoritative store for boo
 status: accepted
 date: 2026-10-20
 owners:
-  - platform-team
+  - catalog-experience-team
 decisionMakers:
-  - platform-team
+  - platform-engineering-team
 appliesTo:
   - type: system
     id: product-catalog-system
@@ -61,9 +61,9 @@ At the same time, Catalog uses a read cache to speed up popular queries and a se
 ### Trade-offs & operational considerations
 
 - **Hard dependency for writes and search resolution:** Availability of the primary database is essential for saving catalog edits and resolving search candidates into canonical book records.
-- **Shared database load:** Because the database also holds the search-indexing work queue, background ingestion adds database activity that must be monitored alongside queue age and depth (see [[doc|runbooks/vector-index-lag]]).
+- **Shared database load:** Because the database also holds the search-indexing work queue, background ingestion adds database activity that must be monitored alongside queue age and depth.
 - **Eventual search consistency:** Saving a book via the API confirms database persistence, not that semantic search has already refreshed.
-- **Controlled operational changes:** Direct manual edits to database rows should occur only for approved operational corrections, following documented engineering change controls (see [[doc|engineering/02-change-checklist]]).
+- **Controlled operational changes:** Direct manual edits to database rows should occur only for approved operational corrections under engineering change controls.
 
 ## 5. Technical Reference
 
@@ -80,6 +80,5 @@ At the same time, Catalog uses a read cache to speed up popular queries and a se
 - **Cache & search rules:**
   - [[container|catalog-cache]] entries are invalidated on book changes and expire per configured lifetime; cache loss impacts performance only.
   - Text search queries [[container|catalog-vector]] for candidate book IDs, then reads canonical records from PostgreSQL; price and availability for purchase validation must never come from cache or Qdrant.
-- **Schema governance & runbooks:**
-  - Schema changes require an EF Core migration and an update to the documented current-state `schema.sql` (note: `schema.sql` is a current-state reference, not migration history).
-  - Operational references: [[doc|runbooks/vector-index-lag]] and [[doc|engineering/02-change-checklist]].
+- **Schema governance:**
+  - Schema changes require an EF Core migration and an update to the documented current-state schema reference.

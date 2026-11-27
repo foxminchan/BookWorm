@@ -2,11 +2,19 @@
 id: bookworm.{env}.finance.place-order
 name: Order Placement Command Channel
 version: 1.0.0
+type: topic
 summary: |
-  Kafka topic carrying Finance's shared order-placement command, consumed by
-  Basket for checkout cleanup and Notification to submit a new-order email.
+  Shared Kafka topic owned by the contributor team carrying Finance order
+  placement commands to Basket API for cleanup and Notification API for email.
 owners:
-  - contributor-team
+  - commerce-fulfillment-team
+badges:
+  - content: Kafka
+    backgroundColor: blue
+    textColor: blue
+  - content: Shared Topic
+    backgroundColor: purple
+    textColor: purple
 address: bookworm.{env}.finance.place-order
 parameters:
   env:
@@ -15,9 +23,12 @@ parameters:
       - staging
       - production
     default: development
+    examples:
+      - development
+      - staging
+      - production
     description: BookWorm deployment environment.
 deliveryGuarantee: at-least-once
-type: stream
 protocols:
   - kafka
 deadLetterChannel:
@@ -25,113 +36,56 @@ deadLetterChannel:
   version: 1.0.0
 ---
 
-`bookworm.{env}.finance.place-order` (v1.0.0) is the Kafka topic owned by Finance that fans out `PlaceOrderCommand` to two independent consumers. Basket API deletes the submitted basket and reports the outcome; Notification sends a new-order email. A message on this topic does not prove that an order was persisted, and it is not a Notification-owned topic.
+## Purpose & Scope
 
-## Channel information
+This shared command topic carries order-placement commands published by [[service|order-orchestration]] after checkout begins. Two independent consumers subscribe to it: [[service|basket-api]] removes the submitted basket and reports the outcome, while [[service|notification-api]] renders and submits a new-order confirmation email. Publication here does not confirm that basket cleanup or email delivery succeeded.
+
+:::warning
+**Shared Multi-Consumer Topic:** Never blindly replay messages to `bookworm.{env}.finance.place-order`. Replaying to this topic triggers _both_ [[service|basket-api]] and [[service|notification-api]] again. Use the consumer-specific dead-letter channel ([[channel|bookworm.&#123;env&#125;.basket.dead-letter-queue]] or [[channel|bookworm.&#123;env&#125;.notification.dead-letter-queue]]) when recovering a single consumer.
+:::
+
+## Channel Specification
+
+| Property                               | Value                                                                                                                                                           |
+| :------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Bounded Context / Owner**            | [[domain\|ordering]] / [[team\|commerce-fulfillment-team]]                                                                                                      |
+| **Channel Type**                       | Topic                                                                                                                                                           |
+| **Address Pattern**                    | `bookworm.{env}.finance.place-order`                                                                                                                            |
+| **Parameters**                         | `env` (`development`, `staging`, `production`; default: `development`)                                                                                          |
+| **Protocol & Envelope Format**         | Kafka + CloudEvents JSON (`application/json`)                                                                                                                   |
+| **Partition Key & Ordering Guarantee** | Keyed by `orderId`; preserves per-order command ordering within a partition                                                                                     |
+| **Delivery Semantics**                 | At-least-once                                                                                                                                                   |
+| **Dead-Letter Channel**                | [[channel\|bookworm.&#123;env&#125;.notification.dead-letter-queue]] (Notification) and [[channel\|bookworm.&#123;env&#125;.basket.dead-letter-queue]] (Basket) |
+
+## Messages & Participants
+
+| Message                        | Type    | Producer                         | Consumer(s)                                            | Consumer Group                                         |
+| :----------------------------- | :------ | :------------------------------- | :----------------------------------------------------- | :----------------------------------------------------- |
+| [[command\|PlaceOrderCommand]] | Command | [[service\|order-orchestration]] | [[service\|basket-api]], [[service\|notification-api]] | Basket service consumer; Notification service consumer |
+
+## Ordering, Retries & Failure Handling
+
+- **Partition-key ordering:** Keying by `orderId` ensures commands for the same order stay serialized per partition across both consumer groups.
+- **Transient retries:** Each consumer group manages its own bounded retry/backoff policy independently (Redis retries in Basket; SMTP retries and listener cooldowns in Notification).
+- **Immediate DLQ routing:** Poison payloads, deserialization errors, or exhausted retries route independently to [[channel|bookworm.&#123;env&#125;.basket.dead-letter-queue]] or [[channel|bookworm.&#123;env&#125;.notification.dead-letter-queue]].
+- **Consumer idempotency:** [[service|basket-api]] handles repeated cleanup idempotently; [[service|notification-api]] uses a 24-hour message-ID cache, though timeout reissues with a new message ID can send another email.
+
+## Channel Details & Visualization
 
 <ChannelInformation />
 
-## Overview
-
-| Property                 | Value                                                                                                                                                                                                                                                                                                        |
-| :----------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**                | Ordering bounded context (**Finance**, Aspire resource `finance`)                                                                                                                                                                                                                                            |
-| **Topic pattern**        | `bookworm.{env}.finance.place-order` (`AppendPrefix = true`)                                                                                                                                                                                                                                                 |
-| **Producer**             | [[service\|order-orchestration]] (`PublishPlaceOrderActivity` via Wolverine)                                                                                                                                                                                                                                 |
-| **Consumers**            | [[service\|basket-api]] (`PlaceOrderCommandHandler`); [[service\|notification-api]] (`PlaceOrderCommandHandler`)                                                                                                                                                                                             |
-| **Message contract**     | [[command\|PlaceOrderCommand]] (`BookWorm.Contracts.PlaceOrderCommand`)                                                                                                                                                                                                                                      |
-| **Protocol / format**    | Kafka stream, CloudEvents JSON (`application/json`, camelCase)                                                                                                                                                                                                                                               |
-| **Partition key**        | `OrderId` (`opts.MessagePartitioning.ByPropertyNamed("OrderId")` in Finance)                                                                                                                                                                                                                                 |
-| **Delivery guarantee**   | At-least-once                                                                                                                                                                                                                                                                                                |
-| **Dead-letter channels** | [[channel\|bookworm.&#123;env&#125;.basket.dead-letter-queue]] (Basket API); [[channel\|bookworm.&#123;env&#125;.notification.dead-letter-queue]] (Notification)                                                                                                                                             |
-| **Source**               | `src/Services/Finance/BookWorm.Finance/Contracts/IntegrationCommands/PlaceOrderCommand.cs`, `src/Services/Basket/BookWorm.Basket/IntegrationEvents/EventHandlers/PlaceOrderCommandHandler.cs`, `src/Services/Notification/BookWorm.Notification/IntegrationEvents/EventHandlers/PlaceOrderCommandHandler.cs` |
-
-## Parameters and fields
-
-### Topic parameters
-
-| Parameter | Type     | Required | Default       | Allowed values                         | Description                              |
-| :-------- | :------- | :------- | :------------ | :------------------------------------- | :--------------------------------------- |
-| `{env}`   | `string` | Yes      | `development` | `development`, `staging`, `production` | Kebab-case Aspire host environment name. |
-
-### Payload fields
-
-| Name           | Type                 | Required | Default                 | Constraints                                  | Description                                                          |
-| :------------- | :------------------- | :------- | :---------------------- | :------------------------------------------- | :------------------------------------------------------------------- |
-| `id`           | `string` (UUID)      | Yes      | `Guid.CreateVersion7()` | UUID v7                                      | Message identifier; Notification idempotency key.                    |
-| `creationDate` | `string` (date-time) | Yes      | `DateTime.UtcNow`       | ISO 8601 UTC                                 | Creation timestamp.                                                  |
-| `basketId`     | `string` (UUID)      | Yes      | —                       | Non-empty UUID (enforced by Finance `Order`) | Basket that Basket API deletes. Notification ignores it.             |
-| `fullName`     | `string \| null`     | No       | `null`                  | Nullable string                              | Customer display name; Notification defaults `null` to `"Customer"`. |
-| `email`        | `string \| null`     | No       | `null`                  | Nullable email                               | Recipient address; Notification skips delivery if blank.             |
-| `orderId`      | `string` (UUID)      | Yes      | —                       | Valid UUID; partition key                    | Order identifier; Basket API idempotency key.                        |
-| `totalMoney`   | `number` (`decimal`) | Yes      | —                       | Non-negative                                 | Order total.                                                         |
-
-### Headers and envelope metadata
-
-| Header / attribute     | Location            | Value / source                                 | Description                            |
-| :--------------------- | :------------------ | :--------------------------------------------- | :------------------------------------- |
-| `specversion`          | CloudEvents JSON    | `"1.0"`                                        | CloudEvents specification version.     |
-| `type` / `messagetype` | CloudEvents JSON    | `BookWorm.Contracts.PlaceOrderCommand`         | Message identity from `Type.FullName`. |
-| `source`               | CloudEvents JSON    | `urn:bookworm:book-worm.finance`               | Producer URN.                          |
-| `traceparent`          | Kafka header & JSON | W3C Trace Context                              | Distributed tracing.                   |
-| `requestid`            | Envelope header     | Propagated from checkout                       | Log correlation.                       |
-| `x-user-id` / `userid` | Envelope header     | Propagated `NameIdentifier` claim when present | User context.                          |
-
-## Delivery, partitioning, and consumer behavior
-
-- **Publication triggers:** `OrderOrchestrator` publishes once at saga start. `PlaceOrderTimeoutStep` republishes after each `MaxRetryTimeout` window (`00:30:00`) with no outcome, until `MaxAttempts` (`3`) is reached; then the saga cancels. Each publish goes through `PublishPlaceOrderActivity` (retry policy: `3` attempts, `5s`, `2.0x`). Finance publishes regardless of `CanSendNotification`.
-- **New `id` per reissue:** `ToPlaceOrderCommand()` builds a new record, so every timeout reissue carries a new `id`. Durable Task activity retries reuse the same serialized input and `id`.
-- **Basket API:** `PlaceOrderCommandHandler` acquires a 24-hour Redis key keyed by `OrderId`. On first receipt it deletes the basket from Redis and returns `BasketDeletedCompleteIntegrationEvent` or `BasketDeletedFailedIntegrationEvent`. On a repeat for the same `OrderId` it skips deletion and returns `BasketDeletedCompleteIntegrationEvent`. If deletion throws, it releases the key and rethrows.
-- **Notification:** `PlaceOrderCommandHandler` acquires a 24-hour Redis key keyed by message `id`, skips blank `email`, renders `Orders/OrderEmail` with subject `"BookWorm: Your Order Has Been Received Successfully"`, and sends via MailKit. A timeout reissue (new `id`) can send another email.
-- **Saga independence:** Successful basket cleanup does not complete the order or finish the saga.
-
-## Error responses and dead-letter behavior
-
-| Condition                                        | Handling behavior                                         | Recovery behavior                                                                                           |
-| :----------------------------------------------- | :-------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------- |
-| Basket not found or Redis delete returns `false` | Basket API returns `BasketDeletedFailedIntegrationEvent`. | Finance publishes `DeleteBasketFailedCommand`; Ordering API soft-deletes the order.                         |
-| Redis exception in Basket API                    | Key released, exception rethrown.                         | Wolverine retries transient types at `50ms`, `250ms`, `1s` with full jitter, then routes to the Basket DLQ. |
-| SMTP or MJML failure in Notification             | `NotificationException` after the Polly pipeline.         | Routed to the Notification DLQ.                                                                             |
-| `JsonException` or `FormatException`             | No retries.                                               | Moved to the consuming service's DLQ.                                                                       |
-
-## Examples
-
-### CloudEvents Kafka message
-
-Kafka key: `0193f1a2-1111-7d8e-9f01-23456789abcd` (`orderId`)
-
-<CodeGroup>
-
-```json
-{
-	"specversion": "1.0",
-	"id": "0193f1a2-6e01-7d8e-9f01-23456789abcd",
-	"type": "BookWorm.Contracts.PlaceOrderCommand",
-	"source": "urn:bookworm:book-worm.finance",
-	"time": "2026-11-25T16:14:52Z",
-	"datacontenttype": "application/json",
-	"messagetype": "BookWorm.Contracts.PlaceOrderCommand",
-	"data": {
-		"id": "0193f1a2-6e01-7d8e-9f01-23456789abcd",
-		"creationDate": "2026-11-25T16:14:52Z",
-		"basketId": "0193f1a2-2222-7d8e-9f01-23456789abcd",
-		"fullName": "Alex Reader",
-		"email": "reader@example.com",
-		"orderId": "0193f1a2-1111-7d8e-9f01-23456789abcd",
-		"totalMoney": 59.98
-	}
-}
-```
-
-</CodeGroup>
-
-## Related documentation
-
-- [[command|PlaceOrderCommand]] — Command contract.
-- [[channel|bookworm.&#123;env&#125;.ordering.user-checked-out]] — Upstream event that starts the saga.
-- [[channel|bookworm.&#123;env&#125;.basket.delete-complete]] — Basket API success outcome.
-- [[channel|bookworm.&#123;env&#125;.basket.delete-failed]] — Basket API failure outcome.
-- [[channel|bookworm.&#123;env&#125;.basket.dead-letter-queue]] — Basket API DLQ.
-- [[channel|bookworm.&#123;env&#125;.notification.dead-letter-queue]] — Notification DLQ.
-
 <NodeGraph />
+
+## Related Documentation
+
+- [[channel|bookworm.&#123;env&#125;.basket.dead-letter-queue]] — Basket consumer dead-letter queue
+- [[channel|bookworm.&#123;env&#125;.notification.dead-letter-queue]] — Notification consumer dead-letter queue
+- [[channel|bookworm.&#123;env&#125;.ordering.user-checked-out]] — Upstream checkout trigger topic
+- [[channel|bookworm.&#123;env&#125;.basket.delete-complete]] — Basket cleanup success topic
+- [[channel|bookworm.&#123;env&#125;.basket.delete-failed]] — Basket cleanup failure topic
+- [[service|order-orchestration]] — Command producer
+- [[service|basket-api]] — Cleanup consumer
+- [[service|notification-api]] — Email consumer
+- [[flow|user-checkout]] — End-to-end checkout workflow
+- [[flow|notification-delivery]] — Notification delivery workflow
+- [[doc|arc42/08-crosscutting-concepts/002-contracts-and-messaging]] — Messaging standards and idempotency rules

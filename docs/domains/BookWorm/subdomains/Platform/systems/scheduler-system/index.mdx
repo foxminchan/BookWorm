@@ -4,50 +4,18 @@ name: Scheduler System
 version: 1.0.0
 summary: |
   Internal Quartz-based platform system that persists schedules, coordinates
-  recurring jobs, and invokes authenticated background work without owning the
-  business data processed by each job.
+  recurring jobs, and dispatches background work without owning domain data.
 scope: internal
 owners:
-  - contributor-team
+  - platform-engineering-team
 services:
-  - id: scheduler-dashboard
+  - id: scheduler-service
     version: 1.0.0
 flows:
   - id: product-ingestion
     version: 1.0.0
 containers:
   - id: scheduler-database
-    version: 1.0.0
-entities:
-  - id: qrtz-job-details
-    version: 1.0.0
-  - id: qrtz-triggers
-    version: 1.0.0
-  - id: qrtz-simple-triggers
-    version: 1.0.0
-  - id: qrtz-simprop-triggers
-    version: 1.0.0
-  - id: qrtz-cron-triggers
-    version: 1.0.0
-  - id: qrtz-blob-triggers
-    version: 1.0.0
-  - id: qrtz-calendars
-    version: 1.0.0
-  - id: qrtz-paused-trigger-grps
-    version: 1.0.0
-  - id: qrtz-paused-job-grps
-    version: 1.0.0
-  - id: qrtz-fired-triggers
-    version: 1.0.0
-  - id: qrtz-scheduler-state
-    version: 1.0.0
-  - id: qrtz-locks
-    version: 1.0.0
-  - id: qrtz-execution-history
-    version: 1.0.0
-  - id: qrtz-misfire-history
-    version: 1.0.0
-  - id: qrtz-job-status
     version: 1.0.0
 relationships:
   - id: product-catalog-system
@@ -58,7 +26,7 @@ relationships:
     label: triggers notification maintenance jobs
   - id: identity-provider
     version: 1.0.0
-    label: obtains OAuth access tokens for authenticated Catalog requests
+    label: authenticates administrative dashboard access
 actors:
   - id: administrator
     name: Administrator
@@ -71,66 +39,49 @@ badges:
     icon: LockClosedIcon
 ---
 
-## 1. Context & Problem
+## System Purpose & Boundary
 
-BookWorm depends on recurring background maintenance—such as updating product search embeddings and retrying or archiving email notifications—that must run reliably without waiting for customer traffic. Scattering independent timers across every business service would fragment operational visibility, risk duplicate runs across scaled instances, and tangle scheduling rules with domain logic. The Scheduler System provides a dedicated platform coordination boundary that manages when recurring work runs while leaving business rules, authorization, and data ownership with each receiving system.
+The Scheduler System coordinates recurring background job schedules and operational trigger inspection within the [[domain|platform]] domain. It serves **Administrators** monitoring and controlling job schedules while triggering downstream maintenance work in [[system|product-catalog-system]] and [[system|notification-system]]. Owning domain business tables, executing search-index mutations directly, and storing credentials or business payloads in job metadata are explicitly out of scope.
 
-## 2. Business Value
+:::note
+A completed job firing in the Scheduler System confirms only that the trigger was dispatched—not that downstream business processing succeeded. Operators must verify target-side metrics (such as pending catalog vector updates) to confirm end-to-end completion.
+:::
 
-- **Centralized visibility and control**: Administrators gain a single place to inspect recurring schedules, pause jobs during maintenance, and investigate failures.
-- **Reliable background operations**: Durable schedules ensure catalog search updates and notification maintenance resume automatically after restarts rather than being silently skipped.
-- **Stronger service boundaries**: Keeping scheduling separate from business data allows Catalog and Notification teams to change their internal rules and data models without breaking the scheduler.
-- **Protected credentials and data**: Separating authentication secrets and business payloads from schedule records reduces security risk during daily operations.
+## Contained Capabilities
 
-## 3. How It Works
+| Service / Agent                | Role in System                                                                                                                                | Primary Data Store                | Interaction Style (Sync / Async)          |
+| :----------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------- | :---------------------------------------- |
+| [[service\|scheduler-service]] | Executes durable UTC cron schedules, persists execution history, publishes batch triggers via outbox, and exposes an admin operator dashboard | [[container\|scheduler-database]] | Async (Kafka publisher) & Sync (Admin UI) |
 
-1. **Schedule evaluation**: The system persists job definitions and timing rules, evaluating calendars, pause states, and missed-run policies to decide when work is eligible to start.
-2. **Authenticated dispatch**: When a run is due, the active scheduler instance records the firing, retrieves service-to-service credentials from secure runtime configuration, and invokes the target system through its supported contract.
-3. **Downstream execution**: The receiving system validates the caller, applies its own concurrency locks, and updates its own data:
-   - **Catalog search maintenance**: [[service|catalog-ingestion]] processes a bounded batch of pending [[entity|book]] updates in [[container|catalog-vector]] and confirms only items that have not changed concurrently.
-   - **Notification maintenance**: [[system|notification-system]] evaluates its durable [[entity|outbox]] to make failed deliveries eligible for retry, clean up expired records, or emit a health signal.
-4. **Outcome recording**: The scheduler records completion, duration, or failure details so operators can monitor execution health and diagnose issues.
+## External Interactions & Trust Boundaries
 
-## 4. Trade-offs & Lessons Learned
+- **Administrator access:** Administrators authenticate via [[system|identity-provider]] OIDC (`admin` role) to inspect triggers, review execution history, and pause or resume schedules in the operator dashboard.
+- **Catalog indexing trigger:** Every five minutes UTC, [[service|scheduler-service]] publishes [[event|ProcessVectorBatchIntegrationEvent]] to [[channel|scheduler.process-vector-batch]] using a transactional outbox; [[service|catalog-ingestion]] consumes the trigger and processes pending updates under its own concurrency lock.
+- **No direct domain table access:** The scheduler never reads or writes domain tables in Catalog or Notification; all coordination happens over explicit messaging or service contracts.
 
-- **Dispatch success vs. business completion**: A completed run in the scheduler only confirms that the target service was called—operators must check Catalog's pending updates or Notification's outbox and provider health to verify business completion.
-- **Targets must tolerate duplicate runs**: Because timeouts or restarts can leave uncertainty about whether a call finished, receiving services must be idempotent or backed by durable work queues so repeated triggers are harmless.
-- **No direct domain table access**: Prohibiting the scheduler from reading or writing Catalog or Notification tables keeps boundaries clean, though diagnosing a backlog requires correlating scheduler outcomes with target-side metrics.
-- **Visibility without secret exposure**: Retaining correlation identifiers and sanitized error categories allows operators to trace issues end to end without copying credentials, notification text, or personal data into schedule metadata or routine logs.
+<Accordion title="Reliability & Secret Hygiene Notes">
+	- **Misfire & concurrency safety:** Durable trigger state survives restarts, misfires follow
+	explicit recovery policies rather than silent skips, and non-concurrent job execution prevents
+	overlapping runs. - **Secret isolation:** Outbound credentials reside in runtime secret
+	configuration and must never appear in schedule metadata or routine logs.
+</Accordion>
 
-## 5. Technical Reference
+## System Visualizations
 
-### Context Diagram
+### System Context
 
 <ContextDiagram />
 
-### Responsibilities and boundaries
+### Component Topology
 
-| Responsibility         | Scheduler owns                                                                 | Target system owns                                                 |
-| ---------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------------ |
-| Schedule management    | Job definitions, trigger cadence, calendars, pause state, and misfire handling | The meaning of the work being scheduled                            |
-| Invocation             | Starting a job and sending the authenticated request                           | Endpoint authorization and request validation                      |
-| Execution coordination | Instance check-ins, fired-trigger records, locks, and job status               | Processing semantics and domain-level concurrency                  |
-| Failure handling       | Recording execution failures and making eligible work runnable again           | Retrying or preserving the business work requested by the job      |
-| Observability          | Scheduler health, trigger state, and execution history                         | Processing metrics, data quality, and downstream business outcomes |
+<NodeGraph mode="full" search="false" legend="false" />
 
-The Scheduler must not read or write Catalog, Notification, or other domain tables directly; it invokes versioned commands or HTTP contracts instead.
-
-### Scheduled work and contracts
-
-- **Catalog vector maintenance**: Invokes [[command|ProcessCatalogVectorBatch]] on [[service|catalog-ingestion]] as an authenticated Quartz job. Catalog Ingestion uses [[container|catalog-vector]], acquires its own database advisory lock, processes a bounded batch, and acknowledges only revisions that remain current. Target endpoints reject missing or invalid credentials and distinguish unauthorized callers from callers using the wrong client identity.
-- **Notification maintenance**: Coordinates resend (making failed/eligible work runnable), cleanup (removing or archiving records no longer eligible for retry or audit), and heartbeat/health jobs against [[system|notification-system]], which owns the durable [[entity|outbox]] state and delivery eligibility.
-
-### Persistence, reliability, and security
-
-- **Quartz persistence**: Operational state resides in `scheduler-database` across [[entity|qrtz-job-details]], [[entity|qrtz-triggers]], cron/simple/blob/calendar tables, paused trigger/job-group tables, [[entity|qrtz-fired-triggers]], [[entity|qrtz-scheduler-state]], locks, job-status, execution-history, and misfire-history entities. Consumers must not query Quartz tables as a job API or infer Catalog/Notification business state from scheduler rows.
-- **Reliability**: Durable trigger state survives restarts; misfires must remain visible and follow configured recovery policies (never silently skipped); non-concurrent jobs and target-side locks prevent overlapping work; failed invocations remain observable with job, trigger, target, and execution context; retries must be bounded and idempotent.
-- **Monitoring & secrets**: Operators monitor scheduler-instance check-ins, fired-trigger age, misfire/failure counts, execution duration, and last successful run, comparing them against pending vector updates (Catalog) or outbox state and provider health (Notification). Outbound credentials belong in runtime secret configuration; authorization headers, notification content, and personal data must never appear in Quartz metadata or routine logs.
-
-### Architecture decisions
+### Architecture Decisions
 
 <ADRTable />
 
-### Architecture
+## Related Documentation
 
-<NodeGraph mode="full" search="false" legend="false" />
+- [[flow|product-ingestion]] — Scheduled catalog vector ingestion workflow.
+- [[doc|platform/005-quartz-schema]] — Persistent scheduler schema reference.
+- [[doc|domains/bookworm/subdomains/platform/guides/scheduled-work-and-email-notifications]] — Guide to scheduled platform work.

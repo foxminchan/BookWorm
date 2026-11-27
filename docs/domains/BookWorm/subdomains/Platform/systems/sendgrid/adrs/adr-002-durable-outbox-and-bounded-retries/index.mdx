@@ -6,9 +6,9 @@ summary: Notification delivery attempts are driven by durable outbox records and
 status: accepted
 date: 2026-10-27
 owners:
-  - contributor-team
+  - platform-engineering-team
 decisionMakers:
-  - contributor-team
+  - platform-engineering-team
 appliesTo:
   - type: system
     id: sendgrid
@@ -37,13 +37,13 @@ If BookWorm attempted to send emails directly inside a business transaction, a p
 
 ## 3. How It Works
 
-The [[system|notification-system]] uses a durable [[entity|outbox]] paired with a bounded retry policy:
+The [[system|notification-system]] uses a durable outbox paired with a bounded retry policy:
 
-1. **Durable staging**: Before contacting the external provider, the [[system|notification-system]] saves each notification as a durable [[entity|outbox]] record.
+1. **Durable staging**: Before contacting the external provider, the [[system|notification-system]] saves each notification as a durable outbox record.
 2. **Background dispatch**: A background delivery worker picks up eligible items, submits them through [[service|sendgrid-api]], and records the provider's response.
 3. **Bounded retry for temporary issues**: When the provider is temporarily unavailable or throttles traffic, the item is retried on a bounded, observable schedule.
 4. **Terminal failure for permanent issues**: Invalid requests or permanent rejections are marked as terminal failures and stopped rather than retried indefinitely.
-5. **Single advancement on success**: When the provider confirms receipt, the [[entity|outbox]] item is marked complete from BookWorm's perspective, carrying a stable identifier across attempts so operators can trace retries and spot potential duplicates.
+5. **Single advancement on success**: When the provider confirms receipt, the outbox item is marked complete from BookWorm's perspective, carrying a stable identifier across attempts so operators can trace retries and spot potential duplicates.
 
 Because BookWorm's internal storage and the external email service cannot confirm work in a single shared transaction, a response lost right after the provider accepts a message can make an item eligible for another attempt. Stable identifiers and recorded outcomes make that risk observable rather than hiding it.
 
@@ -62,7 +62,7 @@ Because BookWorm's internal storage and the external email service cannot confir
 
 ### Target Outbox & Retry Contract
 
-- **Components**: [[system|notification-system]], [[entity|outbox]], [[service|sendgrid-api]], [[system|sendgrid]].
+- **Components**: [[system|notification-system]], outbox, [[service|sendgrid-api]], [[system|sendgrid]].
 - **Storage boundary**: PostgreSQL (local outbox persistence) and the external email provider do not share an atomic transaction; durable local state does not eliminate the ambiguous-outcome window between external submission and recording the provider result.
 - **Required controls before relying on guarantees**: Persisted attempt count, explicit terminal-failure classification, stable notification correlation identifiers, and automated recovery testing covering duplicates, timeouts, rate limits, and provider outages.
 

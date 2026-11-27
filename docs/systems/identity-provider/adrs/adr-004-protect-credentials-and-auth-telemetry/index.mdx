@@ -6,7 +6,7 @@ summary: Identity credentials and provider configuration remain secret, while au
 status: accepted
 date: 2026-11-02
 owners:
-  - contributor-team
+  - platform-engineering-team
 badges:
   - content: Security
     backgroundColor: red
@@ -15,12 +15,12 @@ appliesTo:
   - type: system
     id: identity-provider
   - type: service
-    id: oauthapi
+    id: oauth-api
 ---
 
 ## Context
 
-Access tokens, refresh credentials, client secrets, provider configuration,
+Access tokens, refresh credentials, client secrets, [[system|identity-provider]] configuration (for [[service|oauth-api]]),
 and signing keys can grant access to protected operations. Authentication
 telemetry is needed to operate the integration but can expose credentials or
 unnecessary personal data if it records request contents indiscriminately.
