@@ -14,83 +14,66 @@ sidebar:
   badge: "gRPC"
 ---
 
-`GetBasketGrpc` invokes the internal `basket.v1.BasketGrpcService/GetBasket` gRPC unary RPC on **Basket API** to retrieve the authenticated customer's basket items and quantities. **Ordering API** calls this RPC synchronously during order creation using an On-Behalf-Of (OBO) Microsoft Entra ID access token exchanged for Basket API.
+`GetBasketGrpc` invokes the internal `basket.v1.BasketGrpcService/GetBasket` gRPC unary RPC on [[service|basket-api]] to retrieve the authenticated customer's basket items and quantities. [[service|order-api]] calls this RPC synchronously during order creation using an On-Behalf-Of (OBO) Microsoft Entra ID access token exchanged for Basket API.
 
 ## Overview
 
-| Property              | Value                                                                                                                                                             |
-| :-------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**             | Shopping bounded context (**Basket API**, Aspire resource `basket`)                                                                                               |
-| **Primary caller**    | **Ordering API** (`ordering`) during checkout                                                                                                                     |
-| **Source**            | `src/Services/Basket/BookWorm.Basket/Grpc/Protos/basket/v1/basket.proto`, `src/Services/Basket/BookWorm.Basket/Grpc/Services/Basket/BasketService.cs`             |
-| **Protocol / format** | gRPC unary RPC (`basket.v1.BasketGrpcService/GetBasket`), Protobuf `edition = "2023"`, `csharp_namespace = "BookWorm.Basket.Grpc.Services"`                       |
-| **Authentication**    | `[Authorize]` — Microsoft Entra ID JWT propagated via gRPC `Authorization: Bearer <token>` metadata (customer OBO token with `basket_read`/`basket_write` scopes) |
-| **Rate limiting**     | `[EnableRateLimiting("PerUserRateLimit")]` (30 token limit, 20 tokens per 10 seconds, queue limit 5)                                                              |
-| **Contract version**  | `1.0.0`                                                                                                                                                           |
+| Property                           | Value                                                                                                                             |
+| :--------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------- |
+| **Bounded Context**                | Shopping                                                                                                                          |
+| **Owner Service**                  | [[service\|basket-api]]                                                                                                           |
+| **Protocol / Format**              | gRPC unary RPC (`basket.v1.BasketGrpcService/GetBasket`), Protobuf `edition = "2023"`                                             |
+| **Gateway Endpoint**               | Internal gRPC RPC `basket.v1.BasketGrpcService/GetBasket` (not exposed via API Gateway)                                           |
+| **Authentication & Authorization** | Microsoft Entra ID JWT via `Authorization: Bearer <token>` metadata (customer OBO token with `basket_read`/`basket_write` scopes) |
+| **Idempotency / Concurrency**      | Read-only and naturally idempotent                                                                                                |
+| **Rate Limit / Caching**           | Per-user token bucket (`30` limit, `20` per `10s`, queue `5`); backed by Redis                                                    |
+| **Contract Version**               | `1.0.0`                                                                                                                           |
 
-## Parameters and fields
+## Request & Response Contract
 
-### Request message (`google.protobuf.Empty`)
+### Request Message (`google.protobuf.Empty`)
 
-`GetBasket` takes an empty `google.protobuf.Empty` message. Basket API derives the customer identity from the authenticated gRPC call context (`context.GetUserIdentity()`).
+Empty `google.protobuf.Empty` message; customer identity is derived from the authenticated gRPC call context.
 
-### Response message (`GetBasketResponse`)
+### Success Response (`GetBasketResponse`)
 
-| Field              | Protobuf type   | Tag | Description                                                           |
-| :----------------- | :-------------- | :-- | :-------------------------------------------------------------------- |
-| `id`               | `string`        | `1` | Basket identifier (empty string if no basket exists for the customer) |
-| `items`            | `repeated Item` | `2` | Items currently stored in the basket (empty list if no basket exists) |
-| `items[].id`       | `string`        | `1` | Catalog book identifier                                               |
-| `items[].quantity` | `int32`         | `2` | Quantity of the book in the basket                                    |
+| Name               | Type     | Required | Constraints                                          | Description                          |
+| :----------------- | :------- | :------- | :--------------------------------------------------- | :----------------------------------- |
+| `id`               | `string` | Yes      | Tag `1` (empty string if no basket exists)           | Basket identifier                    |
+| `items`            | `Item[]` | Yes      | Tag `2` (`repeated`; empty list if no basket exists) | Items currently stored in the basket |
+| `items[].id`       | `string` | Yes      | Tag `1`                                              | Catalog book identifier              |
+| `items[].quantity` | `int32`  | Yes      | Tag `2`                                              | Quantity of the book in the basket   |
 
 :::note
-When no basket exists in Redis for the authenticated customer, `BasketService.GetBasket` returns an empty `GetBasketResponse` (`id = ""`, `items = []`) rather than throwing `StatusCode.NotFound`. Callers must check `response.Items.Count` before proceeding.
+When no basket exists in Redis for the authenticated customer, this RPC returns an empty `GetBasketResponse` (`id = ""`, `items = []`) rather than `NotFound` (`5`). Callers must check `items` length before proceeding.
 :::
 
-### Protobuf contract
+## Behavior & Side Effects
 
-<CodeGroup>
+- **Redis lookup:** Reads `basket:{userId}` directly from Redis without Catalog enrichment.
+- **No state mutation:** Pure read RPC with no database writes or integration events.
 
-```protobuf
-edition = "2023";
+## Error Responses
 
-import "google/protobuf/empty.proto";
+| Status / Code             | Condition                                                     | Client Recovery Action                                                |
+| :------------------------ | :------------------------------------------------------------ | :-------------------------------------------------------------------- |
+| `Unauthenticated` (`16`)  | Missing/invalid Entra ID token or empty user identity         | Exchange a valid customer OBO token for Basket API and retry          |
+| `PermissionDenied` (`7`)  | Authenticated principal fails Basket API authorization policy | Verify customer role and `basket_read`/`basket_write` scopes          |
+| `ResourceExhausted` (`8`) | Caller exceeded per-user rate limit                           | Retry with exponential backoff                                        |
+| `Unavailable` (`14`)      | Basket API or backing Redis instance is unreachable           | Retry within budgeted resilience policy; fail checkout if unavailable |
 
-option csharp_namespace = "BookWorm.Basket.Grpc.Services";
-
-package basket.v1;
-
-service BasketGrpcService {
-  rpc GetBasket (google.protobuf.Empty) returns (GetBasketResponse);
-}
-
-message GetBasketResponse {
-  string id = 1;
-  repeated Item items = 2;
-}
-
-message Item {
-  string id = 1;
-  int32  quantity = 2;
-}
-```
-
-</CodeGroup>
-
-## Error responses
-
-| Code / status             | Condition                                                                              | Recovery behavior                                                     |
-| :------------------------ | :------------------------------------------------------------------------------------- | :-------------------------------------------------------------------- |
-| `Unauthenticated` (`16`)  | Missing/invalid Entra ID token or empty user identity (`"User is not authenticated."`) | Exchange a valid customer OBO token for Basket API and retry          |
-| `PermissionDenied` (`7`)  | Authenticated principal fails Basket API authorization policy                          | Verify customer role and `basket_read`/`basket_write` scopes          |
-| `ResourceExhausted` (`8`) | Caller exceeded `PerUserRateLimit`                                                     | Retry with exponential backoff                                        |
-| `Unavailable` (`14`)      | Basket API or backing Redis instance is unreachable                                    | Retry within budgeted resilience policy; fail checkout if unavailable |
-
-## Related documentation
+## Related Documentation
 
 - [[service|basket-api]] — Service overview, Redis persistence, and endpoints.
-- [[query|GetBasket]] — Public HTTP endpoint that enriches basket items with Catalog API details.
+- [[entity|basket]] — Basket entity model.
+- [[query|GetBasket]] — Public HTTP endpoint that enriches basket items with Catalog details.
 - [[command|CreateOrder]] — Ordering API checkout flow that calls `GetBasket`.
-- [[entity|basket]] — Domain model for stored customer baskets.
 
 <NodeGraph />
+
+<SchemaViewer
+	file="schema.proto"
+	title="Get basket over gRPC schema"
+	maxHeight="500"
+	search="true"
+/>

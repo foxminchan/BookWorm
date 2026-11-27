@@ -14,72 +14,58 @@ sidebar:
   badge: "gRPC"
 ---
 
-`ListAuthorsGrpc` invokes the internal `book.v1.BookGrpcService/ListAuthors` gRPC unary RPC on **Catalog API** to return all registered catalog authors (`AuthorItem`) without pagination. **MCP Tools** calls this RPC to power its `list_authors` tool.
+`ListAuthorsGrpc` invokes the internal `book.v1.BookGrpcService/ListAuthors` gRPC unary RPC on [[service|catalog-api]] to return all registered catalog authors without pagination. [[service|mcp-server]] calls this RPC to power its `list_authors` tool.
 
 ## Overview
 
-| Property                | Value                                                                                                                                        |
-| :---------------------- | :------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner (gRPC server)** | Catalog bounded context (**Catalog API**, Aspire resource `catalog`)                                                                         |
-| **Primary caller**      | **MCP Tools** (`mcptools`, `list_authors` tool)                                                                                              |
-| **Source**              | `src/Services/Catalog/BookWorm.Catalog/Grpc/Protos/book/v1/book.proto`, `src/Services/Catalog/BookWorm.Catalog/Grpc/Services/BookService.cs` |
-| **Protocol / format**   | gRPC unary RPC (`book.v1.BookGrpcService/ListAuthors`), Protobuf `edition = "2023"`, `csharp_namespace = "BookWorm.Catalog.Grpc.Services"`   |
-| **Authentication**      | `[AllowAnonymous]` (internal service-to-service public catalog read)                                                                         |
-| **Caching**             | Dispatches `ListAuthorsQuery`, backed by PostgreSQL (`catalogdb`) and FusionCache (L1 + Redis L2, key `CatalogCacheKeys.Authors`)            |
-| **Contract version**    | `1.0.0`                                                                                                                                      |
+| Property                           | Value                                                                                 |
+| :--------------------------------- | :------------------------------------------------------------------------------------ |
+| **Bounded Context**                | Catalog                                                                               |
+| **Owner Service**                  | [[service\|catalog-api]]                                                              |
+| **Protocol / Format**              | gRPC unary RPC (`book.v1.BookGrpcService/ListAuthors`), Protobuf `edition = "2023"`   |
+| **Gateway Endpoint**               | Internal gRPC RPC `book.v1.BookGrpcService/ListAuthors` (not exposed via API Gateway) |
+| **Authentication & Authorization** | Internal service-to-service anonymous read                                            |
+| **Idempotency / Concurrency**      | Read-only and naturally idempotent                                                    |
+| **Rate Limit / Caching**           | Backed by PostgreSQL and cached in L1 + Redis L2                                      |
+| **Contract Version**               | `1.0.0`                                                                               |
 
-## Parameters and fields
+## Request & Response Contract
 
-### Request message (`ListAuthorsRequest`)
+### Request Message (`ListAuthorsRequest`)
 
-`ListAuthorsRequest` is an empty Protobuf message with no fields.
+Empty Protobuf message with no fields.
 
-### Response message (`ListAuthorsResponse`)
+### Success Response (`ListAuthorsResponse`)
 
-| Field            | Protobuf type         | Tag | Description                                                             |
-| :--------------- | :-------------------- | :-- | :---------------------------------------------------------------------- |
-| `authors`        | `repeated AuthorItem` | `1` | All catalog authors (empty collection if none exist)                    |
-| `authors[].id`   | `string`              | `1` | Author UUID                                                             |
-| `authors[].name` | `string`              | `2` | Author display name (mapped to empty string `""` if null in source DTO) |
+| Name             | Type              | Required | Constraints                    | Description                                          |
+| :--------------- | :---------------- | :------- | :----------------------------- | :--------------------------------------------------- |
+| `authors`        | `AuthorItem[]`    | Yes      | Tag `1` (`repeated`)           | All catalog authors (empty collection if none exist) |
+| `authors[].id`   | `string` (`uuid`) | Yes      | Tag `1`                        | Author UUID                                          |
+| `authors[].name` | `string`          | Yes      | Tag `2` (empty string if null) | Author display name                                  |
 
-### Protobuf contract
+## Behavior & Side Effects
 
-<CodeGroup>
+- **Read-through caching:** Serves the author directory from L1/Redis L2 cache, shared with [[query|ListAuthors]].
+- **No state mutation:** Pure read RPC with no database writes or integration events.
 
-```protobuf
-edition = "2023";
+## Error Responses
 
-package book.v1;
-
-service BookGrpcService {
-  rpc ListAuthors (ListAuthorsRequest) returns (ListAuthorsResponse);
-}
-
-message ListAuthorsRequest {}
-
-message ListAuthorsResponse {
-  repeated AuthorItem authors = 1;
-}
-
-message AuthorItem {
-  string id = 1;
-  string name = 2;
-}
-```
-
-</CodeGroup>
-
-## Error responses
-
-| Code / status        | Condition                  | Recovery behavior                           |
+| Status / Code        | Condition                  | Client Recovery Action                      |
 | :------------------- | :------------------------- | :------------------------------------------ |
 | `Unavailable` (`14`) | Catalog API is unreachable | Retry within the budgeted resilience policy |
 
-## Related documentation
+## Related Documentation
 
-- [[service|catalog-api]] — Service overview, PostgreSQL persistence, and gRPC services.
+- [[service|catalog-api]] — Service overview, persistence, and gRPC services.
 - [[service|mcp-server]] — Primary caller exposing the `list_authors` MCP tool.
-- [[query|ListAuthors]] — Public HTTP endpoint (`GET /api/v1/authors`).
-- [[entity|author]] — Domain model for catalog authors.
+- [[entity|author]] — Author entity model.
+- [[query|ListAuthors]] — Public HTTP endpoint (`GET /catalog/api/v1/authors`).
 
 <NodeGraph />
+
+<SchemaViewer
+	file="schema.proto"
+	title="List authors over gRPC schema"
+	maxHeight="500"
+	search="true"
+/>

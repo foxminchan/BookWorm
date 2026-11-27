@@ -1,13 +1,16 @@
 ---
 id: order-lifecycle
-name: Order lifecycle and status transitions
+name: Order Lifecycle and Status Transitions
 version: 1.0.0
 summary: >-
-  A buyer's checkout creates a New Order, Finance coordinates the post-order
-  work, and Ordering moves the order to Completed or Cancelled according to
-  its own state transitions.
+  Checkout creates a New Order owned by Ordering API, Finance coordinates
+  post-order cleanup and notifications, and explicit business operations move
+  the Order to Completed or Cancelled.
 owners:
   - contributor-team
+diagrams:
+  - id: order-lifecycle
+    version: 1.0.0
 badges:
   - content: Business Process
     backgroundColor: purple
@@ -19,7 +22,7 @@ steps:
       name: Customer
     next_step:
       id: create-order
-      label: Submit the basket to Ordering
+      label: Submit basket to Ordering
   - id: create-order
     title: CreateOrder command
     message:
@@ -27,65 +30,73 @@ steps:
       version: 1.0.0
     next_step:
       id: order-api
-      label: Build the Order from the current basket
+      label: Validate and build New order
   - id: order-api
-    title: Ordering API creates the New order
+    title: Ordering API creates New order
     summary: >-
-      The order API authenticates the buyer, resolves the current basket and
-      Catalog prices, and writes the Order and item snapshot in the order
-      database.
+      Authenticates the buyer, resolves basket quantities and Catalog prices,
+      and writes the New order snapshot and event stream.
     service:
       id: order-api
       version: 1.0.0
     next_steps:
       - id: order-db
-        label: Persist the accepted purchase
+        label: Persist New order and projections
       - id: finance-saga
-        label: Publish the checkout event for Finance
+        label: Publish checkout event to Finance
   - id: order-db
-    title: Order Database stores the accepted purchase
+    title: Order Database stores accepted order
+    summary: >-
+      Stores the authoritative Order record, event-sourced summary projections,
+      and transactional outbox messages.
     container:
       id: order-database
       version: 1.0.0
     next_steps:
       - id: order-complete
-        label: Order is completed
+        label: Explicit completion transition
       - id: order-cancel
-        label: Order is cancelled
+        label: Explicit cancellation transition
   - id: finance-saga
-    title: Finance saga tracks basket cleanup and notifications
+    title: Finance coordinates post-checkout work
+    summary: >-
+      Tracks post-checkout basket cleanup and awaits explicit Ordering status
+      events while managing bounded retry timeouts.
     service:
       id: order-orchestration
       version: 1.0.0
     next_steps:
       - id: finance-complete
-        label: Wait for explicit ordering completion event
+        label: Await order completion event
       - id: finance-cancel
-        label: Wait for explicit ordering cancellation event
+        label: Await order cancellation event
   - id: order-complete
-    title: Ordering publishes order-completion status
+    title: Order status changed to Complete
     message:
       id: OrderStatusChangedToCompleteIntegrationEvent
       version: 1.0.0
     next_step:
       id: finance-complete
-      label: Finance consumes completion event
+      label: Deliver via ordering.order-status-change-to-complete
   - id: order-cancel
-    title: Ordering publishes order-cancellation status
+    title: Order status changed to Cancel
     message:
       id: OrderStatusChangedToCancelIntegrationEvent
       version: 1.0.0
     next_step:
       id: finance-cancel
-      label: Finance consumes cancellation event
+      label: Deliver via ordering.order-status-change-to-cancel
   - id: finance-complete
-    title: Finance emits CompleteOrderCommand
+    title: Finance handles order completion
+    summary: >-
+      Finalizes the orchestration and emits CompleteOrderCommand to notify the
+      customer.
     service:
       id: order-orchestration
       version: 1.0.0
     next_step:
       id: complete-order-command
-      label: Publish CompleteOrderCommand to Kafka
+      label: Publish CompleteOrderCommand
   - id: complete-order-command
     title: CompleteOrderCommand
     message:
@@ -93,15 +104,18 @@ steps:
       version: 1.0.0
     next_step:
       id: notification-complete
-      label: Notification consumes CompleteOrderCommand
+      label: Deliver via finance.complete-order
   - id: finance-cancel
-    title: Finance emits CancelOrderCommand
+    title: Finance handles order cancellation
+    summary: >-
+      Finalizes the orchestration and emits CancelOrderCommand to notify the
+      customer.
     service:
       id: order-orchestration
       version: 1.0.0
     next_step:
       id: cancel-order-command
-      label: Publish CancelOrderCommand to Kafka
+      label: Publish CancelOrderCommand
   - id: cancel-order-command
     title: CancelOrderCommand
     message:
@@ -109,69 +123,73 @@ steps:
       version: 1.0.0
     next_step:
       id: notification-cancel
-      label: Notification consumes CancelOrderCommand
+      label: Deliver via finance.cancel-order
   - id: notification-complete
-    title: Notification renders and sends the completion message
+    title: Notification sends completion email
     service:
       id: notification-api
       version: 1.0.0
   - id: notification-cancel
-    title: Notification renders and sends the cancellation message
+    title: Notification sends cancellation email
     service:
       id: notification-api
       version: 1.0.0
 ---
 
-**Ordering API** is the single system of record for accepted customer orders and owns every business status transition (`New`, `Completed`, and `Cancelled`). After Ordering API persists a `New` order snapshot in PostgreSQL (`orderingdb`), **Finance** (`OrderOrchestrator` on Azure Durable Functions) coordinates asynchronous basket cleanup and routes order-status notifications to **Notification** over Kafka. Neither Finance nor Notification ever modifies an order's business status.
+## Trigger & Business Outcome
 
-## Context and motivation
+This lifecycle begins when a customer submits [[command|CreateOrder]] to create a purchase record and spans every authoritative state transition until the [[entity|order]] reaches a terminal **Completed** or **Cancelled** state. Success is confirmed when [[service|order-api]] commits the terminal status in [[container|order-database]], [[service|order-orchestration]] closes its coordination workflow, and [[service|notification-api]] delivers the corresponding status email.
 
-Checkout turns mutable shopping intent in **Basket API** into an immutable purchase snapshot in **Ordering API**, then triggers downstream basket deletion and customer emails. Combining those steps into one synchronous call or allowing downstream workers to mutate order status would create brittle checkouts and conflicting records.
-
-BookWorm separates responsibilities across four bounded contexts:
-
-- **Shopping (`Basket API`):** Holds mutable pre-order items in Redis and deletes the basket after checkout.
-- **Ordering (`Ordering API`):** Owns the accepted order, its item-price snapshot, event-sourced `OrderSummary` projections (Marten + EF Core in PostgreSQL `orderingdb`), and explicit status transitions (`New`, `Completed`, `Cancelled`).
-- **Ordering (`Finance`):** Runs the Azure Durable Functions `OrderOrchestrator` on Azure Durable Task Scheduler (`finance-taskhub`) to coordinate basket cleanup, bounded retry timeouts, and notification commands. Finance has no PostgreSQL database and does not process card payments.
-- **Platform (`Notification`):** Renders and sends order emails over SMTP as a pure downstream side effect.
-
-## How it works
-
-An order moves through explicit business states owned by **Ordering API**, while **Finance** orchestrates asynchronous follow-up commands on Kafka.
-
-This sequence diagram shows order creation, Finance coordination, explicit completion or cancellation transitions, and Notification delivery.
-
-<MermaidFileLoader file="mermaids/order-lifecycle-diagram-1.mmd" />
-
-### State transitions and soft deletion
-
-This state diagram clarifies the difference between Ordering API's explicit business statuses (`New`, `Completed`, `Cancelled`) and technical soft deletion after failed basket cleanup.
-
-<MermaidFileLoader file="mermaids/order-lifecycle-diagram-2.mmd" />
-
-- **Creation (`New`):** **Ordering API** authenticates the buyer via Microsoft Entra ID, reads the persisted basket over gRPC (`basket.v1.BasketGrpcService`), resolves authoritative prices over gRPC (`book.v1.BookGrpcService`), persists the order in `orderingdb` (EF Core + Marten event store + Wolverine PostgreSQL outbox), and publishes `UserCheckedOutIntegrationEvent` (`bookworm.{env}.ordering.user-checked-out`).
-- **Post-checkout coordination:** **Finance** consumes `UserCheckedOutIntegrationEvent` and starts an `OrderOrchestrator` instance correlated by `OrderId` in Azure Durable Task Scheduler (`finance-taskhub`). Finance publishes `PlaceOrderCommand` (`bookworm.{env}.finance.place-order`), consumed independently by **Basket API** (to delete the basket) and **Notification** (to send the placement email).
-- **Explicit completion or cancellation:** When an authorized business operation marks an order `Completed` or `Cancelled`, **Ordering API** commits the new status and publishes `OrderStatusChangedToCompleteIntegrationEvent` (`bookworm.{env}.ordering.order-status-change-to-complete`) or `OrderStatusChangedToCancelIntegrationEvent` (`bookworm.{env}.ordering.order-status-change-to-cancel`). **Finance** consumes the status event, completes its orchestration, and publishes `CompleteOrderCommand` (`bookworm.{env}.finance.complete-order`) or `CancelOrderCommand` (`bookworm.{env}.finance.cancel-order`) for **Notification**.
-- **Basket cleanup failure vs. cancellation:** If **Basket API** returns `false` on deletion, Finance sends `DeleteBasketFailedCommand` (`bookworm.{env}.finance.delete-basket-failed`) to **Ordering API**, which soft-deletes the order (`IsDeleted = true`) without changing its business status to `Cancelled` and without publishing `OrderStatusChangedToCancelIntegrationEvent`.
-
-## Design trade-offs
-
-| Decision                                                   | Benefits                                                                                                               | Costs and limits                                                                                               |
-| :--------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------- |
-| **Ordering owns status; Finance routes notifications**     | Keeps business status authoritative in one service and lets Finance cancel pending retry timers when an order finishes | Adds a Kafka hop through Finance between Ordering status events and Notification emails                        |
-| **PostgreSQL outbox + Marten event store on Ordering API** | Guarantees atomic order persistence, `OrderSummary` read projections, and Kafka event publication                      | Requires operating Marten's Async Daemon (`DaemonLockId = 44444`) alongside EF Core migrations in `orderingdb` |
-| **Soft deletion separate from `Cancelled` status**         | Distinguishes technical post-checkout cleanup failures from intentional business cancellations                         | Support and operators must inspect both business status and `IsDeleted` when troubleshooting missing orders    |
-| **Asynchronous downstream side effects**                   | Keeps checkout fast and prevents email or basket outages from blocking order acceptance                                | Introduces eventual consistency between order status and customer emails                                       |
-
-## Alternatives considered
-
-- **Notification consuming Ordering status events directly:** Rejected because **Finance** must observe `OrderStatusChangedToCompleteIntegrationEvent` and `OrderStatusChangedToCancelIntegrationEvent` anyway to stop its active retry loop and clear compensations before issuing `CompleteOrderCommand` or `CancelOrderCommand`.
-- **Finance owning order status:** Rejected because Finance is a coordination orchestrator on Durable Task Scheduler, not the domain authority for purchases, pricing snapshots, or buyer order history.
-- **Synchronous distributed transaction across Ordering, Basket, and Notification:** Rejected because two-phase commits across PostgreSQL, Redis, and external SMTP providers cannot preserve checkout availability.
-
-## Related documentation
-
-- [[flow|user-checkout]] — Detailed walkthrough of checkout validation, basket cleanup, and Finance retry timeouts.
-- [[flow|notification-delivery]] — How Notification renders and sends placement, completion, and cancellation emails.
+## Interactive Flow Visualization
 
 <NodeGraph />
+
+## Step-by-Step Walkthrough
+
+<Steps title="Order Lifecycle and Downstream Coordination">
+	<Step title="Accept New order in Ordering">
+		[[service|order-api]] authenticates the buyer, resolves the persisted [[entity|basket]] and
+		[[domain|catalog]] prices, persists the **New** [[entity|order]] in
+		[[container|order-database]], and publishes [[event|UserCheckedOutIntegrationEvent]] via its
+		transactional outbox.
+	</Step>
+	<Step title="Coordinate post-checkout work in Finance">
+		[[service|order-orchestration]] consumes [[event|UserCheckedOutIntegrationEvent]], coordinates
+		basket cleanup (detailed in [[flow|user-checkout]]), and remains active until an explicit
+		order-status event arrives or bounded retries exhaust.
+	</Step>
+	<Step title="Transition to Completed or Cancelled">
+		When an authorized business operation invokes [[command|CompleteOrder]] or
+		[[command|CancelOrder]], [[service|order-api]] commits the irreversible terminal transition and
+		publishes [[event|OrderStatusChangedToCompleteIntegrationEvent]] or
+		[[event|OrderStatusChangedToCancelIntegrationEvent]].
+	</Step>
+	<Step title="Route status notifications">
+		[[service|order-orchestration]] consumes the status event, completes its workflow to stop any
+		pending timeout timers, and publishes [[command|CompleteOrderCommand]] or
+		[[command|CancelOrderCommand]] to [[service|notification-api]] for customer email delivery.
+	</Step>
+</Steps>
+
+## Failure, Retry & Compensation Behavior
+
+| Failure Point                             | System Behavior                                                                                                                                                                                     | Compensation / Recovery                                                                                                                                                                                                        |
+| :---------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Invalid transition on terminal order**  | <ResourceLink id="order-api" type="service">order-api</ResourceLink> rejects completion or cancellation once **Completed** or **Cancelled**                                                         | Terminal states are immutable; handle post-finalization exceptions through external compensating workflows                                                                                                                     |
+| **Basket cleanup failure after checkout** | <ResourceLink id="order-orchestration" type="service">order-orchestration</ResourceLink> sends <ResourceLink id="DeleteBasketFailedCommand" type="command">DeleteBasketFailedCommand</ResourceLink> | <ResourceLink id="order-api" type="service">order-api</ResourceLink> soft-deletes the order record while preserving **New** business status                                                                                    |
+| **Finance timeout exhaustion**            | <ResourceLink id="order-orchestration" type="service">order-orchestration</ResourceLink> cancels its own workflow after three attempts                                                              | Sends <ResourceLink id="CancelOrderCommand" type="command">CancelOrderCommand</ResourceLink> for email notification only; does not mutate order status in <ResourceLink id="order-api" type="service">order-api</ResourceLink> |
+| **Notification delivery failure**         | <ResourceLink id="notification-api" type="service">notification-api</ResourceLink> retries with backoff, then dead-letters                                                                          | Routed to <ResourceLink id="bookworm.{env}.notification.dead-letter-queue" type="channel">`bookworm.{env}.notification.dead-letter-queue`</ResourceLink>; order status remains intact                                          |
+
+:::warning
+**[[service|order-api]] is the sole authority for order business status.**
+
+Neither [[service|order-orchestration]] nor [[service|notification-api]] can transition an [[entity|order]] to **Completed** or **Cancelled**. Always inspect [[diagram|order-lifecycle]] when distinguishing business cancellation from technical soft deletion or orchestration timeouts.
+:::
+
+## Participating Resources
+
+- **Domains & Systems:** [[domain|ordering]], [[domain|shopping]], [[domain|platform]], [[system|order-system]], [[system|finance-system]], [[system|notification-system]]
+- **Services:** [[service|order-api]], [[service|order-orchestration]], [[service|notification-api]]
+- **Messages:** [[command|CreateOrder]], [[command|CompleteOrder]], [[command|CancelOrder]], [[event|UserCheckedOutIntegrationEvent]], [[event|OrderStatusChangedToCompleteIntegrationEvent]], [[event|OrderStatusChangedToCancelIntegrationEvent]], [[command|CompleteOrderCommand]], [[command|CancelOrderCommand]]
+- **Channels & Stores:** <ResourceLink id="bookworm.{env}.ordering.order-status-change-to-complete" type="channel">`bookworm.{env}.ordering.order-status-change-to-complete`</ResourceLink>, <ResourceLink id="bookworm.{env}.ordering.order-status-change-to-cancel" type="channel">`bookworm.{env}.ordering.order-status-change-to-cancel`</ResourceLink>, <ResourceLink id="bookworm.{env}.finance.complete-order" type="channel">`bookworm.{env}.finance.complete-order`</ResourceLink>, <ResourceLink id="bookworm.{env}.finance.cancel-order" type="channel">`bookworm.{env}.finance.cancel-order`</ResourceLink>, [[container|order-database]]
+- **Related Views:** [[diagram|order-lifecycle]], [[flow|user-checkout]], [[flow|notification-delivery]]

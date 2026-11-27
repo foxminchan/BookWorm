@@ -9,46 +9,46 @@ dictionary:
     icon: MessageCircle
   - id: Decision Router
     name: Decision Router
-    summary: Evaluates language, scope, and target specialist for a customer request.
+    summary: Evaluates safety, language, scope, and target specialist for a customer request.
     description: |
-      The Decision Router (DecisionRouterExecutor backed by Microsoft-Decision-1)
-      checks English language compliance, BookWorm domain scope, and selects
-      Book Agent, QA Agent, or Rating Agent without invoking an LLM agent.
+      The Decision Router checks safety, English language compliance, and BookWorm
+      domain scope, then selects Book Agent, QA Agent, or Rating Agent in a single
+      pass before invoking any generative specialist.
     icon: Route
   - id: Book Agent
     name: Book Agent
     summary: Helps customers search for books and receive recommendations.
     description: |
-      The Book Agent (`book-agent`) uses Catalog capabilities and sub-researchers
-      for search, details, categories, authors, and recommendations, while inferring
+      The Book Agent uses Catalog capabilities and research sub-agents for search,
+      details, categories, authors, and recommendations, while inferring
       conversational sentiment inline. Catalog remains the source of book data.
     icon: Search
   - id: Book Catalog Researcher
     name: Book Catalog Researcher
     summary: Sub-agent that performs deep catalog lookups for the Book Agent.
     description: |
-      The Book Catalog Researcher (`book-catalog-researcher`) queries Catalog MCP
-      tools for book details, categories, authors, and publishers on behalf of Book Agent.
+      The Book Catalog Researcher queries read-only Catalog tools for book details,
+      categories, authors, and publishers on behalf of Book Agent.
     icon: BookSearch
   - id: Book Recommendation Researcher
     name: Book Recommendation Researcher
     summary: Sub-agent that generates tailored book recommendations for the Book Agent.
     description: |
-      The Book Recommendation Researcher (`book-recommendation-researcher`) synthesizes
-      personalized reading suggestions using catalog metadata and rating summaries.
+      The Book Recommendation Researcher synthesizes personalized reading
+      suggestions using catalog metadata and rating summaries.
     icon: Sparkles
   - id: QA Agent
     name: QA Agent
     summary: Answers general questions about bookstore policies and services.
     description: |
-      The QA Agent (`qa-agent`) handles shipping, returns, account, order, billing, and
+      The QA Agent handles shipping, returns, account, order, billing, and
       store-policy questions without changing business records.
     icon: CircleHelp
   - id: Rating Agent
     name: Rating Agent
     summary: Summarizes customer book ratings and feedback in Reviews.
     description: |
-      The Rating Agent (`rating-agent`) provides read-only rating and review insights
+      The Rating Agent provides read-only rating and review insights
       from the Reviews context via agent-to-agent delegation.
     icon: Star
   - id: Handoff
@@ -92,13 +92,13 @@ Each term captures a distinct responsibility in handling customer conversations:
 
 ## 5. Technical Reference
 
-| Dictionary ID                    | Summary                                                                  | Technical & Boundary Notes                                                                                                                |
-| -------------------------------- | ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `Customer Request`               | BookWorm-related message being handled by agents.                        | Interaction only; Books, Baskets, and Orders mentioned remain owned by their respective contexts.                                         |
-| `Decision Router`                | Evaluates language, scope, and target specialist for a customer request. | Implemented by `DecisionRouterExecutor` backed by `Microsoft-Decision-1`; selects `book-agent`, `qa-agent`, or `rating-agent`.            |
-| `Book Agent`                     | Helps customers search for books and receive recommendations.            | Agent `book-agent`; delegates to `book-catalog-researcher` and `book-recommendation-researcher` and handles emotional tone inline.        |
-| `Book Catalog Researcher`        | Sub-agent that performs deep catalog lookups for the Book Agent.         | Agent `book-catalog-researcher`; queries Catalog MCP tools without owning catalog data.                                                   |
-| `Book Recommendation Researcher` | Sub-agent that generates tailored book recommendations.                  | Agent `book-recommendation-researcher`; synthesizes suggestions from catalog metadata and ratings.                                        |
-| `QA Agent`                       | Answers general questions about bookstore policies and services.         | Agent `qa-agent`; handles shipping, returns, account, order, billing, and store-policy questions without changing business records.       |
-| `Rating Agent`                   | Summarizes customer book ratings and feedback in Reviews.                | Agent `rating-agent`; provides read-only review summaries via A2A delegation.                                                             |
-| `Handoff`                        | Transfer of a request between specialist agents.                         | Routes `qa-agent` -> `book-agent` or `book-agent` -> `rating-agent`; conversational routing, not a business process like Order placement. |
+| Dictionary ID                    | Summary                                                                          | Technical & Boundary Notes                                                                                                                |
+| -------------------------------- | -------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `Customer Request`               | BookWorm-related message being handled by agents.                                | Interaction only; Books, Baskets, and Orders mentioned remain owned by their respective contexts.                                         |
+| `Decision Router`                | Evaluates safety, language, scope, and target specialist for a customer request. | Single-pass gatekeeper selecting Book Agent, QA Agent, or Rating Agent.                                                                   |
+| `Book Agent`                     | Helps customers search for books and receive recommendations.                    | Agent `book-agent`; delegates to `book-catalog-researcher` and `book-recommendation-researcher` and handles emotional tone inline.        |
+| `Book Catalog Researcher`        | Sub-agent that performs deep catalog lookups for the Book Agent.                 | Agent `book-catalog-researcher`; queries Catalog MCP tools without owning catalog data.                                                   |
+| `Book Recommendation Researcher` | Sub-agent that generates tailored book recommendations.                          | Agent `book-recommendation-researcher`; synthesizes suggestions from catalog metadata and ratings.                                        |
+| `QA Agent`                       | Answers general questions about bookstore policies and services.                 | Agent `qa-agent`; handles shipping, returns, account, order, billing, and store-policy questions without changing business records.       |
+| `Rating Agent`                   | Summarizes customer book ratings and feedback in Reviews.                        | Agent `rating-agent`; provides read-only review summaries via A2A delegation.                                                             |
+| `Handoff`                        | Transfer of a request between specialist agents.                                 | Routes `qa-agent` -> `book-agent` or `book-agent` -> `rating-agent`; conversational routing, not a business process like Order placement. |

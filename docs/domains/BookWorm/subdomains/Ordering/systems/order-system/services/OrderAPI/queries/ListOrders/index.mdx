@@ -18,67 +18,71 @@ sidebar:
   badge: "GET"
 ---
 
-`ListOrders` queries **Ordering API** (`GET /api/v1/orders`) to return a paginated list of order summaries (`OrderDto[]`) with optional status and buyer filters. Non-administrator callers are automatically scoped to their own authenticated Microsoft Entra ID buyer ID, while administrators (`admin` role) can filter across buyers.
+`ListOrders` queries [[service|order-api]] (`GET /ordering/api/v1/orders`) to return a paginated list of order summaries with optional status and buyer filters. Non-administrator callers are automatically scoped to their own authenticated Microsoft Entra ID buyer ID, while administrators (`admin` role) can filter across buyers.
 
 ## Overview
 
-| Property              | Value                                                                                                                                |
-| :-------------------- | :----------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**             | Ordering bounded context (**Ordering API**, Aspire resource `ordering`)                                                              |
-| **Source**            | `src/Services/Ordering/BookWorm.Ordering/Features/Orders/List/ListOrdersEndpoint.cs`, `ListOrdersQuery.cs`, `ListOrdersValidator.cs` |
-| **Protocol / format** | HTTP `GET /api/v1/orders` (via API Gateway: `GET /ordering/api/v1/orders`), `ApiVersions.V1`, JSON (`application/json`)              |
-| **Authentication**    | Microsoft Entra ID JWT required (`customer` or `admin` role; scopes `ordering_read`, `ordering_write`)                               |
-| **Rate limiting**     | `PerUserRateLimit` token bucket (30 token limit, 20 tokens per 10 seconds, queue limit 5) plus global IP/concurrency limiters        |
-| **Backing store**     | PostgreSQL (`orderingdb`, EF Core)                                                                                                   |
-| **Contract version**  | `1.0.0`                                                                                                                              |
+| Property                           | Value                                                                                                                             |
+| :--------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------- |
+| **Bounded Context**                | Ordering                                                                                                                          |
+| **Owner Service**                  | [[service\|order-api]]                                                                                                            |
+| **Protocol / Format**              | HTTP `GET`, `application/json` response                                                                                           |
+| **Gateway Endpoint**               | `GET /ordering/api/v1/orders` (service path `/api/v1/orders`)                                                                     |
+| **Authentication & Authorization** | Microsoft Entra ID JWT — `customer` or `admin` role plus scopes `ordering_read`, `ordering_write`                                 |
+| **Idempotency / Concurrency**      | Read-only and naturally idempotent                                                                                                |
+| **Rate Limit / Caching**           | Global concurrency (`100`), per-IP fixed-window (`30 req/min`), and per-user token bucket (`30` limit, `20` per `10s`, queue `5`) |
+| **Contract Version**               | `1.0.0` (`ApiVersions.V1`)                                                                                                        |
 
-## Parameters and fields
+## Request & Response Contract
 
-### Query parameters
+### Query Parameters
 
-| Name        | Type            | Required | Default | Constraints                           | Description                                                                                                     |
-| :---------- | :-------------- | :------- | :------ | :------------------------------------ | :-------------------------------------------------------------------------------------------------------------- |
-| `PageIndex` | `integer`       | No       | `1`     | `> 0` (`ListOrdersValidator`)         | 1-based page number to retrieve                                                                                 |
-| `PageSize`  | `integer`       | No       | `20`    | `> 0` (`ListOrdersValidator`)         | Maximum number of order summaries per page                                                                      |
-| `Status`    | `string`        | No       | —       | Enum: `New`, `Cancelled`, `Completed` | Filters orders by lifecycle status                                                                              |
-| `BuyerId`   | `string` (UUID) | No       | —       | Valid UUID (`Guid`)                   | Filters orders by buyer ID for `admin` callers; overridden with the caller's own buyer ID for non-admin callers |
+| Name        | Type              | Required | Constraints                           | Description                                                                                                     |
+| :---------- | :---------------- | :------- | :------------------------------------ | :-------------------------------------------------------------------------------------------------------------- |
+| `PageIndex` | `integer`         | No       | Default `1`; must be `> 0`            | 1-based page number to retrieve                                                                                 |
+| `PageSize`  | `integer`         | No       | Default `20`; must be `> 0`           | Maximum number of order summaries per page                                                                      |
+| `Status`    | `string`          | No       | Enum: `New`, `Cancelled`, `Completed` | Filters orders by lifecycle status                                                                              |
+| `BuyerId`   | `string` (`uuid`) | No       | Valid UUID                            | Filters orders by buyer ID for `admin` callers; overridden with the caller's own buyer ID for non-admin callers |
 
-### Response headers
+### Response Headers (`200 OK`)
 
-`ListOrdersEndpoint` applies `WithPaginationHeaders()` (`PaginationHeaderFilter`), which appends two headers on `200 OK` responses:
+| Name               | Type     | Required | Constraints                               | Description                                                                                                          |
+| :----------------- | :------- | :------- | :---------------------------------------- | :------------------------------------------------------------------------------------------------------------------- |
+| `Pagination-Count` | `string` | Yes      | Integer string (e.g., `57`)               | Total number of orders matching the active status and buyer filters across all pages                                 |
+| `Link`             | `string` | Yes      | Comma-separated `<uri>;rel=<rel>` entries | Navigation URIs with `first`, `self`, `last`, and conditional `previous` / `next` relations preserving query filters |
 
-| Header             | Format                                    | Description                                                                                                          |
-| :----------------- | :---------------------------------------- | :------------------------------------------------------------------------------------------------------------------- |
-| `Pagination-Count` | Integer string (for example, `57`)        | Total number of orders matching the active status and buyer filters across all pages                                 |
-| `Link`             | Comma-separated `<uri>;rel=<rel>` entries | Navigation URIs with `first`, `self`, `last`, and conditional `previous` / `next` relations preserving query filters |
+### Success Response (`200 OK`)
 
-### Response schema (`OrderDto[]`)
+Returns a JSON array of order summary objects. To retrieve line items for an order, call [[query|GetOrder]].
 
-A `200 OK` response body serializes `PagedResult<OrderDto>` as a JSON array of `OrderDto` summary objects. To retrieve line items for an order, call [[query|GetOrder]].
+| Name        | Type                   | Required | Constraints                           | Description                             |
+| :---------- | :--------------------- | :------- | :------------------------------------ | :-------------------------------------- |
+| `[].id`     | `string` (`uuid`)      | Yes      | Valid UUID                            | Unique identifier of the order          |
+| `[].date`   | `string` (`date-time`) | Yes      | ISO 8601 UTC timestamp                | UTC timestamp when the order was placed |
+| `[].total`  | `number`               | Yes      | Decimal currency amount               | Total recorded amount for the order     |
+| `[].status` | `string`               | Yes      | Enum: `New`, `Cancelled`, `Completed` | Current lifecycle status of the order   |
 
-| Field       | Type     | Required | Constraints                           | Description                             |
-| :---------- | :------- | :------- | :------------------------------------ | :-------------------------------------- |
-| `[].id`     | `string` | Yes      | UUID                                  | Unique identifier of the order          |
-| `[].date`   | `string` | Yes      | ISO 8601 `date-time`                  | UTC timestamp when the order was placed |
-| `[].total`  | `number` | Yes      | Decimal currency amount               | Total recorded amount for the order     |
-| `[].status` | `string` | Yes      | Enum: `New`, `Cancelled`, `Completed` | Current lifecycle status of the order   |
+## Behavior & Side Effects
 
-## Error responses
+- **Role-scoped filtering:** Standard customers only see their own orders (any `BuyerId` parameter is overridden); administrators can filter across all buyers.
+- **No state mutation:** Pure read query with no database writes or integration events.
 
-| Code / status           | Condition                                                                                                                                                    | Recovery behavior                                                   |
-| :---------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------ |
-| `400 Bad Request`       | `PageIndex <= 0`, `PageSize <= 0`, unrecognized `Status` enum value, or malformed `BuyerId` UUID (`application/problem+json` `HttpValidationProblemDetails`) | Correct invalid query parameters; do not retry unchanged            |
-| `401 Unauthorized`      | Missing, expired, or invalid Entra ID bearer token                                                                                                           | Re-authenticate and retry                                           |
-| `403 Forbidden`         | Authenticated principal lacks Ordering API roles or scopes                                                                                                   | Request a token with `customer` or `admin` role and Ordering scopes |
-| `429 Too Many Requests` | Caller exceeded `PerUserRateLimit` or global rate limit (`application/problem+json` + `Retry-After` header)                                                  | Wait for the `Retry-After` duration before retrying                 |
+## Error Responses
 
-## Related documentation
+| Status / Code           | Condition                                                                                        | Client Recovery Action                                              |
+| :---------------------- | :----------------------------------------------------------------------------------------------- | :------------------------------------------------------------------ |
+| `400 Bad Request`       | `PageIndex <= 0`, `PageSize <= 0`, unrecognized `Status` enum value, or malformed `BuyerId` UUID | Correct invalid query parameters; do not retry unchanged            |
+| `401 Unauthorized`      | Missing, expired, or invalid Entra ID bearer token                                               | Re-authenticate and retry                                           |
+| `403 Forbidden`         | Caller lacks Ordering API roles or scopes                                                        | Request a token with `customer` or `admin` role and Ordering scopes |
+| `429 Too Many Requests` | Rate limit quota exceeded (`Retry-After` header included)                                        | Wait for the `Retry-After` duration before retrying                 |
 
-- [[service|order-api]] — Service overview, PostgreSQL/Marten persistence, and endpoints.
+## Related Documentation
+
+- [[service|order-api]] — Service overview, persistence, and endpoints.
+- [[entity|order]] — Order entity model.
 - [[query|GetOrder]] — Retrieve full order details including line items.
 - [[command|CreateOrder]] — Place a new order from the active basket.
-- [[entity|order]] — Domain model for accepted orders.
 
 <NodeGraph />
 
-<SchemaViewer file="schema.json" title="OrderDto array JSON Schema" maxHeight="500" search="true" />
+<SchemaViewer file="schema.json" title="List orders schema" maxHeight="500" search="true" />

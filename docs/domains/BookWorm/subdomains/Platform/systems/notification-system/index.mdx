@@ -4,7 +4,7 @@ name: Notification System
 version: 1.0.0
 summary: |
   Internal platform system that consumes order commands, renders email
-  templates, and submits messages through SMTP via MailKit.
+  templates, and submits messages over SMTP.
 scope: internal
 owners:
   - platform-team
@@ -27,64 +27,49 @@ badges:
     icon: LockClosedIcon
 ---
 
-## 1. Context & Problem
+## System Purpose & Boundary
 
-BookWorm's customer experience depends on timely email updates when orders are placed, canceled, or completed. If business domains such as Finance had to format email layouts, manage mail-server retries, and hold email provider credentials directly, core order workflows would become tightly coupled to messaging mechanics and harder to maintain.
+The Notification System centralizes transactional email rendering and SMTP delivery handoff within the [[domain|platform]] domain. It consumes order lifecycle commands from [[system|finance-system]], merges supplied order and customer context into shared email templates, and submits MIME messages to the configured mail provider ([[system|sendgrid]] in publish environments, or a local test inbox in development). Owning order business state, tracking inbox delivery/bounces, and maintaining a relational email outbox are explicitly out of scope.
 
-The Notification System centralizes email rendering and delivery handoff so upstream business domains only need to supply the order context and recipient details.
+:::warning
+Mail-provider acceptance confirms only SMTP submission—not recipient inbox arrival or underlying order success. Calling domains retain full ownership of business state, and exhausted delivery retries route to the dead-letter Kafka topic.
+:::
 
-## 2. Business Value
+## Contained Capabilities
 
-- **Separation of concerns**: Keeps email formatting, template maintenance, and mail-provider integration out of core financial and ordering workflows.
-- **Consistent customer messaging**: Renders all order lifecycle notifications from shared templates so branding and messaging stay uniform.
-- **Resilient delivery handoff**: Automatically absorbs temporary mail-provider outages through built-in retries before escalating persistent failures.
-- **Clear operational boundaries**: Prevents downstream consumers from confusing email submission with official order or payment status.
+| Service / Agent               | Role in System                                                                                                 | Primary Data Store                | Interaction Style (Sync / Async)     |
+| :---------------------------- | :------------------------------------------------------------------------------------------------------------- | :-------------------------------- | :----------------------------------- |
+| [[service\|notification-api]] | Consumes order email commands from Kafka, deduplicates by message ID, renders templates, and submits over SMTP | Redis (24-hour idempotency cache) | Async (Kafka consumer & SMTP client) |
 
-## 3. How It Works
+## External Interactions & Trust Boundaries
 
-The Notification System owns BookWorm's order email workflow from template rendering through mail-provider submission, while calling domains retain full ownership of the underlying business outcome.
+- **Upstream commands:** Consumes [[command|PlaceOrderCommand]], [[command|CompleteOrderCommand]], and [[command|CancelOrderCommand]] from [[system|finance-system]] over Kafka.
+- **Outbound mail provider:** Submits rendered emails over authenticated SMTP to [[system|sendgrid]]; blank recipient addresses are skipped safely without failing.
+- **Credential boundary:** Mail-provider credentials reside strictly in runtime secret configuration and are never logged alongside recipient addresses or message bodies.
 
-1. Finance sends an order-placement, cancellation, or completion notification request containing customer and order details.
-2. If the recipient email address is blank, the system skips the request safely without failing.
-3. For valid addresses, the system merges the supplied order details into the matching email template to produce the subject and message body.
-4. It submits the formatted email to the configured mail provider—a local test inbox in development environments, or an external provider such as [[system|sendgrid]] elsewhere—using built-in retry protection.
-5. Once the mail provider accepts the submission, processing completes. The Notification System does not track final inbox delivery or publish a result back to upstream systems.
+<Accordion title="Delivery Guarantees & Retry Behavior">
+	- **At-least-once handoff:** Message-ID deduplication guards against duplicate Kafka deliveries
+	within 24 hours, while Finance timeout retries that emit new message IDs may trigger an additional
+	email. - **Resilience:** Transient SMTP failures trigger bounded client retries before Kafka
+	listener cooldowns and dead-letter routing.
+</Accordion>
+
+## System Visualizations
+
+### System Context
 
 <ContextDiagram />
 
-## 4. Trade-offs & Lessons Learned
+### Component Topology
 
-- **At-least-once delivery vs. duplicate emails**: Built-in sending retries and upstream retry behavior protect against lost messages, but repeated requests can occasionally submit the same email more than once.
-- **Provider acceptance is not business or inbox confirmation**: Accepting a message for delivery does not guarantee the email reached the customer's inbox, nor does it confirm that the underlying order succeeded. Consumers must always read the owning domain's state or events for business truth.
-- **Lightweight handoff vs. delivery tracking**: Because the system does not store long-term delivery state or emit downstream delivery-result events, it stays simple to operate—but teams cannot query it to verify whether an email was opened or bounced.
-- **Credential and privacy hygiene**: Mail-provider secrets belong strictly in runtime secret configuration, and operational logs should favor stable identifiers, provider status, error categories, and correlation metadata over personal data or full message bodies.
-
-## 5. Technical Reference
-
-### Service & Transport Implementation
-
-- [[service|notification-api]] consumes Finance order-placement, cancellation, and completion commands, renders emails with `MjmlTemplateRenderer` using MJML templates, and builds MIME messages.
-- Messages are submitted over SMTP using MailKit protected by a configured mail resilience pipeline (MailPit in development; a configured SMTP provider such as [[system|sendgrid]] elsewhere).
-- **Important implementation note**: The current implementation does not call the SendGrid HTTP API and does not maintain a separate PostgreSQL database.
-- [[service|notification-api]] delivers rendered MIME messages to [[service|sendgrid-api]] exclusively over SMTP via `MailKitSender` (`Components.Email` in publish mode; `Components.MailPit` in development).
-
-### Responsibilities and Boundaries
-
-| Concern            | Notification System owns                                 | Boundary                                              |
-| ------------------ | -------------------------------------------------------- | ----------------------------------------------------- |
-| Message submission | Rendering MIME messages and submitting them through SMTP | The configured provider accepts or rejects submission |
-| Resilience         | MailKit resilience pipeline and Wolverine retries        | Exhausted retries move to the dead-letter Kafka topic |
-| Business meaning   | Rendering notifications from supplied order details      | Calling domains own the business operation            |
-
-### Reliability, Security & Diagnostics
-
-- **Retry & DLQ behavior**: Sender resilience bounds retries within a submission attempt; exhausted Wolverine listener retries route failed messages to the dead-letter Kafka topic.
-- **Secrets & data handling**: Store email provider credentials in runtime secret configuration—never in source control, catalog docs, or routine logs. Restrict recipient addresses and message content to delivery and authorized support roles. Prefer stable identifiers, provider status, error categories, and correlation metadata in logs.
+<NodeGraph />
 
 ### Architecture Decisions
 
 <ADRTable />
 
-### System Architecture Graph
+## Related Documentation
 
-<NodeGraph />
+- [[flow|notification-delivery]] — End-to-end notification rendering and SMTP submission flow.
+- [[flow|user-checkout]] — Checkout flow triggering order placement notifications.
+- [[doc|domains/bookworm/subdomains/platform/engineering/platform-integration-boundaries]] — Platform service and external provider boundaries.

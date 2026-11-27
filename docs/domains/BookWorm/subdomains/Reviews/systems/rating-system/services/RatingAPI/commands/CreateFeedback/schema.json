@@ -3,7 +3,7 @@
 	"title": "CreateFeedbackCommand",
 	"type": "object",
 	"additionalProperties": false,
-	"required": ["bookId", "firstName", "lastName", "comment", "rating"],
+	"required": ["bookId", "firstName", "lastName", "rating"],
 	"properties": {
 		"bookId": {
 			"type": "string",
@@ -11,15 +11,20 @@
 			"description": "Identifier of the Catalog book being reviewed."
 		},
 		"firstName": {
-			"type": ["string", "null"],
+			"type": "string",
+			"minLength": 1,
+			"maxLength": 50,
 			"description": "First name of the reviewer."
 		},
 		"lastName": {
-			"type": ["string", "null"],
+			"type": "string",
+			"minLength": 1,
+			"maxLength": 50,
 			"description": "Last name of the reviewer."
 		},
 		"comment": {
 			"type": ["string", "null"],
+			"maxLength": 1000,
 			"description": "Optional written feedback."
 		},
 		"rating": {

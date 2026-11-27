@@ -28,8 +28,11 @@ html[data-theme="dark"] .mermaid svg .edgeLabel .labelBkg {
 
 html[data-theme="dark"] .mermaid svg .edgeLabel foreignObject span,
 html[data-theme="dark"] .mermaid svg .edgeLabel foreignObject p,
-html[data-theme="dark"] .mermaid svg .edgeLabel foreignObject div {
+html[data-theme="dark"] .mermaid svg .edgeLabel foreignObject div,
+html[data-theme="dark"] .mermaid svg .edgeLabel span.edgeLabel,
+html[data-theme="dark"] .mermaid svg .edgeLabel p {
 	color: #e2e8f0 !important;
+	background-color: #1e293b !important;
 }
 
 html[data-theme="dark"] .mermaid svg .transition,

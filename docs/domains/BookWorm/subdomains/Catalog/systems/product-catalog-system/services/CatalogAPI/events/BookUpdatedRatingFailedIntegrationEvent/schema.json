@@ -3,8 +3,18 @@
 	"title": "BookUpdatedRatingFailedIntegrationEvent",
 	"type": "object",
 	"additionalProperties": false,
-	"required": ["feedbackId"],
+	"required": ["id", "creationDate", "feedbackId"],
 	"properties": {
+		"id": {
+			"type": "string",
+			"format": "uuid",
+			"description": "Unique event identifier (UUIDv7) inherited from IntegrationEvent."
+		},
+		"creationDate": {
+			"type": "string",
+			"format": "date-time",
+			"description": "ISO 8601 UTC timestamp when the event was created."
+		},
 		"feedbackId": {
 			"type": "string",
 			"format": "uuid",

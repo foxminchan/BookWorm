@@ -14,63 +14,64 @@ badges:
     textColor: blue
 ---
 
-`UserCheckedOutIntegrationEvent` (v1.0.0) reports that Ordering API accepted and persisted a new `Order` during customer checkout. Finance consumes this event to start an `OrderOrchestrator` Durable Task saga instance, which dispatches `PlaceOrderCommand` to Basket API (for basket cleanup) and Notification (for order confirmation email). Receiving this event confirms order placement only, not basket cleanup or order completion.
+`UserCheckedOutIntegrationEvent` (v1.0.0) reports that [[service|order-api]] accepted and persisted a new [[entity|order]] during customer checkout. [[service|order-orchestration]] consumes this event to start a Durable Task saga instance, which dispatches [[command|PlaceOrderCommand]] to [[service|basket-api]] (for basket cleanup) and [[service|notification-api]] (for order confirmation email). Receiving this event confirms order placement only, not basket cleanup or order completion.
 
 ## Overview
 
-| Property              | Value                                                                                                |
-| :-------------------- | :--------------------------------------------------------------------------------------------------- |
-| **Owner**             | Ordering bounded context (`Ordering API`)                                                            |
-| **Producer**          | [[service\|order-api]]                                                                               |
-| **Consumer**          | [[service\|order-orchestration]] (`OrderOrchestrator`)                                               |
-| **Source**            | `src/Services/Ordering/BookWorm.Ordering/IntegrationEvents/Events/UserCheckedOutIntegrationEvent.cs` |
-| **Protocol / format** | Kafka + CloudEvents JSON (Wolverine)                                                                 |
-| **Kafka topic**       | `bookworm.{env}.ordering.user-checked-out` (where `{env}` is the kebab-case environment name)        |
-| **Message identity**  | `BookWorm.Contracts.UserCheckedOutIntegrationEvent`                                                  |
-| **Partition key**     | `OrderId` (preserves per-order saga ordering on Kafka)                                               |
-| **Outbox**            | Wolverine PostgreSQL outbox (`orderingdb`, `wolverine` schema) with EF Core transactional middleware |
+| Property                             | Value                                                                                               |
+| :----------------------------------- | :-------------------------------------------------------------------------------------------------- |
+| **Bounded Context**                  | Ordering                                                                                            |
+| **Producer**                         | [[service\|order-api]]                                                                              |
+| **Consumer(s)**                      | [[service\|order-orchestration]]                                                                    |
+| **Protocol / Format**                | Kafka + CloudEvents JSON (camelCase payload)                                                        |
+| **Channel / Topic**                  | [[channel\|bookworm.&#123;env&#125;.ordering.user-checked-out]]                                     |
+| **Dead-Letter Channel**              | [[channel\|bookworm.&#123;env&#125;.ordering.dead-letter-queue]]                                    |
+| **Partition Key**                    | `OrderId`                                                                                           |
+| **Delivery / Idempotency Guarantee** | Published via transactional outbox (at-least-once); orchestration starts idempotently per `OrderId` |
 
-## Parameters and fields
+## Payload Fields & Envelope
 
-The schema below defines the camelCase JSON `data` payload carried inside the CloudEvents envelope (`additionalProperties: false` in JSON Schema). All seven properties are present in the serialized contract, including nullable `fullName` and `email`.
+### Event Payload
 
-| Name           | Type                 | Required | Default                 | Constraints                                              | Description                                                                                     |
-| :------------- | :------------------- | :------- | :---------------------- | :------------------------------------------------------- | :---------------------------------------------------------------------------------------------- |
-| `id`           | `string` (UUID)      | Yes      | `Guid.CreateVersion7()` | UUID v7 inherited from `IntegrationEvent`                | Unique identifier for this integration event instance.                                          |
-| `creationDate` | `string` (date-time) | Yes      | `DateTime.UtcNow`       | ISO 8601 UTC timestamp inherited from `IntegrationEvent` | UTC timestamp when Ordering API created the event.                                              |
-| `orderId`      | `string` (UUID)      | Yes      | —                       | Valid UUID; also used as Kafka partition key             | Identifier of the accepted `Order`.                                                             |
-| `basketId`     | `string` (UUID)      | Yes      | —                       | Valid UUID (currently populated from `Order.BuyerId`)    | Buyer-linked basket reference supplied by Ordering `EventMapper`.                               |
-| `fullName`     | `string \| null`     | Yes      | `null`                  | Nullable string                                          | Customer full name when available on the buyer record.                                          |
-| `email`        | `string \| null`     | Yes      | `null`                  | Nullable email format                                    | Customer email address when available; used by Finance to decide whether to send notifications. |
-| `totalMoney`   | `number` (`decimal`) | Yes      | —                       | Non-negative monetary amount                             | Total purchase amount associated with the accepted order.                                       |
+| Name           | Type                   | Required | Constraints                     | Description                                                                         |
+| :------------- | :--------------------- | :------- | :------------------------------ | :---------------------------------------------------------------------------------- |
+| `id`           | `string` (`uuid`)      | Yes      | UUIDv7                          | Unique identifier for this integration event instance                               |
+| `creationDate` | `string` (`date-time`) | Yes      | ISO 8601 UTC timestamp          | UTC timestamp when the event was created                                            |
+| `orderId`      | `string` (`uuid`)      | Yes      | Valid UUID; Kafka partition key | Identifier of the accepted order                                                    |
+| `basketId`     | `string` (`uuid`)      | Yes      | Valid UUID                      | Buyer-linked basket reference supplied by the producer                              |
+| `fullName`     | `string \| null`       | Yes      | Nullable string                 | Customer full name when available on the buyer record                               |
+| `email`        | `string \| null`       | Yes      | Nullable email format           | Customer email address when available; used to decide whether to send notifications |
+| `totalMoney`   | `number`               | Yes      | Non-negative monetary amount    | Total purchase amount associated with the accepted order                            |
 
 :::note
-The current Ordering `EventMapper` populates `basketId` with the order's `BuyerId`. Downstream consumers must not treat `basketId` as an independently resolved Basket API record.
+The current producer populates `basketId` with the order's `BuyerId`. Downstream consumers must not treat `basketId` as an independently resolved [[service|basket-api]] record.
 :::
 
-### CloudEvents envelope headers
+### CloudEvents Envelope Headers
 
-| Header        | Value / source                                      | Purpose                                                                         |
-| :------------ | :-------------------------------------------------- | :------------------------------------------------------------------------------ |
-| `messagetype` | `BookWorm.Contracts.UserCheckedOutIntegrationEvent` | Explicit message identity for cross-service deserialization.                    |
-| `source`      | `urn:bookworm:bookworm-ordering`                    | Identifies the producing service.                                               |
-| `requestid`   | Propagated from `POST /api/v1/orders`               | Correlates checkout across Ordering API, Finance, Basket API, and Notification. |
+| Header        | Value / Source                                      | Purpose                                                                |
+| :------------ | :-------------------------------------------------- | :--------------------------------------------------------------------- |
+| `messagetype` | `BookWorm.Contracts.UserCheckedOutIntegrationEvent` | Explicit message identity for cross-service deserialization            |
+| `source`      | `urn:bookworm:bookworm-ordering`                    | Identifies the producing service                                       |
+| `requestid`   | Propagated from `POST /ordering/api/v1/orders`      | Correlates checkout across Ordering, Finance, Basket, and Notification |
 
-## Error handling and delivery guarantees
+## Delivery Guarantees & Error Handling
 
-| Condition                              | Behavior                                                                                                                                  | Recovery behavior                                                                                   |
-| :------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------- |
-| `email` or `fullName` is `null`        | Payload remains valid; Finance still coordinates basket cleanup and evaluates `order.CanSendNotification` before emitting email commands. | Consumers must tolerate `null` contact fields without failing deserialization.                      |
-| Transient broker or Durable Task error | Wolverine outbox guarantees at-least-once publication from `orderingdb`; Finance starts the orchestration idempotently per `OrderId`.     | Inspect Durable Task Scheduler (`finance-taskhub`) and `bookworm.{env}.ordering.dead-letter-queue`. |
-| Contract mismatch                      | Caught in CI by Pact consumer/provider verification.                                                                                      | Verify against `tests/pacts/Finance-Ordering.json`.                                                 |
+| Condition                               | System Behavior                                                                                                                 | Recovery / Compensation                                                                             |
+| :-------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------ | :-------------------------------------------------------------------------------------------------- |
+| `email` or `fullName` is `null`         | Payload remains valid; [[service\|order-orchestration]] still coordinates basket cleanup and evaluates notification eligibility | Consumers must tolerate `null` contact fields without failing deserialization                       |
+| Transient broker or orchestration error | Transactional outbox guarantees at-least-once publication; orchestration starts idempotently per `OrderId`                      | Inspect orchestration task hub and [[channel\|bookworm.&#123;env&#125;.ordering.dead-letter-queue]] |
 
-## Related documentation
+## Related Documentation
 
-- [[channel|bookworm.&#123;env&#125;.ordering.user-checked-out]] — Kafka channel specification for `bookworm.{env}.ordering.user-checked-out`.
+- [[service|order-api]] — Producer service.
+- [[service|order-orchestration]] — Consumer orchestration service.
+- [[channel|bookworm.&#123;env&#125;.ordering.user-checked-out]] — Kafka channel specification.
+- [[channel|bookworm.&#123;env&#125;.ordering.dead-letter-queue]] — Dead-letter queue for failed Ordering consumers.
 - [[event|OrderStatusChangedToCompleteIntegrationEvent]] — Subsequent completion event.
 - [[event|OrderStatusChangedToCancelIntegrationEvent]] — Subsequent cancellation event.
 - [[entity|order]] — Ordering aggregate schema and lifecycle.
 
 <NodeGraph />
 
-<SchemaViewer file="schema.json" title="Checkout event payload" maxHeight="500" />
+<SchemaViewer file="schema.json" title="User checked out schema" maxHeight="500" search="true" />

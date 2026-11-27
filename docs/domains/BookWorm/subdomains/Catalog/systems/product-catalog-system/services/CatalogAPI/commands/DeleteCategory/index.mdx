@@ -18,55 +18,54 @@ sidebar:
   badge: "DELETE"
 ---
 
-`DeleteCategory` permanently deletes a category record from **Catalog API** (`DELETE /api/v1/categories/{id}`) and returns `204 No Content`. The command rejects deletion with `400 Bad Request` when any active book references the category.
+`DeleteCategory` permanently deletes a category record from [[service|catalog-api]] (`DELETE /catalog/api/v1/categories/{id}`) and returns `204 No Content`. Deletion is rejected with `400 Bad Request` when any active book references the category.
 
 ## Overview
 
-| Property              | Value                                                                                                                             |
-| :-------------------- | :-------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**             | Catalog bounded context (**Catalog API**, Aspire resource `catalog`)                                                              |
-| **Source**            | `src/Services/Catalog/BookWorm.Catalog/Features/Categories/Delete/`                                                               |
-| **Protocol / format** | HTTP `DELETE`, path parameter only, empty response body (`204 No Content`)                                                        |
-| **Endpoint**          | Direct: `DELETE /api/v1/categories/{id}` (local HTTP `5100`, HTTPS `7187`); API Gateway: `DELETE /catalog/api/v1/categories/{id}` |
-| **Authentication**    | Microsoft Entra ID JWT — `business_user` policy (role `business_user` or `admin` and scopes `catalog_read`, `catalog_write`)      |
-| **Rate limiting**     | Global concurrency (`100`) and fixed-window (`30 req/min`) limiters plus `PerUserRateLimit` token bucket                          |
-| **Idempotency**       | Not idempotent across retries; repeating a completed delete returns `404 Not Found`; no `x-request-id` header is enforced         |
-| **Contract version**  | `1.0.0` (`ApiVersions.V1`)                                                                                                        |
+| Property                           | Value                                                                                                                                |
+| :--------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------- |
+| **Bounded Context**                | Catalog                                                                                                                              |
+| **Owner Service**                  | [[service\|catalog-api]]                                                                                                             |
+| **Protocol / Format**              | HTTP `DELETE`, path parameter only, empty response (`204 No Content`)                                                                |
+| **Gateway Endpoint**               | `DELETE /catalog/api/v1/categories/{id}` (service path `/api/v1/categories/{id}`)                                                    |
+| **Authentication & Authorization** | Microsoft Entra ID JWT — `business_user` policy (role `business_user` or `admin` and scopes `catalog_read`, `catalog_write`)         |
+| **Idempotency / Concurrency**      | Not idempotent across retries; repeating a completed delete returns `404 Not Found`; no `x-request-id` header is enforced            |
+| **Rate Limit / Caching**           | Global concurrency (`100`) and fixed-window (`30 req/min`) limiters plus per-user token bucket; invalidates category and book caches |
+| **Contract Version**               | `1.0.0` (`ApiVersions.V1`)                                                                                                           |
 
-## Parameters and fields
+## Request & Response Contract
 
-### Path parameters
+### Path Parameters
 
-`DELETE /api/v1/categories/{id}` accepts no request body.
+| Name | Type              | Required | Constraints                                           | Description                                 |
+| :--- | :---------------- | :------- | :---------------------------------------------------- | :------------------------------------------ |
+| `id` | `string` (`uuid`) | Yes      | Valid UUID; must not be referenced by any active book | Unique identifier of the category to delete |
 
-| Name | Type   | Required | Default | Constraints                                                          | Description                                 |
-| :--- | :----- | :------- | :------ | :------------------------------------------------------------------- | :------------------------------------------ |
-| `id` | `uuid` | Yes      | —       | Valid UUID (`CategoryId`); must not be referenced by any active book | Unique identifier of the category to delete |
+## Behavior & Side Effects
 
-## Behavior and side effects
+- **Referential integrity guard:** Rejects deletion with `400 Bad Request` (`"Category has books and cannot be deleted"`) if any active (non-soft-deleted) book references the category.
+- **Hard delete:** Permanently removes the [[entity|category]] record (no soft delete); soft-deleted books referencing the category have their category reference set to `NULL`.
+- **Cache invalidation:** Clears `catalog:categories:v1` and invalidates `book` and `books:list` cache tags.
+- **Vector index queueing:** Database triggers enqueue any linked book IDs for asynchronous vector reconciliation by [[service|catalog-ingestion]].
 
-- **Referential integrity guard:** Before loading the category, `DeleteCategoryValidator` runs `BookFilterSpec([categoryId], null)` against active (non-soft-deleted) books. If any active book references the category, FluentValidation fails with `400 Bad Request` (`"Category has books and cannot be deleted"`).
-- **Hard delete and foreign-key handling:** `Category` does not implement `ISoftDelete`; `DeleteCategoryHandler` calls `repository.Delete(category)` to remove the row permanently from PostgreSQL (`categories`). For any soft-deleted book rows still referencing the category, `BookConfiguration.cs` configures `OnDelete(DeleteBehavior.SetNull)`, setting their `category_id` to `NULL`.
-- **Cache invalidation:** Dispatches `CategoryDeletedEvent` on save; `CategoryChangedEventHandler` removes `catalog:categories:v1` and invalidates FusionCache tags `book` and `books:list`.
-- **Vector index queueing:** PostgreSQL trigger `categories_vector_update` (`BEFORE UPDATE OR DELETE ON categories`) enqueues any linked `book_id` rows into `pending_vector_updates` for asynchronous Qdrant reconciliation by **Catalog Ingestion**.
+## Error Responses
 
-## Error responses
+| Status / Code               | Condition                                                                                       | Client Recovery Action                                                         |
+| :-------------------------- | :---------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------- |
+| `400 Bad Request`           | Category is still linked to one or more active books, or `{id}` is not a valid UUID             | Reassign or delete linked books first, or fix the UUID; do not retry unchanged |
+| `401 Unauthorized`          | Missing, expired, or invalid Entra ID JWT                                                       | Acquire a valid Entra ID access token and retry                                |
+| `403 Forbidden`             | Token lacks role `business_user` or `admin`, or lacks scopes `catalog_read` and `catalog_write` | Request the required Entra ID app role and scopes                              |
+| `404 Not Found`             | No category exists with the supplied `{id}`                                                     | Verify the UUID; treat as already absent only if your workflow allows it       |
+| `429 Too Many Requests`     | Rate limit quota exceeded (`Retry-After` header included)                                       | Wait for the `Retry-After` interval before retrying                            |
+| `500 Internal Server Error` | Unhandled server or database failure (`traceId` included)                                       | Inspect service logs using `traceId`                                           |
 
-| Code / status               | Condition                                                                                                                                                           | Recovery behavior                                                              |
-| :-------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :----------------------------------------------------------------------------- |
-| `400 Bad Request`           | Category is still linked to one or more active books (`"Category has books and cannot be deleted"`), or `{id}` is not a valid UUID (`HttpValidationProblemDetails`) | Reassign or delete linked books first, or fix the UUID; do not retry unchanged |
-| `401 Unauthorized`          | Missing, expired, or invalid Entra ID JWT                                                                                                                           | Acquire a valid Entra ID access token and retry                                |
-| `403 Forbidden`             | Token lacks role `business_user` or `admin`, or lacks scopes `catalog_read` and `catalog_write`                                                                     | Request the required Entra ID app role and scopes                              |
-| `404 Not Found`             | No category exists with the supplied `{id}` (`{ "detail": "The requested resource was not found." }`)                                                               | Verify the UUID; treat as already absent only if your workflow allows it       |
-| `429 Too Many Requests`     | Global or `PerUserRateLimit` quota exceeded (`ProblemDetails` with `Retry-After` header)                                                                            | Wait for the `Retry-After` interval before retrying                            |
-| `500 Internal Server Error` | Unhandled server or PostgreSQL failure (`ProblemDetails` with `traceId`)                                                                                            | Inspect Catalog API logs using `traceId`                                       |
-
-## Related documentation
+## Related Documentation
 
 - [[service|catalog-api]] — Service overview, routing, and authorization policies.
+- [[entity|category]] — Category entity model.
 - [[command|CreateCategory]] — Create a new category record.
 - [[command|UpdateCategory]] — Rename an existing category.
 
 <NodeGraph />
 
-<SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />
+<SchemaViewer file="schema.json" title="Delete category schema" maxHeight="500" search="true" />

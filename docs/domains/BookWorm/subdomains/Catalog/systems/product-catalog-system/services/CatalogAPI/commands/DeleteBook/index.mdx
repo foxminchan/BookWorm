@@ -18,55 +18,54 @@ sidebar:
   badge: "DELETE"
 ---
 
-`DeleteBook` soft-deletes an existing book listing in **Catalog API** (`DELETE /api/v1/books/{id}`) by setting `is_deleted = true` and returns `204 No Content`. It does not permanently erase the database row or delete the book's cover image from Azure Blob Storage.
+`DeleteBook` soft-deletes an existing book listing in [[service|catalog-api]] (`DELETE /catalog/api/v1/books/{id}`) and returns `204 No Content`. It does not permanently erase the database row or delete the book's cover image from blob storage.
 
 ## Overview
 
-| Property              | Value                                                                                                                                                                             |
-| :-------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**             | Catalog bounded context (**Catalog API**, Aspire resource `catalog`)                                                                                                              |
-| **Source**            | `src/Services/Catalog/BookWorm.Catalog/Features/Books/Delete/`                                                                                                                    |
-| **Protocol / format** | HTTP `DELETE`, path parameter only, empty response body (`204 No Content`)                                                                                                        |
-| **Endpoint**          | Direct: `DELETE /api/v1/books/{id}` (local HTTP `5100`, HTTPS `7187`); API Gateway: `DELETE /catalog/api/v1/books/{id}`                                                           |
-| **Authentication**    | Microsoft Entra ID JWT — `business_user` policy (role `business_user` or `admin` and scopes `catalog_read`, `catalog_write`)                                                      |
-| **Rate limiting**     | Global concurrency (`100`) and fixed-window (`30 req/min`) limiters plus `PerUserRateLimit` token bucket                                                                          |
-| **Idempotency**       | Not idempotent across retries; repeating a completed delete returns `404 Not Found` because the soft-delete query filter hides deleted rows; no `x-request-id` header is enforced |
-| **Contract version**  | `1.0.0` (`ApiVersions.V1`)                                                                                                                                                        |
+| Property                           | Value                                                                                                                                              |
+| :--------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Bounded Context**                | Catalog                                                                                                                                            |
+| **Owner Service**                  | [[service\|catalog-api]]                                                                                                                           |
+| **Protocol / Format**              | HTTP `DELETE`, path parameter only, empty response (`204 No Content`)                                                                              |
+| **Gateway Endpoint**               | `DELETE /catalog/api/v1/books/{id}` (service path `/api/v1/books/{id}`)                                                                            |
+| **Authentication & Authorization** | Microsoft Entra ID JWT — `business_user` policy (role `business_user` or `admin` and scopes `catalog_read`, `catalog_write`)                       |
+| **Idempotency / Concurrency**      | Not idempotent across retries; repeating a completed delete returns `404 Not Found`; no `x-request-id` header is enforced                          |
+| **Rate Limit / Caching**           | Global concurrency (`100`) and fixed-window (`30 req/min`) limiters plus per-user token bucket; invalidates book, summary, list, and search caches |
+| **Contract Version**               | `1.0.0` (`ApiVersions.V1`)                                                                                                                         |
 
-## Parameters and fields
+## Request & Response Contract
 
-### Path parameters
+### Path Parameters
 
-`DELETE /api/v1/books/{id}` accepts no request body.
+| Name | Type              | Required | Constraints | Description                                  |
+| :--- | :---------------- | :------- | :---------- | :------------------------------------------- |
+| `id` | `string` (`uuid`) | Yes      | Valid UUID  | Unique identifier of the book to soft-delete |
 
-| Name | Type   | Required | Default | Constraints           | Description                                  |
-| :--- | :----- | :------- | :------ | :-------------------- | :------------------------------------------- |
-| `id` | `uuid` | Yes      | —       | Valid UUID (`BookId`) | Unique identifier of the book to soft-delete |
+## Behavior & Side Effects
 
-## Behavior and side effects
+- **Soft delete:** Marks the [[entity|book]] as deleted (`is_deleted = true`), hiding it from standard catalog reads and subsequent `DELETE` calls.
+- **Cover image retention:** Any cover image stored in `catalog-blob` remains in blob storage after a book is soft-deleted.
+- **Cache invalidation:** Clears cached book details (`book:{id}`), book summary (`book:summary:{id}`), and invalidates `books:list` and `books:search` cache tags.
+- **Vector index queueing:** Database triggers enqueue the book ID for asynchronous Qdrant vector index reconciliation by [[service|catalog-ingestion]].
 
-- **Soft delete (`ISoftDelete`):** `DeleteBookCommand` is decorated with `[Transactional]`. `DeleteBookHandler` loads the book, invokes `book.Delete()` to set `IsDeleted = true` (`Book.cs`), and commits the update. `BookConfiguration.cs` applies a global EF Core query filter (`HasQueryFilter(x => !x.IsDeleted)`), hiding soft-deleted books from standard catalog reads and subsequent `DELETE` calls.
-- **Cover image retention:** `DeleteBookHandler` does not call `IBlobService`. Any cover image stored in Azure Blob Storage (`catalog-blob`) remains in blob storage after a book is soft-deleted.
-- **Cache invalidation:** `book.Delete()` registers `BookChangedEvent(Id)`; `BookChangedEventHandler` removes FusionCache keys `book:{id}` and `book:summary:{id}` and invalidates tags `books:list` and `books:search`.
-- **Vector index queueing:** Updating `is_deleted` on `books` fires the PostgreSQL trigger `books_vector_update` (`AFTER UPDATE ON books`), enqueuing `book_id` into `pending_vector_updates` so **Catalog Ingestion** reconciles the Qdrant vector index asynchronously.
+## Error Responses
 
-## Error responses
+| Status / Code               | Condition                                                                                       | Client Recovery Action                                                    |
+| :-------------------------- | :---------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------ |
+| `400 Bad Request`           | `{id}` is not a valid UUID                                                                      | Fix the path parameter; do not retry unchanged                            |
+| `401 Unauthorized`          | Missing, expired, or invalid Entra ID JWT                                                       | Acquire a valid Entra ID access token and retry                           |
+| `403 Forbidden`             | Token lacks role `business_user` or `admin`, or lacks scopes `catalog_read` and `catalog_write` | Request the required Entra ID app role and scopes                         |
+| `404 Not Found`             | No active book exists with the supplied `{id}`                                                  | Verify the UUID; treat as already deleted only if your workflow allows it |
+| `429 Too Many Requests`     | Rate limit quota exceeded (`Retry-After` header included)                                       | Wait for the `Retry-After` interval before retrying                       |
+| `500 Internal Server Error` | Unhandled server or database failure (`traceId` included)                                       | Inspect service logs using `traceId`                                      |
 
-| Code / status               | Condition                                                                                                | Recovery behavior                                                         |
-| :-------------------------- | :------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------ |
-| `400 Bad Request`           | `{id}` is not a valid UUID                                                                               | Fix the path parameter; do not retry unchanged                            |
-| `401 Unauthorized`          | Missing, expired, or invalid Entra ID JWT                                                                | Acquire a valid Entra ID access token and retry                           |
-| `403 Forbidden`             | Token lacks role `business_user` or `admin`, or lacks scopes `catalog_read` and `catalog_write`          | Request the required Entra ID app role and scopes                         |
-| `404 Not Found`             | No active book exists with the supplied `{id}` (`{ "detail": "The requested resource was not found." }`) | Verify the UUID; treat as already deleted only if your workflow allows it |
-| `429 Too Many Requests`     | Global or `PerUserRateLimit` quota exceeded (`ProblemDetails` with `Retry-After` header)                 | Wait for the `Retry-After` interval before retrying                       |
-| `500 Internal Server Error` | Unhandled server or PostgreSQL failure (`ProblemDetails` with `traceId`)                                 | Inspect Catalog API logs using `traceId`                                  |
-
-## Related documentation
+## Related Documentation
 
 - [[service|catalog-api]] — Service overview, routing, and authorization policies.
+- [[entity|book]] — Book entity model.
 - [[command|CreateBook]] — Create a new book listing.
 - [[command|UpdateBook]] — Replace book details and manage cover images.
 
 <NodeGraph />
 
-<SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />
+<SchemaViewer file="schema.json" title="Delete book schema" maxHeight="500" search="true" />

@@ -18,55 +18,54 @@ sidebar:
   badge: "DELETE"
 ---
 
-`DeleteAuthor` permanently deletes an author record from **Catalog API** (`DELETE /api/v1/authors/{id}`) and returns `204 No Content`. The command rejects deletion with `400 Bad Request` when any active book references the author.
+`DeleteAuthor` permanently deletes an author record from [[service|catalog-api]] (`DELETE /catalog/api/v1/authors/{id}`) and returns `204 No Content`. Deletion is rejected with `400 Bad Request` when any active book references the author.
 
 ## Overview
 
-| Property              | Value                                                                                                                        |
-| :-------------------- | :--------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**             | Catalog bounded context (**Catalog API**, Aspire resource `catalog`)                                                         |
-| **Source**            | `src/Services/Catalog/BookWorm.Catalog/Features/Authors/Delete/`                                                             |
-| **Protocol / format** | HTTP `DELETE`, path parameter only, empty response body (`204 No Content`)                                                   |
-| **Endpoint**          | Direct: `DELETE /api/v1/authors/{id}` (local HTTP `5100`, HTTPS `7187`); API Gateway: `DELETE /catalog/api/v1/authors/{id}`  |
-| **Authentication**    | Microsoft Entra ID JWT — `business_user` policy (role `business_user` or `admin` and scopes `catalog_read`, `catalog_write`) |
-| **Rate limiting**     | Global concurrency (`100`) and fixed-window (`30 req/min`) limiters plus `PerUserRateLimit` token bucket                     |
-| **Idempotency**       | Not idempotent across retries; repeating a completed delete returns `404 Not Found`; no `x-request-id` header is enforced    |
-| **Contract version**  | `1.0.0` (`ApiVersions.V1`)                                                                                                   |
+| Property                           | Value                                                                                                                              |
+| :--------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------- |
+| **Bounded Context**                | Catalog                                                                                                                            |
+| **Owner Service**                  | [[service\|catalog-api]]                                                                                                           |
+| **Protocol / Format**              | HTTP `DELETE`, path parameter only, empty response (`204 No Content`)                                                              |
+| **Gateway Endpoint**               | `DELETE /catalog/api/v1/authors/{id}` (service path `/api/v1/authors/{id}`)                                                        |
+| **Authentication & Authorization** | Microsoft Entra ID JWT — `business_user` policy (role `business_user` or `admin` and scopes `catalog_read`, `catalog_write`)       |
+| **Idempotency / Concurrency**      | Not idempotent across retries; repeating a completed delete returns `404 Not Found`; no `x-request-id` header is enforced          |
+| **Rate Limit / Caching**           | Global concurrency (`100`) and fixed-window (`30 req/min`) limiters plus per-user token bucket; invalidates author and book caches |
+| **Contract Version**               | `1.0.0` (`ApiVersions.V1`)                                                                                                         |
 
-## Parameters and fields
+## Request & Response Contract
 
-### Path parameters
+### Path Parameters
 
-`DELETE /api/v1/authors/{id}` accepts no request body.
+| Name | Type              | Required | Constraints                                           | Description                               |
+| :--- | :---------------- | :------- | :---------------------------------------------------- | :---------------------------------------- |
+| `id` | `string` (`uuid`) | Yes      | Valid UUID; must not be referenced by any active book | Unique identifier of the author to delete |
 
-| Name | Type   | Required | Default | Constraints                                                        | Description                               |
-| :--- | :----- | :------- | :------ | :----------------------------------------------------------------- | :---------------------------------------- |
-| `id` | `uuid` | Yes      | —       | Valid UUID (`AuthorId`); must not be referenced by any active book | Unique identifier of the author to delete |
+## Behavior & Side Effects
 
-## Behavior and side effects
+- **Referential integrity guard:** Rejects deletion with `400 Bad Request` (`"Author has books and cannot be deleted"`) if any active (non-soft-deleted) book references the author.
+- **Hard delete:** Permanently removes the [[entity|author]] record (no soft delete). If a soft-deleted book still references the author, the database restrict constraint causes `500 Internal Server Error`.
+- **Cache invalidation:** Clears `catalog:authors:v1` and invalidates `book` and `books:list` cache tags.
+- **Vector index queueing:** Database triggers enqueue any linked book IDs for asynchronous vector reconciliation by [[service|catalog-ingestion]].
 
-- **Referential integrity guard:** Before loading the entity, `DeleteAuthorValidator` runs `BookAuthorFilterSpec` against active (non-soft-deleted) books. If any active book references the author, FluentValidation fails with `400 Bad Request` (`"Author has books and cannot be deleted"`).
-- **Hard delete and database constraint:** `Author` does not implement `ISoftDelete`; `DeleteAuthorHandler` calls `repository.Delete(author)` to remove the row permanently from PostgreSQL (`authors`). Because `BookAuthorConfiguration.cs` configures `OnDelete(DeleteBehavior.Restrict)`, deleting an author still linked to a soft-deleted book's `book_authors` row fails at the database layer (`500 Internal Server Error`).
-- **Cache invalidation:** Dispatches `AuthorDeletedEvent` on save; `AuthorChangedEventHandler` removes `catalog:authors:v1` and invalidates FusionCache tags `book` and `books:list`.
-- **Vector index queueing:** PostgreSQL trigger `authors_vector_update` (`BEFORE UPDATE OR DELETE ON authors`) enqueues any linked `book_id` rows into `pending_vector_updates` for asynchronous Qdrant reconciliation by **Catalog Ingestion**.
+## Error Responses
 
-## Error responses
+| Status / Code               | Condition                                                                                                        | Client Recovery Action                                                         |
+| :-------------------------- | :--------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------- |
+| `400 Bad Request`           | Author is still linked to one or more active books, or `{id}` is not a valid UUID                                | Reassign or delete linked books first, or fix the UUID; do not retry unchanged |
+| `401 Unauthorized`          | Missing, expired, or invalid Entra ID JWT                                                                        | Acquire a valid Entra ID access token and retry                                |
+| `403 Forbidden`             | Token lacks role `business_user` or `admin`, or lacks scopes `catalog_read` and `catalog_write`                  | Request the required Entra ID app role and scopes                              |
+| `404 Not Found`             | No author exists with the supplied `{id}`                                                                        | Verify the UUID; treat as already absent only if your workflow allows it       |
+| `429 Too Many Requests`     | Rate limit quota exceeded (`Retry-After` header included)                                                        | Wait for the `Retry-After` interval before retrying                            |
+| `500 Internal Server Error` | Database restrict constraint failure (e.g., soft-deleted book reference) or unhandled error (`traceId` included) | Inspect service logs using `traceId`                                           |
 
-| Code / status               | Condition                                                                                                                                                       | Recovery behavior                                                              |
-| :-------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------- |
-| `400 Bad Request`           | Author is still linked to one or more active books (`"Author has books and cannot be deleted"`), or `{id}` is not a valid UUID (`HttpValidationProblemDetails`) | Reassign or delete linked books first, or fix the UUID; do not retry unchanged |
-| `401 Unauthorized`          | Missing, expired, or invalid Entra ID JWT                                                                                                                       | Acquire a valid Entra ID access token and retry                                |
-| `403 Forbidden`             | Token lacks role `business_user` or `admin`, or lacks scopes `catalog_read` and `catalog_write`                                                                 | Request the required Entra ID app role and scopes                              |
-| `404 Not Found`             | No author exists with the supplied `{id}` (`{ "detail": "The requested resource was not found." }`)                                                             | Verify the UUID; treat as already absent only if your workflow allows it       |
-| `429 Too Many Requests`     | Global or `PerUserRateLimit` quota exceeded (`ProblemDetails` with `Retry-After` header)                                                                        | Wait for the `Retry-After` interval before retrying                            |
-| `500 Internal Server Error` | Database `ON DELETE RESTRICT` failure (such as a soft-deleted book referencing the author) or unhandled server error (`ProblemDetails` with `traceId`)          | Inspect Catalog API logs using `traceId`                                       |
-
-## Related documentation
+## Related Documentation
 
 - [[service|catalog-api]] — Service overview, routing, and authorization policies.
+- [[entity|author]] — Author entity model.
 - [[command|CreateAuthor]] — Create a new author record.
 - [[command|UpdateAuthor]] — Rename an existing author.
 
 <NodeGraph />
 
-<SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />
+<SchemaViewer file="schema.json" title="Delete author schema" maxHeight="500" search="true" />

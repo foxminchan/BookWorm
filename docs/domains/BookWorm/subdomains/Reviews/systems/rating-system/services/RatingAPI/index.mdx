@@ -3,8 +3,8 @@ id: rating-api
 name: Rating API
 version: 1.0.0
 summary: |
-  Internal HTTP service for collecting, listing, deleting, and summarizing
-  customer feedback for Catalog books.
+  Internal HTTP and A2A gRPC service for collecting, listing, deleting, and
+  summarizing customer feedback for Catalog books.
 readsFrom:
   - id: rating-database
     version: 1.0.0
@@ -91,89 +91,56 @@ repository:
   url: "https://github.com/foxminchan/BookWorm"
 ---
 
-Rating API (`rating`) is the system of record in the Reviews bounded context for individual customer `Feedback` records about Catalog books. It persists feedback in **Azure Cosmos DB** (not PostgreSQL), synchronizes derived rating summaries to Catalog API over Kafka, and hosts BookWorm's Agent-to-Agent (A2A) gRPC server (`MapGrpcA2A`) for read-time AI review summarization.
+## Service Responsibility & Boundary
 
-## Overview
+Rating API is the system of record within the [[domain|reviews]] domain for individual customer [[entity|feedback]] records on Catalog books. It exposes versioned HTTP endpoints for feedback management and read-time AI summarization, hosts BookWorm's Agent-to-Agent (A2A) gRPC server for [[agent|rating-agent]], and synchronizes rating deltas with [[service|catalog-api]] over Kafka. Book metadata and derived rating totals remain owned by [[service|catalog-api]].
 
-| Property                       | Value                                                                                                                                                                                   |
-| :----------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**                      | Reviews bounded context (`BookWorm.Rating`)                                                                                                                                             |
-| **Aspire resource ID**         | `rating`                                                                                                                                                                                |
-| **Source**                     | `src/Services/Rating/BookWorm.Rating`                                                                                                                                                   |
-| **Gateway path & local ports** | Gateway `/rating/api/v1/feedbacks*`; local HTTP `5278`, HTTPS `7003`                                                                                                                    |
-| **Protocols**                  | HTTP REST (`ApiVersions.V1`), A2A gRPC server (`MapGrpcA2A`), Agent Discovery (`/agents`), MCP Streamable HTTP client → MCP Tools, Kafka + Wolverine                                    |
-| **Persistence & caching**      | **Azure Cosmos DB** (`ratingdb` / `feedbacks`, partition key `/bookId`, EF Core Cosmos + `WolverineFx.CosmosDb`) — **no PostgreSQL**; Redis (`rating-cache`, FusionCache + idempotency) |
-| **AI & governance**            | Microsoft Agent Framework (`Agents/rating-agent.yaml`), Agent Governance (`Policies/rating-agent.yaml`), Presidio PII sidecars, Microsoft Foundry LLM                                   |
-| **Authentication**             | Microsoft Entra ID JWT + Entra Agent Identity (`ratingAgentId`); `admin` policy (`admin` + `rating_read`/`rating_write`); `read` policy (`rating_read`, protects A2A gRPC)              |
+## Service Profile
 
-## Runtime architecture
+| Property                                  | Value                                                                                                                                                                                  |
+| :---------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Bounded Context / Domain**              | [[domain\|reviews]]                                                                                                                                                                    |
+| **Owner Team**                            | [[team\|contributor-team]]                                                                                                                                                             |
+| **Runtime Style**                         | REST API, A2A gRPC Server, and Async Kafka Producer/Consumer                                                                                                                           |
+| **Public / Gateway Exposure**             | Yes via API Gateway (HTTP) and Internal Only (A2A gRPC)                                                                                                                                |
+| **Authentication & Authorization Policy** | Microsoft Entra ID JWT and Entra Agent Identity via [[system\|identity-provider]]; `admin` policy for deletion, `rating_read` scope for A2A gRPC                                       |
+| **Owned Data Store(s)**                   | [[container\|rating-database]] (Azure Cosmos DB partitioned by book ID), [[container\|rating-cache]] (Redis read cache & idempotency)                                                  |
+| **Key Resilience / Idempotency Pattern**  | Compensating delete on Catalog rejection, fail-closed PII screening, per-user rate limiting, and dead-letter routing on [[channel\|bookworm.&#123;env&#125;.rating.dead-letter-queue]] |
 
-Rating API serves HTTP feedback operations via the API Gateway and A2A gRPC summarization requests from Chat API, storing feedback in Azure Cosmos DB and coordinating derived summaries with Catalog API via Kafka.
+## Contracts & Data Ownership
+
+Rating API owns the [[entity|feedback]] aggregate in [[container|rating-database]] and enforces uniqueness per `(bookId, firstName, lastName)`.
+
+:::note
+Read-time summarization via [[agent|rating-agent]] retrieves book metadata and analysis prompts from [[service|mcp-server]], reads raw reviews in-process under a rate cap, and screens inputs and outputs fail-closed through [[service|presidio-api]] without mutating stored feedback.
+:::
+
+:::warning
+If [[service|catalog-api]] emits [[event|BookUpdatedRatingFailedIntegrationEvent]] because a reviewed book does not exist, Rating API executes an idempotent compensating delete on the orphaned feedback record.
+:::
+
+<MessageTable format="all" limit={10} showChannels={true} />
+
+## Architecture Visualizations & Specifications
+
+### Rating API Context
 
 <MermaidFileLoader file="mermaids/RatingAPI-diagram-1.mmd" />
 
-## HTTP and A2A endpoints
+### Service Interactions
 
-| Surface       | Route (direct)                     | Gateway route                             | Access                                                                     | Purpose                                                                                     |
-| :------------ | :--------------------------------- | :---------------------------------------- | :------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------ |
-| `POST`        | `/api/v1/feedbacks`                | `/rating/api/v1/feedbacks`                | Authenticated caller                                                       | [[command\|CreateFeedback]] — Creates feedback (UUID v7); returns `200 OK` with feedback ID |
-| `GET`         | `/api/v1/feedbacks`                | `/rating/api/v1/feedbacks`                | Service API (`BookId`, `PageIndex`, `PageSize`, `OrderBy`, `IsDescending`) | [[query\|ListFeedbacks]] — Returns paged feedback (`200 OK`)                                |
-| `DELETE`      | `/api/v1/feedbacks/{id}`           | `/rating/api/v1/feedbacks/{id}`           | `admin` policy (`admin` + `rating_read`/`rating_write`)                    | [[command\|DeleteFeedback]] — Deletes feedback; returns `204 No Content`                    |
-| `GET`         | `/api/v1/feedbacks/{id}/summarize` | `/rating/api/v1/feedbacks/{id}/summarize` | Authenticated caller + `PerUserRateLimit`                                  | [[query\|SummarizeFeedback]] — Runs read-time AI summary (`200 OK` with `SummarizeResult`)  |
-| **A2A gRPC**  | `MapGrpcA2A`                       | Internal only                             | `read` policy (`rating_read`)                                              | Exposes [[agent\|rating-agent]] to [[service\|chat-api]] over A2A gRPC                      |
-| **Discovery** | `/agents`                          | `/rating/agents`                          | Service auth defaults                                                      | Agent discovery metadata                                                                    |
-| **Health**    | `/health`, `/alive`                | —                                         | Development only                                                           | Readiness and liveness probes                                                               |
+<NodeGraph />
 
-### Error responses
+### Owned Entities
 
-| Status                  | Condition                                                                                                                   | Recovery behavior                                                 |
-| :---------------------- | :-------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------- |
-| `400 Bad Request`       | Rating outside `0`-`5`, missing `bookId`/`firstName`/`lastName`, comment exceeds max length, or `PageIndex`/`PageSize <= 0` | Fix request fields; do not retry unchanged                        |
-| `401 Unauthorized`      | Missing, expired, or invalid Entra ID JWT                                                                                   | Re-authenticate and retry                                         |
-| `403 Forbidden`         | Caller lacks `admin` role (`DELETE`) or `rating_read`/`rating_write` scopes                                                 | Request token with required role and scopes                       |
-| `404 Not Found`         | Feedback ID not found on `DELETE`                                                                                           | Verify feedback ID                                                |
-| `409 Conflict`          | Duplicate feedback from the same `(bookId, firstName, lastName)`                                                            | Update design expectation; one review per named reviewer per book |
-| `429 Too Many Requests` | `PerUserRateLimit` or agent review-read cap (`30` calls/min) exceeded                                                       | Wait for `Retry-After` interval and retry                         |
+<EntityMap />
 
-## Feedback invariants and Cosmos DB persistence
-
-- **Authoritative store:** Azure Cosmos DB database `ratingdb`, container `feedbacks`, partitioned by `/bookId`. Other services must consume Kafka events and never query Cosmos DB directly.
-- **Validation rules:** `bookId`, `firstName`, and `lastName` are required; `rating` is an integer `0`-`5` inclusive; `comment` is optional within shared max text length; new IDs use client-generated UUID v7.
-- **Uniqueness:** Prevents duplicate feedback for the same `(bookId, firstName, lastName)` combination.
-
-## Read-time AI summarization (`rating-agent`)
-
-Summarization executes in real time without mutating reviews or persisting generated classifications:
-
-1. Retrieves book metadata and derived Catalog totals via `get_book` on [[service|mcp-server]].
-2. Loads `summarize_rating`, `reduce_rating_summaries`, and `analyze_book_quality` prompt templates from [[service|mcp-server]].
-3. Reads raw reviews through the in-process `GetCustomerReviews` function (capped at `30` calls/min).
-4. Screens inputs and outputs fail-closed through [[service|presidio-api]] PII middleware and enforces the default-deny governance policy (`Policies/rating-agent.yaml`).
-5. Returns metrics, sentiment analysis, brief justification, confidence level, and classification (**TopRated**, **Good**, **Bad**, or **NoData**).
-
-## Kafka messaging contracts
-
-Rating API uses Wolverine with `WolverineFx.CosmosDb` persistence, partitions by `BookId` and `FeedbackId`, and routes exhausted retries to [[channel|bookworm.&#123;env&#125;.rating.dead-letter-queue]].
-
-| Direction     | Event                                              | Kafka topic                                        | Peer                     | Behavior                                                                                                        |
-| :------------ | :------------------------------------------------- | :------------------------------------------------- | :----------------------- | :-------------------------------------------------------------------------------------------------------------- |
-| **Publishes** | [[event\|FeedbackCreatedIntegrationEvent]]         | `bookworm.{env}.rating.feedback-create`            | [[service\|catalog-api]] | Prompts Catalog to add the rating to the book's derived summary                                                 |
-| **Publishes** | [[event\|FeedbackDeletedIntegrationEvent]]         | `bookworm.{env}.rating.feedback-delete`            | [[service\|catalog-api]] | Prompts Catalog to subtract the rating from the book's derived summary                                          |
-| **Consumes**  | [[event\|BookUpdatedRatingFailedIntegrationEvent]] | `bookworm.{env}.catalog.book-update-rating-failed` | [[service\|catalog-api]] | Compensating delete of orphaned feedback when Catalog cannot find the book; idempotent no-op if already deleted |
-
-## Messages
-
-<MessageTable format="all" limit={10} />
-
-## Supporting documentation
+## Attached Resources & Related Docs
 
 <Attachments />
 
-## Related catalog resources
-
 - [[doc|platform/006-api-and-contracts]] — Consolidated service, HTTP, gRPC, and Kafka directory.
 - [[agent|rating-agent]] — AI review summarization agent contract.
-- [[container|rating-database]] — Azure Cosmos DB (`ratingdb`/`feedbacks`) reference.
-- [[container|rating-cache]] — Redis FusionCache and idempotency reference.
-
-<NodeGraph />
+- [[container|rating-database]] — Azure Cosmos DB persistence reference.
+- [[container|rating-cache]] — Redis caching and idempotency reference.
+- [[diagram|rating-summarizer-workflow]] — Read-time feedback summarization flow.

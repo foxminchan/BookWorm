@@ -18,60 +18,59 @@ sidebar:
   badge: "DELETE"
 ---
 
-The `DeleteOrder` command (`DELETE /api/v1/orders/{id}`) soft-deletes an `Order` in **Ordering API** (v1.0.0) by setting `IsDeleted = true` while leaving its business status unchanged. Access is restricted to callers holding the Microsoft Entra ID `admin` role, and external callers reach this endpoint through the YARP **API Gateway** at `/ordering/api/v1/orders/{id}`.
+`DeleteOrder` soft-deletes an [[entity|order]] in [[service|order-api]] (`DELETE /ordering/api/v1/orders/{id}`) while leaving its business status unchanged. Access is restricted to callers holding the Microsoft Entra ID `admin` role.
 
 ## Overview
 
-| Property                    | Value                                                                                                                                                                                                                           |
-| :-------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Owner**                   | Ordering bounded context (**Ordering API**, Aspire resource `ordering`)                                                                                                                                                         |
-| **Source**                  | `src/Services/Ordering/BookWorm.Ordering/Features/Orders/Delete/DeleteOrderEndpoint.cs`, `DeleteOrderCommand.cs`, `Domain/AggregatesModel/OrderAggregate/Order.cs`, `Infrastructure/EntityConfigurations/OrderConfiguration.cs` |
-| **Protocol / format**       | HTTP `DELETE`, empty response body (`204 No Content`, API version `v1`)                                                                                                                                                         |
-| **Gateway endpoint**        | `DELETE /ordering/api/v1/orders/{id}`                                                                                                                                                                                           |
-| **Direct service endpoint** | `DELETE /api/v1/orders/{id}` (local ports: HTTP `5244`, HTTPS `7203`)                                                                                                                                                           |
-| **Authentication**          | Microsoft Entra ID JWT — `admin` policy: role `admin` plus scopes `ordering_read` and `ordering_write`                                                                                                                          |
-| **Idempotency**             | Standard HTTP `DELETE` semantics (`IdempotencyEndpointFilter` is not applied; `x-request-id` is not required; repeat calls return `404 Not Found`)                                                                              |
-| **ETag**                    | Not used                                                                                                                                                                                                                        |
-| **Rate limit**              | `PerUserRateLimit` token bucket (30 burst, 20 tokens / 10s, queue limit 5) plus global concurrency (100) and IP fixed-window (30 req/min) limiters                                                                              |
+| Property                           | Value                                                                                                                             |
+| :--------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------- |
+| **Bounded Context**                | Ordering                                                                                                                          |
+| **Owner Service**                  | [[service\|order-api]]                                                                                                            |
+| **Protocol / Format**              | HTTP `DELETE`, path parameter only, empty response (`204 No Content`)                                                             |
+| **Gateway Endpoint**               | `DELETE /ordering/api/v1/orders/{id}` (service path `/api/v1/orders/{id}`)                                                        |
+| **Authentication & Authorization** | Microsoft Entra ID JWT — `admin` policy (role `admin` plus scopes `ordering_read`, `ordering_write`)                              |
+| **Idempotency / Concurrency**      | Not idempotent across retries; repeat calls return `404 Not Found`; no `x-request-id` header is required                          |
+| **Rate Limit / Caching**           | Global concurrency (`100`), per-IP fixed-window (`30 req/min`), and per-user token bucket (`30` burst, `20` per `10s`, queue `5`) |
+| **Contract Version**               | `1.0.0` (`ApiVersions.V1`)                                                                                                        |
 
-## Parameters and fields
+## Request & Response Contract
 
-### Request parameters
+### Path Parameters
 
-`DeleteOrder` accepts no request body and requires no `x-request-id` header.
+Accepts no request body and requires no `x-request-id` header.
 
-| Name | Type            | Required | Default | Constraints                          | Description                                    |
-| :--- | :-------------- | :------- | :------ | :----------------------------------- | :--------------------------------------------- |
-| `id` | `string` (UUID) | Yes      | —       | Path parameter; valid `OrderId` UUID | Unique identifier of the order to soft-delete. |
+| Name | Type              | Required | Constraints                | Description                                   |
+| :--- | :---------------- | :------- | :------------------------- | :-------------------------------------------- |
+| `id` | `string` (`uuid`) | Yes      | Path parameter; valid UUID | Unique identifier of the order to soft-delete |
 
-### Response
+### Success Response (`204 No Content`)
 
-`204 No Content` with an empty response body confirms the order was soft-deleted.
+Empty response body confirms the order was soft-deleted.
 
-## Behavior and side effects
+## Behavior & Side Effects
 
-- **Soft-delete without status transition:** `DeleteOrderHandler` retrieves the order via `repository.GetByIdAsync((Guid)request.Id, cancellationToken)`, throws `NotFoundException` (`404 Not Found`) if absent, calls `order.Delete()` to set `IsDeleted = true`, and saves inside a `[Transactional]` unit of work on PostgreSQL (`orderingdb`). The order's `Status` (`New`, `Completed`, or `Cancelled`) remains unchanged.
-- **Global query filter:** `OrderConfiguration` registers `HasQueryFilter(x => !x.IsDeleted)`, which hides soft-deleted orders from standard read queries and causes subsequent `DELETE /api/v1/orders/{id}` calls for the same `{id}` to return `404 Not Found`.
-- **No events emitted:** `Order.Delete()` raises no domain events, makes no Marten `OrderSummary` event-stream update, and publishes no Kafka integration events. To cancel an active order and notify downstream **Finance** and **Notification** workflows, use [[command|CancelOrder]] instead.
+- **Soft-delete without status transition:** Sets `isDeleted = true` without changing the order's `status` (`New`, `Completed`, or `Cancelled`).
+- **Global query filter:** Soft-deleted orders are hidden from standard read queries and subsequent `DELETE` calls (`404 Not Found`).
+- **No events emitted:** Raises no domain events and publishes no Kafka integration events. To cancel an active order and notify downstream workflows, use [[command|CancelOrder]].
 
-## Error responses
+## Error Responses
 
-| Code / status               | Condition                                                                              | Recovery behavior                                                                    |
-| :-------------------------- | :------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------- |
-| `400 Bad Request`           | Path parameter `{id}` is not a valid UUID                                              | Supply a valid `OrderId` UUID; do not retry unchanged.                               |
-| `401 Unauthorized`          | Missing, expired, or invalid Entra ID bearer token                                     | Acquire a fresh Entra ID access token and retry.                                     |
-| `403 Forbidden`             | Authenticated caller lacks the `admin` role or `ordering_read`/`ordering_write` scopes | Authenticate with an `admin` token that includes the required scopes.                |
-| `404 Not Found`             | Order does not exist or was already soft-deleted (`HasQueryFilter(x => !x.IsDeleted)`) | Verify the order identifier; treat as already soft-deleted if retrying a prior call. |
-| `429 Too Many Requests`     | Caller exceeded `PerUserRateLimit` or global rate limits                               | Wait for the `Retry-After` header interval before retrying.                          |
-| `500 Internal Server Error` | Unhandled database failure                                                             | Retry with backoff and inspect Ordering API logs.                                    |
+| Status / Code               | Condition                                                                | Client Recovery Action                                                              |
+| :-------------------------- | :----------------------------------------------------------------------- | :---------------------------------------------------------------------------------- |
+| `400 Bad Request`           | Path parameter `{id}` is not a valid UUID                                | Supply a valid UUID; do not retry unchanged                                         |
+| `401 Unauthorized`          | Missing, expired, or invalid Entra ID bearer token                       | Acquire a fresh Entra ID access token and retry                                     |
+| `403 Forbidden`             | Caller lacks the `admin` role or `ordering_read`/`ordering_write` scopes | Authenticate with an `admin` token that includes the required scopes                |
+| `404 Not Found`             | Order does not exist or was already soft-deleted                         | Verify the order identifier; treat as already soft-deleted if retrying a prior call |
+| `429 Too Many Requests`     | Rate limit quota exceeded (`Retry-After` header included)                | Wait for the `Retry-After` interval before retrying                                 |
+| `500 Internal Server Error` | Unhandled database failure                                               | Retry with backoff and inspect service logs                                         |
 
-## Related documentation
+## Related Documentation
 
 - [[service|order-api]] — Service architecture, persistence, and endpoints.
+- [[entity|order]] — Order aggregate schema and soft-delete behavior.
 - [[command|CancelOrder]] — Transition a `New` order to `Cancelled` and notify downstream workflows.
-- [[command|DeleteBasketFailedCommand]] — Automated **Finance** recovery command that also soft-deletes an order.
-- [[entity|order]] — Order aggregate schema and `ISoftDelete` behavior.
+- [[command|DeleteBasketFailedCommand]] — Automated compensation command that also soft-deletes an order.
 
 <NodeGraph />
 
-<SchemaViewer file="schema.json" title="Path parameter JSON Schema" maxHeight="500" search="true" />
+<SchemaViewer file="schema.json" title="Delete order schema" maxHeight="500" search="true" />

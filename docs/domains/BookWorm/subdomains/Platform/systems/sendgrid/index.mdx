@@ -3,8 +3,8 @@ id: sendgrid
 name: SendGrid
 version: 1.0.0
 summary: |
-  SendGrid is the external email delivery platform used by BookWorm to submit
-  notification messages and receive provider delivery outcomes.
+  External email delivery platform used by BookWorm to submit rendered
+  transactional emails over authenticated SMTP.
 scope: external
 owners:
   - platform-team
@@ -21,56 +21,43 @@ badges:
     icon: GlobeAltIcon
 ---
 
-## 1. Context & Problem
+## System Purpose & Boundary
 
-BookWorm needs to send transactional emails—such as checkout and order notifications—reliably without building or operating its own internet mail-routing infrastructure. At the same time, BookWorm cannot allow an external email vendor to dictate internal business state, lose pending notifications during provider downtime, or expose sensitive customer communications across unrelated services.
+SendGrid provides BookWorm's external SMTP email relay boundary within the [[domain|platform]] domain, offloading internet mail routing, sender reputation, and downstream ISP delivery. Only [[system|notification-system]] integrates with SendGrid at runtime to submit rendered order lifecycle emails. Owning BookWorm's notification state, managing retry queues, and dictating order or payment status are explicitly out of scope.
 
-SendGrid serves as BookWorm's external email delivery boundary, isolating third-party delivery mechanics from BookWorm's internal business workflows.
+:::note
+SendGrid acceptance confirms only that the provider accepted the SMTP submission—it does not guarantee recipient inbox delivery or confirm that the underlying business order succeeded.
+:::
 
-## 2. Business Value
+## Contained Capabilities
 
-- **Reliable customer communication**: Offloads complex email routing, reputation management, and downstream mail-provider delivery to a dedicated external platform.
-- **Resilience to provider disruptions**: Keeping notification work queued inside BookWorm prevents temporary email-provider outages from dropping customer messages or blocking core workflows like checkout.
-- **Clear accountability**: Splitting provider delivery responsibilities from BookWorm business ownership ensures operations, support, and product teams share a clear view of what "submitted" versus "completed" means.
-- **Protected customer data**: Concentrates email credentials and sensitive message content within a tightly controlled outbound integration boundary.
+| Service / Agent           | Role in System                                                                        | Primary Data Store          | Interaction Style (Sync / Async) |
+| :------------------------ | :------------------------------------------------------------------------------------ | :-------------------------- | :------------------------------- |
+| [[service\|sendgrid-api]] | External email delivery integration boundary accepting authenticated SMTP submissions | External (Provider-managed) | Sync (SMTP submission)           |
 
-## 3. How It Works
+## External Interactions & Trust Boundaries
 
-The [[system|notification-system]] renders notification messages and submits them to [[service|sendgrid-api]] over SMTP via MailKit, while SendGrid handles external validation, routing, rate limiting, and delivery processing.
+- **Sole BookWorm consumer:** [[service|notification-api]] submits rendered MIME emails over TLS-encrypted SMTP in publish environments (and uses a local test inbox during development).
+- **Resilience & dead-lettering:** [[system|notification-system]] retains full ownership of 24-hour message-ID deduplication, bounded client retries, and dead-letter routing when SendGrid is unavailable or throttles requests.
+- **Credential & PII boundary:** API keys and sender secrets are injected strictly via runtime secret configuration; recipient addresses and message bodies are never logged in routine telemetry.
+
+## System Visualizations
+
+### System Context
 
 <ContextDiagram />
 
-SendGrid never owns BookWorm's notification state or business outcomes. The [[system|notification-system]] retains full ownership of Redis message-ID idempotency, retry decisions, and dead-letter routing.
+### Component Topology
 
-| Concern             | SendGrid responsibility                                      | BookWorm responsibility                                     |
-| ------------------- | ------------------------------------------------------------ | ----------------------------------------------------------- |
-| Message submission  | Accept email requests over SMTP                              | Render the MIME message from the inbound Kafka command      |
-| Provider validation | Validate provider-specific request details                   | Validate required application fields before submission      |
-| Delivery processing | Route and process the message with downstream mail providers | Handle SMTP acceptance or transient failure via MailKit     |
-| Failures and limits | Return errors for invalid requests, outages, or rate limits  | Retry transiently and route exhausted messages to Kafka DLQ |
-| Business meaning    | Deliver the supplied message                                 | Own the business event and notification content             |
-
-A provider response indicates only whether SendGrid accepted or rejected a submission—not whether the underlying business operation succeeded or the message reached the recipient's inbox.
-
-## 4. Trade-offs & Lessons Learned
-
-- **Bounded reliability over naive retries**: Temporary failures are retried in a controlled manner via MailKit resilience and Wolverine cooldowns, rate limits must be observable without infinite retry loops, and exhausted failures move to the Kafka dead-letter queue (`bookworm.{env}.notification.dead-letter-queue`).
-- **Exactly-once expectation management**: A successful submission updates BookWorm's internal state once, yet distributed communication means rare duplicates or ambiguous outcomes must still be accounted for operationally.
-- **Strict data minimization**: Credentials must stay out of code, documentation, and logs, while email addresses and message bodies are treated as sensitive data accessible only to components required for delivery and authorized support.
-
-## 5. Technical Reference
-
-### Integration & Architecture Details
-
-- **Scope**: External system (`sendgrid`), exposing [[service|sendgrid-api]] (`1.0.0`).
-- **Flows**: Participates in `user-checkout` (`1.0.0`).
-- **Security**: Outbound authenticated integration using runtime secret configuration; credentials and message content must not appear in catalog documentation, source control, or routine operational logs.
-- **Ownership boundary**: [[system|notification-system]] persists [[entity|outbox]] records, applies retry and rate-limit policies, and updates delivery state exactly once per successful provider response from the Notification System's perspective.
+<NodeGraph />
 
 ### Architecture Decisions
 
 <ADRTable />
 
-### Architecture
+## Related Documentation
 
-<NodeGraph />
+- [[flow|user-checkout]] — Checkout flow triggering transactional order emails.
+- [[system|notification-system]] — Internal email rendering and retry boundary.
+- [[service|sendgrid-api]] — External SMTP integration details and credential practices.
+- [[doc|domains/bookworm/subdomains/platform/engineering/platform-integration-boundaries]] — Platform external integration boundaries.

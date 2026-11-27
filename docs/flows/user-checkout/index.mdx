@@ -3,9 +3,9 @@ id: user-checkout
 name: User Checkout
 version: 1.0.0
 summary: >-
-  An authenticated customer checks out a basket through Ordering; Finance
-  coordinates basket cleanup and Notification submits the order email through
-  SendGrid over SMTP, with independent cleanup outcomes and bounded saga retries.
+  An authenticated customer checks out a persisted basket through Ordering API;
+  Finance coordinates asynchronous basket cleanup and Notification submits the
+  order email over SMTP with independent outcomes and bounded retries.
 owners:
   - contributor-team
 diagrams:
@@ -22,106 +22,99 @@ steps:
       name: Customer
     next_step:
       id: authenticate
-      label: Sign in to the Storefront
+      label: Sign in to Storefront
   - id: authenticate
     title: OAuth API - Entra ID sign-in
     summary: >-
-      Storefront uses Entra ID through Better Auth generic OAuth with PKCE and
-      openid, profile, email, basket, and ordering scopes. Protected APIs require
-      an authenticated caller; Ordering uses identity claims for Buyer ID,
-      full name, and email.
+      Storefront authenticates the customer via Microsoft Entra ID with PKCE and
+      customer scopes. Protected APIs derive buyer identity, full name, and
+      email from verified token claims.
     service:
       id: oauth-api
       version: 1.0.0
     next_step:
       id: review-basket
-      label: Authenticated customer reviews the basket
+      label: Authenticated customer reviews basket
   - id: review-basket
-    title: Basket API - load the customer's basket
+    title: Basket API - load persisted basket
     summary: >-
-      Storefront loads the customer-scoped basket and displays its items and
-      totals. Basket enriches items with Catalog details. Quantity edits must
-      be saved to affect the persisted basket used by checkout.
+      Commerce loads the customer-scoped basket and displays items enriched
+      with Catalog details. Edits must be saved to affect checkout.
     service:
       id: basket-api
       version: 1.0.0
     next_step:
       id: submit-checkout
-      label: Customer selects Checkout
+      label: Customer confirms checkout
   - id: submit-checkout
     title: Create order
     summary: >-
-      Storefront posts to /ordering/api/v1/orders through the gateway with a
-      fresh x-request-id. Its client sends basketId, but the backend command has
-      no body fields: Ordering reads the authenticated customer's current basket.
+      Commerce submits the checkout command through the gateway with a unique
+      request key for idempotency. Ordering reads the customer's persisted
+      basket rather than trusting client-supplied totals.
     message:
       id: CreateOrder
       version: 1.0.0
     next_step: create-order
   - id: create-order
-    title: Ordering - authenticate and build the order
+    title: Ordering API - validate and build order
     summary: >-
-      The authorized, rate-limited endpoint applies idempotency. CreateOrderHandler
-      derives Buyer ID from NameIdentifier and reads the basket before building
-      the purchase snapshot.
+      Enforces customer authorization, per-user rate limiting, and request
+      idempotency before reading the persisted basket and current prices.
     service:
       id: order-api
       version: 1.0.0
     next_step: read-checkout-basket
   - id: read-checkout-basket
-    title: Get current basket over gRPC
+    title: Get current basket
     message:
       id: GetBasketGrpc
       version: 1.0.0
     next_step: basket-checkout-read
   - id: basket-checkout-read
-    title: Basket API - return persisted item quantities
+    title: Basket API - return persisted quantities
     summary: >-
-      Ordering calls BasketGrpcService.GetBasket with an empty request and a
-      ten-second deadline. Checkout uses the stored basket, not the Storefront's
-      unsaved quantity edits or displayed totals.
+      Returns the authoritative item quantities stored in the basket cache.
+      Unsaved browser edits are not included.
     service:
       id: basket-api
       version: 1.0.0
     next_step: read-checkout-books
   - id: read-checkout-books
-    title: Resolve current Catalog books over gRPC
+    title: Resolve current catalog books
     message:
       id: GetBooksGrpc
       version: 1.0.0
     next_step: catalog-pricing
   - id: catalog-pricing
-    title: Catalog API - provide checkout prices
+    title: Catalog API - provide authoritative prices
     summary: >-
-      Ordering resolves basket book IDs through Catalog and records sale price
-      when available, otherwise regular price. A missing book prevents order
-      creation. The accepted total is the sum of item prices times quantities;
-      the Storefront's displayed shipping charge is not added by this handler.
+      Resolves each book ID and supplies the sale price when active, otherwise
+      the regular price. A missing book aborts order creation.
     service:
       id: catalog-api
       version: 1.0.0
     next_step: persist-order
   - id: persist-order
-    title: Ordering - save the New order
+    title: Order Database - save New order snapshot
     summary: >-
-      Under a per-Buyer distributed lock, Ordering saves the Order and item
-      snapshot. OrderPlacedEvent is mapped to UserCheckedOutIntegrationEvent
-      with Order ID, Buyer ID as Basket ID, name, email, and total. Dependency,
-      validation, lock, or persistence failures prevent successful acceptance.
+      Under a per-buyer distributed lock, Ordering persists the New order and
+      item-price snapshot and atomically queues the checkout integration event
+      in the transactional outbox.
     container:
       id: order-database
       version: 1.0.0
     next_steps:
       - id: checkout-confirmation
-        label: HTTP 201 returns Order ID; no wait for cleanup or email
+        label: Confirm order acceptance immediately
       - id: checked-out
-        label: Publish the checkout integration event
+        label: Publish checkout event via outbox
   - id: checkout-confirmation
-    title: Storefront displays checkout confirmation
+    title: Customer receives checkout confirmation
     summary: >-
-      On successful order creation the Storefront navigates to
-      /checkout/confirmation?orderId={orderId}. This confirms order acceptance,
-      not basket deletion, payment settlement, order completion, or email delivery.
+      Commerce displays the confirmation page with the Order ID. This confirms
+      order acceptance only—not basket deletion, payment settlement, or email
+      delivery.
     actor:
       name: Customer
   - id: checked-out
@@ -130,70 +123,65 @@ steps:
       version: 1.0.0
     next_step:
       id: start-finance-saga
-      label: Kafka ordering.user-checked-out channel
+      label: Deliver via ordering.user-checked-out
   - id: start-finance-saga
-    title: Finance - start the persisted Order saga
+    title: Finance - start tracked orchestration
     summary: >-
-      OrderSaga starts in Placed state, correlated by Order ID and persisted
-      in the Finance database. It emits PlaceOrderCommand and schedules
-      PlaceOrderTimeout. Finance coordinates messages; it does not charge a
-      card, authorize a payment, or own the Order's business status.
+      Starts a durable orchestration correlated by Order ID, publishes the
+      placement command, and schedules a 30-minute timeout. Finance coordinates
+      messages and does not process card payments or own order status.
     service:
       id: order-orchestration
       version: 1.0.0
     next_steps:
       - id: place-order
-        label: Request basket cleanup and the placement email
+        label: Request basket cleanup and order email
       - id: saga-timeout
-        label: Independently schedule the saga timeout
+        label: Schedule 30-minute orchestration timeout
   - id: place-order
     message:
       id: PlaceOrderCommand
       version: 1.0.0
     next_step: placement-channel
   - id: placement-channel
-    title: Finance placement channel - independent consumers
+    title: Finance placement channel
     summary: >-
-      Basket and Notification consume the same command independently.
-      Email submission does not wait for basket cleanup, and retrying the
-      command can repeat both consumers' work.
+      Basket API and Notification consume the same command independently. Email
+      submission does not wait for basket cleanup, and retries can repeat both
+      consumers' work.
     channel:
       id: bookworm.{env}.finance.place-order
       version: 1.0.0
     next_steps:
       - id: delete-basket
-        label: Basket consumer
+        label: Basket cleanup consumer
       - id: prepare-email
-        label: Notification consumer - new-order email
+        label: Order email consumer
   - id: delete-basket
-    title: Basket API - delete the submitted basket
+    title: Basket API - delete submitted basket
     summary: >-
-      PlaceOrderCommandHandler deletes the basket using BasketId. A true
-      repository result publishes the completion event; false publishes the
-      failure event. Repository exceptions propagate rather than becoming a
-      successful cleanup outcome.
+      Deletes the customer's basket from Redis. Returns a completion event on
+      success or a failure event if deletion returns false.
     service:
       id: basket-api
       version: 1.0.0
     next_steps:
       - id: basket-deleted
-        label: DeleteBasketAsync returns true
+        label: Basket deleted
       - id: basket-deletion-failed
-        label: DeleteBasketAsync returns false
+        label: Deletion returned false
   - id: basket-deleted
     message:
       id: BasketDeletedCompleteIntegrationEvent
       version: 1.0.0
     next_step:
       id: finance-cleanup-success
-      label: Kafka basket.delete-complete channel
+      label: Deliver via basket.delete-complete
   - id: finance-cleanup-success
-    title: Finance - forward successful cleanup
+    title: Finance - forward cleanup completion
     summary: >-
-      Update the saga's basket, order, and total fields and emit
-      DeleteBasketCompleteCommand. Successful cleanup does not complete the
-      saga or change the Order status; the saga remains active for explicit
-      Ordering status events and scheduled timeouts.
+      Records cleanup progress and notifies Ordering. Orchestration remains
+      active for explicit order completion, cancellation, or timeout.
     service:
       id: order-orchestration
       version: 1.0.0
@@ -204,13 +192,12 @@ steps:
       version: 1.0.0
     next_step:
       id: ordering-cleanup-success
-      label: Kafka finance.delete-basket-complete channel
+      label: Deliver via finance.delete-basket-complete
   - id: ordering-cleanup-success
-    title: Ordering - log successful basket cleanup
+    title: Ordering API - log basket cleanup
     summary: >-
-      DeleteBasketCompleteCommandHandler logs the Order ID and amount only.
-      It does not mark the Order Completed. Completion and cancellation are
-      separate Order lifecycle operations outside this checkout flow.
+      Logs the cleanup completion for observability without changing the
+      order's New business status.
     service:
       id: order-api
       version: 1.0.0
@@ -220,13 +207,12 @@ steps:
       version: 1.0.0
     next_step:
       id: finance-cleanup-failure
-      label: Kafka basket.delete-failed channel
+      label: Deliver via basket.delete-failed
   - id: finance-cleanup-failure
-    title: Finance - finalize failed basket cleanup
+    title: Finance - finalize failed cleanup
     summary: >-
-      Mark the saga BasketDeletionFailed, log the failure, complete the saga,
-      and emit DeleteBasketFailedCommand. This is not an Order Cancelled
-      status transition and does not itself request a cancellation email.
+      Marks the orchestration as failed, ends coordination, and instructs
+      Ordering to soft-delete the order. Does not request a cancellation email.
     service:
       id: order-orchestration
       version: 1.0.0
@@ -237,183 +223,205 @@ steps:
       version: 1.0.0
     next_step:
       id: ordering-cleanup-failure
-      label: Kafka finance.delete-basket-failed channel
+      label: Deliver via finance.delete-basket-failed
   - id: ordering-cleanup-failure
-    title: Ordering - soft-delete the order after cleanup failure
+    title: Ordering API - soft-delete order
     summary: >-
-      DeleteBasketFailedCommandHandler loads the Order, calls Delete, and
-      saves IsDeleted when it exists. This hides the Order through soft
-      deletion without changing its business status or emitting an Order
-      cancellation event. A missing Order ends handling without a write.
+      Marks the order as soft-deleted while preserving its New business status
+      and without emitting an order-cancellation event.
     service:
       id: order-api
       version: 1.0.0
   - id: prepare-email
-    title: Notification - prepare the order-status email
+    title: Notification - check idempotency and render email
     summary: >-
-      The placement handler renders a new-order email; the timeout cancellation
-      handler renders a cancelled-order email. Both use Orders/OrderEmail.
-      A null name defaults to Customer. Null, empty, or whitespace-only email
-      skips notification work.
+      Applies a 24-hour Redis idempotency guard keyed by message ID, skips
+      blank recipient addresses, and renders the order email template.
     service:
       id: notification-api
       version: 1.0.0
     next_steps:
       - id: submit-email
-        label: Recipient present and template rendered
+        label: Valid recipient and template rendered
       - id: skip-email
-        label: No usable recipient email
+        label: Missing recipient email
   - id: skip-email
-    title: No email requested
+    title: Skip email delivery
     summary: >-
-      The Notification handler returns without rendering or submitting mail.
-      This does not undo the accepted Order or basket cleanup.
+      Returns without rendering or sending email. Does not affect the accepted
+      order or basket cleanup.
+    custom:
+      title: Email skipped
+      type: Outcome
+      icon: CheckCircleIcon
+      color: gray
   - id: submit-email
     title: SendGrid - SMTP submission
     summary: >-
-      Notification uses MailKit over SMTP with the configured provider;
-      SendGrid participates when configured, while development uses Mailpit.
-      This is not an HTTP SendMail call. Sender failures are logged and
-      rethrown. SMTP acceptance does not prove delivery to the recipient.
-    system:
-      id: sendgrid
+      Submits the MIME message over SMTP with MailKit resilience (Mailpit in
+      local development, SendGrid in Azure). SMTP acceptance confirms provider
+      handoff, not inbox delivery.
+    service:
+      id: sendgrid-api
       version: 1.0.0
     next_steps:
       - id: email-submitted
-        label: Sender returns successfully
+        label: Provider accepted message
       - id: email-failed
-        label: Submission fails after retries
+        label: Submission failed after retries
   - id: email-submitted
-    title: Notification completes SMTP submission
+    title: Email submitted to provider
     summary: >-
-      Notification emits no delivery-result event, and this result changes
-      neither the Order status nor the Finance orchestration.
+      Notification emits no delivery-result callback and never mutates order
+      status or Finance orchestration state.
+    custom:
+      title: Email submitted
+      type: Outcome
+      icon: CheckCircleIcon
+      color: green
   - id: email-failed
-    title: Notification delivery fails
+    title: Notification dead-letter queue
     summary: >-
-      Failures propagate to Wolverine message handling and exhaust into the
-      dead-letter queue topic. Retries and ambiguous SMTP outcomes can
-      duplicate email because there is no order-command deduplication check.
+      Transient errors exhaust Wolverine retries and route the command to the
+      notification dead-letter queue for operator inspection.
+    channel:
+      id: bookworm.{env}.notification.dead-letter-queue
+      version: 1.0.0
   - id: saga-timeout
-    title: Finance - scheduled timeout while the saga is active
+    title: Finance - evaluate 30-minute timeout
     summary: >-
-      The checked-in configuration uses a thirty-minute timeout and MaxAttempts
-      of 3. Each handled timeout increments TimeoutRetryCount. Counts below 3
-      reissue PlaceOrderCommand and schedule another timeout; count 3 finalizes
-      the saga. Successful basket cleanup alone does not stop these timeouts.
+      Increments the retry counter while orchestration remains active. Up to
+      two reissues are allowed (three total attempts) before exhaustion.
     service:
       id: order-orchestration
       version: 1.0.0
     next_steps:
       - id: retry-placement
-        label: TimeoutRetryCount is below MaxAttempts
+        label: Retry count below maximum attempts
       - id: timeout-exhausted
-        label: TimeoutRetryCount reaches MaxAttempts
+        label: Retry limit reached
   - id: retry-placement
-    title: Finance - repeat placement and schedule the next timeout
+    title: Finance - reissue placement command
     summary: >-
-      Reissue the shared command to Basket and Notification and schedule another
-      timeout. The configured limit permits two timeout-driven reissues after
-      the initial command; these are not exactly-once cleanup or email attempts.
+      Reissues the shared placement command with a new message ID and schedules
+      the next 30-minute timeout.
+    service:
+      id: order-orchestration
+      version: 1.0.0
     next_steps:
       - id: place-order
         label: Reissue PlaceOrderCommand
       - id: saga-timeout
-        label: Schedule another thirty-minute timeout
+        label: Schedule next timeout
   - id: timeout-exhausted
-    title: Finance - cancel the saga, not the Order
+    title: Finance - cancel orchestration only
     summary: >-
-      Set the Finance saga state to Cancelled and complete it. Emit
-      CancelOrderCommand only when both name and email are nonblank.
-      No command is sent to Ordering to cancel or soft-delete the Order.
+      Marks the orchestration cancelled when retries exhaust. Emits a
+      cancellation email command if contact details are present, without
+      cancelling the order in Ordering.
     service:
       id: order-orchestration
       version: 1.0.0
     next_steps:
       - id: request-cancellation-email
-        label: Name and email are present
+        label: Name and email present
       - id: saga-ended-without-email
-        label: Name or email is absent
+        label: Contact details absent
   - id: request-cancellation-email
     message:
       id: CancelOrderCommand
       version: 1.0.0
     next_step:
       id: prepare-email
-      label: Kafka finance.cancel-order channel - cancellation email only
+      label: Deliver via finance.cancel-order
   - id: saga-ended-without-email
-    title: Finance saga ended without a cancellation email
+    title: Orchestration ended without email
     summary: >-
-      Retry exhaustion finalizes coordination without changing the Order's
-      business status. The independent placement-email branch may already
-      have submitted mail.
+      Retry exhaustion ends Finance coordination without changing the order's
+      business status.
+    custom:
+      title: Orchestration ended
+      type: Outcome
+      icon: ExclamationTriangleIcon
+      color: orange
 ---
 
-User checkout converts an authenticated customer's persisted basket into an immutable purchase snapshot in **Ordering API**, then delegates basket deletion and customer email delivery to asynchronous workflows coordinated by **Finance**. Checkout produces three independent outcomes: **order acceptance**, **basket cleanup**, and **email submission**. Returning HTTP `201 Created` confirms order acceptance only—not basket deletion, payment settlement, fulfillment, order completion, or email delivery.
+## Trigger & Business Outcome
 
-## Context and motivation
+This flow is triggered when an authenticated customer confirms checkout in the Commerce storefront to convert their persisted shopping basket into an immutable purchase snapshot. Success is confirmed when [[service|order-api]] persists a **New** [[entity|order]] in [[container|order-database]] and returns immediate confirmation, while [[service|order-orchestration]] asynchronously coordinates basket deletion in [[service|basket-api]] and order email submission via [[service|notification-api]].
 
-BookWorm splits customer web experiences across two customer microfrontends (MFEs) behind **API Gateway** (YARP): **Storefront** (`@bookworm/storefront`) owns public discovery and Microsoft Entra ID authentication via Better Auth (PKCE), while **Commerce** (`@bookworm/commerce`) serves `/basket`, `/checkout/*`, and `/account/*` (`X-Mfe-Zone: commerce`).
-
-Checkout coordinates six backend services without coupling customer response time to cleanup or SMTP latency:
-
-- **Shopping (`Basket API`):** Owns mutable pre-order baskets in Redis and deletes the basket after checkout.
-- **Catalog (`Catalog API`):** Supplies authoritative book records and current sale or regular prices over gRPC.
-- **Ordering (`Ordering API`):** Owns the accepted order, item-price snapshot, business status (`New`, `Completed`, `Cancelled`), and soft-deletion state in PostgreSQL (`orderingdb`, EF Core + Marten + Wolverine outbox).
-- **Ordering (`Finance`):** Runs the Azure Durable Functions `OrderOrchestrator` on Azure Durable Task Scheduler (`finance-taskhub`) with no PostgreSQL database. Despite its name, Finance coordinates post-checkout messages and bounded timeouts—it does not authorize or settle payments.
-- **Platform (`Notification`):** Runs a stateless Kafka worker with Redis idempotency (`IIntegrationEventIdempotencyGuard`), Mjml.Net templates, and MailKit SMTP (**Mailpit** locally, SendGrid SMTP in Azure) with no PostgreSQL database.
-
-Explicit order completion or cancellation, payment processing, and physical fulfillment are outside this flow's scope.
-
-## How it works
-
-Checkout splits into a synchronous order-acceptance path and an asynchronous post-checkout fan-out coordinated by Finance.
-
-### Part 1: Synchronous checkout and order acceptance
-
-This sequence diagram shows how Commerce submits checkout through API Gateway and how Ordering API resolves authoritative basket items and catalog prices before returning HTTP `201 Created`.
-
-<MermaidFileLoader file="mermaids/user-checkout-diagram-1.mmd" />
-
-1. **Authenticate and review basket:** The customer signs in with Microsoft Entra ID through **Storefront** (Better Auth PKCE) and reviews their basket in **Commerce** (`/basket`). Quantity edits must be saved to **Basket API** before checkout because **Ordering API** reads the persisted Redis basket, not unsaved browser state.
-2. **Submit checkout request:** **Commerce** posts to `/ordering/api/v1/orders` through **API Gateway** with an `x-request-id` header for request-level idempotency. **Ordering API** enforces Microsoft Entra ID authorization (`customer` role, `ordering_read`/`ordering_write`), per-user rate limiting, and derives Buyer ID, full name, and email from authenticated identity claims rather than trusting client-supplied IDs.
-   Commerce does not send a `basketId` field in a request body. Its checkout handler passes `basket.id` to the create-order mutation, while the basket page displays a shipping estimate from `DEFAULT_SHIPPING_COST`.
-3. **Resolve authoritative basket and prices:** **Ordering API** fetches persisted item quantities via `basket.v1.BasketGrpcService.GetBasket` and resolves each book via `book.v1.BookGrpcService.GetBooks`. Each order item records the sale price when present, otherwise the regular price. Any missing book aborts order creation.
-4. **Persist `New` order and publish checkout event:** Under a per-buyer Redis distributed lock, **Ordering API** saves the `New` order snapshot in PostgreSQL (`orderingdb`), maps `OrderPlacedEvent` to `UserCheckedOutIntegrationEvent` (carrying `OrderId`, `BasketId`, `FullName`, `Email`, and `TotalMoney`), and publishes it to Kafka (`bookworm.{env}.ordering.user-checked-out`) via Wolverine's transactional outbox. On HTTP `201 Created`, **Commerce** navigates to `/checkout/confirmation?orderId=<order-id>`.
-
-### Part 2: Asynchronous Finance orchestration, cleanup, and email
-
-This flowchart shows how Finance fans out `PlaceOrderCommand` independently to Basket API and Notification, routes cleanup outcomes back to Ordering API, and manages bounded retry timeouts.
-
-<MermaidFileLoader file="mermaids/user-checkout-diagram-2.mmd" />
-
-1. **Start Durable Functions orchestration:** **Finance** consumes `UserCheckedOutIntegrationEvent` and starts `OrderOrchestrator` in Azure Durable Task Scheduler (`finance-taskhub`), correlated by `OrderId`. Finance registers a `PublishCancelOrderActivity` compensation when customer contact details are valid, publishes `PlaceOrderCommand` to `bookworm.{env}.finance.place-order`, and enters its event-and-timer wait loop.
-2. **Independent fan-out to Basket API and Notification:** **Basket API** and **Notification** consume `bookworm.{env}.finance.place-order` in parallel as independent consumers. Email submission does not wait for basket deletion, so a placement email can be submitted even if basket cleanup later fails.
-3. **Basket cleanup outcome:**
-   - **Success (`DeleteBasketAsync` returns `true`):** **Basket API** publishes `BasketDeletedCompleteIntegrationEvent` (`bookworm.{env}.basket.delete-complete`). **Finance** emits `DeleteBasketCompleteCommand` (`bookworm.{env}.finance.delete-basket-complete`) to **Ordering API**, which logs the cleanup. Neither step marks the order `Completed` or stops Finance's wait loop—the orchestration stays active until an explicit Ordering completion or cancellation event arrives or retries exhaust.
-   - **Failure (`DeleteBasketAsync` returns `false`):** **Basket API** publishes `BasketDeletedFailedIntegrationEvent` (`bookworm.{env}.basket.delete-failed`). **Finance** emits `DeleteBasketFailedCommand` (`bookworm.{env}.finance.delete-basket-failed`) to **Ordering API**, which soft-deletes the order (`IsDeleted = true`) without changing its business status to `Cancelled` and without publishing an order-cancellation event. Repository exceptions propagate to Wolverine retries rather than fabricating a cleanup event.
-4. **Notification rendering and SMTP submission:** **Notification** wraps `PlaceOrderCommandHandler` in Redis-backed `IIntegrationEventIdempotencyGuard` (24-hour TTL keyed by `message.Id`), skips blank email addresses, renders `Orders/OrderEmail.mjml` via Mjml.Net, and sends MIME email through MailKit's Polly resilience pipeline (**Mailpit** locally on port `587`, SendGrid SMTP in Azure). Exhausted failures route to `bookworm.{env}.notification.dead-letter-queue`.
-5. **Bounded Finance timeout retries:** Checked-in `OrderStateMachine` settings in `BookWorm.Finance/appsettings.json` configure `MaxAttempts: 3` and `MaxRetryTimeout: 00:30:00` (30 minutes). While the orchestration remains non-terminal, timeout steps below `MaxAttempts` reissue `PlaceOrderCommand` (with a new `message.Id`) and wait for the next timer. When retries reach `MaxAttempts`, `OrderOrchestrator` cancels **the orchestration** (`CancelDueToMaxRetriesAsync`) and publishes `CancelOrderCommand` (`bookworm.{env}.finance.cancel-order`) to **Notification** if contact details are present. Timeout exhaustion does **not** send a cancel command to **Ordering API**.
-
-## Design trade-offs
-
-| Decision                                                            | Benefits                                                                                          | Costs and limits                                                                                                                                                 |
-| :------------------------------------------------------------------ | :------------------------------------------------------------------------------------------------ | :--------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Asynchronous fan-out after HTTP `201 Created`**                   | Keeps checkout responsive and insulates order acceptance from Redis deletion or SMTP delays       | Basket deletion and email submission can succeed or fail independently after checkout confirmation                                                               |
-| **Shared `finance.place-order` topic for Basket and Notification**  | Simplifies Finance's command contract with one placement broadcast                                | A Finance timeout reissue emits a new `PlaceOrderCommand` with a new `message.Id`, which bypasses per-message-ID deduplication and can trigger a duplicate email |
-| **Durable Task Scheduler orchestration (no Finance PostgreSQL DB)** | Provides replay-safe durable timers and compensations without managing a relational saga database | Orchestration state lives in `finance-taskhub`, separate from `orderingdb`                                                                                       |
-| **Soft-delete on cleanup failure vs. business `Cancelled` status**  | Prevents technical basket-cleanup faults from masquerading as customer cancellations              | Operators must check both `IsDeleted` and business `Status` in `orderingdb`; a placement email may already have been sent                                        |
-| **Saga timeout cancellation without mutating Ordering**             | Preserves Ordering API as sole authority over order business status                               | If an order stays `New` past `MaxAttempts`, Finance sends a canceled-order email while Ordering's status remains unchanged until explicitly reconciled           |
-
-## Alternatives considered
-
-- **Synchronous basket deletion and email sending inside `CreateOrder`:** Rejected because transient Redis or SMTP errors would abort otherwise valid customer purchases.
-- **Database-backed Notification outbox with scheduled resend jobs:** Rejected in favor of stateless Kafka consumption, Redis `IIntegrationEventIdempotencyGuard`, MailKit Polly resilience, and Kafka native DLQ.
-- **Allowing Finance to update Ordering's `Status` directly:** Rejected to preserve strict bounded-context ownership in Ordering API.
-
-## Related documentation
-
-- [[flow|order-lifecycle]] — Explicit `New`, `Completed`, and `Cancelled` transitions and how Finance routes status emails.
-- [[flow|notification-delivery]] — Stateless Kafka, Redis idempotency, Mjml.Net, and MailKit SMTP mechanics.
+## Interactive Flow Visualization
 
 <NodeGraph />
+
+## Step-by-Step Walkthrough
+
+<Steps title="Checkout Acceptance and Post-Checkout Coordination">
+	<Step title="Authenticate and review persisted basket">
+		The customer signs in with [[system|identity-provider]] ([[service|oauth-api]]) and reviews
+		their basket in Commerce, which loads customer-scoped items from [[service|basket-api]]. Only
+		saved basket quantities participate in checkout.
+	</Step>
+	<Step title="Accept order synchronously in Ordering">
+		[[service|order-api]] handles [[command|CreateOrder]] with request-level idempotency and
+		per-user rate limiting. It fetches persisted quantities via [[query|GetBasketGrpc]] from
+		[[service|basket-api]] and authoritative prices via [[query|GetBooksGrpc]] from
+		[[service|catalog-api]] (preferring sale price when active). Under a per-buyer distributed lock,
+		it persists the **New** [[entity|order]] in [[container|order-database]], queues
+		[[event|UserCheckedOutIntegrationEvent]] in its transactional outbox, and confirms acceptance
+		immediately.
+	</Step>
+	<Step title="Start asynchronous Finance orchestration">
+		[[service|order-orchestration]] consumes [[event|UserCheckedOutIntegrationEvent]] from{" "}
+		<ResourceLink id="bookworm.{env}.ordering.user-checked-out" type="channel">
+			`bookworm.{env}.ordering.user-checked-out`
+		</ResourceLink>
+		, starts a tracked orchestration correlated by Order ID, publishes [[command|PlaceOrderCommand]]
+		to{" "}
+		<ResourceLink id="bookworm.{env}.finance.place-order" type="channel">
+			`bookworm.{env}.finance.place-order`
+		</ResourceLink>
+		, and schedules a 30-minute timeout.
+	</Step>
+	<Step title="Fan out independently to Basket and Notification">
+		[[service|basket-api]] and [[service|notification-api]] consume [[command|PlaceOrderCommand]] in
+		parallel. [[service|basket-api]] deletes the basket from [[container|basket-database]] and
+		reports either [[event|BasketDeletedCompleteIntegrationEvent]] or
+		[[event|BasketDeletedFailedIntegrationEvent]]. Meanwhile, [[service|notification-api]] applies a
+		24-hour Redis idempotency guard, renders the order email template, and submits it over SMTP to
+		[[service|sendgrid-api]] (or Mailpit locally).
+	</Step>
+	<Step title="Enforce bounded timeout retries">
+		While orchestration remains active, each 30-minute timeout reissues
+		[[command|PlaceOrderCommand]] up to two times (three total attempts). When the retry limit is
+		reached, [[service|order-orchestration]] cancels its own orchestration and—if contact details
+		are present—publishes [[command|CancelOrderCommand]] to [[service|notification-api]] without
+		cancelling the [[entity|order]] in [[service|order-api]].
+	</Step>
+</Steps>
+
+## Failure, Retry & Compensation Behavior
+
+| Failure Point                            | System Behavior                                                                                                                                                                                     | Compensation / Recovery                                                                                                                                                                                                                                                                                                                                  |
+| :--------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Missing catalog book or gRPC timeout** | <ResourceLink id="order-api" type="service">order-api</ResourceLink> aborts order creation before committing                                                                                        | Customer remains on checkout; no <ResourceLink id="order" type="entity">order</ResourceLink> or outbox event is created                                                                                                                                                                                                                                  |
+| **Basket deletion returns false**        | <ResourceLink id="basket-api" type="service">basket-api</ResourceLink> emits <ResourceLink id="BasketDeletedFailedIntegrationEvent" type="event">BasketDeletedFailedIntegrationEvent</ResourceLink> | <ResourceLink id="order-orchestration" type="service">order-orchestration</ResourceLink> finalizes as failed and sends <ResourceLink id="DeleteBasketFailedCommand" type="command">DeleteBasketFailedCommand</ResourceLink>; <ResourceLink id="order-api" type="service">order-api</ResourceLink> soft-deletes the order while preserving **New** status |
+| **Basket repository exception**          | Exception propagates to message-broker retries                                                                                                                                                      | Retried automatically; dead-lettered to <ResourceLink id="bookworm.{env}.basket.dead-letter-queue" type="channel">`bookworm.{env}.basket.dead-letter-queue`</ResourceLink> if exhausted                                                                                                                                                                  |
+| **SMTP submission failure**              | MailKit resilience and worker retries execute with backoff                                                                                                                                          | Exhausted failures route to <ResourceLink id="bookworm.{env}.notification.dead-letter-queue" type="channel">`bookworm.{env}.notification.dead-letter-queue`</ResourceLink>; order status is unaffected                                                                                                                                                   |
+| **Orchestration timeout exhaustion**     | <ResourceLink id="order-orchestration" type="service">order-orchestration</ResourceLink> reaches its three-attempt cap                                                                              | Cancels orchestration only and requests a cancellation email via <ResourceLink id="CancelOrderCommand" type="command">CancelOrderCommand</ResourceLink> if contact details exist                                                                                                                                                                         |
+
+:::warning
+**Confirmation means order acceptance—not basket deletion, payment settlement, or email delivery.**
+
+- Because [[service|basket-api]] and [[service|notification-api]] consume [[command|PlaceOrderCommand]] independently, a placement email may be submitted even if basket cleanup later fails.
+- Reissued timeout commands carry new message IDs, which bypass per-message-ID deduplication in [[service|notification-api]] and can result in a duplicate email.
+- Always inspect both order business status and soft-deletion state in [[container|order-database]] before replaying failed checkout messages.
+  :::
+
+## Participating Resources
+
+- **Domains & Systems:** [[domain|shopping]], [[domain|ordering]], [[domain|catalog]], [[domain|platform]], [[system|identity-provider]], [[system|sendgrid]]
+- **Services:** [[service|oauth-api]], [[service|basket-api]], [[service|catalog-api]], [[service|order-api]], [[service|order-orchestration]], [[service|notification-api]], [[service|sendgrid-api]]
+- **Messages:** [[command|CreateOrder]], [[query|GetBasketGrpc]], [[query|GetBooksGrpc]], [[event|UserCheckedOutIntegrationEvent]], [[command|PlaceOrderCommand]], [[event|BasketDeletedCompleteIntegrationEvent]], [[command|DeleteBasketCompleteCommand]], [[event|BasketDeletedFailedIntegrationEvent]], [[command|DeleteBasketFailedCommand]], [[command|CancelOrderCommand]]
+- **Channels & Stores:** <ResourceLink id="bookworm.{env}.ordering.user-checked-out" type="channel">`bookworm.{env}.ordering.user-checked-out`</ResourceLink>, <ResourceLink id="bookworm.{env}.finance.place-order" type="channel">`bookworm.{env}.finance.place-order`</ResourceLink>, <ResourceLink id="bookworm.{env}.notification.dead-letter-queue" type="channel">`bookworm.{env}.notification.dead-letter-queue`</ResourceLink>, [[container|basket-database]], [[container|order-database]]
+- **Related Views:** [[diagram|checkout-interaction]], [[flow|order-lifecycle]], [[flow|notification-delivery]]

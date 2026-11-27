@@ -3,8 +3,8 @@ id: presidio-api
 name: Presidio API
 version: 1.0.0
 summary: |
-  External HTTP API for detecting PII in text and anonymizing detected entities,
-  used by the Rating and Chat agents' privacy middleware.
+  External HTTP sidecar API for detecting PII in text and anonymizing detected
+  entities in the Chat and Rating AI agent pipelines.
 externalSystem: true
 owners:
   - platform-team
@@ -39,59 +39,42 @@ specifications:
     name: OpenAPI V2
 ---
 
-Presidio (`presidio-analyzer` and `presidio-anonymizer`) provides internal HTTP services for detecting and anonymizing personally identifiable information (PII) in text before and after AI model execution. BookWorm's `PIIMiddleware` (`BookWorm.Chassis`) calls Presidio fail-closed on behalf of Chat API and Rating API agents.
+## Integration Purpose & Boundary
 
-## Overview
+Presidio provides external sidecar HTTP services (Analyzer and Anonymizer) for detecting and redacting personally identifiable information (PII) in text before and after AI model execution. BookWorm's deterministic PII middleware invokes Presidio on behalf of [[service|chat-api]] and [[service|rating-api]] agents so foundation models cannot bypass privacy screening.
 
-| Property                | Value                                                                                                                                                      |
-| :---------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Aspire integration**  | `src/Integrations/BookWorm.Hosting.Presidio` (`AddPresidioAnalyzer`, `AddPresidioAnonymizer`)                                                              |
-| **Aspire resource IDs** | `presidio-analyzer`, `presidio-anonymizer`                                                                                                                 |
-| **Container images**    | `ghcr.io/data-privacy-stack/presidio-analyzer:latest`, `ghcr.io/data-privacy-stack/presidio-anonymizer:latest`                                             |
-| **Port & transport**    | Container port `3000`; HTTPS with dev certificate in local run mode, internal HTTP in Azure Container Apps publish mode; **not routed via API Gateway**    |
-| **Health probe**        | `GET /health` on each container                                                                                                                            |
-| **BookWorm consumers**  | [[service\|chat-api]] (`book-agent`, `book-catalog-researcher`, `book-recommendation-researcher`, `qa-agent`) and [[service\|rating-api]] (`rating-agent`) |
-| **Upstream contract**   | Microsoft Presidio OpenAPI v2 (`data-privacy-stack/presidio`)                                                                                              |
+:::warning
+Although the attached upstream OpenAPI specification documents discovery endpoints (`GetRecognizers`, `GetSupportedEntities`, `GetAnonymizers`), BookWorm's runtime integration invokes only [[command|AnalyzeText]] and [[command|AnonymizeText]]—targeting email addresses, phone numbers, and credit-card numbers. All screening executes **fail-closed**: any timeout or non-success response aborts the AI turn rather than sending unscreened text.
+:::
 
-## Runtime architecture
+## Integration Profile
 
-BookWorm's `PIIMiddleware` sends non-empty agent inputs and outputs to `presidio-analyzer` first, and calls `presidio-anonymizer` whenever PII entities are detected.
+| Property                         | Value                                                                                                                                                                                                   |
+| :------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Provider / Sidecar**           | Microsoft Presidio (`presidio-analyzer` and `presidio-anonymizer` sidecar containers)                                                                                                                   |
+| **BookWorm Consumers**           | [[service\|chat-api]] ([[agent\|book-agent]], [[agent\|book-catalog-researcher]], [[agent\|book-recommendation-researcher]], [[agent\|qa-agent]]) and [[service\|rating-api]] ([[agent\|rating-agent]]) |
+| **Runtime Transport & Protocol** | Internal HTTP/HTTPS via service discovery (not routed via public API Gateway)                                                                                                                           |
+| **Auth / Credential Boundary**   | Internal cluster network boundary; no public exposure or customer credentials forwarded                                                                                                                 |
+| **Data / PII Sensitivity**       | Critical — processes raw customer prompts, review text, and model responses; never log raw inputs, outputs, or detected PII spans                                                                       |
+| **Failure / Fallback Behavior**  | Fail-closed — connection errors, timeouts, or non-success status codes propagate and fail the request immediately                                                                                       |
+
+## Visualizations & Specifications
+
+### Privacy Screening Context
 
 <MermaidFileLoader file="mermaids/PresidioAPI-diagram-1.mmd" />
 
-## HTTP endpoints
+### Service Interactions
 
-Analyzer and Anonymizer run as two separate containers behind Aspire service discovery.
+<NodeGraph />
 
-| Container             | Method & route           | Contract reference              | Purpose                                                                                 |
-| :-------------------- | :----------------------- | :------------------------------ | :-------------------------------------------------------------------------------------- |
-| `presidio-analyzer`   | `POST /analyze`          | [[command\|AnalyzeText]]        | Detects PII entities and returns entity types, character offsets, and confidence scores |
-| `presidio-analyzer`   | `GET /recognizers`       | [[query\|GetRecognizers]]       | Lists active PII recognizers for a language                                             |
-| `presidio-analyzer`   | `GET /supportedentities` | [[query\|GetSupportedEntities]] | Lists detectable PII entity types for a language                                        |
-| `presidio-anonymizer` | `POST /anonymize`        | [[command\|AnonymizeText]]      | Redacts or transforms detected PII spans in text                                        |
-| `presidio-anonymizer` | `GET /anonymizers`       | [[query\|GetAnonymizers]]       | Lists supported anonymization operators                                                 |
-| Both containers       | `GET /health`            | —                               | Container liveness and readiness check                                                  |
+<MessageTable format="all" limit={10} showChannels={true} />
 
-## Middleware behavior and failure semantics
-
-- **Middleware invocation (not an AI tool):** `PIIMiddleware` executes deterministically in the agent chat client pipeline; LLM models cannot bypass or opt out of PII screening.
-- **Two-step screening:** For any non-empty prompt or response, middleware calls `POST /analyze`. If one or more PII entities match (such as email addresses, phone numbers, or credit card numbers), middleware sends the text and entity spans to `POST /anonymize`.
-- **Fail-closed guarantee:** Any timeout, connection error, or non-success response from `presidio-analyzer` or `presidio-anonymizer` propagates out of `PIIMiddleware` and fails the request rather than sending unscreened text to Microsoft Foundry or end users.
-
-### Error responses
-
-The upstream [Presidio OpenAPI contract](https://raw.githubusercontent.com/data-privacy-stack/presidio/refs/heads/main/docs/api-docs/api-docs.yml) declares `400 Bad Request` and `422 Unprocessable Entity` for `POST /anonymize`. For `POST /analyze` and the discovery `GET` endpoints, it documents `200 OK` but no non-200 status codes or error-body schemas. Do not treat other statuses as a stable Presidio contract; the image tags are mutable. Regardless of status, BookWorm's PII middleware fails closed when an Analyzer or Anonymizer request does not succeed.
-
-## Messages
-
-<MessageTable format="all" limit={10} />
-
-## Related documentation
+## Related Documentation
 
 - [[doc|platform/006-api-and-contracts]] — Consolidated service and contract index.
 - [[service|chat-api]] — Conversational consumer of Presidio PII middleware.
 - [[service|rating-api]] — Review summarization consumer of Presidio PII middleware.
-- [[command|AnalyzeText]] — Request and response schema for `POST /analyze`.
-- [[command|AnonymizeText]] — Request and response schema for `POST /anonymize`.
-
-<NodeGraph />
+- [[command|AnalyzeText]] — Request and response contract for PII detection.
+- [[command|AnonymizeText]] — Request and response contract for PII redaction.
+- [[system|data-privacy]] — External Data Privacy system boundary.

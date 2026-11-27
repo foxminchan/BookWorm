@@ -4,7 +4,7 @@
 	"description": "Multipart payload for creating a book listing.",
 	"type": "object",
 	"additionalProperties": false,
-	"required": ["name", "description", "price", "categoryId", "publisherId", "authorIds"],
+	"required": ["name", "price", "categoryId", "publisherId", "authorIds"],
 	"properties": {
 		"name": {
 			"type": "string",

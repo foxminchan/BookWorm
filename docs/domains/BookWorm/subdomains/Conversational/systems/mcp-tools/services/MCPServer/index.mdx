@@ -4,7 +4,7 @@ name: MCP Server
 version: 1.0.0
 summary: |
   Internal stateless Streamable HTTP MCP service that exposes read-only
-  Catalog and Reviews tools, resources, and reusable AI prompts.
+  Catalog lookup tools and reusable AI prompts.
 owners:
   - contributor-team
 sends:
@@ -22,7 +22,7 @@ sends:
     group: Catalog Queries
 repository:
   language: C#
-  url: https://github.com/foxminchan/BookWorm
+  url: "https://github.com/foxminchan/BookWorm"
 styles:
   icon: /icons/languages/dotnet.svg
 badges:
@@ -34,78 +34,45 @@ badges:
     textColor: teal
 ---
 
-MCP Tools (`mcptools`) is an internal, stateless Model Context Protocol (MCP) server in the Conversational bounded context that exposes four read-only Catalog tools and four reusable AI prompt templates over Streamable HTTP at `/mcp`. It owns no database, cache, or messaging infrastructure and delegates all catalog lookups to Catalog API over gRPC.
+## Service Responsibility & Boundary
 
-## Overview
+MCP Server is a stateless Model Context Protocol (MCP) adapter within the [[domain|conversational]] domain that exposes read-only catalog lookup tools and reusable AI prompt templates over Streamable HTTP to [[service|chat-api]] and [[service|rating-api]]. It delegates all product queries to [[service|catalog-api]] over gRPC and owns no databases, caches, or messaging channels.
 
-| Property                        | Value                                                                                                                                                                      |
-| :------------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**                       | Conversational bounded context (`BookWorm.McpTools`)                                                                                                                       |
-| **Aspire resource ID**          | `mcptools`                                                                                                                                                                 |
-| **Source**                      | `src/Services/McpTools/BookWorm.McpTools`                                                                                                                                  |
-| **Endpoint & local ports**      | `/mcp` (Streamable HTTP, `HttpServerSessionMode.Stateless`); local HTTP `5243`, HTTPS `7193`; **not routed via API Gateway** (uses custom MCP CORS against gateway origin) |
-| **Packages**                    | `ModelContextProtocol.AspNetCore` `2.4.0`, `Microsoft.AgentGovernance.Extensions.ModelContextProtocol` `5.0.0`                                                             |
-| **Persistence & messaging**     | **Stateless** — no database, no Redis, no Kafka                                                                                                                            |
-| **Authentication & governance** | Microsoft Entra ID JWT requiring `mcptools_read` scope; governance policies `AI/Governance/Policies/default.yaml` and `Policies/mcp-tools.yaml`                            |
+## Service Profile
 
-## Runtime architecture
+| Property                                  | Value                                                                                                                              |
+| :---------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------- |
+| **Bounded Context / Domain**              | [[domain\|conversational]]                                                                                                         |
+| **Owner Team**                            | [[team\|contributor-team]]                                                                                                         |
+| **Runtime Style**                         | Stateless Streamable HTTP MCP Server                                                                                               |
+| **Public / Gateway Exposure**             | Internal Only (not routed via public API Gateway)                                                                                  |
+| **Authentication & Authorization Policy** | Microsoft Entra ID JWT requiring `mcptools_read` scope with server-side authorization filters and default-deny governance policies |
+| **Owned Data Store(s)**                   | None (Stateless)                                                                                                                   |
+| **Key Resilience / Idempotency Pattern**  | Global rate limiting, RFC 9457 error handling, and explicit error propagation on upstream gRPC failures                            |
 
-Chat API and Rating API call MCP Tools over Streamable HTTP using Entra ID token exchange; MCP Tools translates tool invocations into read-only gRPC queries against Catalog API.
+## Contracts & Data Ownership
+
+MCP Server owns no persistent entities or data stores. It translates four read-only catalog tools (`search_catalog`, `get_book`, `list_categories`, `list_authors`) into gRPC queries against [[service|catalog-api]] and serves reusable prompt templates for book recommendations and review summarization.
+
+:::note
+MCP Server has no upstream dependency on [[service|rating-api]] and exposes no review-fetching tool. [[service|rating-api]] retrieves raw customer feedback in-process while using MCP Server only for book details and review-analysis prompts.
+:::
+
+<MessageTable format="all" limit={10} showChannels={true} />
+
+## Architecture Visualizations & Specifications
+
+### MCP Integration Context
 
 <MermaidFileLoader file="mermaids/MCPServer-diagram-1.mmd" />
 
-## Registered MCP tools
-
-All tools execute read-only gRPC queries against [[service|catalog-api]] (`Tools/CatalogTools.cs`) and serialize results as JSON. Upstream failures return an explicit error message without mutating data.
-
-| Tool name         | Catalog gRPC method           | Purpose                                                    | Primary consumers                                                                 |
-| :---------------- | :---------------------------- | :--------------------------------------------------------- | :-------------------------------------------------------------------------------- |
-| `search_catalog`  | [[query\|ListBooksGrpc]]      | Searches books by description, keyword, or filter criteria | [[service\|chat-api]] (`book`, `catalog-researcher`, `recommendation-researcher`) |
-| `get_book`        | [[query\|GetBookDetailsGrpc]] | Retrieves full details for a specific book ID              | [[service\|chat-api]], [[service\|rating-api]]                                    |
-| `list_categories` | [[query\|ListCategoriesGrpc]] | Lists all available book categories                        | [[service\|chat-api]]                                                             |
-| `list_authors`    | [[query\|ListAuthorsGrpc]]    | Lists all authors in the catalog                           | [[service\|chat-api]]                                                             |
-
-:::note
-MCP Tools has **no** Rating API upstream dependency, **no** `get_book_reviews` tool, and **no** registered MCP Resource URI handlers. [[service|rating-api]] reads raw customer feedback directly through its in-process `GetCustomerReviews` tool.
-:::
-
-## Registered MCP prompts
-
-Prompts supply reusable instruction templates (`Prompts/*.cs`) without reading or writing business records.
-
-| Prompt name               | Purpose                                                                                                  | Primary consumers       |
-| :------------------------ | :------------------------------------------------------------------------------------------------------- | :---------------------- |
-| `recommend_books`         | Converts reader preferences (genre, price range, author, profile) into a structured catalog-search task  | [[service\|chat-api]]   |
-| `summarize_rating`        | Guides grounded summarization of supplied review text, themes, and data limitations                      | [[service\|rating-api]] |
-| `reduce_rating_summaries` | Merges multiple partial review summaries into one consolidated summary                                   | [[service\|rating-api]] |
-| `analyze_book_quality`    | Evaluates dominant negative review patterns; the calling service applies final classification thresholds | [[service\|rating-api]] |
-
-## Security, governance, and observability
-
-- **Authorization:** Default policy requires an authenticated Microsoft Entra ID caller with the `mcptools_read` scope, enforced via `.RequireAuthorization()` on `/mcp` and `.AddAuthorizationFilters()`.
-- **Agent governance:** Applies `AI/Governance/Policies/default.yaml` and `Policies/mcp-tools.yaml` (`RequireAuthenticatedAgentId = false`, default agent ID `did:mesh:bookworm:{ServerInfoOptions.Name}`).
-- **Rate limiting and errors:** Registers global rate limiting, global exception handling, and RFC 9457 `ProblemDetails`.
-- **Observability:** Exports OpenTelemetry metrics and traces under the `Experimental.ModelContextProtocol` meter and activity source.
-- **Local testing:** In Development run mode, AppHost starts **MCP Inspector** (`inspector`) pre-wired to `mcptools`; `/health` and `/alive` are mapped only in Development.
-
-### Error responses
-
-| Status                  | Condition                                                    | Recovery behavior                                               |
-| :---------------------- | :----------------------------------------------------------- | :-------------------------------------------------------------- |
-| `401 Unauthorized`      | Missing, expired, or invalid Entra ID JWT                    | Re-authenticate or refresh OBO token                            |
-| `403 Forbidden`         | Token lacks `mcptools_read` scope or fails governance policy | Request `mcptools_read` scope; review `Policies/mcp-tools.yaml` |
-| `429 Too Many Requests` | Global rate limit exceeded (`Retry-After` header returned)   | Wait for `Retry-After` interval and retry                       |
-| `502 / 503`             | Upstream Catalog API gRPC unavailable                        | Check Catalog API health and retry with backoff                 |
-
-## Messages
-
-<MessageTable format="all" limit={10} />
-
-## Related documentation
-
-- [[doc|platform/006-api-and-contracts]] — Consolidated service, HTTP, gRPC, and Kafka index.
-- [[service|catalog-api]] — Upstream gRPC provider (`book.v1.BookGrpcService`).
-- [[service|chat-api]] — Conversational consumer of Catalog MCP tools.
-- [[service|rating-api]] — Consumer of `get_book` and rating analysis prompts.
+### Service Interactions
 
 <NodeGraph />
+
+## Attached Resources & Related Docs
+
+- [[doc|platform/006-api-and-contracts]] — Consolidated service, HTTP, gRPC, and Kafka index.
+- [[service|catalog-api]] — Upstream gRPC catalog provider.
+- [[service|chat-api]] — Conversational consumer of Catalog MCP tools.
+- [[service|rating-api]] — Consumer of book detail lookups and rating analysis prompts.

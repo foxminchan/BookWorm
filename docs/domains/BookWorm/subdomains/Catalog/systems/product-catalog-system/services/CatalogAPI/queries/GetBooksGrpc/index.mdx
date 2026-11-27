@@ -14,87 +14,69 @@ sidebar:
   badge: "gRPC"
 ---
 
-`GetBooksGrpc` invokes the internal `book.v1.BookGrpcService/GetBooks` gRPC unary RPC on **Catalog API** to fetch compact commercial summaries (ID, name, price, sale price, and stock status) for multiple books in a single round trip. **Basket API** calls this RPC to enrich basket items on read, and **Ordering API** calls it during checkout and order detail enrichment.
+`GetBooksGrpc` invokes the internal `book.v1.BookGrpcService/GetBooks` gRPC unary RPC on [[service|catalog-api]] to fetch compact commercial summaries (ID, name, price, sale price, and stock status) for multiple books in a single round trip. [[service|basket-api]] calls this RPC to enrich basket items on read, and [[service|order-api]] calls it during checkout and order detail enrichment.
 
 ## Overview
 
-| Property                | Value                                                                                                                                                                                                    |
-| :---------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner (gRPC server)** | Catalog bounded context (**Catalog API**, Aspire resource `catalog`)                                                                                                                                     |
-| **Primary callers**     | **Basket API** (`basket`) for basket enrichment; **Ordering API** (`ordering`) for checkout and order detail enrichment                                                                                  |
-| **Source**              | `src/Services/Catalog/BookWorm.Catalog/Grpc/Protos/book/v1/book.proto`, `src/Services/Catalog/BookWorm.Catalog/Grpc/Services/BookService.cs`                                                             |
-| **Protocol / format**   | gRPC unary RPC (`book.v1.BookGrpcService/GetBooks`), Protobuf `edition = "2023"`, `csharp_namespace = "BookWorm.Catalog.Grpc.Services"`                                                                  |
-| **Authentication**      | `[AllowAnonymous]` (internal service-to-service public catalog read)                                                                                                                                     |
-| **Caching & batching**  | Deduplicates `book_ids`, resolves hits per ID in FusionCache (`BookSummary`), batch-queries PostgreSQL (`catalogdb`) only for misses, populates cache, and returns matches in deduplicated request order |
-| **Contract version**    | `1.0.0`                                                                                                                                                                                                  |
+| Property                           | Value                                                                                                        |
+| :--------------------------------- | :----------------------------------------------------------------------------------------------------------- |
+| **Bounded Context**                | Catalog                                                                                                      |
+| **Owner Service**                  | [[service\|catalog-api]]                                                                                     |
+| **Protocol / Format**              | gRPC unary RPC (`book.v1.BookGrpcService/GetBooks`), Protobuf `edition = "2023"`                             |
+| **Gateway Endpoint**               | Internal gRPC RPC `book.v1.BookGrpcService/GetBooks` (not exposed via API Gateway)                           |
+| **Authentication & Authorization** | Internal service-to-service anonymous read                                                                   |
+| **Idempotency / Concurrency**      | Read-only and naturally idempotent                                                                           |
+| **Rate Limit / Caching**           | Deduplicates `book_ids`, resolves hits per ID in L1 + Redis L2, and batch-queries PostgreSQL only for misses |
+| **Contract Version**               | `1.0.0`                                                                                                      |
 
 :::note
-`GetBooks` silently omits unknown book IDs rather than throwing `StatusCode.NotFound`, and returns an empty `GetBooksResponse` when `book_ids` is empty. Callers must reconcile returned `books` against requested `book_ids`.
+`GetBooks` silently omits unknown book IDs rather than returning `NotFound`, and returns an empty `GetBooksResponse` when `book_ids` is empty. Callers must reconcile returned `books` against requested `book_ids`.
 :::
 
-## Parameters and fields
+## Request & Response Contract
 
-### Request message (`GetBooksRequest`)
+### Request Message (`GetBooksRequest`)
 
-| Field      | Protobuf type     | Tag | Constraints                | Description                                            |
-| :--------- | :---------------- | :-- | :------------------------- | :----------------------------------------------------- |
-| `book_ids` | `repeated string` | `1` | Valid UUIDs (`Guid.Parse`) | List of book UUIDs to fetch (deduplicated server-side) |
+| Name       | Type                  | Required | Constraints                       | Description                                            |
+| :--------- | :-------------------- | :------- | :-------------------------------- | :----------------------------------------------------- |
+| `book_ids` | `string[]` (`uuid[]`) | Yes      | Tag `1` (`repeated`); valid UUIDs | List of book UUIDs to fetch (deduplicated server-side) |
 
-### Response message (`GetBooksResponse`)
+### Success Response (`GetBooksResponse`)
 
-| Field                | Protobuf type              | Tag | Description                                                      |
-| :------------------- | :------------------------- | :-- | :--------------------------------------------------------------- |
-| `books`              | `repeated GetBookResponse` | `1` | Matched book summaries in deduplicated request order             |
-| `books[].id`         | `string`                   | `1` | Book UUID                                                        |
-| `books[].name`       | `string`                   | `2` | Book title                                                       |
-| `books[].price`      | `DecimalValue`             | `3` | Regular unit price (`int64 units`, `sfixed32 nanos`)             |
-| `books[].price_sale` | `DecimalValue`             | `4` | Promotional sale price (omitted/null when no sale applies)       |
-| `books[].status`     | `BookStatus`               | `5` | `BOOK_STATUS_IN_STOCK` (`1`) or `BOOK_STATUS_OUT_OF_STOCK` (`2`) |
+| Name                 | Type                | Required | Constraints                                                          | Description                                          |
+| :------------------- | :------------------ | :------- | :------------------------------------------------------------------- | :--------------------------------------------------- |
+| `books`              | `GetBookResponse[]` | Yes      | Tag `1` (`repeated`)                                                 | Matched book summaries in deduplicated request order |
+| `books[].id`         | `string` (`uuid`)   | Yes      | Tag `1`                                                              | Book UUID                                            |
+| `books[].name`       | `string`            | Yes      | Tag `2`                                                              | Book title                                           |
+| `books[].price`      | `DecimalValue`      | Yes      | Tag `3` (`int64 units`, `sfixed32 nanos`)                            | Regular unit price                                   |
+| `books[].price_sale` | `DecimalValue`      | No       | Tag `4` (omitted when no sale applies)                               | Promotional sale price                               |
+| `books[].status`     | `BookStatus`        | Yes      | Tag `5` (`BOOK_STATUS_IN_STOCK = 1`, `BOOK_STATUS_OUT_OF_STOCK = 2`) | Current stock availability status                    |
 
-### Protobuf contract
+## Behavior & Side Effects
 
-<CodeGroup>
+- **Per-ID cache batching:** Resolves cached book summaries first and batch-queries PostgreSQL only for cache misses, populating cache entries for subsequent reads.
+- **No state mutation:** Pure read RPC with no database writes or integration events.
 
-```protobuf
-edition = "2023";
+## Error Responses
 
-package book.v1;
+| Status / Code        | Condition                                   | Client Recovery Action                      |
+| :------------------- | :------------------------------------------ | :------------------------------------------ |
+| `Unknown` (`2`)      | Any entry in `book_ids` is not a valid UUID | Validate all UUIDs before calling           |
+| `Unavailable` (`14`) | Catalog API is unreachable                  | Retry within the budgeted resilience policy |
 
-service BookGrpcService {
-  rpc GetBooks (GetBooksRequest) returns (GetBooksResponse);
-}
+## Related Documentation
 
-message GetBooksRequest {
-  repeated string book_ids = 1;
-}
-
-message GetBooksResponse {
-  repeated GetBookResponse books = 1;
-}
-
-message GetBookResponse {
-  string id = 1;
-  string name = 2;
-  DecimalValue price = 3;
-  DecimalValue price_sale = 4;
-  BookStatus status = 5;
-}
-```
-
-</CodeGroup>
-
-## Error responses
-
-| Code / status        | Condition                                                                                        | Recovery behavior                           |
-| :------------------- | :----------------------------------------------------------------------------------------------- | :------------------------------------------ |
-| `Unknown` (`2`)      | Any entry in `book_ids` is not a valid UUID (`BookService.GetBooks` calls `Guid.Parse` directly) | Validate all UUIDs before calling           |
-| `Unavailable` (`14`) | Catalog API is unreachable                                                                       | Retry within the budgeted resilience policy |
-
-## Related documentation
-
-- [[service|catalog-api]] — Service overview, PostgreSQL persistence, and gRPC services.
+- [[service|catalog-api]] — Service overview, persistence, and gRPC services.
+- [[entity|book]] — Book entity model.
 - [[query|GetBasket]] — Basket API endpoint that enriches items via `GetBooks`.
 - [[query|GetOrder]] — Ordering API endpoint that enriches order line-item names via `GetBooks`.
 - [[query|GetBookGrpc]] — Single-book compact gRPC RPC.
 
 <NodeGraph />
+
+<SchemaViewer
+	file="schema.proto"
+	title="Get books over gRPC schema"
+	maxHeight="500"
+	search="true"
+/>

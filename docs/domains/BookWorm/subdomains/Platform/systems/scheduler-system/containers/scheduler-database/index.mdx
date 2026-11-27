@@ -2,9 +2,7 @@
 id: scheduler-database
 name: Scheduler Database
 version: 1.0.0
-summary: |
-  PostgreSQL persistence for Quartz schedules, trigger state, scheduler
-  coordination, and execution history owned by the Scheduler System.
+summary: Authoritative PostgreSQL database owned by the Platform bounded context for Quartz.NET job definitions, cluster locks, execution history, and outbox envelopes.
 owners:
   - platform-team
 container_type: database
@@ -16,93 +14,81 @@ technology: postgresql
 authoritative: true
 access_mode: readWrite
 classification: internal
+retention: 30d history / indefinite schedules
+residency: eastasia
+purpose: Persist Quartz.NET schedules, cluster coordination locks, bounded execution history, and transactional outbox state.
 styles:
   icon: /icons/database/postgresql.svg
 ---
 
-The Scheduler database (`schedulerdb`) is the authoritative PostgreSQL database owned exclusively by the [[service|scheduler-service]] service in the Platform bounded context. It persists Quartz.NET job definitions, cluster coordination locks, bounded execution history, and Wolverine transactional outbox/inbox message envelopes.
+## Purpose & Ownership Boundary
 
-## Overview
+Scheduler Database (`schedulerdb`) is the authoritative PostgreSQL database owned exclusively by [[service|scheduler-service]] in the Platform bounded context. PostgreSQL was chosen to back Quartz.NET's clustered ADO.NET job store with transactional locking, durable misfire tracking, and a co-located Wolverine outbox for reliable scheduled event publication.
 
-| Property               | Value                                                                                                          |
-| :--------------------- | :------------------------------------------------------------------------------------------------------------- |
-| **Owner**              | Platform bounded context — [[service\|scheduler-service]] (`scheduler`)                                        |
-| **Aspire resource ID** | `schedulerdb` (on shared `postgres` resource)                                                                  |
-| **Source**             | `src/Services/Scheduler/BookWorm.Scheduler/Extensions/Extensions.cs`, `src/Aspire/BookWorm.AppHost/AppHost.cs` |
-| **Engine**             | PostgreSQL (Azure Database for PostgreSQL Flexible Server in cloud)                                            |
-| **Authoritative**      | Yes (`readWrite`)                                                                                              |
-| **Classification**     | `internal`                                                                                                     |
-| **Retention**          | Indefinite for schedules; `30 days` or `100,000` entries per scheduler for execution history                   |
+## Data Store Profile
 
-## Architecture and ownership boundary
+| Property                            | Value                                                                                        |
+| :---------------------------------- | :------------------------------------------------------------------------------------------- |
+| **Bounded Context / Owner**         | Platform — [[team\|platform-team]]                                                           |
+| **Engine / Technology**             | PostgreSQL 18 (Azure Database for PostgreSQL Flexible Server)                                |
+| **Store Type**                      | Database                                                                                     |
+| **Primary Writer(s)**               | [[service\|scheduler-service]]                                                               |
+| **Primary Reader(s)**               | [[service\|scheduler-service]]                                                               |
+| **Authoritative / Source of Truth** | Yes                                                                                          |
+| **Data Classification**             | Internal                                                                                     |
+| **Retention / TTL Policy**          | Indefinite for schedules; `30 days` or `100,000` entries per scheduler for execution history |
 
-Scheduler is the sole application writer and reader of `schedulerdb`. Operators inspect and manage schedules through the Quartz Dashboard (`quartz-dashboard`, protected by Microsoft Entra ID OpenID Connect with the `admin` role), never by editing database rows directly.
+## Logical Data Layout & Key Patterns
 
-The diagram shows how Scheduler coordinates persistent Quartz state and Wolverine outbox messages in `schedulerdb` without exposing database access to downstream services.
+| Table / Schema                                                                                                                                     | Owned Entity | Partition / Primary Key                          | Purpose & Concurrency                                                                                                                                                |
+| :------------------------------------------------------------------------------------------------------------------------------------------------- | :----------- | :----------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `qrtz_job_details`, `qrtz_triggers`, `qrtz_cron_triggers`, `qrtz_simple_triggers`, `qrtz_simprop_triggers`, `qrtz_blob_triggers`, `qrtz_calendars` | —            | (`sched_name`, `job_name`/`trigger_name`, group) | Persistent job metadata, cron/simple triggers (including `ProcessVectorBatchJob` every 5 minutes UTC and `HeartbeatJob` every 30 seconds), and calendar constraints. |
+| `qrtz_fired_triggers`, `qrtz_scheduler_state`, `qrtz_locks`, `qrtz_paused_trigger_grps`, `qrtz_paused_job_grps`, `qrtz_job_status`                 | —            | (`sched_name`, `lock_name` / `entry_id`)         | Active firing state, cluster instance heartbeats, and row-level distributed locks preventing split-brain execution.                                                  |
+| `qrtz_execution_history`, `qrtz_misfire_history`                                                                                                   | —            | History entry ID                                 | Bounded execution and misfire audit trail (`30 days` / `100,000` entries per scheduler).                                                                             |
+| `wolverine` schema                                                                                                                                 | —            | Envelope ID                                      | Transactional outbox/inbox tables for reliable Kafka publication (such as [[event\|ProcessVectorBatchIntegrationEvent]] on `scheduler.process-vector-batch`).        |
 
-<MermaidFileLoader file="mermaids/scheduler-database-diagram-1.mmd" />
+## Consistency, Isolation & Security Guardrails
 
-- **Strict single-owner isolation:** Downstream services such as [[service|catalog-api]], [[service|catalog-ingestion]], and [[service|notification-api]] never read or write `schedulerdb`.
-- **Trigger completion vs. business completion:** A succeeded Quartz execution record confirms only that Scheduler ran the job and enqueued any outbound integration event. Verify downstream Kafka consumers and target data stores to confirm business completion.
-- **Explicit startup in local development:** AppHost registers `scheduler` with `.WithExplicitStart()` and `.WaitFor(schedulerDb)`, so local developers start it manually from the Aspire dashboard after `schedulerdb` is healthy.
-
-## Schemas and persisted data
-
-`schedulerdb` stores two logical schemas managed by separate libraries over the `schedulerdb` Npgsql data source:
-
-| Schema / table group                 | Library              | Purpose                                                                                                                    | Key objects                                                                                                                                        |
-| :----------------------------------- | :------------------- | :------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Quartz job & trigger definitions** | Quartz.NET (`4.8.1`) | Persistent job metadata, cron/simple triggers, and calendar constraints loaded from `jobs.json` (scanned every `1 minute`) | `qrtz_job_details`, `qrtz_triggers`, `qrtz_cron_triggers`, `qrtz_simple_triggers`, `qrtz_simprop_triggers`, `qrtz_blob_triggers`, `qrtz_calendars` |
-| **Quartz cluster coordination**      | Quartz.NET (`4.8.1`) | Active firing state, scheduler instance heartbeats, pause flags, and distributed locks preventing split-brain runs         | `qrtz_fired_triggers`, `qrtz_scheduler_state`, `qrtz_locks`, `qrtz_paused_trigger_grps`, `qrtz_paused_job_grps`, `qrtz_job_status`                 |
-| **Quartz execution diagnostics**     | Quartz.NET (`4.8.1`) | Bounded run and misfire audit trail for operational triage                                                                 | `qrtz_execution_history`, `qrtz_misfire_history`                                                                                                   |
-| **Transactional outbox / inbox**     | Wolverine (`6.65.1`) | Durable integration message envelopes (`wolverine` schema) for reliable Kafka publication                                  | Wolverine envelope tables in `wolverine` schema                                                                                                    |
-
-See [[doc|platform/005-quartz-schema]] for the complete PostgreSQL DDL and entity definitions.
-
-### Scheduled jobs persisted
-
-Scheduler loads declarative schedules from `src/Services/Scheduler/BookWorm.Scheduler/jobs.json` (`FailOnFileNotFound = true`, `FailOnSchedulingError = true`):
-
-| Job class               | Cron schedule (UTC)                 | Purpose                                                 | Downstream contract                                                                       |
-| :---------------------- | :---------------------------------- | :------------------------------------------------------ | :---------------------------------------------------------------------------------------- |
-| `ProcessVectorBatchJob` | `0 0/5 * * * ?` (every 5 minutes)   | Publishes a batch-indexing trigger via Wolverine outbox | `ProcessVectorBatchIntegrationEvent` on unprefixed topic `scheduler.process-vector-batch` |
-| `HeartbeatJob`          | `0/30 * * * * ?` (every 30 seconds) | Verifies scheduler liveness and telemetry pipeline      | None (internal telemetry only)                                                            |
-
-The Quartz Dashboard Agent restricts remote job execution to types under the `BookWorm.Scheduler.Jobs.` namespace.
-
-## Hosting and environment provisioning
-
-AppHost provisions `schedulerdb` as one of three databases (`catalogdb`, `orderingdb`, `schedulerdb`) on the shared `postgres` server (`src/Aspire/BookWorm.AppHost/Extensions/Infrastructure/AzureExtensions.Postgres.cs`).
-
-| Environment           | Compute & hosting                                                                                          | High availability & pooling          | Backup retention    | Storage      |
-| :-------------------- | :--------------------------------------------------------------------------------------------------------- | :----------------------------------- | :------------------ | :----------- |
-| **Local development** | Local PostgreSQL container (`ContainerLifetime.Persistent`), persistent data volume, pgAdmin, Postgres MCP | Single container                     | None (local volume) | Local volume |
-| **Azure Development** | Azure Database for PostgreSQL Flexible Server (`Standard_B1ms` Burstable)                                  | Single zone; PgBouncer disabled      | 7 days              | 32 GB        |
-| **Azure Staging**     | Azure Database for PostgreSQL Flexible Server (`Standard_D2ds_v5` General Purpose)                         | Zone-redundant HA; PgBouncer enabled | 14 days             | 128 GB       |
-| **Azure Production**  | Azure Database for PostgreSQL Flexible Server (`Standard_D4ds_v5` General Purpose)                         | Zone-redundant HA; PgBouncer enabled | 35 days             | 256 GB       |
-
-## Retention and operational rules
-
-- **Execution history limits:** `AddQuartzExecutionHistory` enforces `Retention = 30 days` and `MaxEntriesPerScheduler = 100,000`. Export longer-term audit trails to platform observability via OpenTelemetry.
-- **No direct SQL mutations:** Modify schedules, pauses, or triggers through the Quartz Dashboard (`/quartz`) or `jobs.json`. Direct `UPDATE` or `DELETE` statements against `qrtz_*` tables corrupt cluster lock state.
-- **No sensitive data in job payloads:** Never store connection strings, credentials, authorization headers, or personal data in `job_data` (`BYTEA`), because operational tables are inspected during diagnostics.
-- **Graceful shutdown:** `AddQuartzHostedService` sets `WaitForJobsToComplete = true` so in-flight jobs finish before the container terminates.
+- **No direct SQL mutations:** Operators must manage schedules and triggers through the Entra ID-protected Quartz Dashboard (`/quartz`, `admin` role) or declarative job configuration—direct `UPDATE`/`DELETE` statements against `qrtz_*` tables corrupt cluster lock state.
+- **No sensitive data in job payloads:** Never store connection strings, credentials, authorization headers, or personal data in `job_data` (`BYTEA`), as operational tables are inspected during diagnostics.
+- **Trigger vs. business completion:** A succeeded execution record confirms only that Scheduler ran the job and enqueued its outbound event; verify downstream consumers (such as [[service|catalog-ingestion]]) for end-to-end completion.
+- **Graceful shutdown:** In-flight jobs are awaited before container termination to prevent partial trigger states.
 
 :::warning
-Do not execute the pristine initialization script with `DropDb := 1` against a live environment. Setting `DropDb := 1` drops all 15 `qrtz_*` tables and erases all registered schedules and execution history.
+**Database-per-Service & Destructive Script Guardrail:** Only [[service|scheduler-service]] may read or write `schedulerdb`—downstream services like [[service|catalog-api]], [[service|catalog-ingestion]], and [[service|notification-api]] never access it directly. Never execute the initialization DDL script with `DropDb := 1` against a live environment, as doing so drops all 15 `qrtz_*` tables and erases all registered schedules and execution history.
 :::
 
-## Related documentation
+## Operational & Resilience Notes
 
-- [[service|scheduler-service]] — Owning service configuration, dashboard authentication, and job orchestration.
-- [[doc|platform/005-quartz-schema]] — Full PostgreSQL table definitions for all Quartz entities.
-- [[service|catalog-ingestion]] — Downstream Azure Functions consumer of `scheduler.process-vector-batch`.
-- [[doc|platform/006-api-and-contracts]] — Overview of all BookWorm services, agents, and data containers.
+<AccordionGroup>
+	<Accordion title="Hosting, backup retention, and environment parity">
+		- **Local vs. Cloud:** Local development runs a persistent PostgreSQL container alongside
+		`catalogdb` and `orderingdb` (with explicit start in the Aspire dashboard); cloud environments
+		run Azure Database for PostgreSQL Flexible Server. - **Scaling & HA:** Development uses
+		`Standard_B1ms` (single zone, 7-day backup, 32 GB); Staging uses `Standard_D2ds_v5`
+		(zone-redundant HA, PgBouncer, 14-day backup, 128 GB); Production uses `Standard_D4ds_v5`
+		(zone-redundant HA, PgBouncer, 35-day backup, 256 GB). - **Long-term audit:** Export longer-term
+		execution metrics to OpenTelemetry observability, as `qrtz_execution_history` is capped at `30
+		days` / `100,000` rows.
+	</Accordion>
+</AccordionGroup>
+
+## Architecture Visualizations & Schema
 
 <NodeGraph />
 
+<MermaidFileLoader file="mermaids/scheduler-database-diagram-1.mmd" />
+
 <AccordionGroup>
-	<Accordion title="Scheduler Database schema">
-		<Schema file="schema.sql" lang="sql" title="schema.sql" />
+	<Accordion title="Scheduler Database DDL">
+		<Schema file="schema.sql" lang="sql" title="Scheduler Database DDL" />
 	</Accordion>
 </AccordionGroup>
+
+## Related Documentation
+
+- [[service|scheduler-service]] — Owning service configuration, dashboard authentication, and job orchestration.
+- [[service|catalog-ingestion]] — Downstream consumer of `scheduler.process-vector-batch`.
+- [[doc|platform/005-quartz-schema]] — Complete PostgreSQL table definitions for all Quartz entities.
+- [[adr|adr-001-postgresql-quartz-persistence]] — Decision establishing PostgreSQL persistence for Quartz.NET.
+- [[doc|operational/005-backup-restore-and-dr]] — Platform backup, restore, and disaster recovery runbook.

@@ -2,8 +2,8 @@
 id: reviews
 name: Reviews
 summary: |
-  Captures customer feedback for books and publishes the rating changes that
-  Catalog projects into its product-discovery view.
+  Captures individual customer feedback for books, publishes rating changes for
+  Catalog discovery, and provides privacy-screened AI feedback summaries.
 version: 1.0.0
 owners:
   - business-strategy
@@ -12,6 +12,9 @@ systems:
     version: 1.0.0
 flows:
   - id: feedback-publication
+    version: 1.0.0
+diagrams:
+  - id: rating-summarizer-workflow
     version: 1.0.0
 entities:
   - id: feedback
@@ -25,70 +28,56 @@ badges:
     textColor: teal
 ---
 
-Reviews is BookWorm's Supporting bounded context for individual customer book feedback (`Feedback` records containing a `BookId` reference, `0`-`5` integer rating, reviewer names, and optional comment). `Rating API` stores authoritative feedback in **Azure Cosmos DB** (`ratingdb` / `feedbacks` container partitioned by `/bookId`), publishes rating changes to Catalog over Kafka with compensating cleanup for missing books, and hosts the remote `Rating Agent` over HTTP and A2A gRPC.
+## Business Purpose & Boundary
 
-## Scope and constraints
+[[domain|reviews]] is BookWorm's Supporting bounded context for individual customer book feedback, centered on the [[entity|feedback]] entity (a book reference, integer rating from `0` to `5`, reviewer name, and optional comment). It persists authoritative feedback records, publishes rating lifecycle events so [[domain|catalog]] can project aggregate scores, compensates orphaned feedback when a referenced book does not exist, and hosts [[agent|rating-agent]] to generate read-only AI review summaries. Explicitly **out of scope** are owning canonical book metadata ([[domain|catalog]]), managing shopping baskets ([[domain|shopping]]), and processing orders ([[domain|ordering]]).
 
-- **In scope:** Creating, listing, and deleting individual customer feedback records, enforcing uniqueness per `(BookId, reviewer name)`, publishing rating change events to Catalog, compensating invalid book references, and generating read-only AI feedback summaries.
-- **Out of scope:** Owning canonical book metadata (`Catalog`), managing baskets (`Shopping`), or processing orders (`Ordering`).
-- **Key constraints:** Rating API uses **Azure Cosmos DB** with `WolverineFx.CosmosDb` persistence and **no PostgreSQL database**. AI-generated feedback summaries never alter stored `Feedback` records or Catalog's numeric rating summary.
+:::warning
+Reviews references books strictly by identifier and never duplicates Catalog metadata. AI-generated feedback summaries are read-only derived insights—they never alter persisted [[entity|feedback]] records or Catalog's numeric rating summary.
+:::
 
-## Context and container view
+## Core Responsibilities & Capabilities
 
-This architecture view shows how customers and administrators interact with Rating and how Reviews integrates with Catalog, identity, and privacy services.
+| Capability                                   | Owning Service / Agent                                | Primary Entities     |
+| :------------------------------------------- | :---------------------------------------------------- | :------------------- |
+| **Customer Feedback Lifecycle**              | [[service\|rating-api]]                               | [[entity\|feedback]] |
+| **Rating Event Publication & Compensation**  | [[service\|rating-api]]                               | [[entity\|feedback]] |
+| **Privacy-Screened AI Review Summarization** | [[agent\|rating-agent]] (via [[service\|rating-api]]) | [[entity\|feedback]] |
+
+## Cross-Domain Interactions (Context Map)
+
+| Neighboring Domain / System    | Direction                                 | Integration Mechanism      | Business Data Exchanged                                                                                                    |
+| :----------------------------- | :---------------------------------------- | :------------------------- | :------------------------------------------------------------------------------------------------------------------------- |
+| **[[domain\|catalog]]**        | Downstream (`Reviews` → `Catalog`)        | Async (Events)             | [[event\|FeedbackCreatedIntegrationEvent]] and [[event\|FeedbackDeletedIntegrationEvent]] to update aggregate book ratings |
+| **[[domain\|catalog]]**        | Upstream (`Catalog` → `Reviews`)          | Async (Compensation Event) | [[event\|BookUpdatedRatingFailedIntegrationEvent]] triggers idempotent deletion of orphaned feedback                       |
+| **[[domain\|conversational]]** | Downstream (`Reviews` → `Conversational`) | Sync (A2A gRPC)            | [[agent\|rating-agent]] returns read-only sentiment and review summaries for a requested book                              |
+| **[[system\|data-privacy]]**   | Upstream (`Data Privacy` → `Reviews`)     | Sync (HTTP)                | Fail-closed PII detection and anonymization before AI summarization                                                        |
+
+:::note
+**Decoupled Availability & Compensation:** Storefront discovery in [[domain|catalog]] never calls Reviews synchronously, so catalog browsing stays available even during Reviews maintenance. Eventual consistency between individual feedback writes and Catalog's rating summary is maintained asynchronously, with explicit compensating deletion when feedback targets an invalid or deleted book.
+:::
+
+## Ubiquitous Language Highlights
+
+- **Feedback & Review:** Synonyms for the same individual customer submission about a book (`Review` in customer-facing experiences, [[entity|feedback]] in the domain model).
+- **Rating & Comment:** An integer score from `0` through `5` paired with an optional written customer comment.
+- **Book Reference:** The book identifier linking feedback to [[domain|catalog]] without copying catalog attributes.
+- **Rating Summary:** [[domain|catalog]]'s aggregated average rating and review count—explicitly distinct from individual feedback records.
+
+## Architecture Visualizations
+
+<NodeGraph />
+
+<EntityMap />
+
+### Reviews Context Overview
 
 <LikeC4View viewId="ratingContext" project="reviews" />
 
-## Building block view
+## Related Governance & Documentation
 
-| Building block            | Bounded context | Technology                                    | Owned state / responsibility                                                                                                                                                                                           | Source path                           |
-| :------------------------ | :-------------- | :-------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------ |
-| **Rating API** (`rating`) | Reviews         | .NET 11 Minimal API + A2A gRPC (`MapGrpcA2A`) | Authoritative `Feedback` persistence in Cosmos DB (`ratingdb`/`feedbacks`, partition key `/bookId`), Kafka rating events, `Rating Agent` (`Agents/rating-agent.yaml`), Agent Governance (`Policies/rating-agent.yaml`) | `src/Services/Rating/BookWorm.Rating` |
-
-### Versioned API and agent surface (`/api/v1`)
-
-| Operation             | Protocol / path                            | Access and validation behavior                                                                                          |
-| :-------------------- | :----------------------------------------- | :---------------------------------------------------------------------------------------------------------------------- |
-| Create feedback       | `POST /api/v1/feedbacks`                   | Validates `BookId`, reviewer names, comment length, and integer rating `0`-`5`                                          |
-| List feedback         | `GET /api/v1/feedbacks`                    | Paginated, sortable list scoped by `BookId`                                                                             |
-| Delete feedback       | `DELETE /api/v1/feedbacks/{id}`            | Requires `admin` policy (`admin` role + `rating_read`/`rating_write`) and per-user rate limit; returns `404` if missing |
-| Summarize feedback    | `GET /api/v1/feedbacks/{bookId}/summarize` | Authenticated and per-user rate-limited; returns cached AI classification (`Best Seller`, `Good`, `Bad`, `No Data`)     |
-| Agent discovery & A2A | `/agents` and A2A gRPC (`MapGrpcA2A`)      | Protected by `read` policy (`rating_read`) and Entra Agent Identity (`ratingAgentId`)                                   |
-
-## Runtime view
-
-- **Feedback creation and projection:** Rating API persists the `Feedback` document in Cosmos DB and publishes `FeedbackCreatedIntegrationEvent` (`bookworm.{env}.rating.feedback-create`, partitioned by `BookId`/`FeedbackId`). Catalog consumes the event and updates its derived `averageRating` and `totalReviews`.
-- **Feedback deletion:** Authorized removal publishes `FeedbackDeletedIntegrationEvent` (`bookworm.{env}.rating.feedback-delete`) so Catalog recalculates its derived summary.
-- **Missing-book compensation:** If Catalog cannot locate the referenced `BookId`, Catalog publishes `BookUpdatedRatingFailedIntegrationEvent` (`bookworm.{env}.catalog.book-update-rating-failed`). Rating API deletes the orphaned `Feedback` record idempotently (already-deleted records are a safe no-op).
-- **AI summarization:** `Rating Agent` screens feedback text through Presidio PII middleware, queries Microsoft Foundry under `Policies/rating-agent.yaml` guardrails, and caches the resulting summary in Redis via FusionCache.
-
-## Deployment and cross-cutting concerns
-
-- **Hosting and ingress:** `rating` runs behind the YARP API Gateway (`/rating/{**remainder}`) with internal Container App ingress; Chat API reaches `Rating Agent` internally via A2A gRPC.
-- **Security and privacy:** Microsoft Entra ID enforces `admin` and `read` policies; Entra Agent Identity (`ratingAgentId`) handles OBO token exchange; `rating-identity` authenticates passwordlessly to Cosmos DB (custom Cosmos Data Role), Redis, and Microsoft Foundry. Presidio redacts PII before LLM calls.
-- **Observability and resilience:** OpenTelemetry correlates HTTP, A2A gRPC, Cosmos DB, and Kafka spans by `BookId` and `FeedbackId`; exhausted Kafka listeners route to `bookworm.{env}.rating.dead-letter-queue`.
-
-## Quality scenarios and known risks
-
-| Quality attribute / risk | Scenario or exposure                                                               | Current mitigation or gap                                                                                        |
-| :----------------------- | :--------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------------------------- |
-| **Eventual consistency** | Catalog's rating summary lags newly submitted feedback                             | Intentional decoupling so storefront discovery never depends synchronously on Reviews                            |
-| **Data hygiene**         | Feedback submitted for a deleted or nonexistent book UUID                          | Explicit Kafka compensation (`BookUpdatedRatingFailedIntegrationEvent`) deletes orphaned feedback idempotently   |
-| **Reviewer uniqueness**  | Duplicate reviews limited by `(BookId, reviewer name)` rather than user subject ID | Relies on reviewer-name uniqueness; changing to verified buyer-ID scoping would require a domain contract update |
-
-## Related architecture decisions
-
-| ADR                                             | Decision summary                                                                                                       | Status   |
-| :---------------------------------------------- | :--------------------------------------------------------------------------------------------------------------------- | :------- |
-| ADR: Rating Azure Cosmos DB                     | Store `Feedback` records in Azure Cosmos DB (`ratingdb`/`feedbacks`) with `WolverineFx.CosmosDb` instead of PostgreSQL | Accepted |
-| ADR-BW-007: Derived eventually consistent views | Maintain Catalog's rating summary as an eventually consistent projection                                               | Proposed |
-| ADR-BW-014: Composable AI governance            | Govern `Rating Agent` with `Policies/rating-agent.yaml` and Presidio PII middleware                                    | Proposed |
-
-## Related documentation
-
-- [[flow|feedback-publication]] — End-to-end projection and compensation sequence.
-- Rating summary mismatch runbook — Investigate Catalog vs. Reviews rating discrepancies.
-- Catalog feedback-created contract — Catalog handler reference.
-- [[doc|arc42/12-glossary]] — Distinction between `Feedback`, `Review`, `Rating summary`, and `Feedback summary`.
-
-<ArchitectureGraph />
+- [[system|rating-system]] — System boundary, Cosmos DB persistence, and [[service|rating-api]].
+- [[flow|feedback-publication]] — Feedback publication, Catalog projection, and compensation workflow.
+- [[adr|adr-bw-007-derived-eventually-consistent-views]] — Authoritative feedback vs. derived Catalog rating summaries.
+- [[adr|adr-bw-014-composable-ai-governance]] — Fail-closed privacy and guardrail governance for [[agent|rating-agent]].
+- [[doc|arc42/12-glossary]] — Shared feedback, rating, and summary terminology.

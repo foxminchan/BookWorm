@@ -18,75 +18,72 @@ sidebar:
   badge: "GET"
 ---
 
-`ListFeedbacks` queries **Rating API** (`GET /api/v1/feedbacks`) for a paginated, sorted page of customer feedback records belonging to a single Catalog book. The endpoint is publicly readable, caches pages in FusionCache for 10 minutes, and emits total counts and navigation links in HTTP response headers.
+`ListFeedbacks` queries [[service|rating-api]] (`GET /rating/api/v1/feedbacks`) for a paginated, sorted page of customer feedback records belonging to a single Catalog book. The endpoint is publicly readable, caches pages for 10 minutes, and emits total counts and navigation links in HTTP response headers.
 
 ## Overview
 
-| Property                  | Value                                                                                                                                                        |
-| :------------------------ | :----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**                 | Reviews bounded context (**Rating API**, Aspire resource `rating`)                                                                                           |
-| **Source**                | `src/Services/Rating/BookWorm.Rating/Features/List/ListFeedbacksEndpoint.cs`, `ListFeedbacksQuery.cs`, `ListFeedbacksValidator.cs`                           |
-| **Protocol / format**     | HTTP `GET /api/v1/feedbacks` (via API Gateway: `GET /rating/api/v1/feedbacks`), `ApiVersions.V1`, JSON (`application/json`)                                  |
-| **Authentication**        | None required (public read endpoint)                                                                                                                         |
-| **Rate limiting**         | `PerUserRateLimit` token bucket (30 token limit, 20 tokens per 10 seconds, queue limit 5) plus global IP/concurrency limiters                                |
-| **Persistence & caching** | Queries Azure Cosmos DB (`ratingdb` / `feedbacks`, partition key `/bookId`); caches results in FusionCache (L1 + Redis L2) for 10 minutes tagged by `BookId` |
-| **Contract version**      | `1.0.0`                                                                                                                                                      |
+| Property                           | Value                                                                                                                                                                                          |
+| :--------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Bounded Context**                | Reviews                                                                                                                                                                                        |
+| **Owner Service**                  | [[service\|rating-api]]                                                                                                                                                                        |
+| **Protocol / Format**              | HTTP `GET`, `application/json` response                                                                                                                                                        |
+| **Gateway Endpoint**               | `GET /rating/api/v1/feedbacks` (service path `/api/v1/feedbacks`)                                                                                                                              |
+| **Authentication & Authorization** | None required (public read endpoint)                                                                                                                                                           |
+| **Idempotency / Concurrency**      | Read-only and naturally idempotent                                                                                                                                                             |
+| **Rate Limit / Caching**           | Global concurrency (`100`), per-IP fixed-window (`30 req/min`), and per-user token bucket (`30` limit, `20` per `10s`, queue `5`); cached in L1 + Redis L2 for `10 minutes` tagged by `BookId` |
+| **Contract Version**               | `1.0.0` (`ApiVersions.V1`)                                                                                                                                                                     |
 
-## Parameters and fields
+## Request & Response Contract
 
-### Query parameters
+### Query Parameters
 
-| Name           | Type            | Required | Default    | Constraints                                     | Description                                                        |
-| :------------- | :-------------- | :------- | :--------- | :---------------------------------------------- | :----------------------------------------------------------------- |
-| `BookId`       | `string` (UUID) | Yes      | —          | Valid UUID                                      | Identifier of the Catalog book whose feedback records are returned |
-| `PageIndex`    | `integer`       | No       | `1`        | `> 0` (`ListFeedbacksValidator`)                | 1-based page number to retrieve                                    |
-| `PageSize`     | `integer`       | No       | `20`       | `> 0` (`ListFeedbacksValidator`)                | Maximum number of feedback records per page                        |
-| `OrderBy`      | `string`        | No       | `"Rating"` | Property name supported by `FeedbackFilterSpec` | Field used to sort feedback records                                |
-| `IsDescending` | `boolean`       | No       | `false`    | `true` or `false`                               | Sorts descending when `true` and ascending when `false`            |
+| Name           | Type              | Required | Constraints                                                                          | Description                                                        |
+| :------------- | :---------------- | :------- | :----------------------------------------------------------------------------------- | :----------------------------------------------------------------- |
+| `BookId`       | `string` (`uuid`) | Yes      | Valid UUID                                                                           | Identifier of the Catalog book whose feedback records are returned |
+| `PageIndex`    | `integer`         | No       | Default `1`; must be `> 0`                                                           | 1-based page number to retrieve                                    |
+| `PageSize`     | `integer`         | No       | Default `20`; must be `> 0`                                                          | Maximum number of feedback records per page                        |
+| `OrderBy`      | `string`          | No       | Default `"Rating"`; supports `Rating` and `CreatedAt` (others fall back to `Rating`) | Field used to sort feedback records                                |
+| `IsDescending` | `boolean`         | No       | Default `false`                                                                      | Sorts descending when `true` and ascending when `false`            |
 
-`OrderBy` recognizes `Rating` and `CreatedAt`. Any other value falls back to `Rating`; ties are ordered by feedback ID.
+### Response Headers (`200 OK`)
 
-### Response headers
+| Name               | Type     | Required | Constraints                               | Description                                                                                                          |
+| :----------------- | :------- | :------- | :---------------------------------------- | :------------------------------------------------------------------------------------------------------------------- |
+| `Pagination-Count` | `string` | Yes      | Integer string (e.g., `42`)               | Total number of feedback records matching `BookId` across all pages                                                  |
+| `Link`             | `string` | Yes      | Comma-separated `<uri>;rel=<rel>` entries | Navigation URIs with `first`, `self`, `last`, and conditional `previous` / `next` relations preserving query filters |
 
-`ListFeedbacksEndpoint` applies `WithPaginationHeaders()` (`PaginationHeaderFilter`), which appends two headers on `200 OK` responses:
+### Success Response (`200 OK`)
 
-| Header             | Format                                    | Description                                                                                                          |
-| :----------------- | :---------------------------------------- | :------------------------------------------------------------------------------------------------------------------- |
-| `Pagination-Count` | Integer string (for example, `42`)        | Total number of feedback records matching `BookId` across all pages                                                  |
-| `Link`             | Comma-separated `<uri>;rel=<rel>` entries | Navigation URIs with `first`, `self`, `last`, and conditional `previous` / `next` relations preserving query filters |
+Returns a JSON array of feedback objects (`additionalProperties: false`).
 
-### Response schema (`FeedbackDto[]`)
+| Name           | Type                | Required | Constraints | Description                                   |
+| :------------- | :------------------ | :------- | :---------- | :-------------------------------------------- |
+| `[].id`        | `string` (`uuid`)   | Yes      | Valid UUID  | Unique identifier of the feedback record      |
+| `[].firstName` | `string \| null`    | Yes      | Nullable    | First name of the reviewer                    |
+| `[].lastName`  | `string \| null`    | Yes      | Nullable    | Last name of the reviewer                     |
+| `[].comment`   | `string \| null`    | Yes      | Nullable    | Written review text left by the reviewer      |
+| `[].rating`    | `integer \| string` | Yes      | `0`-`5`     | Numeric star rating submitted by the reviewer |
+| `[].bookId`    | `string` (`uuid`)   | Yes      | Valid UUID  | Identifier of the reviewed Catalog book       |
 
-A `200 OK` response body serializes `PagedResult<FeedbackDto>` as a JSON array of `FeedbackDto` objects (`additionalProperties: false`).
+## Behavior & Side Effects
 
-| Field          | Type                | Required | Constraints      | Description                                   |
-| :------------- | :------------------ | :------- | :--------------- | :-------------------------------------------- |
-| `[].id`        | `string`            | Yes      | UUID             | Unique identifier of the feedback record      |
-| `[].firstName` | `string \| null`    | Yes      | Nullable         | First name of the reviewer                    |
-| `[].lastName`  | `string \| null`    | Yes      | Nullable         | Last name of the reviewer                     |
-| `[].comment`   | `string \| null`    | Yes      | Nullable         | Written review text left by the reviewer      |
-| `[].rating`    | `integer \| string` | Yes      | `int32`, `0`-`5` | Numeric star rating submitted by the reviewer |
-| `[].bookId`    | `string`            | Yes      | UUID             | Identifier of the reviewed Catalog book       |
+- **Read-through caching:** Queries Azure Cosmos DB (`ratingdb`/`feedbacks`, partition key `/bookId`) and caches paginated results for 10 minutes; invalidated on feedback creation or deletion.
+- **No state mutation:** Pure read query with no database writes or integration events.
 
-## Error responses
+## Error Responses
 
-| Code / status           | Condition                                                                                                                         | Recovery behavior                                        |
-| :---------------------- | :-------------------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------- |
-| `400 Bad Request`       | Missing/malformed `BookId` or invalid `PageIndex`/`PageSize` (`<= 0`) (`application/problem+json` `HttpValidationProblemDetails`) | Correct invalid query parameters; do not retry unchanged |
-| `429 Too Many Requests` | Caller exceeded `PerUserRateLimit` or global rate limit (`application/problem+json` + `Retry-After` header)                       | Wait for the `Retry-After` duration before retrying      |
+| Status / Code           | Condition                                                             | Client Recovery Action                                   |
+| :---------------------- | :-------------------------------------------------------------------- | :------------------------------------------------------- |
+| `400 Bad Request`       | Missing/malformed `BookId` or invalid `PageIndex`/`PageSize` (`<= 0`) | Correct invalid query parameters; do not retry unchanged |
+| `429 Too Many Requests` | Rate limit quota exceeded (`Retry-After` header included)             | Wait for the `Retry-After` duration before retrying      |
 
-## Related documentation
+## Related Documentation
 
 - [[service|rating-api]] — Service overview, Azure Cosmos DB storage, and endpoints.
+- [[entity|feedback]] — Feedback document model.
 - [[query|SummarizeFeedback]] — Generate an AI summary and classification for a book's feedback.
 - [[command|CreateFeedback]] — Submit a new customer feedback record.
-- [[entity|feedback]] — Domain model for individual customer reviews.
 
 <NodeGraph />
 
-<SchemaViewer
-	file="schema.json"
-	title="FeedbackDto array JSON Schema"
-	maxHeight="500"
-	search="true"
-/>
+<SchemaViewer file="schema.json" title="List feedbacks schema" maxHeight="500" search="true" />

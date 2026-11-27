@@ -14,73 +14,63 @@ sidebar:
   badge: "gRPC"
 ---
 
-`ListBooksGrpc` invokes the internal `book.v1.BookGrpcService/ListBooks` gRPC unary RPC on **Catalog API** to search and list books with full `BookItem` metadata (descriptions, images, pricing, stock status, relationships, and rating summaries). **MCP Tools** calls this RPC to power its `search_catalog` tool.
+`ListBooksGrpc` invokes the internal `book.v1.BookGrpcService/ListBooks` gRPC unary RPC on [[service|catalog-api]] to search and list books with full metadata (descriptions, images, pricing, stock status, relationships, and rating summaries). [[service|mcp-server]] calls this RPC to power its `search_catalog` tool.
 
 ## Overview
 
-| Property                         | Value                                                                                                                                                                                                                                                                               |
-| :------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner (gRPC server)**          | Catalog bounded context (**Catalog API**, Aspire resource `catalog`)                                                                                                                                                                                                                |
-| **Primary caller**               | **MCP Tools** (`mcptools`, `search_catalog` tool)                                                                                                                                                                                                                                   |
-| **Source**                       | `src/Services/Catalog/BookWorm.Catalog/Grpc/Protos/book/v1/book.proto`, `src/Services/Catalog/BookWorm.Catalog/Grpc/Services/BookService.cs`                                                                                                                                        |
-| **Protocol / format**            | gRPC unary RPC (`book.v1.BookGrpcService/ListBooks`), Protobuf `edition = "2023"`, `csharp_namespace = "BookWorm.Catalog.Grpc.Services"`                                                                                                                                            |
-| **Authentication**               | `[AllowAnonymous]` (internal service-to-service public catalog read)                                                                                                                                                                                                                |
-| **Delegation, search & caching** | Dispatches `ListBooksQuery(Search: search)` with fixed defaults (`PageIndex = 1`, `PageSize = 20`, `OrderBy = "Name"`, `IsDescending = false`); uses Qdrant (`vectordb`) hybrid search (5-minute FusionCache) when `search` is non-empty and caches filtered pages for `60 seconds` |
-| **Contract version**             | `1.0.0`                                                                                                                                                                                                                                                                             |
+| Property                           | Value                                                                                        |
+| :--------------------------------- | :------------------------------------------------------------------------------------------- |
+| **Bounded Context**                | Catalog                                                                                      |
+| **Owner Service**                  | [[service\|catalog-api]]                                                                     |
+| **Protocol / Format**              | gRPC unary RPC (`book.v1.BookGrpcService/ListBooks`), Protobuf `edition = "2023"`            |
+| **Gateway Endpoint**               | Internal gRPC RPC `book.v1.BookGrpcService/ListBooks` (not exposed via API Gateway)          |
+| **Authentication & Authorization** | Internal service-to-service anonymous read                                                   |
+| **Idempotency / Concurrency**      | Read-only and naturally idempotent                                                           |
+| **Rate Limit / Caching**           | Hybrid vector search (cached `5 min`) when `search` is non-empty; filtered page cached `60s` |
+| **Contract Version**               | `1.0.0`                                                                                      |
 
 :::note
-Because `BookService.ListBooks` delegates to `ListBooksQuery` without exposing paging fields, responses are capped at the default first page of **20 books** sorted by `Name` ascending. Callers requiring multi-page traversal or price/relationship filters must use HTTP [[query|ListBooks]].
+This RPC uses fixed defaults (`pageIndex = 1`, `pageSize = 20`, `orderBy = "Name"`, `isDescending = false`) and does not expose paging parameters. Callers requiring multi-page traversal or price/relationship filters must use HTTP [[query|ListBooks]].
 :::
 
-## Parameters and fields
+## Request & Response Contract
 
-### Request message (`ListBooksRequest`)
+### Request Message (`ListBooksRequest`)
 
-| Field    | Protobuf type | Tag | Constraints                                  | Description                                                                         |
-| :------- | :------------ | :-- | :------------------------------------------- | :---------------------------------------------------------------------------------- |
-| `search` | `string`      | `1` | Optional; blank/whitespace treated as `null` | Free-text search term executed via hybrid vector search against Qdrant (`vectordb`) |
+| Name     | Type     | Required | Constraints                                 | Description                                             |
+| :------- | :------- | :------- | :------------------------------------------ | :------------------------------------------------------ |
+| `search` | `string` | No       | Tag `1`; blank/whitespace treated as `null` | Free-text search term executed via hybrid vector search |
 
-### Response message (`ListBooksResponse`)
+### Success Response (`ListBooksResponse`)
 
-| Field   | Protobuf type       | Tag | Description                                                                                                                                                                  |
-| :------ | :------------------ | :-- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `books` | `repeated BookItem` | `1` | Up to 20 matching books with full metadata (empty collection if zero matches). See [[query\|GetBookDetailsGrpc]] for all `BookItem`, `DecimalValue`, and `BookStatus` fields |
+| Name    | Type         | Required | Constraints                          | Description                                                                                                                    |
+| :------ | :----------- | :------- | :----------------------------------- | :----------------------------------------------------------------------------------------------------------------------------- |
+| `books` | `BookItem[]` | Yes      | Tag `1` (`repeated`); max `20` items | Matching books with full metadata (empty collection if zero matches). See [[query\|GetBookDetailsGrpc]] for `BookItem` fields. |
 
-### Protobuf contract
+## Behavior & Side Effects
 
-<CodeGroup>
+- **Hybrid search & caching:** When `search` is non-empty, executes hybrid vector search against Qdrant and filters matching books from PostgreSQL.
+- **No state mutation:** Pure read RPC with no database writes or integration events.
 
-```protobuf
-edition = "2023";
+## Error Responses
 
-package book.v1;
-
-service BookGrpcService {
-  rpc ListBooks (ListBooksRequest) returns (ListBooksResponse);
-}
-
-message ListBooksRequest {
-  string search = 1;
-}
-
-message ListBooksResponse {
-  repeated BookItem books = 1;
-}
-```
-
-</CodeGroup>
-
-## Error responses
-
-| Code / status        | Condition                                                                                      | Recovery behavior                           |
+| Status / Code        | Condition                                                                                      | Client Recovery Action                      |
 | :------------------- | :--------------------------------------------------------------------------------------------- | :------------------------------------------ |
 | `Unavailable` (`14`) | Catalog API (or backing Qdrant/PostgreSQL dependency during an uncached search) is unreachable | Retry within the budgeted resilience policy |
 
-## Related documentation
+## Related Documentation
 
-- [[service|catalog-api]] — Service overview, PostgreSQL/Qdrant persistence, and gRPC services.
+- [[service|catalog-api]] — Service overview, persistence, and gRPC services.
 - [[service|mcp-server]] — Primary caller exposing the `search_catalog` MCP tool.
-- [[query|ListBooks]] — Public HTTP `QUERY /api/v1/books` supporting pagination and rich filters.
+- [[entity|book]] — Book entity model.
+- [[query|ListBooks]] — Public HTTP `QUERY /catalog/api/v1/books` supporting pagination and rich filters.
 - [[query|GetBookDetailsGrpc]] — Full `BookItem` field schema and single-book lookup.
 
 <NodeGraph />
+
+<SchemaViewer
+	file="schema.proto"
+	title="List books over gRPC schema"
+	maxHeight="500"
+	search="true"
+/>

@@ -2,7 +2,7 @@
 id: order-database
 name: Order Database
 version: 1.0.0
-summary: PostgreSQL system of record for Buyer profiles, Orders, and purchase-time items, with Ordering event and message persistence.
+summary: Authoritative PostgreSQL system of record owned by the Ordering bounded context for buyers, accepted orders, purchase-time line items, and order lifecycle event streams.
 owners:
   - business-strategy
 container_type: database
@@ -14,66 +14,76 @@ technology: postgresql
 authoritative: true
 access_mode: readWrite
 classification: confidential
-purpose: Persist accepted purchases and Buyer profiles alongside Marten event streams, projections, and Wolverine message storage.
+retention: indefinite
+residency: eastasia
+purpose: Persist accepted purchases and Buyer profiles alongside order lifecycle event streams, projections, and transactional outbox storage.
 styles:
   icon: /icons/database/postgresql.svg
 ---
 
-Order database (`orderingdb`) is the authoritative PostgreSQL system of record owned exclusively by [[service|order-api]] in the Ordering bounded context. Over a single PostgreSQL database connection, it stores relational buyer and order records via EF Core, order lifecycle event streams and projections via Marten, and transactional integration message envelopes via Wolverine.
+## Purpose & Ownership Boundary
 
-## Overview
+Order Database (`orderingdb`) is the authoritative PostgreSQL system of record owned exclusively by [[service|order-api]] in the Ordering bounded context. PostgreSQL was chosen to combine ACID relational persistence for buyer profiles and immutable checkout snapshots with append-only order lifecycle event streams, read projections, and a transactional outbox over a single connection.
 
-| Property               | Value                                                                                                                                                 |
-| :--------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**              | Ordering bounded context — [[service\|order-api]] (`ordering`)                                                                                        |
-| **Aspire resource ID** | `orderingdb` (on shared `postgres` resource)                                                                                                          |
-| **Source**             | `src/Services/Ordering/BookWorm.Ordering/Infrastructure/Extensions.cs`, `src/Services/Ordering/BookWorm.Ordering/Infrastructure/OrderingDbContext.cs` |
-| **Engine**             | PostgreSQL 18 (Azure Database for PostgreSQL Flexible Server in cloud)                                                                                |
-| **Persistence stack**  | EF Core 11 (`snake_case` conventions) + Marten event store + Wolverine (`6.65.1`, `wolverine` schema)                                                 |
-| **Authoritative**      | Yes (`readWrite`)                                                                                                                                     |
-| **Classification**     | `confidential` (contains customer names and shipping addresses)                                                                                       |
-| **Retention**          | Indefinite (subject to environment data-governance policy)                                                                                            |
+## Data Store Profile
 
-## Architecture and persistence layers
+| Property                            | Value                                                                             |
+| :---------------------------------- | :-------------------------------------------------------------------------------- |
+| **Bounded Context / Owner**         | Ordering — [[team\|business-strategy]]                                            |
+| **Engine / Technology**             | PostgreSQL 18 (Azure Database for PostgreSQL Flexible Server)                     |
+| **Store Type**                      | Database                                                                          |
+| **Primary Writer(s)**               | [[service\|order-api]]                                                            |
+| **Primary Reader(s)**               | [[service\|order-api]]                                                            |
+| **Authoritative / Source of Truth** | Yes                                                                               |
+| **Data Classification**             | Confidential (contains customer names and shipping addresses)                     |
+| **Retention / TTL Policy**          | Indefinite (soft-delete on orders; subject to environment data-governance policy) |
 
-Ordering API accesses `orderingdb` exclusively; no other service queries or mutates this database. Active pre-checkout baskets live in [[container|basket-database]], temporary locks and HTTP idempotency markers live in [[container|order-cache]], and post-checkout saga state lives in Azure Durable Task Scheduler (`finance-taskhub`).
+## Logical Data Layout & Key Patterns
 
-The diagram shows how Ordering API combines EF Core, Marten, and Wolverine inside `orderingdb` while publishing order lifecycle events to Kafka.
+| Table / Schema         | Owned Entity           | Partition / Primary Key                           | Purpose & Concurrency                                                                                                                                                                                                                                                         |
+| :--------------------- | :--------------------- | :------------------------------------------------ | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `buyers`               | [[entity\|buyer]]      | `id` (`uuidv7()`)                                 | Customer profiles including name and shipping address (`street`, `city`, `province`).                                                                                                                                                                                         |
+| `orders`               | [[entity\|order]]      | `id` (`uuidv7()`)                                 | Accepted orders with status (`New`, `Cancelled`, `Completed`), order note, timestamps, and soft-delete flag; optimistic concurrency via row-version token.                                                                                                                    |
+| `order_items`          | [[entity\|order-item]] | `id` (`uuidv7()`), unique (`book_id`, `order_id`) | Immutable checkout-time line item snapshots locking `book_id`, quantity, and unit price at purchase time.                                                                                                                                                                     |
+| Event store (`public`) | [[entity\|order]]      | Stream ID (`order_id`)                            | Append-only order placement, completion, and cancellation events; live stream aggregation and asynchronous summary projection (`DaemonLockId = 44444`).                                                                                                                       |
+| `wolverine` schema     | —                      | Envelope ID                                       | Transactional outbox and inbox tables sharing the domain write transaction; partitions Kafka events ([[event\|UserCheckedOutIntegrationEvent]], [[event\|OrderStatusChangedToCompleteIntegrationEvent]], [[event\|OrderStatusChangedToCancelIntegrationEvent]]) by `OrderId`. |
+
+## Consistency, Isolation & Security Guardrails
+
+- **Checkout price immutability:** `order_items` persists the unit price resolved at checkout so subsequent price edits in [[container|catalog-database]] never alter historical purchases.
+- **Soft-delete audit preservation:** Administrative cleanup and failed basket-cleanup compensation mark orders as soft-deleted (filtered from normal reads) rather than physically erasing rows.
+- **Eventually consistent summary views:** Asynchronous order summary projections can briefly lag transactional writes; `orders` remains the canonical source for order status.
+- **Confidential PII posture:** Buyer names and street/city/province addresses are classified `confidential` and protected by encryption at rest, regional residency, and backup retention policies.
+
+:::warning
+**Database-per-Service Isolation:** Only [[service|order-api]] may read or write `orderingdb`. Active pre-checkout baskets live in [[container|basket-database]], temporary locks and HTTP idempotency markers live in [[container|order-cache]], and post-checkout saga state lives in [[service|order-orchestration]]. External services must never query `orderingdb` directly.
+:::
+
+## Operational & Resilience Notes
+
+<AccordionGroup>
+	<Accordion title="Hosting, backup retention, and environment parity">
+		- **Local vs. Cloud:** Local development runs a persistent PostgreSQL container alongside
+		`catalogdb` and `schedulerdb`; cloud environments run Azure Database for PostgreSQL Flexible
+		Server. - **Scaling & HA:** Development uses `Standard_B1ms` (single zone, 7-day backup, 32 GB);
+		Staging uses `Standard_D2ds_v5` (zone-redundant HA, PgBouncer, 14-day backup, 128 GB);
+		Production uses `Standard_D4ds_v5` (zone-redundant HA, PgBouncer, 35-day backup, 256 GB). -
+		**Active messaging schema:** Treat the `wolverine` schema as the sole authoritative messaging
+		store; ignore any retired messaging tables from historical migrations.
+	</Accordion>
+</AccordionGroup>
+
+## Architecture Visualizations
+
+<NodeGraph />
 
 <MermaidFileLoader file="mermaids/order-database-diagram-1.mmd" />
 
-## Stored data and schemas
+## Related Documentation
 
-| Layer                         | Objects / entities                                | Purpose                                                                                                                                                                                                                                 | Key rules and configuration                                                                                                                                                             |
-| :---------------------------- | :------------------------------------------------ | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **EF Core (`public`)**        | `buyers`, `orders`, `order_items`                 | Authoritative buyer profiles (name, street, city, province), accepted orders (status `New`, `Cancelled`, `Completed`, note, timestamps, soft-delete flag), and checkout-time line item snapshots (book ID, quantity, locked unit price) | Unique constraint on (`book_id`, `order_id`) per order; row-version optimistic concurrency token on `orders`; global soft-delete query filter excludes deleted orders from normal reads |
-| **Marten (`public` default)** | Event streams, `OrderSummary`, `OrderSummaryView` | Permanent order placement, completion, and cancellation events; live `OrderSummary` stream aggregation; asynchronous `OrderSummaryView` documents (order ID, status, total price)                                                       | Async daemon runs with `DaemonLockId = 44444` and `MartenEventPublisher` subscription; `DisableNpgsqlLogging = true`; `AutoCreateSchemaObjects = AutoCreate.All` in Development only    |
-| **Wolverine (`wolverine`)**   | Outbox and inbox envelope tables                  | Durable integration messaging sharing EF Core transactions                                                                                                                                                                              | Publishes `UserCheckedOutIntegrationEvent`, `OrderStatusChangedToCompleteIntegrationEvent`, and `OrderStatusChangedToCancelIntegrationEvent` partitioned by `OrderId`                   |
-
-## Hosting and environment provisioning
-
-AppHost provisions `orderingdb` as one of three databases (`catalogdb`, `orderingdb`, `schedulerdb`) on the shared `postgres` server (`src/Aspire/BookWorm.AppHost/Extensions/Infrastructure/AzureExtensions.Postgres.cs`).
-
-| Environment           | Compute & hosting                                                                                          | High availability & pooling          | Backup retention    | Storage      |
-| :-------------------- | :--------------------------------------------------------------------------------------------------------- | :----------------------------------- | :------------------ | :----------- |
-| **Local development** | Local PostgreSQL container (`ContainerLifetime.Persistent`), persistent data volume, pgAdmin, Postgres MCP | Single container                     | None (local volume) | Local volume |
-| **Azure Development** | Azure Database for PostgreSQL Flexible Server (`Standard_B1ms` Burstable)                                  | Single zone; PgBouncer disabled      | 7 days              | 32 GB        |
-| **Azure Staging**     | Azure Database for PostgreSQL Flexible Server (`Standard_D2ds_v5` General Purpose)                         | Zone-redundant HA; PgBouncer enabled | 14 days             | 128 GB       |
-| **Azure Production**  | Azure Database for PostgreSQL Flexible Server (`Standard_D4ds_v5` General Purpose)                         | Zone-redundant HA; PgBouncer enabled | 35 days             | 256 GB       |
-
-## Operational and governance rules
-
-- **Confidential customer data:** Buyer names and street/city/province addresses are classified `confidential`. Enforce backup retention, encryption, and regional residency policies at the Azure infrastructure level.
-- **Eventually consistent projections:** Marten's asynchronous `OrderSummaryView` can briefly lag behind transactional EF Core writes. Treat `orders` as the authoritative source for order status (`New`, `Cancelled`, `Completed`).
-- **Checkout price immutability:** `order_items` persists the unit price resolved at checkout so subsequent price edits in [[container|catalog-database]] never alter historical purchases.
-- **Soft deletion:** Administrative cleanup and failed basket-cleanup compensation mark orders as soft-deleted rather than physically erasing rows, preserving audit trails.
-- **Legacy migration artifacts:** Historical EF Core migrations may contain retired messaging tables; treat the active `wolverine` schema as the sole authoritative messaging store.
-
-## Related documentation
-
-- [[service|order-api]] — Owning service REST endpoints, gRPC clients, and Kafka handlers.
+- [[service|order-api]] — Owning service endpoints, gRPC clients, and Kafka handlers.
 - [[container|order-cache]] — Redis locks, atomic HTTP idempotency, and cached responses.
-- [[service|order-orchestration]] — Durable Functions saga coordinating post-checkout cleanup and notifications.
-- [[doc|platform/006-api-and-contracts]] — Overview of all BookWorm services, agents, and data containers.
-
-<NodeGraph />
+- [[service|order-orchestration]] — Saga coordinating post-checkout cleanup and notifications.
+- [[adr|adr-001-postgresql-order-system-of-record]] — Decision establishing PostgreSQL as Ordering's system of record.
+- [[adr|adr-002-preserve-checkout-purchase-snapshot]] — Decision locking checkout-time prices in `order_items`.
+- [[doc|operational/005-backup-restore-and-dr]] — Platform backup, restore, and disaster recovery runbook.

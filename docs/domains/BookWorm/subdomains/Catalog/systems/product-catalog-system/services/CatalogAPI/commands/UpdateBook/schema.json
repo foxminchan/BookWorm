@@ -4,7 +4,7 @@
 	"description": "Multipart payload for updating a book listing.",
 	"type": "object",
 	"additionalProperties": false,
-	"required": ["id"],
+	"required": ["id", "name", "price", "categoryId", "publisherId", "authorIds"],
 	"properties": {
 		"id": {
 			"type": "string",

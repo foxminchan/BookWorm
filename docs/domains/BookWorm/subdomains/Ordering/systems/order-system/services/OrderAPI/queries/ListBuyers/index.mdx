@@ -18,63 +18,67 @@ sidebar:
   badge: "GET"
 ---
 
-`ListBuyers` queries **Ordering API** (`GET /api/v1/buyers`) to return a paginated slice of registered buyer profiles (`BuyerDto[]`) for store administrators. The endpoint requires the Microsoft Entra ID `admin` authorization policy and emits total item counts and navigation URIs in HTTP response headers.
+`ListBuyers` queries [[service|order-api]] (`GET /ordering/api/v1/buyers`) to return a paginated slice of registered buyer profiles for store administrators. The endpoint requires the Microsoft Entra ID `admin` policy and emits total item counts and navigation URIs in HTTP response headers.
 
 ## Overview
 
-| Property              | Value                                                                                                                                |
-| :-------------------- | :----------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**             | Ordering bounded context (**Ordering API**, Aspire resource `ordering`)                                                              |
-| **Source**            | `src/Services/Ordering/BookWorm.Ordering/Features/Buyers/List/ListBuyersEndpoint.cs`, `ListBuyersQuery.cs`, `ListBuyersValidator.cs` |
-| **Protocol / format** | HTTP `GET /api/v1/buyers` (via API Gateway: `GET /ordering/api/v1/buyers`), `ApiVersions.V1`, JSON (`application/json`)              |
-| **Authentication**    | Microsoft Entra ID JWT required — `admin` policy (`admin` role; scopes `ordering_read`, `ordering_write`)                            |
-| **Rate limiting**     | `PerUserRateLimit` token bucket (30 token limit, 20 tokens per 10 seconds, queue limit 5) plus global IP/concurrency limiters        |
-| **Backing store**     | PostgreSQL (`orderingdb`, EF Core)                                                                                                   |
-| **Contract version**  | `1.0.0`                                                                                                                              |
+| Property                           | Value                                                                                                                             |
+| :--------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------- |
+| **Bounded Context**                | Ordering                                                                                                                          |
+| **Owner Service**                  | [[service\|order-api]]                                                                                                            |
+| **Protocol / Format**              | HTTP `GET`, `application/json` response                                                                                           |
+| **Gateway Endpoint**               | `GET /ordering/api/v1/buyers` (service path `/api/v1/buyers`)                                                                     |
+| **Authentication & Authorization** | Microsoft Entra ID JWT — `admin` policy (role `admin` plus scopes `ordering_read`, `ordering_write`)                              |
+| **Idempotency / Concurrency**      | Read-only and naturally idempotent                                                                                                |
+| **Rate Limit / Caching**           | Global concurrency (`100`), per-IP fixed-window (`30 req/min`), and per-user token bucket (`30` limit, `20` per `10s`, queue `5`) |
+| **Contract Version**               | `1.0.0` (`ApiVersions.V1`)                                                                                                        |
 
-## Parameters and fields
+## Request & Response Contract
 
-### Query parameters
+### Query Parameters
 
-| Name        | Type      | Required | Default | Constraints                   | Description                               |
-| :---------- | :-------- | :------- | :------ | :---------------------------- | :---------------------------------------- |
-| `PageIndex` | `integer` | No       | `1`     | `> 0` (`ListBuyersValidator`) | 1-based page number to retrieve           |
-| `PageSize`  | `integer` | No       | `20`    | `> 0` (`ListBuyersValidator`) | Maximum number of buyer profiles per page |
+| Name        | Type      | Required | Constraints                 | Description                               |
+| :---------- | :-------- | :------- | :-------------------------- | :---------------------------------------- |
+| `PageIndex` | `integer` | No       | Default `1`; must be `> 0`  | 1-based page number to retrieve           |
+| `PageSize`  | `integer` | No       | Default `20`; must be `> 0` | Maximum number of buyer profiles per page |
 
-### Response headers
+### Response Headers (`200 OK`)
 
-`ListBuyersEndpoint` applies `WithPaginationHeaders()` (`PaginationHeaderFilter`), which appends two headers on `200 OK` responses:
+| Name               | Type     | Required | Constraints                               | Description                                                                                 |
+| :----------------- | :------- | :------- | :---------------------------------------- | :------------------------------------------------------------------------------------------ |
+| `Pagination-Count` | `string` | Yes      | Integer string (e.g., `128`)              | Total number of buyer profiles across all pages                                             |
+| `Link`             | `string` | Yes      | Comma-separated `<uri>;rel=<rel>` entries | Navigation URIs with `first`, `self`, `last`, and conditional `previous` / `next` relations |
 
-| Header             | Format                                    | Description                                                                                 |
-| :----------------- | :---------------------------------------- | :------------------------------------------------------------------------------------------ |
-| `Pagination-Count` | Integer string (for example, `128`)       | Total number of buyer profiles across all pages                                             |
-| `Link`             | Comma-separated `<uri>;rel=<rel>` entries | Navigation URIs with `first`, `self`, `last`, and conditional `previous` / `next` relations |
+### Success Response (`200 OK`)
 
-### Response schema (`BuyerDto[]`)
+Returns a JSON array of buyer summary objects.
 
-A `200 OK` response body serializes `PagedResult<BuyerDto>` as a JSON array of `BuyerDto` objects.
+| Name         | Type              | Required | Constraints | Description                                    |
+| :----------- | :---------------- | :------- | :---------- | :--------------------------------------------- |
+| `[].id`      | `string` (`uuid`) | Yes      | Valid UUID  | Unique identifier of the buyer profile         |
+| `[].name`    | `string \| null`  | Yes      | Nullable    | Buyer display name (`null` when unset)         |
+| `[].address` | `string \| null`  | Yes      | Nullable    | Formatted shipping address (`null` when unset) |
 
-| Field        | Type             | Required | Constraints | Description                                    |
-| :----------- | :--------------- | :------- | :---------- | :--------------------------------------------- |
-| `[].id`      | `string`         | Yes      | UUID        | Unique identifier of the buyer profile         |
-| `[].name`    | `string \| null` | Yes      | Nullable    | Buyer display name (`null` when unset)         |
-| `[].address` | `string \| null` | Yes      | Nullable    | Formatted shipping address (`null` when unset) |
+## Behavior & Side Effects
 
-## Error responses
+- **Admin-scoped listing:** Returns paginated buyer profiles from PostgreSQL with `Pagination-Count` and `Link` headers.
+- **No state mutation:** Pure read query with no database writes or integration events.
 
-| Code / status           | Condition                                                                                                                    | Recovery behavior                                                  |
-| :---------------------- | :--------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------- |
-| `400 Bad Request`       | `PageIndex <= 0` or `PageSize <= 0`, or non-integer paging value (`application/problem+json` `HttpValidationProblemDetails`) | Fix paging parameters to positive integers; do not retry unchanged |
-| `401 Unauthorized`      | Missing, expired, or invalid Entra ID bearer token                                                                           | Re-authenticate and retry                                          |
-| `403 Forbidden`         | Authenticated caller does not satisfy the `admin` authorization policy                                                       | Authenticate with an administrator account                         |
-| `429 Too Many Requests` | Caller exceeded `PerUserRateLimit` or global rate limit (`application/problem+json` + `Retry-After` header)                  | Wait for the `Retry-After` duration before retrying                |
+## Error Responses
 
-## Related documentation
+| Status / Code           | Condition                                                      | Client Recovery Action                                             |
+| :---------------------- | :------------------------------------------------------------- | :----------------------------------------------------------------- |
+| `400 Bad Request`       | `PageIndex <= 0`, `PageSize <= 0`, or non-integer paging value | Fix paging parameters to positive integers; do not retry unchanged |
+| `401 Unauthorized`      | Missing, expired, or invalid Entra ID bearer token             | Re-authenticate and retry                                          |
+| `403 Forbidden`         | Caller does not satisfy the `admin` authorization policy       | Authenticate with an administrator account                         |
+| `429 Too Many Requests` | Rate limit quota exceeded (`Retry-After` header included)      | Wait for the `Retry-After` duration before retrying                |
 
-- [[service|order-api]] — Service overview, PostgreSQL persistence, and endpoints.
+## Related Documentation
+
+- [[service|order-api]] — Service overview, persistence, and endpoints.
+- [[entity|buyer]] — Buyer entity model.
 - [[query|GetBuyer]] — Retrieve a single buyer profile.
-- [[entity|buyer]] — Domain model for buyer profiles.
 
 <NodeGraph />
 
-<SchemaViewer file="schema.json" title="BuyerDto array JSON Schema" maxHeight="500" search="true" />
+<SchemaViewer file="schema.json" title="List buyers schema" maxHeight="500" search="true" />

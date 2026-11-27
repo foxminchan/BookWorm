@@ -18,73 +18,65 @@ sidebar:
   badge: "DELETE"
 ---
 
-`DeleteFeedback` (`DELETE /api/v1/feedbacks/{id}`) is an administrator-only command in **Rating API** that deletes an existing **Feedback** record from **Azure Cosmos DB** (`ratingdb`/`feedbacks`), publishes `FeedbackDeletedIntegrationEvent` to Kafka, invalidates Redis/FusionCache entries, and returns `204 No Content`.
+`DeleteFeedback` is an administrator-only command in [[service|rating-api]] (`DELETE /rating/api/v1/feedbacks/{id}`) that deletes an existing [[entity|feedback]] record from Azure Cosmos DB, publishes [[event|FeedbackDeletedIntegrationEvent]] to Kafka, invalidates cached feedback lists and summaries, and returns `204 No Content`.
 
 ## Overview
 
-| Property                 | Value                                                                                                                                                                                                |
-| :----------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**                | Reviews bounded context (**Rating API**, Aspire resource `rating`)                                                                                                                                   |
-| **Source**               | `src/Services/Rating/BookWorm.Rating/Features/Delete/DeleteFeedbackEndpoint.cs`, `DeleteFeedbackCommand.cs`, `src/Services/Rating/BookWorm.Rating/Infrastructure/Repositories/FeedbackRepository.cs` |
-| **Protocol / format**    | HTTP `DELETE`, UUID path parameter, empty request and `204` response bodies                                                                                                                          |
-| **Direct endpoint**      | `DELETE /api/v1/feedbacks/{id}` (local ports: HTTP `5278`, HTTPS `7003`)                                                                                                                             |
-| **API Gateway endpoint** | `DELETE /rating/api/v1/feedbacks/{id}` (YARP strips `/rating`)                                                                                                                                       |
-| **Authentication**       | Microsoft Entra ID JWT bearer token; `admin` authorization policy requires role `admin` and scopes `rating_read` and `rating_write`                                                                  |
-| **Rate limit**           | `PerUserRateLimit` token bucket (30 tokens, +20 per 10 s, queue 5) plus global concurrency (100) and per-IP fixed-window (30 req/min) limiters                                                       |
-| **Contract version**     | `1.0.0` (`ApiVersions.V1`)                                                                                                                                                                           |
+| Property                           | Value                                                                                                                                                                                |
+| :--------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Bounded Context**                | Reviews                                                                                                                                                                              |
+| **Owner Service**                  | [[service\|rating-api]]                                                                                                                                                              |
+| **Protocol / Format**              | HTTP `DELETE`, path parameter only, empty response (`204 No Content`)                                                                                                                |
+| **Gateway Endpoint**               | `DELETE /rating/api/v1/feedbacks/{id}` (service path `/api/v1/feedbacks/{id}`)                                                                                                       |
+| **Authentication & Authorization** | Microsoft Entra ID JWT — `admin` policy (role `admin` and scopes `rating_read`, `rating_write`)                                                                                      |
+| **Idempotency / Concurrency**      | Not idempotent across retries; repeat calls return `404 Not Found`; Cosmos DB ETag optimistic concurrency                                                                            |
+| **Rate Limit / Caching**           | Global concurrency (`100`), per-IP fixed-window (`30 req/min`), and per-user token bucket (`30` tokens, `+20` per `10s`, queue `5`); invalidates feedback list and AI summary caches |
+| **Contract Version**               | `1.0.0` (`ApiVersions.V1`)                                                                                                                                                           |
 
-## Parameters and fields
+## Request & Response Contract
 
-### Request headers
+### Path Parameters
 
-| Name            | Type     | Required | Default | Constraints             | Description                                                                          |
-| :-------------- | :------- | :------- | :------ | :---------------------- | :----------------------------------------------------------------------------------- |
-| `Authorization` | `string` | Yes      | —       | `Bearer <access-token>` | Microsoft Entra ID JWT with role `admin` and scopes `rating_read` and `rating_write` |
+Accepts no request body.
 
-### Path parameters
+| Name | Type              | Required | Constraints | Description                                        |
+| :--- | :---------------- | :------- | :---------- | :------------------------------------------------- |
+| `id` | `string` (`uuid`) | Yes      | Valid UUID  | Unique identifier of the feedback record to delete |
 
-| Name | Type                             | Required | Default | Constraints                           | Description                                        |
-| :--- | :------------------------------- | :------- | :------ | :------------------------------------ | :------------------------------------------------- |
-| `id` | `string` (`uuid` / `FeedbackId`) | Yes      | —       | Valid UUID parsable into `FeedbackId` | Unique identifier of the feedback record to delete |
+### Success Response (`204 No Content`)
 
-### Request body and success response
+Empty response body confirms the feedback record was deleted.
 
-`DELETE /api/v1/feedbacks/{id}` accepts no request body and returns `204 No Content` with an empty response body on success.
+## Behavior & Side Effects
 
-## Behavior and side effects
-
-- **Azure Cosmos DB lookup and deletion (not PostgreSQL):** `DeleteFeedbackHandler` queries Azure Cosmos DB (`ratingdb`/`feedbacks`, partition key `/bookId`) by `Id` with EF Core change tracking enabled (`FeedbackRepository.GetByIdAsync`), verifies existence via `Guard.Against.NotFound`, calls `feedback.Remove()` to register `FeedbackDeletedEvent`, deletes the entity, and commits via `SaveEntitiesAsync` (with ETag optimistic concurrency).
-- **Kafka integration event:** After `SaveChangesAsync` succeeds, `EventDispatchInterceptor` dispatches `FeedbackDeletedEvent`. `FeedbackDeletedEventHandler` maps it to `FeedbackDeletedIntegrationEvent` (`BookId`, `Rating`, `FeedbackId`) and publishes it via **Wolverine** (with `WolverineFx.CosmosDb` persistence) to Kafka topic `bookworm.{env}.rating.feedback-delete`, partitioned by `BookId` and `FeedbackId`. **Catalog API** consumes this event to recalculate the book's derived rating summary.
-- **Redis / FusionCache invalidation:** `FeedbackCacheInvalidationHandler` removes both the cached feedback list entries tagged for `bookId` and the cached AI rating summary key for that book.
+- **Azure Cosmos DB deletion:** Queries Cosmos DB (`ratingdb`/`feedbacks`, partition key `/bookId`), deletes the record with ETag concurrency protection, and returns `404 Not Found` if absent.
+- **Kafka integration event:** Publishes [[event|FeedbackDeletedIntegrationEvent]] to [[channel|bookworm.&#123;env&#125;.rating.feedback-delete]] so [[service|catalog-api]] recalculates the book's derived rating summary.
+- **Cache invalidation:** Clears cached feedback list entries tagged for `bookId` and the cached AI rating summary for that book.
 
 :::note
-OpenAPI metadata (`ProducesDelete()`) declares `404 Not Found` as `application/problem+json` (`ProblemDetails`), but at runtime `NotFoundExceptionHandler` (`src/BuildingBlocks/BookWorm.Chassis/Exceptions/NotFoundExceptionHandler.cs`) returns `application/json` with `{ "detail": "The requested resource was not found." }`.
+OpenAPI metadata declares `404 Not Found` as `application/problem+json`, whereas runtime responses return `application/json` with `{ "detail": "The requested resource was not found." }`.
 :::
 
-## Error responses
+## Error Responses
 
-| Code / status               | Condition                                                                                                                                                                     | Recovery behavior                                                       |
-| :-------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------- |
-| `400 Bad Request`           | `id` path segment is not a valid UUID (`FeedbackId` binding failure)                                                                                                          | Provide a valid feedback UUID in the path and retry                     |
-| `401 Unauthorized`          | Missing, expired, or invalid Entra ID bearer token                                                                                                                            | Acquire a valid Entra ID access token and retry                         |
-| `403 Forbidden`             | Valid token missing the `admin` role or the `rating_read`/`rating_write` scopes                                                                                               | Authenticate as a store administrator with the required scopes          |
-| `404 Not Found`             | No feedback record exists with the specified `id` (`NotFoundExceptionHandler` returns `application/json` `{ "detail": "The requested resource was not found." }`)             | Refresh the moderation list; do not retry unchanged                     |
-| `409 Conflict`              | Cosmos DB ETag concurrency conflict wrapped in `InvalidOperationException` (`RatingDbContext.SaveEntitiesAsync` -> `GlobalExceptionHandler`, `ProblemDetails` with `traceId`) | Re-fetch the feedback state and retry if still present                  |
-| `429 Too Many Requests`     | `PerUserRateLimit` or global rate limiter exceeded (`ProblemDetails` with `Retry-After` header in seconds)                                                                    | Wait for the `Retry-After` interval before retrying                     |
-| `500 Internal Server Error` | Unexpected Cosmos DB, Kafka, or server failure (`GlobalExceptionHandler`, `ProblemDetails` with `traceId`)                                                                    | Retry with exponential backoff; inspect Rating API logs using `traceId` |
+| Status / Code               | Condition                                                                   | Client Recovery Action                                               |
+| :-------------------------- | :-------------------------------------------------------------------------- | :------------------------------------------------------------------- |
+| `400 Bad Request`           | `id` path segment is not a valid UUID                                       | Provide a valid feedback UUID in the path and retry                  |
+| `401 Unauthorized`          | Missing, expired, or invalid Entra ID bearer token                          | Acquire a valid Entra ID access token and retry                      |
+| `403 Forbidden`             | Valid token missing the `admin` role or `rating_read`/`rating_write` scopes | Authenticate as a store administrator with the required scopes       |
+| `404 Not Found`             | No feedback record exists with the specified `id`                           | Refresh the moderation list; do not retry unchanged                  |
+| `409 Conflict`              | Cosmos DB ETag concurrency conflict                                         | Re-fetch the feedback state and retry if still present               |
+| `429 Too Many Requests`     | Rate limit quota exceeded (`Retry-After` header included)                   | Wait for the `Retry-After` interval before retrying                  |
+| `500 Internal Server Error` | Unexpected Cosmos DB, Kafka, or server failure (`traceId` included)         | Retry with exponential backoff; inspect service logs using `traceId` |
 
-## Related documentation
+## Related Documentation
 
 - [[service|rating-api]] — Service overview, Azure Cosmos DB storage, and authorization policies.
-- [[command|CreateFeedback]] — Submit a new book feedback record (`POST /api/v1/feedbacks`).
-- [[event|FeedbackDeletedIntegrationEvent]] — Kafka event published to `bookworm.{env}.rating.feedback-delete`.
-- [[query|ListFeedbacks]] — Retrieve feedback records to locate IDs (`GET /api/v1/feedbacks`).
+- [[entity|feedback]] — Feedback document model.
+- [[command|CreateFeedback]] — Submit a new book feedback record.
+- [[event|FeedbackDeletedIntegrationEvent]] — Kafka event published on deletion.
+- [[query|ListFeedbacks]] — Retrieve feedback records to locate IDs.
 
 <NodeGraph />
 
-<SchemaViewer
-	file="schema.json"
-	title="DeleteFeedback request contract"
-	maxHeight="500"
-	search="true"
-/>
+<SchemaViewer file="schema.json" title="Delete feedback schema" maxHeight="500" search="true" />

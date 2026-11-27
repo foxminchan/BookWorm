@@ -1,11 +1,11 @@
 ---
 id: feedback-publication
-name: Customer feedback publication and projection
+name: Customer Feedback Publication and Projection
 version: 1.0.0
 summary: >-
-  A customer creates feedback, the Rating service persists it, Catalog updates
-  the derived rating summary, and invalid catalog references are compensated
-  through the failure path.
+  Rating API persists customer feedback in Cosmos DB and publishes an
+  integration event; Catalog API updates the derived book rating summary or
+  emits a compensating failure event to delete orphaned feedback.
 owners:
   - contributor-team
 badges:
@@ -19,7 +19,7 @@ steps:
       name: Customer
     next_step:
       id: create-feedback
-      label: Submit the rating and optional comment
+      label: Submit rating and optional comment
   - id: create-feedback
     title: CreateFeedback command
     message:
@@ -27,136 +27,145 @@ steps:
       version: 1.0.0
     next_step:
       id: rating-api
-      label: Persist the feedback aggregate
+      label: Validate and persist feedback
   - id: rating-api
-    title: Rating API persists the new feedback
+    title: Rating API persists new feedback
     summary: >-
-      The API validates the book ID, rating, reviewer names, and comment, then
-      stores the accepted feedback record in the Rating Database.
+      Validates the book ID, score, reviewer name, and comment, then commits the
+      authoritative feedback record to Cosmos DB.
     service:
       id: rating-api
       version: 1.0.0
-    next_steps:
-      - id: rating-db
-        label: Save the feedback row and emit the domain event
-      - id: invalid-book-failure
-        label: Catalog rejects the referenced book
+    next_step:
+      id: rating-db
+      label: Save feedback document
   - id: rating-db
     title: Rating Database stores committed feedback
+    summary: >-
+      Stores the authoritative Feedback document partitioned by book ID and
+      atomically queues the integration event.
     container:
       id: rating-database
       version: 1.0.0
     next_step:
       id: feedback-created
-      label: Publish the feedback-created event
+      label: Publish feedback-created event
   - id: feedback-created
-    title: FeedbackCreatedIntegrationEvent reaches Catalog
+    title: FeedbackCreatedIntegrationEvent
     message:
       id: FeedbackCreatedIntegrationEvent
       version: 1.0.0
     next_step:
+      id: feedback-create-channel
+      label: Publish to rating.feedback-create
+  - id: feedback-create-channel
+    title: Feedback created channel
+    channel:
+      id: bookworm.{env}.rating.feedback-create
+      version: 1.0.0
+    next_step:
       id: catalog-api
-      label: Update the Catalog rating projection
+      label: Deliver to Catalog API
   - id: catalog-api
-    title: Catalog API updates the projected rating summary
+    title: Catalog API updates derived rating summary
     summary: >-
-      Catalog reads the event, updates the book's average rating and review
-      count, and keeps the summary separate from the original feedback record.
+      Applies a 24-hour Redis idempotency guard, looks up the book in Catalog
+      Database, and updates the derived average rating and review count.
     service:
       id: catalog-api
       version: 1.0.0
     next_steps:
-      - id: rating-projection
-        label: Summary is refreshed successfully
+      - id: catalog-db
+        label: Active book found; update summary
       - id: feedback-compensation
-        label: Missing book triggers compensation
-  - id: rating-projection
-    title: Rating summary is available to product discovery
-    custom:
-      title: Projection updated
-      type: Outcome
-      icon: CheckCircleIcon
-      color: green
-  - id: invalid-book-failure
-    title: Catalog reports a missing book reference
-    custom:
-      title: Invalid book reference
-      type: Failure
-      icon: ExclamationTriangleIcon
-      color: red
-    next_step:
-      id: feedback-compensation
-      label: Apply the compensation path
+        label: Missing book; trigger compensation
+  - id: catalog-db
+    title: Catalog Database stores updated rating summary
+    summary: >-
+      Persists the recalculated average rating and total review count on the
+      book record for storefront discovery.
+    container:
+      id: catalog-database
+      version: 1.0.0
   - id: feedback-compensation
-    title: BookUpdatedRatingFailedIntegrationEvent triggers feedback cleanup
+    title: BookUpdatedRatingFailedIntegrationEvent
     message:
       id: BookUpdatedRatingFailedIntegrationEvent
       version: 1.0.0
     next_step:
+      id: compensation-channel
+      label: Publish to catalog.book-update-rating-failed
+  - id: compensation-channel
+    title: Rating update failed channel
+    channel:
+      id: bookworm.{env}.catalog.book-update-rating-failed
+      version: 1.0.0
+    next_step:
       id: rating-api-cleanup
-      label: Remove the invalid record
+      label: Deliver compensation to Rating API
   - id: rating-api-cleanup
-    title: Rating API deletes the invalid feedback record
+    title: Rating API deletes orphaned feedback
     summary: >-
-      The feedback is removed when the Catalog projection cannot be applied,
-      keeping Reviews and Catalog aligned without leaving orphaned rating data.
+      Deletes the invalid feedback document from Cosmos DB so Reviews and
+      Catalog remain consistent without leaving orphaned data.
     service:
       id: rating-api
       version: 1.0.0
 ---
 
-When a customer submits a book review, **Rating API** saves the authoritative `Feedback` document in Azure Cosmos DB (`ratingdb`/`feedbacks`) and publishes `FeedbackCreatedIntegrationEvent` over Kafka. **Catalog API** consumes that event to recalculate the book's derived rating summary (`average_rating` and `total_reviews`) in PostgreSQL, without ever storing review text or reviewer details. If the referenced book does not exist in Catalog, Catalog API publishes `BookUpdatedRatingFailedIntegrationEvent` so Rating API deletes the orphaned feedback record.
+## Trigger & Business Outcome
 
-## Context and motivation
+This flow starts when a customer submits [[command|CreateFeedback]] for a book through [[service|rating-api]]. Success is confirmed when [[service|rating-api]] persists the authoritative [[entity|feedback]] document in [[container|rating-database]] and [[service|catalog-api]] asynchronously updates the book's derived average rating and review count in [[container|catalog-database]]—or, if the book does not exist, compensates by deleting the orphaned feedback.
 
-Storefront browsing and search listings display each book's average rating and total review count on high-traffic pages. Querying **Rating API** synchronously on every catalog read would couple catalog availability to the Reviews subdomain and add cross-service latency. Conversely, copying full customer comments into **Catalog API** would duplicate ownership of moderation history and reviewer data.
-
-BookWorm separates ownership cleanly across two bounded contexts:
-
-- **Reviews (`Rating API`):** Owns individual `Feedback` records in Azure Cosmos DB (`ratingdb`, container `feedbacks`, partition key `/bookId`) using EF Core Cosmos and Wolverine Cosmos DB persistence.
-- **Catalog (`Catalog API`):** Owns books in PostgreSQL (`catalogdb`) and maintains only a derived, rebuildable rating summary (`average_rating` and `total_reviews`) updated via Kafka integration events.
-
-## How it works
-
-Customer feedback publication follows an optimistic asynchronous projection with a compensating rollback path when a book ID is invalid.
-
-This sequence diagram shows both the happy-path rating projection and the compensating deletion when Catalog API cannot find the referenced book.
-
-<MermaidFileLoader file="mermaids/feedback-publication-diagram-1.mmd" />
-
-### Happy path: persist and project
-
-1. **Validate and persist feedback:** A customer submits a rating and optional comment to `Rating API` (`/rating/api/v1/feedbacks`). Rating API validates the book ID, score, reviewer name, and comment, then commits the `Feedback` document to Azure Cosmos DB (`ratingdb`/`feedbacks`, partitioned by `/bookId`).
-2. **Publish integration event:** Wolverine maps `FeedbackCreatedEvent` to `FeedbackCreatedIntegrationEvent` (`BookId`, `Rating`, `FeedbackId`) and publishes it as CloudEvents JSON to `bookworm.{env}.rating.feedback-create`, partitioned by `BookId` / `FeedbackId`.
-3. **Apply derived summary in Catalog:** `FeedbackCreatedIntegrationEventHandler` in **Catalog API** guards duplicate delivery with Redis-backed `IIntegrationEventIdempotencyGuard` (24-hour window keyed by event ID), loads the book from PostgreSQL (`catalogdb`), calls `book.AddRating(@event.Rating)`, and commits the updated summary through EF Core and Wolverine's PostgreSQL outbox.
-
-### Failure path: missing-book compensation
-
-If `Catalog API` looks up `@event.BookId` and finds no active book, the handler commits its unit of work and returns `BookUpdatedRatingFailedIntegrationEvent(@event.FeedbackId)` as a Wolverine cascading message on `bookworm.{env}.catalog.book-update-rating-failed`. **Rating API** consumes this compensating event and deletes the orphaned `Feedback` document from Cosmos DB so Reviews and Catalog stay aligned.
-
-:::note
-Deleting a review follows a separate one-way contract: Rating API publishes `FeedbackDeletedIntegrationEvent` on `bookworm.{env}.rating.feedback-delete`, and Catalog API calls `book.RemoveRating(@event.Rating)` (treating a missing book as a safe no-op).
-:::
-
-## Design trade-offs
-
-| Decision                                                                 | Benefits                                                                                                                    | Costs and limits                                                                                                                           |
-| :----------------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------- | :----------------------------------------------------------------------------------------------------------------------------------------- |
-| **Optimistic acceptance with async compensation**                        | Keeps review submission available even if Catalog API is temporarily unreachable and avoids synchronous cross-service calls | Invalid book references exist briefly in Cosmos DB until the compensation event deletes them                                               |
-| **Derived rating summary on `books`**                                    | Serves book listings and search results from PostgreSQL without calling Rating API on every page view                       | Introduces brief eventual-consistency lag between review submission and updated catalog scores                                             |
-| **Redis-backed idempotency guard (`IIntegrationEventIdempotencyGuard`)** | Prevents duplicate Kafka deliveries from double-counting a rating during the 24-hour guard window                           | Messages replayed after the 24-hour window or delta drift after broker faults require reconciliation against Cosmos DB                     |
-| **Separate Cosmos DB and PostgreSQL stores**                             | Matches each bounded context to its access pattern (partitioned document reviews vs. relational catalog)                    | Prohibits distributed database transactions; cross-domain recovery relies on Wolverine retries (`50ms / 250ms / 1s`) and native Kafka DLQs |
-
-## Alternatives considered
-
-- **Synchronous gRPC check from Rating API to Catalog API before saving:** Rejected because it creates tight runtime coupling and fails review submission whenever Catalog API experiences latency or downtime.
-- **Querying Rating API live during catalog reads:** Rejected because product browsing and search are high-volume read paths that must remain isolated from Reviews traffic.
-- **Storing full review records inside Catalog PostgreSQL:** Rejected because it violates bounded-context ownership and duplicates PII and moderation data across services.
-
-## Related documentation
-
-- Catalog feedback-created contract reference — Exact payload fields, Kafka topic, and handler implementation for new feedback.
-- Catalog feedback-deleted contract reference — Exact payload fields, Kafka topic, and no-op behavior for deleted feedback.
-- How to resolve a Catalog rating summary mismatch — Operational steps to diagnose and reconcile rating drift against Cosmos DB.
+## Interactive Flow Visualization
 
 <NodeGraph />
+
+## Step-by-Step Walkthrough
+
+<Steps title="Optimistic Feedback Persistence and Asynchronous Rating Projection">
+	<Step title="Persist authoritative feedback in Reviews">
+		[[service|rating-api]] validates the rating score, reviewer details, and comment, commits the
+		[[entity|feedback]] document to [[container|rating-database]], and publishes
+		[[event|FeedbackCreatedIntegrationEvent]] to{" "}
+		<ResourceLink id="bookworm.{env}.rating.feedback-create" type="channel">
+			`bookworm.{env}.rating.feedback-create`
+		</ResourceLink>
+		.
+	</Step>
+	<Step title="Update derived rating summary in Catalog">
+		[[service|catalog-api]] consumes [[event|FeedbackCreatedIntegrationEvent]] behind a 24-hour
+		Redis idempotency guard, loads the target [[entity|book]] from [[container|catalog-database]],
+		and updates its derived average rating and total review count without storing review text or
+		reviewer PII.
+	</Step>
+	<Step title="Compensate on missing book reference">
+		If [[service|catalog-api]] finds no active book for the referenced ID, it emits
+		[[event|BookUpdatedRatingFailedIntegrationEvent]] on{" "}
+		<ResourceLink id="bookworm.{env}.catalog.book-update-rating-failed" type="channel">
+			`bookworm.{env}.catalog.book-update-rating-failed`
+		</ResourceLink>
+		. [[service|rating-api]] consumes this compensating event and deletes the orphaned
+		[[entity|feedback]] record from [[container|rating-database]].
+	</Step>
+</Steps>
+
+## Failure, Retry & Compensation Behavior
+
+| Failure Point                        | System Behavior                                                                                                                                                                                               | Compensation / Recovery                                                                                                                                                                                                                                      |
+| :----------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Duplicate event delivery**         | Redis idempotency guard deduplicates by event ID for 24 hours                                                                                                                                                 | Prevents double-counting ratings during Kafka redeliveries or transient retries                                                                                                                                                                              |
+| **Referenced book does not exist**   | <ResourceLink id="catalog-api" type="service">catalog-api</ResourceLink> emits <ResourceLink id="BookUpdatedRatingFailedIntegrationEvent" type="event">BookUpdatedRatingFailedIntegrationEvent</ResourceLink> | <ResourceLink id="rating-api" type="service">rating-api</ResourceLink> deletes the orphaned <ResourceLink id="feedback" type="entity">feedback</ResourceLink> record from <ResourceLink id="rating-database" type="container">rating-database</ResourceLink> |
+| **Transient Catalog database error** | Worker retries with exponential backoff                                                                                                                                                                       | Exhausted failures route to <ResourceLink id="bookworm.{env}.catalog.dead-letter-queue" type="channel">`bookworm.{env}.catalog.dead-letter-queue`</ResourceLink> for replay                                                                                  |
+
+:::note
+**Feedback deletion follows a separate one-way contract:** When a review is deleted, [[service|rating-api]] publishes [[event|FeedbackDeletedIntegrationEvent]] on <ResourceLink id="bookworm.{env}.rating.feedback-delete" type="channel">`bookworm.{env}.rating.feedback-delete`</ResourceLink>, and [[service|catalog-api]] decrements the derived rating summary (treating a missing book as a safe no-op).
+:::
+
+## Participating Resources
+
+- **Domains & Systems:** [[domain|reviews]], [[domain|catalog]], [[system|rating-system]], [[system|product-catalog-system]]
+- **Services:** [[service|rating-api]], [[service|catalog-api]]
+- **Messages:** [[command|CreateFeedback]], [[event|FeedbackCreatedIntegrationEvent]], [[event|BookUpdatedRatingFailedIntegrationEvent]], [[event|FeedbackDeletedIntegrationEvent]]
+- **Channels & Stores:** <ResourceLink id="bookworm.{env}.rating.feedback-create" type="channel">`bookworm.{env}.rating.feedback-create`</ResourceLink>, <ResourceLink id="bookworm.{env}.catalog.book-update-rating-failed" type="channel">`bookworm.{env}.catalog.book-update-rating-failed`</ResourceLink>, <ResourceLink id="bookworm.{env}.rating.feedback-delete" type="channel">`bookworm.{env}.rating.feedback-delete`</ResourceLink>, <ResourceLink id="bookworm.{env}.catalog.dead-letter-queue" type="channel">`bookworm.{env}.catalog.dead-letter-queue`</ResourceLink>, [[container|rating-database]], [[container|catalog-database]]
+- **Related Views:** [[diagram|rating-summarizer-workflow]]

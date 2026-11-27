@@ -2,34 +2,32 @@
 dictionary:
   - id: Idempotency Guard
     name: Idempotency Guard
-    summary: Redis-backed deduplication guard for incoming Kafka notification commands.
+    summary: Time-bounded deduplication guard for incoming notification commands.
     description: |
-      The Idempotency Guard (`IIntegrationEventIdempotencyGuard`) tracks processed
-      message IDs in Redis via FusionCache for 24 hours so duplicate Kafka deliveries
-      do not send duplicate customer emails.
+      The Idempotency Guard tracks processed message identifiers for 24 hours
+      so duplicate deliveries do not send duplicate customer emails.
     icon: ShieldCheck
   - id: Dead-Letter Queue
     name: Dead-Letter Queue
-    summary: Kafka topic holding messages that exhausted Wolverine delivery retries.
+    summary: Message channel holding commands that exhausted delivery retries.
     description: |
-      When transient MailKit SMTP or rendering retries are exhausted, Wolverine routes
-      the failed command to `bookworm.{env}.notification.dead-letter-queue` for
-      operator inspection and replay.
+      When transient delivery or rendering retries are exhausted, failed
+      notification commands route to a dead-letter queue for operator
+      inspection and replay.
     icon: AlertTriangle
-  - id: MJML Template
-    name: MJML Template
-    summary: Responsive email template compiled to HTML at runtime via Mjml.Net.
+  - id: Email Template
+    name: Email Template
+    summary: Responsive email markup compiled to HTML at runtime for order emails.
     description: |
-      Notification renders `_Layout.mjml` and `Orders/OrderEmail.mjml` into MIME HTML
-      messages before submitting them through MailKit SMTP.
+      Platform compiles responsive email templates into HTML messages before
+      submitting them through the external email relay.
     icon: FileCode
   - id: Vector Batch Job
     name: Vector Batch Job
-    summary: Scheduled work that asks Catalog ingestion to process vector data.
+    summary: Scheduled work that asks Catalog ingestion to refresh vector search data.
     description: |
-      The Vector batch job (`ProcessVectorBatchJob`) runs on Quartz.NET every five
-      minutes and publishes `ProcessVectorBatchIntegrationEvent` to Kafka without
-      owning book information.
+      The Vector Batch Job runs on a five-minute schedule and emits a trigger
+      for Catalog ingestion without owning book information.
     icon: Database
 ---
 
@@ -51,15 +49,15 @@ The Platform ubiquitous language establishes one consistent set of definitions f
 The Platform vocabulary is organized into two closely linked areas:
 
 - **Stateless Notification Delivery:**
-  - **Idempotency Guard:** Redis-backed `IIntegrationEventIdempotencyGuard` keyed by `(message.Id, handlerName)` with a 24-hour TTL so duplicate Kafka deliveries are safely skipped.
-  - **MJML Template:** Responsive email markup (`_Layout.mjml`, `Orders/OrderEmail.mjml`) compiled into HTML by `Mjml.Net` before MIME construction.
-  - **Dead-Letter Queue:** Kafka topic (`bookworm.{env}.notification.dead-letter-queue`) where Wolverine routes commands after MailKit and Wolverine retries are exhausted.
+  - **Idempotency Guard:** Time-bounded deduplication keyed by message and handler identity with a 24-hour TTL so duplicate deliveries are safely skipped.
+  - **Email Template:** Responsive email markup compiled into HTML at runtime before message delivery.
+  - **Dead-Letter Queue:** Dedicated message channel where failed commands route after transient delivery retries are exhausted.
 - **Scheduled Platform Jobs:**
-  - **Vector Batch Job:** Scheduled Quartz.NET work (`ProcessVectorBatchJob`) that publishes `ProcessVectorBatchIntegrationEvent` to trigger Catalog ingestion, supporting search indexing without owning book information.
+  - **Vector Batch Job:** Scheduled work that emits a refresh trigger for Catalog ingestion, supporting search indexing without owning book information.
 
 ## 4. Trade-offs & Lessons Learned
 
-- **Stateless Kafka + Redis over a PostgreSQL email outbox:** Using **Idempotency Guard** in Redis, **MJML Template** rendering in memory, MailKit Polly retries, and the **Dead-Letter Queue** eliminates a relational database and sweep jobs, at the trade-off of relying on Kafka DLQ tooling for replaying exhausted failures.
+- **Stateless delivery over a relational email outbox:** Using **Idempotency Guard** deduplication, **Email Template** rendering in memory, transient retries, and the **Dead-Letter Queue** eliminates a relational database and sweep jobs, at the trade-off of relying on dead-letter tooling for replaying exhausted failures.
 - **Coordination without data ownership:** Defining **Vector Batch Job** strictly as a trigger for catalog ingestion preserves clean domain boundaries, requiring downstream systems to remain responsible for validating and maintaining their own data.
 
 ## 5. Technical Reference
@@ -68,9 +66,9 @@ The Platform vocabulary is organized into two closely linked areas:
 
 The YAML `dictionary` frontmatter above defines the authoritative Platform glossary entries rendered by EventCatalog:
 
-| Dictionary ID       | Summary                                                                    | Operational & Boundary Notes                                            | Icon            |
-| ------------------- | -------------------------------------------------------------------------- | ----------------------------------------------------------------------- | --------------- |
-| `Idempotency Guard` | Redis-backed deduplication guard for incoming Kafka notification commands. | 24-hour TTL via FusionCache (`IIntegrationEventIdempotencyGuard`).      | `ShieldCheck`   |
-| `Dead-Letter Queue` | Kafka topic holding messages that exhausted Wolverine delivery retries.    | `bookworm.{env}.notification.dead-letter-queue` for operator triage.    | `AlertTriangle` |
-| `MJML Template`     | Responsive email template compiled to HTML at runtime via Mjml.Net.        | Compiles `_Layout.mjml` and `Orders/OrderEmail.mjml` into MIME HTML.    | `FileCode`      |
-| `Vector Batch Job`  | Scheduled work that asks Catalog ingestion to process vector data.         | Publishes `ProcessVectorBatchIntegrationEvent`; does not own book data. | `Database`      |
+| Dictionary ID       | Summary                                                                   | Operational & Boundary Notes                                         | Icon            |
+| ------------------- | ------------------------------------------------------------------------- | -------------------------------------------------------------------- | --------------- |
+| `Idempotency Guard` | Time-bounded deduplication guard for incoming notification commands.      | 24-hour TTL deduplicating repeated notification deliveries.          | `ShieldCheck`   |
+| `Dead-Letter Queue` | Message channel holding commands that exhausted delivery retries.         | Routes exhausted failures for operator triage and replay.            | `AlertTriangle` |
+| `Email Template`    | Responsive email markup compiled to HTML at runtime for order emails.     | Compiles responsive templates into HTML messages for email delivery. | `FileCode`      |
+| `Vector Batch Job`  | Scheduled work that asks Catalog ingestion to refresh vector search data. | Emits periodic refresh triggers without owning book data.            | `Database`      |

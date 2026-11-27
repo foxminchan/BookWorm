@@ -2,7 +2,7 @@
 id: book-agent
 name: Book Agent
 version: 1.0.0
-summary: Helps customers discover books and get catalog-backed information and recommendations using BookWorm catalog tools and delegated research.
+summary: Primary conversational book discovery and recommendation specialist that grounds catalog answers in read-only MCP lookups and delegated research while never mutating orders, baskets, or reviews.
 owners:
   - contributor-team
 repository:
@@ -13,19 +13,22 @@ sends:
     version: 1.0.0
   - id: AnonymizeText
     version: 1.0.0
+flows:
+  - id: agent-orchestration
+    version: 1.0.0
 tools:
   - name: search_catalog
     type: mcp
     icon: /icons/languages/dotnet.svg
-    description: Searches the book catalog by description or keyword.
+    description: Searches the book catalog by keyword or semantic description.
   - name: get_book
     type: mcp
     icon: /icons/languages/dotnet.svg
-    description: Retrieves full catalog details for a known book ID.
+    description: Retrieves full catalog details for a known book identifier.
   - name: list_categories
     type: mcp
     icon: /icons/languages/dotnet.svg
-    description: Lists available book categories.
+    description: Lists all available book categories in the catalog.
   - name: list_authors
     type: mcp
     icon: /icons/languages/dotnet.svg
@@ -33,11 +36,19 @@ tools:
   - name: Book Catalog Researcher
     type: subagent
     icon: /icons/languages/dotnet.svg
-    description: Calls the Book Catalog Researcher subagent for catalog fact-finding.
+    description: Delegates multi-part factual catalog lookups to the Book Catalog Researcher subagent.
   - name: Book Recommendation Researcher
     type: subagent
     icon: /icons/languages/dotnet.svg
-    description: Calls the Book Recommendation Researcher subagent for preference-based recommendations.
+    description: Delegates preference-based shortlist discovery to the Book Recommendation Researcher subagent.
+  - name: handoff_to_rating
+    type: handoff
+    icon: /icons/languages/dotnet.svg
+    description: Transfers review summary and rating quality requests to the Rating Agent over A2A gRPC after resolving an exact book ID.
+  - name: handoff_to_qa
+    type: handoff
+    icon: /icons/languages/dotnet.svg
+    description: Transfers store policy, shipping, returns, account, order, or billing inquiries to the QA Agent.
 badges:
   - content: AI Agent
     backgroundColor: purple
@@ -48,92 +59,101 @@ model:
   version: "2025-11-18"
 ---
 
-Book Agent (`book`) is the primary conversational book discovery and recommendation specialist hosted in [[service|chat-api]]. Built with Microsoft Agent Framework (`1.28.0`), it grounds every product claim in live [[service|mcp-server]] catalog queries, delegates complex multi-part lookups in parallel to [[agent|book-catalog-researcher]] and [[agent|book-recommendation-researcher]], and hands off review or policy requests to [[agent|rating-agent]] or [[agent|qa-agent]].
+## Role & Autonomy Boundary
 
-## Overview
+Book Agent is the primary conversational book discovery and recommendation specialist hosted in [[service|chat-api]]. It is triggered when the intent router inside [[flow|agent-orchestration]] classifies an authenticated customer chat turn as a book discovery, catalog lookup, or recommendation request, or when [[agent|qa-agent]] hands off a book-specific follow-up.
 
-| Property             | Value                                                                                                                                                                                                          |
-| :------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**            | Conversational bounded context — [[service\|chat-api]] (`chatting`)                                                                                                                                            |
-| **Agent name / DID** | `book` (`did:mesh:bookworm:book`)                                                                                                                                                                              |
-| **Source**           | `src/Services/Chat/BookWorm.Chat/Agents/BookSearch/book-agent.yaml`, `src/Services/Chat/BookWorm.Chat/Agents/BookSearch/BookAgentRegistration.cs`, `src/Services/Chat/BookWorm.Chat/Policies/chat-agents.yaml` |
-| **Model deployment** | Shared Microsoft Foundry `chat` deployment (`FoundryModel.Microsoft.ModelRouter`)                                                                                                                              |
-| **Identity**         | Microsoft Entra Agent Identity (`chatAgentId`); customer session isolation via Entra ID JWT (`customer` policy)                                                                                                |
-| **Workflow entry**   | Routed by Microsoft-Decision-1 (`DecisionRouterExecutor`) inside `chat-workflow` (`WorkflowRegistration.cs`)                                                                                                   |
+Book Agent operates strictly within a **read-only discovery boundary**: it must never place orders, mutate baskets, publish or edit reviews, bypass caller authorization, or invent unverified catalog facts such as prices, availability, or ratings.
 
-The generated Bicep snapshot pins the `model-router` deployment to version `2025-11-18`. `AppHost.cs` selects the `ModelRouter` model symbolically; the version pin is visible in the generated deployment template.
+## Agent Profile & Model Governance
 
-## Architecture and delegation flow
+| Property                     | Value                                                                                                                                 |
+| :--------------------------- | :------------------------------------------------------------------------------------------------------------------------------------ |
+| **Bounded Context / Domain** | Conversational ([[domain\|bookworm]])                                                                                                 |
+| **Owner Team**               | [[team\|contributor-team]]                                                                                                            |
+| **Hosting Service**          | [[service\|chat-api]]                                                                                                                 |
+| **LLM Provider & Model**     | Microsoft Foundry `model-router` (`2025-11-18`; `temperature: 0.7`, `maxOutputTokens: 2000`, `reasoningEffort: high`)                 |
+| **Interaction Protocol**     | Streaming AG-UI over HTTP (inbound); MCP Streamable HTTP (outbound to [[service\|mcp-server]]); A2A gRPC (handoff to reviews)         |
+| **Memory / Context Scope**   | Durable AG-UI session state in [[container\|chat-session-blob]], user-scoped reading preference memory, and local planning/file state |
+| **Fallback Behavior**        | Falls back to Markdown responses if storefront UI tools are absent; fails closed on PII screening or policy denial                    |
 
-Book Agent runs as a top-level specialist inside `BookWorkflowExecutor` (`WorkflowRegistration.cs`). Its two researcher subagents are initialized via `InitSubAgent` with the same middleware-wrapped chat client and registered as internal delegated tools rather than top-level workflow participants.
+## Tools & Capabilities
 
-The diagram shows how Book Agent interacts with MCP Tools, delegated subagents, peer handoffs, Presidio privacy sidecars, and Microsoft Foundry.
+<AgentTools />
+
+| Capability / Tool                                                   | Access Level | Target Resource                                | Guardrail / Constraint                                                                       |
+| :------------------------------------------------------------------ | :----------- | :--------------------------------------------- | :------------------------------------------------------------------------------------------- |
+| `search_catalog`, `get_book`, `list_categories`, `list_authors`     | Read         | [[service\|mcp-server]]                        | Governed by default-deny policy; executes with On-Behalf-Of (OBO) caller identity            |
+| `Book Catalog Researcher`                                           | Delegate     | [[agent\|book-catalog-researcher]]             | Invoked only for multi-part factual lookups; inherits parent PII and guardrail middleware    |
+| `Book Recommendation Researcher`                                    | Delegate     | [[agent\|book-recommendation-researcher]]      | Invoked in parallel for preference-based shortlists; inherits parent middleware              |
+| `handoff_to_rating`                                                 | Delegate     | [[agent\|rating-agent]]                        | Permitted only after resolving a single exact book identifier and title                      |
+| `handoff_to_qa`                                                     | Delegate     | [[agent\|qa-agent]]                            | Transfers store policy, shipping, returns, account, order, or billing questions              |
+| Planning & skill harness (`load_skill`, `todos_*`, `mode_*`)        | Read / Write | Scoped session planning & `book-catalog` skill | Multi-step plans pause in Plan Mode for user approval before switching to Execute Mode       |
+| Storefront UI tools (`showBookCard`, `showBookList`, `addToBasket`) | Delegate     | Storefront AG-UI client                        | Emitted only when advertised by the client; cart actions execute client-side under user auth |
+
+## Data, Messaging & Handoff Boundaries
+
+- **Data Stores:** Book Agent does not read or write relational or document domain databases directly. Durable conversation transcripts are managed by [[service|chat-api]] in [[container|chat-session-blob]], while user reading preferences and scratchpad planning files remain isolated from business domain stores.
+- **Messages:** Every input prompt and buffered streaming output is screened via [[service|presidio-api]] using [[command|AnalyzeText]] and [[command|AnonymizeText]].
+- **Delegation & Handoffs:** Complex multi-constraint queries fan out in parallel to [[agent|book-catalog-researcher]] and [[agent|book-recommendation-researcher]]. Review quality questions hand off over A2A gRPC to [[agent|rating-agent]], and operational support questions hand off in-process to [[agent|qa-agent]].
+
+<Steps>
+<Step title="Receive routed turn and client context">
+
+The orchestrator validates the prompt, injects live storefront context, and filters candidate tools using the decision model before invoking Book Agent.
+
+</Step>
+<Step title="Delegate parallel research when needed">
+
+For multi-part queries, Book Agent delegates factual verification to [[agent|book-catalog-researcher]] and preference matching to [[agent|book-recommendation-researcher]] concurrently.
+
+</Step>
+<Step title="Synthesize grounded response or hand off">
+
+Book Agent merges verified catalog identifiers into structured storefront UI cards or Markdown, or hands off to [[agent|rating-agent]] or [[agent|qa-agent]] when the intent crosses specialist boundaries.
+
+</Step>
+</Steps>
+
+## Safety, Privacy & AI Governance
+
+- **Fail-Closed PII Redaction:** Input and buffered streaming output pass through [[service|presidio-api]] (`AnalyzeText` followed by `AnonymizeText`, replacing detected entities with `<PII>`). Any screening failure aborts the turn.
+- **Default-Deny Tool Governance:** Only explicitly allow-listed tools for Book Agent's workload identity can execute; unapproved tools and cross-domain mutations are blocked by policy.
+- **Conversation Guardian & Loop Protection:** Enforces a maximum of `30` conversation turns, caps retry cycles at `3`, and screens for multi-turn prompt injection and escalating or offensive rhetoric.
+- **Context Compaction & Observability:** Applies full conversation compaction before model context limits are reached and emits OpenTelemetry traces correlated to the caller's session.
+
+<Admonition type="warning">
+	Book Agent must never claim a book is in stock, quote unverified prices, or fabricate ratings. All
+	product claims must originate from live [[service|mcp-server]] responses, and review quality
+	analysis must be handed off to [[agent|rating-agent]] only after resolving a single exact book ID.
+</Admonition>
+
+<Accordion title="Fallback Behavior & Evaluation Criteria">
+
+- **Absent UI Tools:** When storefront interactive card tools are not advertised in the client context, Book Agent falls back to structured Markdown links and summaries.
+- **Ambiguous Intent:** Low-confidence routing pauses for human-in-the-loop disambiguation before Book Agent is invoked.
+- **Evaluation:** Verified against deterministic tool allow/deny tests, adversarial multi-turn prompt-injection suites, and Presidio fail-closed fault injection.
+
+</Accordion>
+
+## Architecture Visualizations
+
+<NodeGraph />
+
+**Agent Orchestration and Tool Boundary**
 
 <MermaidFileLoader file="mermaids/book-agent-diagram-1.mmd" />
 
-## Runtime settings
+## Related Documentation
 
-Settings are declared in `book-agent.yaml` and `BookAgentRegistration.cs`:
-
-| Setting                     | Value  | Notes                                                             |
-| :-------------------------- | :----- | :---------------------------------------------------------------- |
-| `temperature`               | `0.7`  | Balances conversational warmth with catalog grounding             |
-| `maxOutputTokens`           | `2000` | Maximum response token budget                                     |
-| `reasoningEffort`           | `high` | Deeper reasoning for multi-constraint recommendation synthesis    |
-| `topP`                      | `0.95` | Nucleus sampling threshold                                        |
-| `allowMultipleToolCalls`    | `true` | Enables parallel catalog queries and parallel subagent delegation |
-| `chatToolMode`              | `auto` | Model chooses when to invoke tools                                |
-| `AllowConcurrentInvocation` | `true` | Set in `BookAgentRegistration.cs` for concurrent tool execution   |
-
-## Tools and capabilities
-
-Book Agent is governed by `Policies/chat-agents.yaml` (`default_action: deny`). Only tools explicitly allow-listed for `did:mesh:bookworm:book` can execute.
-
-### Catalog MCP tools (`mcptools`)
-
-| Tool name         | Parameters                         | Purpose                                                 |
-| :---------------- | :--------------------------------- | :------------------------------------------------------ |
-| `search_catalog`  | `description` (`string`, required) | Searches the catalog by keyword or semantic description |
-| `get_book`        | `id` (`string`, required)          | Retrieves full details for a specific book UUID         |
-| `list_categories` | None                               | Lists all available book categories                     |
-| `list_authors`    | None                               | Lists all authors available in the catalog              |
-
-### Delegated subagents and workflow handoffs
-
-| Tool name                                 | Target                                    | Trigger condition                                                                                                   |
-| :---------------------------------------- | :---------------------------------------- | :------------------------------------------------------------------------------------------------------------------ |
-| `delegate_book_catalog_researcher`        | [[agent\|book-catalog-researcher]]        | Complex multi-part queries needing dedicated catalog fact-finding (called in parallel with recommendation research) |
-| `delegate_book_recommendation_researcher` | [[agent\|book-recommendation-researcher]] | Complex preference-based shortlist discovery (called in parallel with catalog fact-finding)                         |
-| `handoff_to_rating`                       | [[agent\|rating-agent]] (remote A2A gRPC) | Review summaries or rating quality analysis **only after** resolving a single exact book ID and title               |
-| `handoff_to_qa`                           | [[agent\|qa-agent]]                       | Store policies, shipping, returns, accounts, orders, or billing inquiries after resolving any active book task      |
-
-### Harness, skills, and storefront AG-UI tools
-
-- **Skills & planning harness:** `load_skill`, `read_skill_resource`, `mode_get`, `mode_set`, `todos_add`, `todos_complete`, `todos_get_remaining`, `todos_get_all`, `todos_remove`. In **Plan Mode**, Book Agent decomposes multi-step research into todos and waits for user approval before switching to **Execute Mode**; single-step lookups run directly without todos or approval cycles.
-- **File memory:** `file_memory_write`, `file_memory_read`, `file_memory_delete`, `file_memory_ls`, `file_memory_grep`, `file_memory_replace`, `file_memory_replace_lines` backed by `Chat:Harness:FileMemory:Root` (default `agent-files`).
-- **Interactive storefront AG-UI tools (when present in client tool list):** `showBookCard`, `showBookList`, `showBasketSummary`, `render_a2ui`, `addToBasket`, `viewBasket`, `searchBooks`, `getBookDetails`. Falls back to Markdown when client UI tools are absent.
-
-## Middleware, context providers, and governance
-
-`BookAgentRegistration.AddBookAgent()` wraps the shared `IChatClient` in a fixed middleware pipeline and attaches five context providers:
-
-| Layer                 | Component                                                                                                                             | Behavior                                                                                                                                                                                                     |
-| :-------------------- | :------------------------------------------------------------------------------------------------------------------------------------ | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Middleware 1**      | `UseAGUIClientContext()`                                                                                                              | Injects live storefront `<ag_ui_context>` and `<ag_ui_state>` into the run                                                                                                                                   |
-| **Middleware 2**      | `UseDecisionToolSelection()`                                                                                                          | Uses Microsoft-Decision-1 (`IDecisionClient`) to filter candidate tools before model invocation                                                                                                              |
-| **Middleware 3**      | `UsePIIMiddleware(sp)`                                                                                                                | Calls [[service\|presidio-api]] (`AnalyzeText`, then `AnonymizeText` replacing PII with `<PII>`) on input and buffered streaming output; fails closed on error                                               |
-| **Middleware 4**      | `UseGuardrailMiddleware()`                                                                                                            | Enforces prompt and response safety guardrails                                                                                                                                                               |
-| **Middleware 5**      | `UseAIContextProviders(CompactionPipelineFactory.CreateFull(...))`                                                                    | Compacts long conversation histories before hitting context limits                                                                                                                                           |
-| **Context providers** | `AgentSkillsProvider` (`Skills/book-catalog`), `todoProvider`, `modeProvider`, `fileMemoryProvider`, optional `FoundryMemoryProvider` | Supplies domain skill guidance, planning state, local scratchpad files, and remembered customer reading preferences                                                                                          |
-| **Governance**        | `WithBookWormGovernance(sp, key)` (`Policies/chat-agents.yaml`)                                                                       | Enforces `default_action: deny` tool allow-list, Conversation Guardian escalation/offensive/loop thresholds (`max_conversation_turns: 30`, `max_retry_cycles: 3`), and multi-turn prompt-injection detection |
-
-## Related documentation
-
-- [[service|chat-api]] — Hosting AG-UI server, `chat-workflow` orchestration, and Entra ID configuration.
-- [[agent|book-catalog-researcher]] — Delegated subagent for catalog fact-finding.
+- [[service|chat-api]] — Hosting AG-UI server, workflow orchestration, and Entra ID authorization.
+- [[flow|agent-orchestration]] — End-to-end conversational routing, disambiguation, and handoff flow.
+- [[agent|book-catalog-researcher]] — Delegated subagent for factual catalog lookups.
 - [[agent|book-recommendation-researcher]] — Delegated subagent for preference-based shortlists.
-- [[agent|qa-agent]] — Peer specialist handling store policy handoffs.
+- [[agent|qa-agent]] — Peer specialist handling store policy and support handoffs.
 - [[agent|rating-agent]] — Remote A2A specialist handling review and rating handoffs.
-- [[container|chat-session-blob]] — Durable AG-UI session storage (`chatting-blob`).
-
-<NodeGraph />
+- [[container|chat-session-blob]] — Durable AG-UI session storage managed by [[service|chat-api]].
+- [[doc|arc42/08-crosscutting-concepts/005-ai-governance]] — Cross-cutting AI governance rules and standards.
+- [[adr|adr-bw-014-composable-ai-governance]] — Shared governance composition across AI paths.
+- [[adr|adr-002-fail-closed-pii-middleware]] — Fail-closed PII screening decision.
+- [[adr|adr-005-govern-agent-tools-per-agent]] — Per-agent default-deny tool governance.

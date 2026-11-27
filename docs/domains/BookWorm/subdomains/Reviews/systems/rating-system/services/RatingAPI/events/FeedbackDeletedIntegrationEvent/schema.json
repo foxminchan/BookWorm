@@ -3,8 +3,18 @@
 	"title": "FeedbackDeletedIntegrationEvent",
 	"type": "object",
 	"additionalProperties": false,
-	"required": ["bookId", "rating", "feedbackId"],
+	"required": ["id", "creationDate", "bookId", "rating", "feedbackId"],
 	"properties": {
+		"id": {
+			"type": "string",
+			"format": "uuid",
+			"description": "Unique event identifier (UUIDv7) inherited from IntegrationEvent."
+		},
+		"creationDate": {
+			"type": "string",
+			"format": "date-time",
+			"description": "ISO 8601 UTC timestamp when the event was created."
+		},
 		"bookId": {
 			"type": "string",
 			"format": "uuid",

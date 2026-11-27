@@ -3,8 +3,8 @@ id: mcp-tools
 name: MCP Tools
 version: 1.0.0
 summary: |
-  Internal stateless MCP server that exposes read-only Catalog and Reviews
-  tools, data resources, and reusable prompts to BookWorm AI clients.
+  Internal stateless MCP server that exposes read-only Catalog tools and
+  reusable AI prompts to BookWorm AI clients.
 scope: internal
 owners:
   - contributor-team
@@ -17,7 +17,7 @@ relationships:
     label: reads book, category, and author data through Catalog API
   - id: rating-system
     version: 1.0.0
-    label: reads book feedback and supplies Rating agents with book data and prompts
+    label: supplies Rating agents with book data and analysis prompts
   - id: identity-provider
     version: 1.0.0
     label: authenticates and authorizes MCP requests
@@ -31,86 +31,50 @@ badges:
     icon: LockClosedIcon
 ---
 
-## 1. Context & Problem
+## System Purpose & Boundary
 
-BookWorm's conversational and rating AI workflows need live access to book catalog details, customer feedback, and consistent task instructions. Without a shared adapter, each AI client would need custom integration logic to reach [[system|product-catalog-system]] and [[system|rating-system]], increasing duplication and risking inconsistent data access or unintended write operations.
+MCP Tools provides a stateless, read-only Model Context Protocol (MCP) integration layer within the [[domain|conversational]] domain for BookWorm's internal AI clients ([[system|chat-system]] and [[system|rating-system]]). It exposes curated catalog lookup tools and reusable AI prompt templates while keeping all product and review data owned by their source systems. Mutating catalog or review records, storing conversation state, and serving public storefront traffic are explicitly out of scope.
 
-MCP Tools solves this by providing a single, read-only, stateless integration layer tailored for internal AI clients while keeping book and review records strictly owned by their source systems.
+:::note
+MCP Tools is completely stateless and owns no databases, caches, or messaging channels. Server-side authorization and default-deny governance policies enforce read-only access regardless of which tools a client chooses to load.
+:::
 
-## 2. Business Value
+## Contained Capabilities
 
-- **Data safety:** Exposes strictly read-only lookups so AI agents cannot create, alter, or delete catalog or review records.
-- **Single source of truth:** Retrieves live data from [[system|product-catalog-system]] and [[system|rating-system]] without duplicating or caching authoritative records.
-- **Consistent AI behavior:** Centralizes reusable instruction templates for book recommendations and review summaries so teams get repeatable quality.
-- **Controlled access:** Pairs client-specific capability selection with central authentication and permission checks via [[system|identity-provider]].
+| Service / Agent         | Role in System                                                                               | Primary Data Store | Interaction Style (Sync / Async) |
+| :---------------------- | :------------------------------------------------------------------------------------------- | :----------------- | :------------------------------- |
+| [[service\|mcp-server]] | Exposes read-only Catalog lookup tools and reusable AI prompt templates over Streamable HTTP | None (Stateless)   | Sync (Streamable HTTP / gRPC)    |
 
-## 3. How It Works
+## External Interactions & Trust Boundaries
 
-MCP Tools acts as an intermediary between BookWorm's internal AI clients (Chat and Rating) and the upstream systems that own product and feedback data. Every request is authenticated through [[system|identity-provider]] and checked against governance rules before any lookup runs.
+- **AI consumers:** [[service|chat-api]] and [[service|rating-api]] connect over internal Streamable HTTP using [[system|identity-provider]] On-Behalf-Of (OBO) token exchange and required read scopes.
+- **Upstream catalog reads:** [[service|mcp-server]] translates tool invocations into read-only gRPC queries against [[service|catalog-api]] in [[system|product-catalog-system]].
+- **No public gateway exposure:** The service is internal-only and not exposed as a public storefront API.
+
+<Accordion title="Capability Selection & Governance Notes">
+	- **Selective client loading:** [[system|chat-system]] loads only the catalog search, book detail,
+	category, and author tools; [[system|rating-system]] uses the book detail tool alongside
+	review-summarization and quality-analysis prompts while reading raw reviews in-process. -
+	**Fail-explicitly:** Upstream catalog errors or missing records return explicit error or not-found
+	responses without mutating state.
+</Accordion>
+
+## System Visualizations
+
+### System Context
 
 <ContextDiagram />
 
-The system exposes three types of read-only capabilities:
-
-1. **Lookup tools:** Explicit operations that AI agents invoke to search the catalog, fetch details for a specific book, list categories or authors, or read book reviews. If an upstream lookup fails or finds nothing, an explicit error or not-found response is returned without changing any data.
-2. **Reference resources:** Stable, address-based data references that give AI clients background context (such as current categories, authors, book details, or reviews) without requiring a model-initiated tool call.
-3. **Reusable prompts:** Standardized instruction templates that structure book recommendation requests, grounded review summaries, and quality theme assessments. Prompts provide guidance only—they do not execute actions or store messages.
-
-Each AI consumer loads only the capabilities it needs: Chat's Book Agent and researchers load only the four catalog lookup tools, while the Rating Agent uses the book-detail lookup alongside the review-analysis prompts (reading raw feedback through its own local review tool).
-
-## 4. Trade-offs & Lessons Learned
-
-- **Stateless read-only boundary:** Keeping the server stateless and free of owned data stores prevents synchronization drift, but means every lookup depends directly on upstream API and [[system|identity-provider]] availability.
-- **Selective client loading vs. server governance:** Letting clients pick which tools they load keeps agent prompts focused, but client configuration alone is never trusted as a security boundary—server-side authorization and default-deny governance remain mandatory.
-- **Selective adoption across agents:** Not every consumer needs every MCP capability; for example, the Rating system reuses MCP book lookups and analysis prompts while keeping raw feedback retrieval in-process.
-
-## 5. Technical Reference
-
-- **Service:** `mcp-server` (C#, stateless Streamable HTTP transport)
-- **Endpoint & discovery:** `/mcp` accessed through service discovery
-- **Registration:** Tools, prompts, and resources are registered from implementation assemblies
-- **Security & governance:**
-  - Authenticated caller required with `mcptools_read` scope
-  - [[system|identity-provider]] token introspection, authorization filters, and MCP governance policy at the server boundary
-  - Chat and Rating connect using service-to-service token exchange
-
-### Tools
-
-| Tool               | Responsibility                                    | Source      |
-| ------------------ | ------------------------------------------------- | ----------- |
-| `search_catalog`   | Search books by description or keyword.           | Catalog API |
-| `get_book`         | Retrieve full details for a known book ID.        | Catalog API |
-| `list_categories`  | List available book categories.                   | Catalog API |
-| `list_authors`     | List available authors.                           | Catalog API |
-| `get_book_reviews` | Retrieve customer reviews and ratings for a book. | Rating API  |
-
-- Results are returned as serialized JSON; unsuccessful API responses return an explicit error or not-found message.
-- Chat loads `search_catalog`, `get_book`, `list_categories`, and `list_authors`.
-- Rating uses `get_book` via MCP and reads individual feedback through its own in-process Review tool rather than `get_book_reviews`.
-
-### Resources
-
-| URI                                   | Resource        | Content                               |
-| ------------------------------------- | --------------- | ------------------------------------- |
-| `bookworm://catalog/categories`       | Book Categories | Current Catalog categories.           |
-| `bookworm://catalog/authors`          | Book Authors    | Current Catalog authors.              |
-| `bookworm://catalog/books/{id}`       | Book Details    | Current details for one book ID.      |
-| `bookworm://ratings/{bookId}/reviews` | Book Reviews    | Feedback and ratings for one book ID. |
-
-### Prompts
-
-| Prompt                 | Purpose                                                                                                                         | Inputs                                                              |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| `recommend_books`      | Builds a structured book-search and recommendation request from preferences.                                                    | Optional genre, price range, preferred authors, and reader profile. |
-| `summarize_rating`     | Produces a grounded summary of supplied review text.                                                                            | Review content.                                                     |
-| `analyze_book_quality` | Requests an evidence-based assessment of review themes and confidence; the application applies final classification thresholds. | Average rating, review count, and review summary.                   |
-
-- Rating retrieves `summarize_rating` and `analyze_book_quality` for its feedback-summary workflow.
-
-### Architecture
+### Component Topology
 
 <NodeGraph />
 
-### Architecture decisions
+### Architecture Decisions
 
 <ADRTable />
+
+## Related Documentation
+
+- [[flow|agent-orchestration]] — Conversational flow invoking catalog MCP tools.
+- [[flow|feedback-publication]] — Review summarization flow consuming MCP book lookups and prompts.
+- [[doc|domains/bookworm/subdomains/conversational/engineering/01-conversation-architecture]] — Conversational and MCP governance architecture.

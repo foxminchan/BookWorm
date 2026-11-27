@@ -2,70 +2,43 @@
 id: order-lifecycle
 name: Order Lifecycle
 version: 1.0.0
-summary: |
-  State machine showing Order creation and the permitted transitions from
-  New to the terminal Completed or Cancelled states.
+summary: Business status lifecycle of an accepted Order showing creation in the New state and irreversible transitions to Completed or Cancelled.
 owners:
   - business-strategy
+badges:
+  - content: State Lifecycle
+    backgroundColor: purple
+    textColor: purple
 ---
 
-## Context & Problem
+## Purpose & Scope
 
-During checkout, several independent activities happen around an [[entity|order]]: basket cleanup, payment settlement, shipping, Finance workflow coordination, and customer email notifications. If all of those downstream steps are conflated with the order's core business status, teams and support staff cannot tell whether an order is actually open, completed, or cancelled—especially when a cleanup step fails or times out.
+This lifecycle view defines the authoritative business states of an [[entity|order]] owned by [[service|order-api]] within the [[domain|ordering]] subdomain. Engineering, product, and operations teams should use this reference to distinguish core order status transitions from downstream [[service|order-orchestration]] coordination, email delivery, and technical soft deletion.
 
-This lifecycle defines the strict business states owned by [[service|order-api]] in the [[domain|ordering]] subdomain and separates them from post-checkout orchestration and soft deletion.
-
-## Order State Transitions
-
-An [[entity|order]] starts in the **New** state when checkout creates the purchase record from the customer's [[entity|basket]] and current [[service|catalog-api]] prices. From **New**, only [[service|order-api]] can transition the order to one of two terminal states: **Completed** or **Cancelled**.
+## Visual Reference
 
 <MermaidFileLoader file="mermaids/order-lifecycle.mmd" />
 
 _Authoritative Order Status Transitions_
 
+## Key Takeaways & Boundaries
+
+- **Single status authority**: Only [[service|order-api]] transitions an [[entity|order]] from **New** (created via [[command|CreateOrder]]) to **Completed** ([[command|CompleteOrder]]) or **Cancelled** ([[command|CancelOrder]]).
+- **Irreversible terminal states**: Once an order reaches **Completed** or **Cancelled**, it cannot be reopened; any subsequent adjustment requires a separate compensating process.
+- **Explicit integration events**: Accepting an order emits [[event|UserCheckedOutIntegrationEvent]], while terminal transitions emit [[event|OrderStatusChangedToCompleteIntegrationEvent]] or [[event|OrderStatusChangedToCancelIntegrationEvent]].
+- **Decoupled orchestration and notifications**: [[service|order-orchestration]] and [[service|notification-api]] react to order events but never own or mutate business order status.
+
 :::warning
-**Do not conflate Finance timeouts, email notifications, or soft deletion with `Order.Status = Cancelled`.**
+**Do not conflate orchestration timeouts, email delivery, or soft deletion with a Cancelled order.**
 
-- [[service|order-orchestration]] runs an independent workflow (`Placed`, `BasketDeletionFailed`, `Completed`, `Cancelled`). When its bounded timeout retries exhaust, it finalizes its own orchestration as cancelled and may trigger a cancellation email via [[service|notification-api]]—without cancelling the order in [[service|order-api]].
-- On [[command|DeleteBasketFailedCommand]], [[service|order-api]] marks the order as soft-deleted (`IsDeleted = true`) while preserving its existing `Status` (`New`).
+- When [[service|order-orchestration]] exhausts its bounded retry budget, it cancels its own coordination workflow and may request a cancellation email via [[command|CancelOrderCommand]]—without cancelling the [[entity|order]] in [[service|order-api]].
+- When [[service|order-api]] handles [[command|DeleteBasketFailedCommand]], it soft-deletes the order record while preserving its existing **New** business status.
   :::
-
-## State Semantics & Transition Boundaries
-
-| State         | Entry Trigger & Guards                                                                                                                                                                                                                    | Permitted Next States        | Related Resources                                                                                                                                                                                                      |
-| :------------ | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | :--------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **New**       | Created via `POST /api/v1/orders` (authenticated, `x-request-id` idempotency, buyer write lock, per-user rate limit); emits <ResourceLink id="UserCheckedOutIntegrationEvent" type="event">UserCheckedOutIntegrationEvent</ResourceLink>. | **Completed**, **Cancelled** | <ResourceLink id="CreateOrder" type="command">CreateOrder</ResourceLink>, <ResourceLink id="UserCheckedOutIntegrationEvent" type="event">UserCheckedOutIntegrationEvent</ResourceLink>                                 |
-| **Completed** | Explicit `PATCH /api/v1/orders/{orderId}/complete` while `Status` is `New`; emits <ResourceLink id="OrderStatusChangedToCompleteIntegrationEvent" type="event">OrderStatusChangedToCompleteIntegrationEvent</ResourceLink>.               | None (terminal)              | <ResourceLink id="CompleteOrder" type="command">CompleteOrder</ResourceLink>, <ResourceLink id="OrderStatusChangedToCompleteIntegrationEvent" type="event">OrderStatusChangedToCompleteIntegrationEvent</ResourceLink> |
-| **Cancelled** | Explicit `PATCH /api/v1/orders/{orderId}/cancel` while `Status` is `New`; emits <ResourceLink id="OrderStatusChangedToCancelIntegrationEvent" type="event">OrderStatusChangedToCancelIntegrationEvent</ResourceLink>.                     | None (terminal)              | <ResourceLink id="CancelOrder" type="command">CancelOrder</ResourceLink>, <ResourceLink id="OrderStatusChangedToCancelIntegrationEvent" type="event">OrderStatusChangedToCancelIntegrationEvent</ResourceLink>         |
-
-## Trade-offs & Troubleshooting Guidance
-
-<AccordionGroup>
-	<Accordion title="Why Finance coordination and soft deletion are separate">
-		Keeping [[service|order-orchestration]] progress, [[service|basket-api]] cleanup, and
-		[[service|notification-api]] delivery out of the [[entity|order]] state machine prevents
-		transient integration failures from corrupting purchase history. In exchange, operational
-		dashboards and support playbooks must inspect [[service|order-api]] and
-		[[service|order-orchestration]] independently by `OrderId`.
-	</Accordion>
-	<Accordion title="Why terminal states are irreversible">
-		Disallowing transitions out of **Completed** or **Cancelled** keeps the lifecycle predictable
-		and audit-safe. Any business exception after finalization must be handled through compensating
-		processes rather than reopening the order.
-	</Accordion>
-	<Accordion title="Reading and troubleshooting rules">
-		- Match [[service|order-api]] and [[service|order-orchestration]] records by `OrderId`, but read
-		each system's status independently. - Do not assume an order is **Completed** because
-		[[command|DeleteBasketCompleteCommand]] was logged. - Check the soft-delete flag (`IsDeleted`)
-		separately when investigating [[command|DeleteBasketFailedCommand]] failures. - Do not treat
-		email submission or delivery as proof of an order status transition.
-	</Accordion>
-</AccordionGroup>
 
 ## Related Resources
 
 - [[domain|ordering]] — Ordering bounded context
-- [[service|order-api]] — Authoritative owner of `Order.Status`
-- [[service|order-orchestration]] — Post-checkout Finance orchestration
-- [[flow|order-lifecycle]], [[diagram|checkout-interaction]] — End-to-end lifecycle and checkout interactions
-- [[adr|adr-003-separate-order-status-from-finance-saga]], [[adr|adr-005-finance-separate-workflow-and-order-status]]
+- [[service|order-api]] — Authoritative owner of the [[entity|order]] lifecycle
+- [[service|order-orchestration]] — Post-checkout coordination workflow
+- [[flow|order-lifecycle]], [[diagram|checkout-interaction]] — End-to-end order lifecycle and checkout interactions
+- [[adr|adr-003-separate-order-status-from-finance-saga]], [[adr|adr-005-finance-separate-workflow-and-order-status]] — Architectural decisions separating order status from orchestration

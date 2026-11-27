@@ -2,7 +2,7 @@
 id: catalog-blob
 name: Catalog Blob Storage
 version: 1.0.0
-summary: Blob storage for Catalog book images and other media.
+summary: Authoritative Azure Blob Storage container owned by the Catalog bounded context for binary book cover images and media assets.
 owners:
   - contributor-team
 container_type: objectStore
@@ -13,7 +13,7 @@ badges:
 technology: azure-storage-account
 authoritative: true
 access_mode: readWrite
-purpose: System of record for Catalog-related files and assets, including book cover images and other media.
+purpose: System of record for Catalog binary media assets, including book cover images.
 classification: internal
 retention: 10y
 residency: eastasia
@@ -21,76 +21,63 @@ styles:
   icon: /icons/database/blob.svg
 ---
 
-Catalog blob storage (`catalog-blob`) is the authoritative Azure Blob Storage container owned by [[service|catalog-api]] for binary book cover images. [[container|catalog-database]] stores only the permanent blob URN in `books.image`, while Catalog API generates short-lived, read-only Shared Access Signature (SAS) URLs on demand.
+## Purpose & Ownership Boundary
 
-## Overview
+Catalog Blob Storage (`catalog-blob`) is the authoritative object store owned exclusively by [[service|catalog-api]] in the Catalog bounded context for binary book cover images. Object storage keeps large binary payloads out of [[container|catalog-database]], which stores only permanent blob URNs (`books.image`) while [[service|catalog-api]] mints short-lived, read-only Shared Access Signature (SAS) URLs on demand.
 
-| Property               | Value                                                                                                                |
-| :--------------------- | :------------------------------------------------------------------------------------------------------------------- |
-| **Owner**              | Catalog bounded context — [[service\|catalog-api]] (`catalog`)                                                       |
-| **Aspire resource ID** | `catalog-blob` (container on shared `storage` resource)                                                              |
-| **Source**             | `src/Services/Catalog/BookWorm.Catalog/Infrastructure/Blob/BlobService.cs`, `src/Aspire/BookWorm.AppHost/AppHost.cs` |
-| **Engine**             | Azure Blob Storage (Azurite emulator locally; Azure Storage Account in cloud)                                        |
-| **Authentication**     | Managed Identity RBAC (`StorageBlobDataContributor`); public blob access disabled (`AllowBlobPublicAccess = false`)  |
-| **Authoritative**      | Yes (`readWrite`) for Catalog binary media                                                                           |
-| **Classification**     | `internal`                                                                                                           |
+## Data Store Profile
 
-## Architecture and media delivery flow
+| Property                            | Value                                                                         |
+| :---------------------------------- | :---------------------------------------------------------------------------- |
+| **Bounded Context / Owner**         | Catalog — [[team\|contributor-team]]                                          |
+| **Engine / Technology**             | Azure Blob Storage (Azure Storage Account in cloud; Azurite emulator locally) |
+| **Store Type**                      | Object Storage                                                                |
+| **Primary Writer(s)**               | [[service\|catalog-api]]                                                      |
+| **Primary Reader(s)**               | [[service\|catalog-api]] (SAS URL minting; clients fetch directly via SAS)    |
+| **Authoritative / Source of Truth** | Yes                                                                           |
+| **Data Classification**             | Internal                                                                      |
+| **Retention / TTL Policy**          | 10 years (explicit delete on book/image removal; no automatic lifecycle TTL)  |
 
-Catalog API mediates every upload, SAS URL resolution, and deletion for `catalog-blob`. Browsers fetch cover images directly from Azure Blob Storage using short-lived read-only SAS URLs rather than proxying binary bytes through Catalog API or storing expiring URLs in PostgreSQL.
+## Logical Data Layout & Key Patterns
 
-The diagram shows how Catalog API splits permanent URN storage in PostgreSQL from binary storage and SAS delivery in Azure Blob Storage.
+| Container / Key Pattern                         | Stored Data                                                        | TTL / Eviction                                             | Invalidation / Update Trigger                                                             |
+| :---------------------------------------------- | :----------------------------------------------------------------- | :--------------------------------------------------------- | :---------------------------------------------------------------------------------------- |
+| `catalog-blob` / `{uuidv7}-{safeName}{safeExt}` | Binary book cover images (`image/jpeg`, `image/png`, `image/webp`) | `10y` retention; `1 hour` default read-only SAS URL expiry | Explicit deletion (including snapshots) on image replacement or [[entity\|book]] removal. |
+| URN reference (`books.image` in `catalogdb`)    | `urn:{account}:catalog-blob:{blobName}`                            | Permanent until book/image is updated or deleted           | Validated on every read/delete to match target storage account and container.             |
+
+## Consistency, Isolation & Security Guardrails
+
+- **No public blob access:** Public container/blob access is disabled (`AllowBlobPublicAccess = false`); access requires Managed Identity RBAC (`StorageBlobDataContributor`) for [[service|catalog-api]] and HTTPS-only, read-only SAS URLs (User Delegation Keys in Azure, account-key SAS in local Azurite) for browser downloads.
+- **Strict URN & overwrite protection:** Uploads enforce non-empty allowed image MIME types, sanitize filenames (`[a-zA-Z0-9._-]`, max 100 chars), and guard against accidental overwrites via `If-None-Match: *`. URN validation rejects path traversal (`/`, `\`, `..`) or cross-account mismatches.
+- **No cross-store distributed transaction:** Because PostgreSQL and Blob Storage do not share a two-phase commit, a failed database transaction after upload can leave an unreferenced blob that requires periodic reconciliation against `books.image`.
+
+:::warning
+**Shared Storage Account Isolation:** `catalog-blob` shares the Azure Storage Account with [[container|chat-session-blob]] (`chatting-blob`) and Azure Functions host storage. Services must use container-scoped references—[[service|catalog-api]] must never access `chatting-blob`, and external services must never read `catalog-blob` directly or persist expiring SAS URLs.
+:::
+
+## Operational & Resilience Notes
+
+<AccordionGroup>
+	<Accordion title="Hosting, redundancy, and failure recovery">
+		- **Local vs. Cloud:** Local development uses a persistent Azurite emulator with Azure Storage
+		Explorer; cloud environments use Azure Storage Account with TLS 1.2 minimum (`StandardLrs` in
+		Dev, `StandardZrs` in Staging, `StandardGzrs` in Production). - **Expired SAS (`403`):**
+		Re-fetch the book from [[service|catalog-api]] to mint a fresh 1-hour SAS URL. -
+		**Cross-environment URN mismatch:** Never copy `books.image` URNs across environments without
+		migrating the corresponding blobs and updating the storage account segment.
+	</Accordion>
+</AccordionGroup>
+
+## Architecture Visualizations
+
+<NodeGraph />
 
 <MermaidFileLoader file="mermaids/catalog-blob-diagram-1.mmd" />
 
-## URN and object naming contract
+## Related Documentation
 
-`BlobService` enforces a strict URN format and filename sanitization policy to prevent path traversal and object collisions.
-
-| Rule                      | Specification                                                                                                                                      |
-| :------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Persisted URN format**  | `urn:{account}:{container}:{blobName}` stored in `books.image`                                                                                     |
-| **Blob name format**      | `{uuidv7}-{safeName}{safeExt}` (or `{uuidv7}{safeExt}` if `safeName` is empty)                                                                     |
-| **Filename sanitization** | Strips all characters outside `[a-zA-Z0-9._-]`; truncates `safeName` to `100` characters                                                           |
-| **Overwrite protection**  | Uploads set `Conditions.IfNoneMatch = ETag.All` to reject accidental overwrites                                                                    |
-| **URN validation**        | Rejects null/empty values, wrong prefix, mismatched storage account or container name, or blob names containing `/`, `\`, or `..` (`UrnException`) |
-
-## Upload validation and SAS URL rules
-
-| Operation                             | Behavior and constraints                                                                                                                                                                                                                                                         |
-| :------------------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Upload (`UploadFileAsync`)**        | Requires a non-empty file (`Length > 0`) with an allowed content type: `image/jpeg`, `image/png`, or `image/webp`. Sets the blob's HTTP `Content-Type` header on upload.                                                                                                         |
-| **Read resolution (`GetFileSasUrl`)** | Validates the URN and builds a read-only (`BlobSasPermissions.Read`) blob SAS URL with `StartsOn = UtcNow - 5 minutes` (clock-skew buffer) and `ExpiresOn = UtcNow + SasExpiryHours`. Uses HTTPS-only SAS when the container URI uses HTTPS. Never persist the returned SAS URL. |
-| **SAS signing mechanism**             | Uses account-key SAS when `BlobClient.CanGenerateSasUri` is true (such as Azurite). Under Microsoft Entra ID Managed Identity, requests a 1-day User Delegation Key (`StartsOn = -5m`) and caches it per storage account until 1 hour before expiry.                             |
-| **Delete (`DeleteFileAsync`)**        | Validates the URN and calls `DeleteIfExistsAsync` with `DeleteSnapshotsOption.IncludeSnapshots`. Triggered by explicit image removal or book deletion.                                                                                                                           |
-
-`CatalogAppSettings.SasExpiryHours` defaults to `1` hour. No Azure Storage lifecycle management policy for catalog blobs is declared in the AppHost configuration.
-
-## Hosting and environment provisioning
-
-AppHost provisions `catalog-blob` on the shared `storage` resource alongside `chatting-blob` and Azure Functions host storage (`src/Aspire/BookWorm.AppHost/Extensions/Infrastructure/AzureExtensions.Storage.cs`).
-
-| Environment           | Hosting & redundancy                                                  | Security & tooling                                                             |
-| :-------------------- | :-------------------------------------------------------------------- | :----------------------------------------------------------------------------- |
-| **Local development** | Azurite emulator (`--disableProductStyleUrl`, persistent data volume) | Azure Storage Explorer attached in AppHost                                     |
-| **Azure Development** | Azure Storage Account (`StandardLrs`, Hot tier)                       | `AllowBlobPublicAccess = false`, TLS 1.2 minimum, `StorageBlobDataContributor` |
-| **Azure Staging**     | Azure Storage Account (`StandardZrs`, Hot tier)                       | `AllowBlobPublicAccess = false`, TLS 1.2 minimum, `StorageBlobDataContributor` |
-| **Azure Production**  | Azure Storage Account (`StandardGzrs`, Hot tier)                      | `AllowBlobPublicAccess = false`, TLS 1.2 minimum, `StorageBlobDataContributor` |
-
-## Failure modes and operational rules
-
-| Symptom                             | Cause                                                                                                          | Recovery                                                                                                       |
-| :---------------------------------- | :------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------- |
-| Image fetch returns `403 Forbidden` | SAS URL expired or storage account clock skew                                                                  | Re-fetch the book from Catalog API to obtain a fresh SAS URL                                                   |
-| Image fetch returns `404 Not Found` | Blob deleted or missing after a partial restore                                                                | Restore the blob under the exact `{blobName}` in the book's URN, or re-upload through Catalog API              |
-| `UrnException` on read or delete    | `books.image` URN targets a different storage account or container (for example, after cross-environment copy) | Update or replace the image through Catalog API; do not manually edit `books.image` without migrating the blob |
-| Orphaned blobs in `catalog-blob`    | Upload succeeded before a PostgreSQL transaction failed (no cross-store distributed transaction)               | Reconcile unreferenced blobs periodically against `books.image`                                                |
-
-## Related documentation
-
-- [[service|catalog-api]] — Endpoints and pre/post-processors that manage cover image uploads and deletions.
+- [[service|catalog-api]] — Owning service managing image uploads, URN persistence, and SAS minting.
 - [[container|catalog-database]] — Relational store holding `books.image` URNs.
-- [[container|chat-session-blob]] — Sibling container on the shared Azure Storage account.
-- [[doc|platform/006-api-and-contracts]] — Overview of all BookWorm services, agents, and data containers.
-
-<NodeGraph />
+- [[container|chat-session-blob]] — Sibling container on the shared Azure Storage Account.
+- [[adr|adr-005-blob-storage-for-book-images]] — Decision separating binary cover media from PostgreSQL.
+- [[doc|operational/005-backup-restore-and-dr]] — Platform backup, restore, and disaster recovery runbook.

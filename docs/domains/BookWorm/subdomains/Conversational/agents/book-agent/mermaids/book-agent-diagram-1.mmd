@@ -1,21 +1,21 @@
 %%{init: {'theme': 'base', 'themeVariables': {'background': '#f5f5f5', 'primaryColor': '#ffffff', 'primaryTextColor': '#2d3142', 'primaryBorderColor': '#2d3142', 'secondaryColor': '#ececec', 'secondaryBorderColor': '#4f5d75', 'tertiaryColor': '#fdf2ee', 'tertiaryBorderColor': '#bf4520', 'lineColor': '#4f5d75', 'textColor': '#2d3142', 'clusterBkg': '#f8f9fa', 'clusterBorder': '#bfc0c0', 'fontFamily': 'Geist, system-ui, sans-serif'}}}%%
 flowchart LR
-	router["Decision Router\n(Microsoft-Decision-1)"]
-	book["Book Agent\n(book / Agent Framework)"]
+	router["Intent & Scope Router\n(Decision Model)"]
+	book["Book Agent\n(Primary Discovery Specialist)"]
 	catRes["Book Catalog Researcher\n(Delegated Subagent)"]
 	recRes["Book Recommendation Researcher\n(Delegated Subagent)"]
-	mcp["MCP Tools\n(Streamable HTTP /mcp)"]
+	mcp["MCP Server\n(Read-Only Catalog Tools)"]
 	rating["Rating Agent\n(Remote A2A gRPC)"]
 	qa["QA Agent\n(In-Process Handoff)"]
-	presidio["Presidio\n(Analyzer + Anonymizer)"]
+	presidio["Presidio PII Sidecars\n(Analyze & Anonymize)"]
 
-	router --> |"Workflow: RouteTarget.Book"| book
-	book --> |"Delegate: parallel"| catRes
-	book --> |"Delegate: parallel"| recRes
-	book --> |"MCP: Catalog tools"| mcp
-	book --> |"Handoff: handoff_to_rating"| rating
-	book --> |"Handoff: handoff_to_qa"| qa
-	book --> |"HTTP Middleware: PII"| presidio
+	router --> |"Route: Book Discovery"| book
+	book --> |"Delegate: Parallel Fact-Finding"| catRes
+	book --> |"Delegate: Parallel Shortlist"| recRes
+	book --> |"MCP Streamable HTTP"| mcp
+	book --> |"Handoff: Review Insights"| rating
+	book --> |"Handoff: Store Policies"| qa
+	book --> |"Fail-Closed PII Screening"| presidio
 
 	classDef focal fill:#fdf2ee,stroke:#bf4520,stroke-width:2px,color:#2d3142
 	classDef service fill:#ffffff,stroke:#2d3142,stroke-width:1.2px,color:#2d3142

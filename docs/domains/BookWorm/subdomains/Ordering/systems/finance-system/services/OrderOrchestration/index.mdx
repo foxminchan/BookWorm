@@ -3,9 +3,8 @@ id: order-orchestration
 name: Order Orchestration
 version: 1.0.0
 summary: |
-  Message-driven Finance Azure Functions service that coordinates checkout
-  basket cleanup and order notifications using Azure Durable Task Scheduler
-  (DTS) and Kafka triggers.
+  Message-driven Finance workflow service that coordinates post-checkout basket
+  cleanup and order notifications using Durable Task Scheduler and Kafka.
 owners:
   - contributor-team
 badges:
@@ -15,6 +14,11 @@ badges:
   - content: Event-driven
     backgroundColor: orange
     textColor: orange
+diagrams:
+  - id: order-lifecycle
+    version: 1.0.0
+  - id: checkout-interaction
+    version: 1.0.0
 receives:
   - id: UserCheckedOutIntegrationEvent
     version: 1.0.0
@@ -87,61 +91,51 @@ repository:
   url: "https://github.com/foxminchan/BookWorm"
 ---
 
-Finance (`finance`, also called Order Orchestration) is an internal Azure Functions isolated worker in the Ordering bounded context that runs one durable `OrderOrchestrator` saga instance per Order using Azure Durable Task Scheduler (DTS). It coordinates post-checkout basket cleanup retries and order lifecycle email commands over Kafka; it does **not** process payments, expose HTTP/gRPC endpoints, or use PostgreSQL.
+## Service Responsibility & Boundary
 
-## Overview
+Order Orchestration is an internal durable workflow worker within the [[domain|ordering]] domain that coordinates post-checkout basket cleanup retries and order lifecycle email commands over Kafka. It tracks one orchestration instance per Order ID in Azure Durable Task Scheduler, delegating authoritative Order state to [[service|order-api]], basket deletion to [[service|basket-api]], and email delivery to [[service|notification-api]]. It does not process payments or expose HTTP or gRPC endpoints.
 
-| Property                 | Value                                                                                                                                                                                                                                                               |
-| :----------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Owner**                | Ordering bounded context (`BookWorm.Finance`)                                                                                                                                                                                                                       |
-| **Aspire resource ID**   | `finance`                                                                                                                                                                                                                                                           |
-| **Source**               | `src/Services/Finance/BookWorm.Finance`                                                                                                                                                                                                                             |
-| **Runtime & local port** | `Azure.Functions.Sdk` `1.1.0` (`Microsoft.Azure.Functions.Worker` `2.52.0`, `DurableTask` `1.22.0`, `DurableTask.AzureManaged` `1.12.0`, `Kafka` `4.3.3`) — local `--port 7072`; **no HTTP/gRPC API**, not routed via API Gateway                                   |
-| **Orchestration state**  | Azure Durable Task Scheduler (`durable-task-scheduler` / `finance-taskhub`, `Consumption` SKU via `Infra/durable-task-scheduler.bicep` injecting `DTS_CONNECTION_STRING` and `TASKHUB_NAME`) + Azure Storage host state (`storage`) — **no PostgreSQL, no EF Core** |
-| **Messaging**            | Kafka triggers + Wolverine Kafka publisher (CloudEvents JSON, partitioned by `OrderId`)                                                                                                                                                                             |
-| **Authentication**       | Internal worker (no public auth); Azure Managed Identity RBAC in Azure                                                                                                                                                                                              |
+## Service Profile
+
+| Property                                  | Value                                                                                                  |
+| :---------------------------------------- | :----------------------------------------------------------------------------------------------------- |
+| **Bounded Context / Domain**              | [[domain\|ordering]]                                                                                   |
+| **Owner Team**                            | [[team\|contributor-team]]                                                                             |
+| **Runtime Style**                         | Durable Orchestrator & Async Kafka Worker                                                              |
+| **Public / Gateway Exposure**             | Internal Only (no HTTP or gRPC API)                                                                    |
+| **Authentication & Authorization Policy** | Internal worker; Azure Managed Identity RBAC for Durable Task Scheduler                                |
+| **Owned Data Store(s)**                   | Azure Durable Task Scheduler (orchestration state and timers, keyed by Order ID)                       |
+| **Key Resilience / Idempotency Pattern**  | Order-ID correlation deduplicating checkout events and bounded 30-minute retry timers (max 3 attempts) |
+
+## Contracts & Data Ownership
+
+Order Orchestration owns only per-order coordination saga state (`Placed`, `BasketDeletionFailed`, `Completed`, `Cancelled`).
 
 :::note
-Despite the Finance name, this service does **not** authorize or settle payments. [[service|order-api]] remains the sole authority for Order aggregates and business status; Finance owns only coordination saga state.
+Despite the Finance system name, this service does **not** authorize or settle payments. [[service|order-api]] remains the sole authority for Order aggregates and business status; timeout exhaustion in Order Orchestration marks only the coordination workflow cancelled without cancelling the Order itself.
 :::
 
-## Runtime architecture
+:::warning
+Both [[service|basket-api]] and [[service|notification-api]] consume [[command|PlaceOrderCommand]] on the same topic. When a durable timeout reissues [[command|PlaceOrderCommand]], both consumers receive the retry, which can generate an additional placement email.
+:::
 
-Finance consumes checkout, basket-cleanup, and Order status events via five Kafka triggers, correlates each event to `OrderOrchestrator` keyed by `OrderId` inside `finance-taskhub`, and dispatches outbound Kafka commands via durable activity functions.
+<MessageTable format="all" limit={15} showChannels={true} />
+
+## Architecture Visualizations & Specifications
+
+### Saga Coordination Context
 
 <MermaidFileLoader file="mermaids/OrderOrchestration-diagram-1.mmd" />
 
-## Kafka triggers and orchestration matrix
+### Service Interactions
 
-Each `OrderOrchestrator` instance is keyed by `OrderId.ToString()`, ignoring duplicate checkout events and routing external events to the active orchestration.
+<NodeGraph />
 
-| Trigger / timer                | Inbound event & Kafka topic                                                                                         | Orchestrator state transition                                     | Outbound Kafka command & topic                                                                                        |
-| :----------------------------- | :------------------------------------------------------------------------------------------------------------------ | :---------------------------------------------------------------- | :-------------------------------------------------------------------------------------------------------------------- |
-| `UserCheckedOutTrigger`        | [[event\|UserCheckedOutIntegrationEvent]] (`bookworm.{env}.ordering.user-checked-out`)                              | Creates instance in `Placed`; schedules `30`-minute timeout       | [[command\|PlaceOrderCommand]] → `bookworm.{env}.finance.place-order`                                                 |
-| `BasketDeletedCompleteTrigger` | [[event\|BasketDeletedCompleteIntegrationEvent]] (`bookworm.{env}.basket.delete-complete`)                          | Remains open waiting for explicit Order status                    | [[command\|DeleteBasketCompleteCommand]] → `bookworm.{env}.finance.delete-basket-complete`                            |
-| `BasketDeletedFailedTrigger`   | [[event\|BasketDeletedFailedIntegrationEvent]] (`bookworm.{env}.basket.delete-failed`)                              | Marks `BasketDeletionFailed` and closes instance                  | [[command\|DeleteBasketFailedCommand]] → `bookworm.{env}.finance.delete-basket-failed`                                |
-| `OrderCompletedTrigger`        | [[event\|OrderStatusChangedToCompleteIntegrationEvent]] (`bookworm.{env}.ordering.order-status-change-to-complete`) | Marks `Completed` and closes instance                             | [[command\|CompleteOrderCommand]] → `bookworm.{env}.finance.complete-order` (if name & email present)                 |
-| `OrderCancelledTrigger`        | [[event\|OrderStatusChangedToCancelIntegrationEvent]] (`bookworm.{env}.ordering.order-status-change-to-cancel`)     | Marks `Cancelled` and closes instance                             | [[command\|CancelOrderCommand]] → `bookworm.{env}.finance.cancel-order` (if name & email present)                     |
-| Durable timeout timer          | `MaxRetryTimeout` (`30` minutes)                                                                                    | Retries up to `3` total attempts; on exhaustion marks `Cancelled` | Reissues [[command\|PlaceOrderCommand]]; on exhaustion sends [[command\|CancelOrderCommand]] if contact details exist |
-
-## Retry configuration and invariants
-
-- **Retry policy (`OrderStateMachineSettings`):** Maximum `3` attempts spaced `30` minutes apart (`MaxRetryTimeout`).
-- **Shared placement channel trade-off:** Both [[service|basket-api]] and [[service|notification-api]] consume `bookworm.{env}.finance.place-order`. When a durable timeout reissues `PlaceOrderCommand`, both consumers receive the retry, which can generate an additional email.
-- **Separate lifecycle boundary:** Successful basket deletion does not complete an Order, and retry exhaustion in Finance marks the _orchestration_ `Cancelled` without calling Ordering API to cancel the Order aggregate.
-- **Fire-and-forget notifications:** Publishing `PlaceOrderCommand`, `CompleteOrderCommand`, or `CancelOrderCommand` requests email delivery from Notification; Finance receives no delivery confirmation event.
-
-## Messages
-
-<MessageTable format="all" limit={10} />
-
-## Related documentation
+## Attached Resources & Related Docs
 
 - [[doc|platform/006-api-and-contracts]] — Consolidated service, HTTP, gRPC, and Kafka directory.
 - [[service|order-api]] — Authoritative Order lifecycle service.
-- [[service|basket-api]] — Consumer of `PlaceOrderCommand` for basket cleanup.
+- [[service|basket-api]] — Consumer of [[command|PlaceOrderCommand]] for basket cleanup.
 - [[service|notification-api]] — Consumer of order email commands.
-- Understanding Order and Finance status — Lifecycle separation mental model.
-- How to resolve stalled or failed checkout basket cleanup — Operational recovery runbook.
-
-<NodeGraph />
+- [[diagram|order-lifecycle]] — Order status transitions and saga separation.
+- [[doc|domains/bookworm/subdomains/ordering/guides/02-understand-order-and-finance-status]] — Lifecycle separation between Order status and Finance orchestration.

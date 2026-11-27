@@ -18,48 +18,54 @@ sidebar:
   badge: "GET"
 ---
 
-`ListAuthors` queries **Catalog API** (`GET /api/v1/authors`) to return all registered catalog authors as an unpaginated JSON array (`AuthorDto[]`). The endpoint is publicly readable, returns `[]` with `200 OK` when no authors exist, and caches the directory in FusionCache.
+`ListAuthors` queries [[service|catalog-api]] (`GET /catalog/api/v1/authors`) to return all registered catalog authors as an unpaginated JSON array. The endpoint is publicly readable, returns `[]` with `200 OK` when no authors exist, and caches the directory.
 
 ## Overview
 
-| Property                  | Value                                                                                                                         |
-| :------------------------ | :---------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**                 | Catalog bounded context (**Catalog API**, Aspire resource `catalog`)                                                          |
-| **Source**                | `src/Services/Catalog/BookWorm.Catalog/Features/Authors/List/ListAuthorsEndpoint.cs`, `ListAuthorsQuery.cs`                   |
-| **Protocol / format**     | HTTP `GET /api/v1/authors` (via API Gateway: `GET /catalog/api/v1/authors`), `ApiVersions.V1`, JSON (`application/json`)      |
-| **Authentication**        | None required (public read endpoint)                                                                                          |
-| **Rate limiting**         | `PerUserRateLimit` token bucket (30 token limit, 20 tokens per 10 seconds, queue limit 5) plus global IP/concurrency limiters |
-| **Persistence & caching** | PostgreSQL (`catalogdb`, EF Core) cached in FusionCache (L1 + Redis L2, key `CatalogCacheKeys.Authors`)                       |
-| **Contract version**      | `1.0.0`                                                                                                                       |
+| Property                           | Value                                                                                                                                                      |
+| :--------------------------------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Bounded Context**                | Catalog                                                                                                                                                    |
+| **Owner Service**                  | [[service\|catalog-api]]                                                                                                                                   |
+| **Protocol / Format**              | HTTP `GET`, `application/json` response                                                                                                                    |
+| **Gateway Endpoint**               | `GET /catalog/api/v1/authors` (service path `/api/v1/authors`)                                                                                             |
+| **Authentication & Authorization** | None required (public read endpoint)                                                                                                                       |
+| **Idempotency / Concurrency**      | Read-only and naturally idempotent                                                                                                                         |
+| **Rate Limit / Caching**           | Global concurrency (`100`), per-IP fixed-window (`30 req/min`), and per-user token bucket (`30` limit, `20` per `10s`, queue `5`); cached in L1 + Redis L2 |
+| **Contract Version**               | `1.0.0` (`ApiVersions.V1`)                                                                                                                                 |
 
-## Parameters and fields
+## Request & Response Contract
 
-### Request parameters
+### Request Parameters
 
-`ListAuthors` accepts no path parameters, query parameters, or request body.
+Accepts no path parameters, query parameters, or request body.
 
-### Response schema (`AuthorDto[]`)
+### Success Response (`200 OK`)
 
-A `200 OK` response returns a JSON array of `AuthorDto` objects (`additionalProperties: false`).
+Returns a JSON array of author objects (`additionalProperties: false`).
 
-| Field     | Type             | Required | Constraints | Description                             |
-| :-------- | :--------------- | :------- | :---------- | :-------------------------------------- |
-| `[].id`   | `string`         | Yes      | UUID        | Unique identifier of the author         |
-| `[].name` | `string \| null` | Yes      | Nullable    | Author display name (`null` when unset) |
+| Name      | Type              | Required | Constraints | Description                             |
+| :-------- | :---------------- | :------- | :---------- | :-------------------------------------- |
+| `[].id`   | `string` (`uuid`) | Yes      | Valid UUID  | Unique identifier of the author         |
+| `[].name` | `string \| null`  | Yes      | Nullable    | Author display name (`null` when unset) |
 
-## Error responses
+## Behavior & Side Effects
 
-| Code / status           | Condition                                                                                                   | Recovery behavior                                   |
-| :---------------------- | :---------------------------------------------------------------------------------------------------------- | :-------------------------------------------------- |
-| `429 Too Many Requests` | Caller exceeded `PerUserRateLimit` or global rate limit (`application/problem+json` + `Retry-After` header) | Wait for the `Retry-After` duration before retrying |
+- **Read-through caching:** Serves the author directory from L1/Redis L2 cache and invalidates when authors are created, updated, or deleted.
+- **No state mutation:** Pure read query with no database writes or integration events.
 
-## Related documentation
+## Error Responses
 
-- [[service|catalog-api]] — Service overview, PostgreSQL persistence, and endpoints.
+| Status / Code           | Condition                                                 | Client Recovery Action                              |
+| :---------------------- | :-------------------------------------------------------- | :-------------------------------------------------- |
+| `429 Too Many Requests` | Rate limit quota exceeded (`Retry-After` header included) | Wait for the `Retry-After` duration before retrying |
+
+## Related Documentation
+
+- [[service|catalog-api]] — Service overview, persistence, and endpoints.
+- [[entity|author]] — Author entity model.
 - [[query|ListAuthorsGrpc]] — Internal gRPC contract used by MCP Tools.
 - [[command|CreateAuthor]] — Create a new catalog author.
-- [[entity|author]] — Domain model for catalog authors.
 
 <NodeGraph />
 
-<SchemaViewer file="schema.json" title="JSON Schema" maxHeight="500" search="true" />
+<SchemaViewer file="schema.json" title="List authors schema" maxHeight="500" search="true" />

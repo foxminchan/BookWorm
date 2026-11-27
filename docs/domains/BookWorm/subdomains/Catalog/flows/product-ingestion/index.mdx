@@ -3,10 +3,9 @@ id: product-ingestion
 name: Product Ingestion
 version: 1.0.0
 summary: >-
-  Catalog API persists product changes in PostgreSQL; Scheduler publishes
-  ProcessVectorBatchIntegrationEvent over Kafka to trigger Catalog Ingestion
-  to refresh or remove Qdrant vectors and acknowledge durable queued revisions
-  without losing concurrent updates.
+  Catalog API persists product changes in PostgreSQL; Scheduler triggers Catalog
+  Ingestion over Kafka every five minutes to refresh or remove Qdrant vectors and
+  acknowledge unchanged revisions.
 owners:
   - contributor-team
 badges:
@@ -15,17 +14,17 @@ badges:
     textColor: blue
 steps:
   - id: maintain-product
-    title: Maintain product information
+    title: Catalog administrator updates products
     actor:
-      name: Catalog administrator
+      name: Catalog Administrator
     next_step:
       id: catalog-api
-      label: Create, update, or delete books and related metadata
+      label: Create, update, or soft-delete catalog entities
   - id: catalog-api
-    title: Catalog API
+    title: Catalog API validates and saves changes
     summary: >-
-      Save validated catalog changes. Book deletion is a soft delete. Embedding
-      generation is not part of the API request path.
+      Saves validated book, author, category, and publisher changes without
+      blocking API requests on AI embedding generation.
     service:
       id: catalog-api
       version: 1.0.0
@@ -33,45 +32,50 @@ steps:
       id: persist-and-enqueue
       label: Commit catalog changes
   - id: persist-and-enqueue
-    title: Catalog Database - persist and enqueue
+    title: Catalog Database - persist and queue revision
     summary: >-
-      Database triggers atomically queue affected book IDs in
-      pending_vector_updates. Book and book-author changes, and author,
-      category, or publisher updates and deletes enqueue work. Repeated changes
-      replace the queued revision and timestamp for the same book.
+      Database triggers atomically coalesce affected book IDs into the pending
+      vector queue with a fresh revision token. Repeated edits replace the
+      queued revision so only the latest state is indexed.
     container:
       id: catalog-database
       version: 1.0.0
     next_step:
       id: scheduler
-      label: Durable work awaits the independent scheduled invocation
+      label: Queued work awaits scheduled batch trigger
   - id: scheduler
-    title: Scheduler - ProcessVectorBatchJob
+    title: Scheduler triggers periodic vector batch
     summary: >-
-      Quartz fires every five minutes in UTC, independently of API requests.
-      The job disallows concurrent execution and uses FireOnceNow for misfires.
-      Invocation failures are logged and reported to Quartz.
+      Fires every five minutes in UTC independently of API traffic, disallowing
+      concurrent job runs and recovering misfires.
     service:
       id: scheduler-service
       version: 1.0.0
     next_step:
       id: request-vector-batch
-      label: Publish ProcessVectorBatchIntegrationEvent to Kafka
+      label: Publish batch trigger event
   - id: request-vector-batch
-    title: Process catalog vector batch
-    summary: Scheduler publishes ProcessVectorBatchIntegrationEvent to scheduler.process-vector-batch.
+    title: ProcessVectorBatchIntegrationEvent
     message:
       id: ProcessVectorBatchIntegrationEvent
       version: 1.0.0
     next_step:
+      id: batch-channel
+      label: Publish to scheduler.process-vector-batch
+  - id: batch-channel
+    title: Vector batch trigger channel
+    channel:
+      id: scheduler.process-vector-batch
+      version: 1.0.0
+    next_step:
       id: read-pending-batch
-      label: Trigger the Kafka-bound Azure Function in Catalog Ingestion
+      label: Trigger Catalog Ingestion worker
   - id: read-pending-batch
-    title: Catalog Database - lock and read batch
+    title: Catalog Database - acquire lock and read batch
     summary: >-
-      Try PostgreSQL advisory lock 740031001. If acquired, read at most 200
-      pending updates ordered by updated_at and book_id, with their revisions
-      and current book content. Missing or soft-deleted books have null content.
+      Attempts an exclusive PostgreSQL advisory lock and reads up to 200
+      queued revisions ordered by update time. Soft-deleted or missing books
+      yield null content for vector removal.
     container:
       id: catalog-database
       version: 1.0.0
@@ -85,60 +89,59 @@ steps:
   - id: no-work
     title: No batch processed
     summary: >-
-      Return 204 without processing records. Release the advisory lock if it
-      was acquired. A busy lock leaves pending work for another invocation.
+      Exits cleanly without modifying Qdrant and releases the advisory lock if
+      held. A busy lock leaves pending work for the next scheduled run.
     custom:
       title: No work this invocation
       type: Outcome
       icon: CheckCircleIcon
       color: gray
   - id: process-batch
-    title: Catalog Ingestion - prepare vector operations
+    title: Catalog Ingestion - generate embeddings
     summary: >-
-      Ensure the vector collection exists and generate embeddings for all
-      active books in the batch before applying vector operations. Searchable
-      text contains title, description, authors, category, and publisher.
-      An incomplete embedding batch fails processing.
+      Ensures the Qdrant collection exists and generates embeddings for all
+      active books in the batch. Incomplete embedding responses fail the batch
+      before any vector writes occur.
     service:
       id: catalog-ingestion
       version: 1.0.0
     next_steps:
       - id: upsert-vector
-        label: For each active book with generated content and embedding
+        label: Active books with embeddings
       - id: delete-vector
-        label: For each missing or soft-deleted book
+        label: Missing or soft-deleted books
       - id: processing-failed
-        label: Collection setup or embedding generation fails
+        label: Embedding generation fails
   - id: upsert-vector
-    title: Catalog Vector - upsert active book
+    title: Catalog Vector - upsert active book vectors
     summary: >-
-      Upsert the book UUID, searchable text, and embedding into the
-      data-bookworm-snippets Qdrant collection.
+      Upserts searchable book text and embeddings keyed by book UUID into
+      Qdrant.
     container:
       id: catalog-vector
       version: 1.0.0
     next_steps:
       - id: acknowledge-batch
-        label: All vector operations in the batch succeed
+        label: All vector operations succeed
       - id: processing-failed
         label: Vector upsert fails
   - id: delete-vector
-    title: Catalog Vector - remove deleted book
-    summary: Delete the Qdrant record keyed by the missing or soft-deleted book UUID.
+    title: Catalog Vector - remove deleted book vectors
+    summary: Deletes Qdrant records keyed by missing or soft-deleted book UUIDs.
     container:
       id: catalog-vector
       version: 1.0.0
     next_steps:
       - id: acknowledge-batch
-        label: All vector operations in the batch succeed
+        label: All vector operations succeed
       - id: processing-failed
         label: Vector deletion fails
   - id: acknowledge-batch
-    title: Catalog Database - acknowledge processed revisions
+    title: Catalog Database - acknowledge unchanged revisions
     summary: >-
-      Only after every vector operation succeeds, delete each pending row
-      whose book_id and revision match the batch snapshot. A newer revision
-      remains queued for a subsequent invocation.
+      Deletes only pending rows whose book ID and revision token still match
+      the processed snapshot. Newer concurrent edits remain queued for the next
+      cycle.
     container:
       id: catalog-database
       version: 1.0.0
@@ -146,24 +149,20 @@ steps:
       - id: complete-batch
         label: Revision-checked acknowledgements complete
       - id: processing-failed
-        label: Acknowledgement fails; remaining queue rows survive
+        label: Acknowledgement fails; rows survive
   - id: complete-batch
-    title: Catalog Ingestion - complete invocation
+    title: Catalog Ingestion - complete batch
     summary: >-
-      Release the advisory lock and return 204 No Content. Concurrent revisions
-      and work beyond the 200-item limit await a later scheduled batch. The
-      vector index is eventually consistent with the authoritative database.
+      Releases the advisory lock. Concurrent edits and queues exceeding 200
+      items await the next scheduled batch.
     service:
       id: catalog-ingestion
       version: 1.0.0
   - id: processing-failed
     title: Preserve pending work after failure
     summary: >-
-      Propagate the error and release any acquired advisory lock in finally.
-      Embedding or vector failures occur before acknowledgement, preserving
-      the entire batch; acknowledgement failures leave unacknowledged rows.
-      Partial vector writes may be repeated safely by book UUID. Scheduler
-      logs the failure and reports a JobExecutionException to Quartz.
+      Releases the advisory lock and leaves unacknowledged rows in PostgreSQL so
+      the next five-minute trigger safely retries the batch.
     custom:
       title: Processing failed
       type: Failure
@@ -171,84 +170,61 @@ steps:
       color: red
     next_step:
       id: scheduler
-      label: Pending work is retried on a later scheduled invocation
+      label: Retry on next scheduled invocation
 ---
 
-BookWorm decouples catalog edits from semantic search indexing so **Catalog API** writes complete fast without waiting on AI embedding generation or Qdrant writes. PostgreSQL triggers atomically coalesce affected book IDs into `pending_vector_updates` inside `catalogdb`, and **Scheduler** publishes `ProcessVectorBatchIntegrationEvent` over Kafka every five minutes to trigger the **Catalog Ingestion** Azure Function (`ProcessVectorBatchFunction`). The worker acquires a PostgreSQL advisory lock, refreshes or deletes up to 200 Qdrant vectors per batch using Microsoft Foundry embeddings, and acknowledges only rows whose revision token did not change during processing.
+## Trigger & Business Outcome
 
-## Context and motivation
+This workflow begins when a catalog administrator creates, updates, or soft-deletes a [[entity|book]], [[entity|author]], [[entity|category]], or [[entity|publisher]] through [[service|catalog-api]]. Success is confirmed when [[service|catalog-ingestion]] refreshes or removes the corresponding embeddings in [[container|catalog-vector]] and acknowledges only unchanged revision rows in [[container|catalog-database]], keeping semantic search eventually consistent without slowing catalog writes.
 
-Updating semantic search requires generating dense vectors through Microsoft Foundry (`Cohere.EmbedV40`) and writing them to Qdrant (`vectordb`). Running those calls inside HTTP write handlers on **Catalog API** would add network latency to every administrator edit and cause AI or vector-store outages to block catalog saves.
-
-BookWorm separates catalog writes from vector indexing across two services:
-
-- **Catalog API (`catalog`) and Catalog Ingestion (`catalog-ingestion`):** Share PostgreSQL (`catalogdb`) for authoritative catalog records and the `pending_vector_updates` queue. **Catalog Ingestion** is an internal Azure Functions worker (`BookWorm.Catalog.Ingestion`) with **no HTTP or gRPC API**.
-- **Scheduler (`scheduler`):** Runs Quartz.NET (`ProcessVectorBatchJob`) backed by PostgreSQL (`schedulerdb`) and Wolverine's outbox to emit periodic Kafka trigger events on unprefixed topic `scheduler.process-vector-batch`.
-
-This flow covers creates, updates, and soft deletes on books, plus updates and deletes on related authors, categories, publishers, and `book_authors` links. Cover image storage (`catalog-blob`) and live customer search queries are outside this flow's scope.
-
-## How it works
-
-Catalog writes and background vector refreshes execute on two independent schedules connected by PostgreSQL (`pending_vector_updates`) and Kafka (`scheduler.process-vector-batch`).
-
-This flowchart shows how catalog mutations enqueue revisions in PostgreSQL, how Scheduler triggers Catalog Ingestion over Kafka, and how Catalog Ingestion updates Qdrant with revision-checked acknowledgements.
-
-<MermaidFileLoader file="mermaids/product-ingestion-diagram-1.mmd" />
-
-### Stage 1: Persist catalog changes and coalesce pending work
-
-When an administrator creates, updates, or soft-deletes a book—or modifies an author, category, publisher, or `book_authors` link—**Catalog API** commits the change in PostgreSQL (`catalogdb`). In the same database transaction, PostgreSQL triggers upsert each affected `book_id` into `pending_vector_updates` with a fresh `revision` UUID and `updated_at` timestamp. Repeated edits to the same book before the next batch replace the existing row so only the latest state is indexed.
-
-### Stage 2: Schedule Kafka batch triggers
-
-Every five minutes in UTC (`0 0/5 * * * ?`, misfire policy `FireOnceNow`, concurrent execution disallowed), **Scheduler** runs `ProcessVectorBatchJob` and publishes `ProcessVectorBatchIntegrationEvent` (CloudEvents JSON) through Wolverine's PostgreSQL outbox to the unprefixed Kafka topic `scheduler.process-vector-batch` (`AppendPrefix = false`).
-
-### Stage 3: Acquire advisory lock and read a bounded batch
-
-`ProcessVectorBatchFunction` (`[KafkaTrigger]`, consumer group `catalog-ingestion`) deserializes the CloudEvents message and calls `VectorBatchProcessor.ProcessAsync`:
-
-1. **Exclusive lock:** Calls `SELECT pg_try_advisory_lock(740031001)` so at most one worker processes the queue at a time. If the lock is busy or no rows are waiting, the processor returns `0` cleanly without modifying Qdrant. The lock is always released in `finally` via `pg_advisory_unlock(740031001)`.
-2. **Bounded read:** Reads up to `200` rows from `pending_vector_updates` ordered by `updated_at, book_id`, joining `books`, `book_authors`, `authors`, `categories`, and `publishers`. Active books produce formatted searchable text (`Title`, `Description`, comma-separated `Authors` ordered by `name, id`, `Category`, `Publisher`—excluding prices, images, and rating summaries). Missing or soft-deleted (`is_deleted = true`) books yield `NULL` content.
-
-### Stage 4: Generate embeddings and update Qdrant
-
-`VectorBatchProcessor.IngestDataAsync` ensures the Qdrant collection exists, then generates embeddings in a single batch call to Microsoft Foundry (`FoundryModel.Cohere.EmbedV40`) for all active books. If the embedding provider returns an incomplete count, the processor throws `InvalidOperationException` before writing to Qdrant. Otherwise, it deletes Qdrant records keyed by `BookId` for every missing or soft-deleted book and batch-upserts `TextSnippet` records (`Id`, `Content`, `Vector`) for all active books.
-
-### Stage 5: Acknowledge only unchanged revisions
-
-Only after all Qdrant deletions and upserts succeed does `VectorBatchProcessor` delete acknowledged rows in one batched SQL statement:
-
-<CodeGroup>
-
-```sql
-DELETE FROM pending_vector_updates AS p
-USING unnest($1::uuid[], $2::uuid[]) AS u(book_id, revision)
-WHERE p.book_id = u.book_id AND p.revision = u.revision;
-```
-
-</CodeGroup>
-
-If an administrator edited a book while the batch was running, its trigger replaced `revision` with a newer UUID. The `WHERE` predicate leaves the newer row intact so the next scheduled batch refreshes Qdrant with the latest content.
-
-## Design trade-offs
-
-| Decision                                   | Benefits                                                                                              | Costs and limits                                                                                                              |
-| :----------------------------------------- | :---------------------------------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------- |
-| **PostgreSQL queue + Kafka timer trigger** | Keeps Catalog API writes fast and survives Microsoft Foundry or Qdrant outages without losing updates | Introduces eventual-consistency lag (five-minute cadence plus backlog drain time for queues over 200 books)                   |
-| **Coalescing one row per `book_id`**       | Collapses rapid draft edits into a single embedding call, reducing AI cost and Qdrant churn           | `updated_at` reflects the latest edit timestamp rather than when a repeatedly edited book first entered the queue             |
-| **PostgreSQL advisory lock (`740031001`)** | Prevents concurrent batches from racing on the same Qdrant book UUIDs                                 | A stuck database session holding the lock causes subsequent runs to return `0` without shrinking the queue                    |
-| **Revision-checked batch acknowledgement** | Eliminates distributed transactions across PostgreSQL and Qdrant while never losing concurrent edits  | A failure after Qdrant writes but before acknowledgement causes safe, idempotent vector replays by `BookId` on the next cycle |
-
-## Alternatives considered
-
-- **Synchronous embedding generation inside Catalog API requests:** Rejected because external AI embedding latency and outages would directly degrade or block catalog administration.
-- **Authenticated HTTP endpoint (`POST /api/vectors/batch`) called by Scheduler:** Retired in favor of Kafka (`scheduler.process-vector-batch`) and `[KafkaTrigger]` on Azure Functions so Catalog Ingestion exposes zero HTTP surface area and inherits Kafka buffering and CloudEvents observability.
-- **Immediate tight-loop retries on embedding failure:** Rejected because retrying immediately during a Microsoft Foundry or Qdrant outage amplifies load; waiting for the next five-minute Quartz trigger bounds retry pressure naturally.
-
-## Related documentation
-
-- How to resolve Catalog vector index lag — Step-by-step diagnosis, queue SQL queries, lock checks, and full-index rebuild procedure.
-- Catalog consistency and data ownership reference — Authoritative vs. derived Catalog stores and change-propagation guarantees.
-- Catalog search and discovery — How customer text searches query Qdrant candidates and hydrate authoritative details from PostgreSQL.
+## Interactive Flow Visualization
 
 <NodeGraph />
+
+## Step-by-Step Walkthrough
+
+<Steps title="Decoupled Catalog Mutation and Vector Indexing">
+	<Step title="Persist catalog changes and coalesce pending work">
+		[[service|catalog-api]] commits validated catalog changes to [[container|catalog-database]]. In
+		the same transaction, database triggers atomically coalesce each affected book ID into the
+		pending vector queue with a new revision token, collapsing rapid edits into one indexing pass.
+	</Step>
+	<Step title="Emit periodic batch trigger">
+		Every five minutes in UTC, [[service|scheduler-service]] publishes
+		[[event|ProcessVectorBatchIntegrationEvent]] via its transactional outbox to
+		[[channel|scheduler.process-vector-batch]].
+	</Step>
+	<Step title="Acquire exclusive lock and read bounded batch">
+		[[service|catalog-ingestion]] acquires an exclusive PostgreSQL advisory lock so only one worker
+		processes the queue at a time, then reads up to 200 queued revisions with current book metadata.
+	</Step>
+	<Step title="Generate embeddings and update Qdrant">
+		[[service|catalog-ingestion]] generates batch embeddings for active books, upserts active
+		records into [[container|catalog-vector]], and deletes vectors for missing or soft-deleted
+		books.
+	</Step>
+	<Step title="Acknowledge unchanged revisions">
+		Only after all vector operations succeed, [[service|catalog-ingestion]] deletes pending rows
+		whose book ID and revision token match the processed snapshot, preserving any concurrent edits
+		made during processing.
+	</Step>
+</Steps>
+
+## Failure, Retry & Compensation Behavior
+
+| Failure Point                               | System Behavior                                                                                                        | Compensation / Recovery                                                                                                                                        |
+| :------------------------------------------ | :--------------------------------------------------------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Advisory lock already held**              | Worker exits cleanly without touching <ResourceLink id="catalog-vector" type="container">catalog-vector</ResourceLink> | Pending rows remain intact for the next five-minute trigger                                                                                                    |
+| **Incomplete AI embedding response**        | Batch aborts before any vector writes                                                                                  | Advisory lock is released; entire batch is retried on the next scheduled run                                                                                   |
+| **Vector store or acknowledgement failure** | Error propagates and lock is released                                                                                  | Unacknowledged rows survive in <ResourceLink id="catalog-database" type="container">catalog-database</ResourceLink>; vector writes are idempotent by book UUID |
+
+:::note
+**Eventual consistency window:** Semantic search results lag behind catalog writes by up to five minutes (plus additional cycles if the queue exceeds 200 books). Authoritative book details and prices are always hydrated from [[container|catalog-database]] at query time.
+:::
+
+## Participating Resources
+
+- **Domains & Systems:** [[domain|catalog]], [[domain|platform]], [[system|product-catalog-system]], [[system|scheduler-system]]
+- **Services:** [[service|catalog-api]], [[service|scheduler-service]], [[service|catalog-ingestion]]
+- **Messages & Channels:** [[event|ProcessVectorBatchIntegrationEvent]], [[channel|scheduler.process-vector-batch]]
+- **Data Stores:** [[container|catalog-database]], [[container|catalog-vector]]

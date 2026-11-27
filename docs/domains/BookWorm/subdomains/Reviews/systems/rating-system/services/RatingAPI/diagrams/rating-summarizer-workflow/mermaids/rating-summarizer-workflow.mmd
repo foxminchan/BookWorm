@@ -3,40 +3,38 @@ title: Rating summarizer workflow
 ---
 %%{init: {'theme': 'base', 'themeVariables': {'background': '#f5f5f5', 'primaryColor': '#ffffff', 'primaryTextColor': '#2d3142', 'primaryBorderColor': '#2d3142', 'secondaryColor': '#ececec', 'secondaryBorderColor': '#4f5d75', 'tertiaryColor': '#fdf2ee', 'tertiaryBorderColor': '#bf4520', 'lineColor': '#4f5d75', 'textColor': '#2d3142', 'clusterBkg': '#f8f9fa', 'clusterBorder': '#bfc0c0', 'fontFamily': 'Geist, system-ui, sans-serif'}}}%%
 flowchart TD
-	PartitionExecutor["PartitionExecutor (Start)"];
-	MapExecutor_0["MapExecutor-0"];
-	MapExecutor_1["MapExecutor-1"];
-	MapExecutor_2["MapExecutor-2"];
-	MapExecutor_3["MapExecutor-3"];
-	MapResultsJoinExecutor["MapResultsJoinExecutor"];
-	ReduceExecutor["ReduceExecutor"];
-	QualityAssessExecutor["QualityAssessExecutor"];
-	RefineReductionExecutor["RefineReductionExecutor"];
-	ClassifyExecutor["ClassifyExecutor"];
+	Partition["Partition Reviews into Batches"]
+	Worker0["Summarize Batch Worker 1"]
+	Worker1["Summarize Batch Worker 2"]
+	Worker2["Summarize Batch Worker 3"]
+	Worker3["Summarize Batch Worker 4"]
+	FanIn(("Fan-In"))
+	Join["Join & Order Partial Summaries"]
+	Reduce["Consolidate Summary"]
+	Assess["Assess Quality & Confidence"]
+	Refine["Build Refinement Feedback"]
+	Classify["Classify Rating (Deterministic Rules)"]
 
-	fan_in_MapResultsJoinExecutor_A93A9FAE((fan-in))
-	MapExecutor_0 --> fan_in_MapResultsJoinExecutor_A93A9FAE;
-	MapExecutor_1 --> fan_in_MapResultsJoinExecutor_A93A9FAE;
-	MapExecutor_2 --> fan_in_MapResultsJoinExecutor_A93A9FAE;
-	MapExecutor_3 --> fan_in_MapResultsJoinExecutor_A93A9FAE;
-	fan_in_MapResultsJoinExecutor_A93A9FAE --> MapResultsJoinExecutor;
-	PartitionExecutor --> MapExecutor_0;
-	PartitionExecutor --> MapExecutor_1;
-	PartitionExecutor --> MapExecutor_2;
-	PartitionExecutor --> MapExecutor_3;
-	MapResultsJoinExecutor --> ReduceExecutor;
-	ReduceExecutor --> QualityAssessExecutor;
-	QualityAssessExecutor -->|"Confidence below minimum and iteration below limit"| RefineReductionExecutor;
-	QualityAssessExecutor -->|"Confidence sufficient or iteration limit reached"| ClassifyExecutor;
-	RefineReductionExecutor -->|"Original partial summaries + assessment feedback; iteration + 1"| ReduceExecutor;
+	Partition --> Worker0
+	Partition --> Worker1
+	Partition --> Worker2
+	Partition --> Worker3
+	Worker0 --> FanIn
+	Worker1 --> FanIn
+	Worker2 --> FanIn
+	Worker3 --> FanIn
+	FanIn --> Join
+	Join --> Reduce
+	Reduce --> Assess
+	Assess -->|"Confidence below threshold and pass below cap"| Refine
+	Assess -->|"Confidence met or refinement cap reached"| Classify
+	Refine -->|"Partial summaries + feedback (next pass)"| Reduce
 
 	classDef focal fill:#fdf2ee,stroke:#bf4520,stroke-width:2px,color:#2d3142
 	classDef service fill:#ffffff,stroke:#2d3142,stroke-width:1.2px,color:#2d3142
-	classDef store fill:#ececec,stroke:#4f5d75,stroke-width:1.2px,color:#2d3142
 	classDef input fill:#eef1f6,stroke:#5a6580,stroke-width:1.2px,color:#2d3142
-	classDef ext fill:#f5f5f5,stroke:#949eb2,stroke-width:1px,stroke-dasharray:4 3,color:#4f5d75
-	class fan_in_MapResultsJoinExecutor_A93A9FAE focal
-	class MapExecutor_0,MapExecutor_1,MapExecutor_2,MapExecutor_3,MapResultsJoinExecutor,ReduceExecutor,QualityAssessExecutor,RefineReductionExecutor,ClassifyExecutor service
-	class PartitionExecutor input
-	linkStyle 0 stroke:#bf4520,stroke-width:2px
-	linkStyle 1 stroke:#bf4520,stroke-width:2px
+	class FanIn focal
+	class Worker0,Worker1,Worker2,Worker3,Join,Reduce,Assess,Refine,Classify service
+	class Partition input
+	linkStyle 4 stroke:#bf4520,stroke-width:2px
+	linkStyle 5 stroke:#bf4520,stroke-width:2px

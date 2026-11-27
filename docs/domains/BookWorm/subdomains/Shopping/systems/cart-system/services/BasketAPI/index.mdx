@@ -3,7 +3,8 @@ id: basket-api
 name: Basket API
 version: 1.0.0
 summary: |
-  Internal HTTP and gRPC service for managing shopping baskets and cart items.
+  Internal HTTP and gRPC service for managing customer-scoped shopping baskets,
+  Catalog price enrichment, and post-checkout cleanup.
 readsFrom:
   - id: basket-database
     version: 1.0.0
@@ -24,6 +25,9 @@ badges:
   - content: HTTP + gRPC
     backgroundColor: teal
     textColor: teal
+diagrams:
+  - id: checkout-interaction
+    version: 1.0.0
 receives:
   - id: CreateBasket
     version: 1.0.0
@@ -76,88 +80,54 @@ repository:
   url: "https://github.com/foxminchan/BookWorm"
 ---
 
-Basket API (`basket`) owns transient, customer-scoped shopping baskets in the Shopping bounded context. It exposes authenticated HTTP `v1` endpoints for the Commerce microfrontend (MFE), serves internal gRPC reads to Ordering API, enriches basket reads from Catalog API over gRPC, and performs asynchronous post-checkout cleanup via Kafka.
+## Service Responsibility & Boundary
 
-## Overview
+Basket API owns transient, customer-scoped shopping [[entity|basket]] and [[entity|basket-item]] state within the [[domain|shopping]] domain. It exposes authenticated HTTP endpoints for the storefront, serves internal gRPC basket snapshots to [[service|order-api]] during checkout, enriches basket reads with live titles and prices from [[service|catalog-api]] over gRPC, and performs asynchronous post-checkout cleanup with [[service|order-orchestration]] over Kafka.
 
-| Property                       | Value                                                                                                                                 |
-| :----------------------------- | :------------------------------------------------------------------------------------------------------------------------------------ |
-| **Owner**                      | Shopping bounded context (`BookWorm.Basket`)                                                                                          |
-| **Aspire resource ID**         | `basket`                                                                                                                              |
-| **Source**                     | `src/Services/Basket/BookWorm.Basket`                                                                                                 |
-| **Gateway path & local ports** | Gateway `/basket/api/v1/baskets`; local HTTP `5052`, HTTPS `7155`                                                                     |
-| **Protocols**                  | HTTP REST (`ApiVersions.V1`), gRPC server (`basket.v1.BasketGrpcService`), gRPC client (`book.v1.BookGrpcService`), Kafka + Wolverine |
-| **Persistence & caching**      | Redis (`redis`, key `basket:{customerId}`, FusionCache, 24-hour `IIntegrationEventIdempotencyGuard`) — **no SQL database**            |
-| **Authentication**             | Microsoft Entra ID JWT: `customer` role with `basket_read` and `basket_write` scopes; `HMAC__Key` for log redaction                   |
+## Service Profile
 
-## Runtime architecture
+| Property                                  | Value                                                                                                                                                   |
+| :---------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Bounded Context / Domain**              | [[domain\|shopping]]                                                                                                                                    |
+| **Owner Team**                            | [[team\|contributor-team]]                                                                                                                              |
+| **Runtime Style**                         | REST API, gRPC Server/Client, and Async Kafka Consumer/Producer                                                                                         |
+| **Public / Gateway Exposure**             | Yes via API Gateway (HTTP) and Internal Only (gRPC)                                                                                                     |
+| **Authentication & Authorization Policy** | Microsoft Entra ID JWT via [[system\|identity-provider]]; `customer` role with basket read/write scopes; basket owner derived strictly from token       |
+| **Owned Data Store(s)**                   | [[container\|basket-database]] (Redis key-value store, no SQL database)                                                                                 |
+| **Key Resilience / Idempotency Pattern**  | 24-hour message-ID idempotency guard, per-user rate limiting, and dead-letter routing on [[channel\|bookworm.&#123;env&#125;.basket.dead-letter-queue]] |
 
-Basket API receives customer traffic through the YARP API Gateway, stores basket state in Redis, enriches read responses from Catalog API over gRPC, serves basket snapshots to Ordering API over gRPC, and coordinates cleanup with Finance over Kafka.
+## Contracts & Data Ownership
+
+Basket API stores only customer ID, book IDs, and positive quantities in [[container|basket-database]]. Basket updates replace the entire item collection rather than merging partial changes, and basket records are never used to reconstruct accepted orders.
+
+:::note
+On read, Basket API batches distinct book IDs into a single gRPC lookup against [[service|catalog-api]] to attach current titles, regular prices, and sale prices. If Catalog returns no match for a book ID, the item remains in the response without inventing metadata.
+:::
+
+:::warning
+Both Basket API and [[service|notification-api]] consume [[command|PlaceOrderCommand]] on the same Kafka topic. When [[service|order-orchestration]] retries on timeout, both consumers receive the retry.
+:::
+
+<MessageTable format="all" limit={15} showChannels={true} />
+
+## Architecture Visualizations & Specifications
+
+### Basket API Context
 
 <MermaidFileLoader file="mermaids/BasketAPI-diagram-1.mmd" />
 
-## HTTP API (`ApiVersions.V1`)
+### Service Interactions
 
-All endpoints require Microsoft Entra ID authentication (`customer` role, `basket_read` and `basket_write` scopes) and apply the `PerUserRateLimit` token-bucket policy. Basket API derives the basket owner from the authenticated token; callers cannot specify another customer's basket ID.
+<NodeGraph />
 
-| Method   | Route (direct)    | Gateway route            | Purpose                                                                | Success response                  |
-| :------- | :---------------- | :----------------------- | :--------------------------------------------------------------------- | :-------------------------------- |
-| `POST`   | `/api/v1/baskets` | `/basket/api/v1/baskets` | [[command\|CreateBasket]] — Create a basket from an initial item list  | `201 Created` with customer ID    |
-| `GET`    | `/api/v1/baskets` | `/basket/api/v1/baskets` | [[query\|GetBasket]] — Retrieve the current customer's enriched basket | `200 OK` with `CustomerBasketDto` |
-| `PUT`    | `/api/v1/baskets` | `/basket/api/v1/baskets` | [[command\|UpdateBasket]] — Replace the entire stored item collection  | `204 No Content`                  |
-| `DELETE` | `/api/v1/baskets` | `/basket/api/v1/baskets` | [[command\|DeleteBasket]] — Delete the current customer's basket       | `204 No Content`                  |
+### Owned Entities
 
-### Error responses
+<EntityMap />
 
-| Status                  | Condition                                                               | Recovery behavior                           |
-| :---------------------- | :---------------------------------------------------------------------- | :------------------------------------------ |
-| `400 Bad Request`       | Empty item list, missing book ID, or quantity `<= 0` (`ProblemDetails`) | Fix request payload; do not retry unchanged |
-| `401 Unauthorized`      | Missing, expired, or invalid Entra ID JWT                               | Re-authenticate and retry                   |
-| `403 Forbidden`         | Token lacks `customer` role or `basket_read`/`basket_write` scopes      | Request token with required role and scopes |
-| `404 Not Found`         | Authenticated customer has no active basket (`GET`, `PUT`, `DELETE`)    | Create a basket via `POST /api/v1/baskets`  |
-| `429 Too Many Requests` | Global or `PerUserRateLimit` exceeded (`Retry-After` header returned)   | Wait for `Retry-After` interval and retry   |
-
-## Basket invariants and Catalog enrichment
-
-- **Minimum item rule:** Create and update payloads must include at least one item; every item requires a non-empty book ID and quantity `> 0`.
-- **Full-list replacement:** `PUT /api/v1/baskets` replaces the stored item list in full rather than merging with existing items.
-- **Transient pre-order state:** Redis stores only customer ID, book IDs, and quantities under `basket:{customerId}`. Basket records are never used to reconstruct accepted orders.
-- **Read-time Catalog enrichment:** During `GET /api/v1/baskets`, Basket API batches distinct book IDs into a single `GetBooks` gRPC call to [[service|catalog-api]] to attach current titles, regular prices, and sale prices. If Catalog returns no match for a book ID, the item remains in the response without altering stored state or inventing metadata.
-
-## gRPC contracts (`edition = "2023"`)
-
-| Role       | Service & method                                                   | Peer service             | Purpose                                                                                      |
-| :--------- | :----------------------------------------------------------------- | :----------------------- | :------------------------------------------------------------------------------------------- |
-| **Server** | `basket.v1.BasketGrpcService/GetBasket` ([[query\|GetBasketGrpc]]) | [[service\|order-api]]   | Returns the authenticated customer's basket ID and item quantities during checkout           |
-| **Client** | `book.v1.BookGrpcService/GetBooks` ([[query\|GetBooksGrpc]])       | [[service\|catalog-api]] | Batch-resolves book titles and prices on basket reads                                        |
-| **Client** | `book.v1.BookGrpcService/GetBook` ([[query\|GetBookGrpc]])         | [[service\|catalog-api]] | Registered helper in `BookService.GetBookByIdAsync`; not currently called by active features |
-
-Basket API also exposes gRPC health checks alongside `/health` and `/alive` (Development only).
-
-## Kafka messaging contracts
-
-Wolverine partitions Basket messages by `OrderId` and guards inbound handlers with Redis-backed `IIntegrationEventIdempotencyGuard` (no SQL outbox). Exhausted retries route to [[channel|bookworm.&#123;env&#125;.basket.dead-letter-queue]].
-
-| Direction     | Message                                          | Kafka topic                             | Peer                             | Behavior                                                          |
-| :------------ | :----------------------------------------------- | :-------------------------------------- | :------------------------------- | :---------------------------------------------------------------- |
-| **Consumes**  | [[command\|PlaceOrderCommand]]                   | `bookworm.{env}.finance.place-order`    | [[service\|order-orchestration]] | Deletes the submitted basket after checkout                       |
-| **Publishes** | [[event\|BasketDeletedCompleteIntegrationEvent]] | `bookworm.{env}.basket.delete-complete` | [[service\|order-orchestration]] | Reports successful deletion (`OrderId`, `BasketId`, `TotalMoney`) |
-| **Publishes** | [[event\|BasketDeletedFailedIntegrationEvent]]   | `bookworm.{env}.basket.delete-failed`   | [[service\|order-orchestration]] | Reports deletion failure (includes customer email for recovery)   |
-
-:::note
-Both Basket API and [[service|notification-api]] independently consume `bookworm.{env}.finance.place-order`. Finance timeout retries reissue `PlaceOrderCommand` to both consumers.
-:::
-
-## Messages
-
-<MessageTable format="all" limit={10} />
-
-## Related documentation
+## Attached Resources & Related Docs
 
 - [[doc|platform/006-api-and-contracts]] — Consolidated HTTP, gRPC, and Kafka contract reference.
 - [[container|basket-database]] — Redis key structure and durability characteristics.
-- Shopping Basket API contracts — Detailed engineering boundaries and contract rules.
-- Shopping checkout lifecycle — Pre-order to checkout handoff mental model.
-- How to recover a failed basket cleanup — Operational recovery runbook.
-
-<NodeGraph />
+- [[diagram|checkout-interaction]] — Interaction between Shopping, Ordering, and Finance.
+- [[doc|domains/bookworm/subdomains/shopping/engineering/basket-api-contracts]] — Basket API contracts and boundaries.
+- [[doc|domains/bookworm/subdomains/shopping/guides/checkout-lifecycle]] — Pre-order to checkout handoff guide.

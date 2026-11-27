@@ -1,14 +1,14 @@
 %%{init: {'theme': 'base', 'themeVariables': {'background': '#f5f5f5', 'primaryColor': '#ffffff', 'primaryTextColor': '#2d3142', 'primaryBorderColor': '#2d3142', 'secondaryColor': '#ececec', 'secondaryBorderColor': '#4f5d75', 'tertiaryColor': '#fdf2ee', 'tertiaryBorderColor': '#bf4520', 'lineColor': '#4f5d75', 'textColor': '#2d3142', 'clusterBkg': '#f8f9fa', 'clusterBorder': '#bfc0c0', 'fontFamily': 'Geist, system-ui, sans-serif'}}}%%
 flowchart LR
-	book["Book Agent\n(book)"]
+	book["Book Agent\n(Coordinating Specialist)"]
 	researcher["Book Catalog Researcher\n(Delegated Subagent)"]
-	mcp["MCP Tools\n(Streamable HTTP /mcp)"]
-	presidio["Presidio\n(Inherited PII Middleware)"]
+	mcp["MCP Server\n(Read-Only Catalog Tools)"]
+	presidio["Presidio PII Sidecars\n(Inherited Middleware)"]
 
-	book --> |"Tool: delegate_book_catalog_researcher"| researcher
-	researcher --> |"MCP: search_catalog / get_book / list_*"| mcp
-	researcher --> |"HTTP Middleware: AnalyzeText / AnonymizeText"| presidio
-	researcher -->|"Concise findings + Book IDs"| book
+	book --> |"Delegate: Catalog Fact-Finding"| researcher
+	researcher --> |"MCP: Search, Details, Categories, Authors"| mcp
+	researcher --> |"Fail-Closed PII Screening"| presidio
+	researcher --> |"Verified Findings + Book IDs"| book
 
 	classDef focal fill:#fdf2ee,stroke:#bf4520,stroke-width:2px,color:#2d3142
 	classDef service fill:#ffffff,stroke:#2d3142,stroke-width:1.2px,color:#2d3142

@@ -6,29 +6,28 @@ sequenceDiagram
 	autonumber
 	actor Customer
 	participant Storefront
-	participant Ordering
+	participant Ordering as Ordering API
 	participant Basket as Basket API
 	participant Catalog as Catalog API
 	participant Finance
 	participant Kafka
 	participant Notification
-	participant Outbox as Notification database
-	participant SMTP as SMTP provider
+	participant SMTP as SMTP Provider
 
-	Customer ->> Storefront: Choose Checkout
-	Storefront ->> Ordering: POST /ordering/api/v1/orders
-	Ordering ->> Basket: GetBasketGrpc (persisted quantities)
-	Basket -->> Ordering: Current basket
-	Ordering ->> Catalog: GetBooksGrpc (current prices)
+	Customer ->> Storefront: Confirm checkout
+	Storefront ->> Ordering: Create Order
+	Ordering ->> Basket: Read persisted basket
+	Basket -->> Ordering: Item quantities
+	Ordering ->> Catalog: Resolve current book prices
 	Catalog -->> Ordering: Book details and prices
-	Ordering ->> Ordering: Save New Order and item-price snapshot
+	Ordering ->> Ordering: Persist New Order and price snapshot
 
-	par HTTP confirmation
-		Ordering -->> Storefront: 201 Created with Order ID
-		Storefront -->> Customer: Show checkout confirmation
-	and Asynchronous Finance workflow
+	par Immediate checkout confirmation
+		Ordering -->> Storefront: Order accepted
+		Storefront -->> Customer: Display confirmation
+	and Asynchronous post-checkout coordination
 		Ordering -->> Finance: UserCheckedOutIntegrationEvent
-		Finance ->> Finance: Start persisted saga
+		Finance ->> Finance: Start tracked orchestration
 		Finance ->> Kafka: Publish PlaceOrderCommand
 		Finance ->> Finance: Schedule 30-minute timeout
 
@@ -36,50 +35,47 @@ sequenceDiagram
 			Kafka ->> Basket: PlaceOrderCommand
 			Basket ->> Basket: Delete submitted basket
 
-			alt Deletion returns true
+			alt Deletion succeeds
 				Basket -->> Finance: BasketDeletedCompleteIntegrationEvent
 				Finance ->> Kafka: DeleteBasketCompleteCommand
-				Kafka ->> Ordering: Log cleanup only
-			else Deletion returns false
+				Kafka ->> Ordering: Log cleanup completion
+			else Deletion fails
 				Basket -->> Finance: BasketDeletedFailedIntegrationEvent
-				Finance ->> Finance: Mark failure and finalize saga
+				Finance ->> Finance: Mark failure and finalize orchestration
 				Finance ->> Kafka: DeleteBasketFailedCommand
 				Kafka ->> Ordering: Soft-delete Order if present
-				Note over Ordering: No Order status change or cancellation event
+				Note over Ordering: Preserves New status; no cancellation event
 			end
 		and Notification consumer
 			Kafka ->> Notification: PlaceOrderCommand
+			Notification ->> Notification: Check Redis idempotency guard
 
 			alt Recipient email is present
-				Notification ->> Outbox: Save rendered email as unsent
-				Notification ->> SMTP: Submit MIME message over SMTP
-
-				alt Submission and sent-state save succeed
-					SMTP -->> Notification: Submission accepted
-					Notification ->> Outbox: Mark email sent
-				else Submission or sent-state save fails
-					Note over Notification,Outbox: Record may remain unsent, outcome can be uncertain
+				Notification ->> SMTP: Submit order email over SMTP
+				alt Submission succeeds
+					SMTP -->> Notification: Accepted
+				else Submission fails after retries
+					Notification ->> Kafka: Route to dead-letter queue
 				end
 			else Recipient email is absent
-				Notification ->> Notification: Skip email work
+				Notification ->> Notification: Skip email delivery
 			end
-			Note over Notification,SMTP: SMTP acceptance is not inbox delivery
+			Note over Notification,SMTP: SMTP acceptance confirms handoff, not inbox delivery
 		and Finance timeout policy
-			loop Timeout fires while saga is active (at most two reissues)
-				Finance ->> Finance: Increment TimeoutRetryCount
+			loop Timeout fires while active (up to 2 reissues)
+				Finance ->> Finance: Increment retry count
 				Finance ->> Kafka: Reissue PlaceOrderCommand
-				Finance ->> Finance: Schedule next timeout
+				Finance ->> Finance: Schedule next 30-minute timeout
 			end
 
-			opt Retry limit reached
-				Finance ->> Finance: Cancel and finalize the saga
-
-				opt Name and email are present
+			opt Retry budget exhausted
+				Finance ->> Finance: Cancel and finalize orchestration
+				opt Customer name and email present
 					Finance ->> Kafka: CancelOrderCommand
 					Kafka ->> Notification: Request cancellation email only
 				end
-				Note over Finance,Ordering: Saga cancellation does not cancel the Order
+				Note over Finance,Ordering: Orchestration cancellation does not cancel the Order
 			end
 		end
-		Note over Basket,Notification: Consumers run independently, retries can repeat their work
+		Note over Basket,Notification: Consumers run independently; retries may repeat work
 	end

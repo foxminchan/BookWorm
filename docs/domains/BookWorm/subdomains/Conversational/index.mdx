@@ -3,7 +3,7 @@ id: conversational
 name: Conversational
 summary: |
   Routes BookWorm customer requests through privacy-filtered AI agents for
-  catalog-backed book discovery and store-policy assistance.
+  catalog-backed book discovery and read-only store-policy guidance.
 owners:
   - contributor-team
 version: 1.0.0
@@ -35,81 +35,58 @@ badges:
     icon: ShieldCheckIcon
 ---
 
-Conversational is BookWorm's Core domain for AI-assisted customer discovery and store-policy assistance. It orchestrates specialist agents inside `Chat API` using Microsoft Agent Framework, routes requests in a single pass with `Microsoft-Decision-1`, protects every prompt and reply with fail-closed Presidio PII middleware, and reads Catalog and Reviews data strictly through read-only MCP and A2A gRPC contracts.
+## Business Purpose & Boundary
 
-## Scope and constraints
+[[domain|conversational]] is BookWorm's Core bounded context for AI-assisted customer book discovery and store-policy guidance. It validates incoming customer requests, routes them in a single pass across safety, language, scope, and specialist selection, protects all prompts and responses with fail-closed PII redaction, and coordinates specialist agents ([[agent|book-agent]], [[agent|qa-agent]], and delegated research subagents) backed by read-only [[service|mcp-server]] tools. Explicitly **out of scope** are mutating books ([[domain|catalog]]), modifying shopping baskets ([[domain|shopping]]), creating or canceling orders ([[domain|ordering]]), and persisting customer feedback ([[domain|reviews]]).
 
-- **In scope:** Interactive AG-UI chat orchestration (`/ag-ui`), input validation, single-pass safety/language/scope/specialist routing, read-only Catalog MCP tools and prompts, delegated catalog and recommendation research, and fail-closed PII redaction.
-- **Out of scope:** Mutating books (`Catalog`), modifying shopping baskets (`Shopping`), creating or canceling orders (`Ordering`), and persisting individual customer reviews (`Reviews`).
-- **Key constraints:** Chat API has no PostgreSQL database, no Redis cache, and no Kafka broker integration. Privacy middleware failures stop requests rather than forwarding unfiltered text.
+:::warning
+Conversational agents operate strictly **read-only** across transactional domains. When a customer asks about orders, shipping, or baskets, [[agent|qa-agent]] provides policy guidance only, and privacy middleware fails closed rather than forwarding unredacted text.
+:::
 
-## Context and container view
+## Core Responsibilities & Capabilities
 
-This architecture view shows how customers interact with Chat and how Conversational integrates with Catalog, Reviews, identity, and privacy services.
+| Capability                                         | Owning Service / Agent                                                                               | Primary Entities              |
+| :------------------------------------------------- | :--------------------------------------------------------------------------------------------------- | :---------------------------- |
+| **Multi-Agent Chat Orchestration & Session State** | [[service\|chat-api]]                                                                                | — (Session state only)        |
+| **Single-Pass Safety, Scope & Specialist Routing** | [[service\|chat-api]]                                                                                | —                             |
+| **Book Discovery & Recommendations**               | [[agent\|book-agent]], [[agent\|book-catalog-researcher]], [[agent\|book-recommendation-researcher]] | — (Reads [[domain\|catalog]]) |
+| **Store Policy & Support Guidance**                | [[agent\|qa-agent]]                                                                                  | —                             |
+| **Read-Only Catalog Tool & Prompt Exposure**       | [[service\|mcp-server]]                                                                              | — (Reads [[domain\|catalog]]) |
+
+## Cross-Domain Interactions (Context Map)
+
+| Neighboring Domain / System       | Direction                                         | Integration Mechanism                   | Business Data Exchanged                                                             |
+| :-------------------------------- | :------------------------------------------------ | :-------------------------------------- | :---------------------------------------------------------------------------------- |
+| **[[domain\|catalog]]**           | Upstream (`Catalog` → `Conversational`)           | Sync (gRPC via [[service\|mcp-server]]) | Read-only book searches, book details, categories, and authors                      |
+| **[[domain\|reviews]]**           | Upstream (`Reviews` → `Conversational`)           | Sync (A2A gRPC)                         | Delegated requests to [[agent\|rating-agent]] for summarized book feedback          |
+| **[[system\|data-privacy]]**      | Upstream (`Data Privacy` → `Conversational`)      | Sync (HTTP)                             | Fail-closed PII analysis and anonymization on incoming prompts and buffered replies |
+| **[[system\|identity-provider]]** | Upstream (`Identity Provider` → `Conversational`) | Sync (OIDC / OBO)                       | Customer and agent identity tokens with per-agent claim isolation                   |
+
+:::note
+**Read-Only Boundary & Fail-Closed Privacy:** Conversational has no transactional SQL database, cache, or broker integration. Any recommendation that a customer chooses to add to a basket requires explicit customer confirmation in the storefront UI, preserving [[domain|shopping]]'s ownership of basket mutations.
+:::
+
+## Ubiquitous Language Highlights
+
+- **Customer Request:** An incoming BookWorm conversation turn; referencing a book, basket, or order never transfers ownership of that record into Conversational.
+- **Decision Router:** The single-pass entry gatekeeper that evaluates safety, English compliance, domain scope, and target specialist before invoking a generative agent.
+- **Book Agent & Research Subagents:** [[agent|book-agent]] handles catalog discovery and delegates deep lookups and personalized synthesis to [[agent|book-catalog-researcher]] and [[agent|book-recommendation-researcher]].
+- **QA Agent:** [[agent|qa-agent]] answers shipping, returns, account, and store-policy questions without accessing live customer records.
+- **Handoff:** A transfer of conversational control between specialists (never a transactional business workflow).
+
+## Architecture Visualizations
+
+<NodeGraph />
+
+### Conversational Context Overview
 
 <LikeC4View viewId="conversationalContext" project="conversational" />
 
-## Building block view
+## Related Governance & Documentation
 
-| Building block             | Bounded context | Technology                                  | Owned state / responsibility                                                                                                                                                                | Source path                               |
-| :------------------------- | :-------------- | :------------------------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | :---------------------------------------- |
-| **Chat API** (`chatting`)  | Conversational  | .NET 11 + Microsoft Agent Framework + AG-UI | `chat-workflow` orchestration (`DecisionRouterExecutor`, `Book Agent`, `QA Agent`, sub-researchers), session persistence in `chatting-blob`, Agent Governance (`Policies/chat-agents.yaml`) | `src/Services/Chat/BookWorm.Chat`         |
-| **MCP Tools** (`mcptools`) | Conversational  | .NET 11 + `ModelContextProtocol.AspNetCore` | Stateless Streamable HTTP `/mcp` server (not routed through YARP) exposing read-only Catalog tools and reusable AI prompts under `Policies/mcp-tools.yaml`                                  | `src/Services/McpTools/BookWorm.McpTools` |
-
-### Specialist agents and subagents
-
-- **Decision Router (`DecisionRouterExecutor`):** Backed by `Microsoft-Decision-1`, evaluates `is_safe`, `is_english`, `is_in_scope`, and `route` in a single pass before invoking any conversational LLM, with human-in-the-loop disambiguation via `RequestPort`.
-- **Book Agent (`book`):** Answers catalog discovery and recommendation requests using Catalog MCP tools and the `book-catalog` skill; delegates complex research concurrently to **Book Catalog Researcher** and **Book Recommendation Researcher**.
-- **QA Agent (`qa`):** Answers shipping, returns, account, billing, and store-policy questions using the `store-policies` skill; holds no MCP tools and cannot access live customer accounts or orders.
-- **Rating Agent (`rating`, remote A2A):** Hosted by [[domain|reviews]] (`Rating API`) and invoked over A2A gRPC when a specific book ID is identified for review summarization.
-
-### Read-only Catalog MCP tools
-
-| Tool              | Responsibility                              | Assigned agents                                                     |
-| :---------------- | :------------------------------------------ | :------------------------------------------------------------------ |
-| `search_catalog`  | Search books by keyword or description      | Book Agent, Book Catalog Researcher, Book Recommendation Researcher |
-| `get_book`        | Retrieve full details for a known book UUID | Book Agent, Book Catalog Researcher, Book Recommendation Researcher |
-| `list_categories` | List available catalog categories           | Book Agent, Book Catalog Researcher, Book Recommendation Researcher |
-| `list_authors`    | List available catalog authors              | Book Agent, Book Catalog Researcher, Book Recommendation Researcher |
-
-`MCP Tools` also publishes reusable AI prompts (`recommend_books`, `summarize_rating`, `reduce_rating_summaries`, `analyze_book_quality`).
-
-## Runtime view
-
-1. Storefront submits a customer message over AG-UI (`/chatting/ag-ui`), protected by the `customer` policy and `PerUserRateLimit`.
-2. `InputValidationExecutor` rejects malformed or empty inputs immediately.
-3. `DecisionRouterExecutor` screens safety, English language, BookWorm scope, and target specialist (`book`, `qa`, or remote A2A `rating`); ambiguous prompts pause on `RequestPort` for user clarification.
-4. `DecisionToolSelectionMiddleware` filters optional tools per turn using a 6-message window and 50% confidence cutoff while preserving mandatory tools.
-5. `PIIMiddleware` calls Presidio Analyzer and Anonymizer over HTTP on both incoming prompts and outgoing replies, buffering streaming output until redaction completes.
-6. `ResponseFormatter` emits the final reply, and Chat API persists session state in Azure Blob Storage (`chatting-blob`, prefix `ag-ui/`).
-
-## Deployment and cross-cutting concerns
-
-- **Hosting and ingress:** `chatting` runs behind the YARP API Gateway (`/chatting/{**remainder}`). `mcptools` is **not** routed through YARP; it configures CORS directly against the gateway origin and serves `/mcp` internally.
-- **Security and privacy:** Microsoft Entra ID JWT authentication enforces `customer` (`chatting_read`/`chatting_write`) and `admin` policies on Chat API and `mcptools_read` on MCP Tools. Entra Agent Identities (`chatAgentId`, `ratingAgentId`) perform On-Behalf-Of (OBO) token exchange with claims-based agent isolation. Agent Governance policies (`Policies/chat-agents.yaml`, `Policies/mcp-tools.yaml`) enforce runtime guardrails.
-- **Observability and resilience:** OpenTelemetry records AG-UI, Foundry, Presidio, MCP, and A2A gRPC traces; `DecisionToolSelectionMiddleware` fails open on timeout while `PIIMiddleware` fails closed.
-
-## Quality scenarios and known risks
-
-| Quality attribute / risk | Scenario or exposure                                      | Current mitigation or gap                                                                                                  |
-| :----------------------- | :-------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------- |
-| **Privacy**              | Customer pastes personal email, phone, or address in chat | Fail-closed Presidio `PIIMiddleware` redacts both prompt and buffered output before LLM/client delivery                    |
-| **Availability**         | Presidio sidecar outage blocks all chat responses         | Intentional fail-closed trade-off; monitor Presidio `/health` on port `3000`                                               |
-| **Safety**               | Prompt injection or off-topic request                     | Layered deterministic `InputValidationExecutor`, `Microsoft-Decision-1` `is_safe`/`is_in_scope`, and `GuardrailMiddleware` |
-
-## Related architecture decisions
-
-| ADR                                  | Decision summary                                                               | Status   |
-| :----------------------------------- | :----------------------------------------------------------------------------- | :------- |
-| ADR-BW-014: Composable AI governance | Compose deterministic validation, PII, and guardrail controls on every AI path | Proposed |
-| ADR: Chat Azure Blob session storage | Persist AG-UI conversation state in Azure Blob Storage (`chatting-blob`)       | Accepted |
-
-## Related documentation
-
-- [[flow|agent-orchestration]] — Detailed end-to-end runtime sequence.
-- Route customer requests — Validation, decision routing, and handoff rules.
-- Handle book discovery requests — Direct lookups vs. delegated research.
-- Conversation architecture and boundaries — Engineering contract reference.
-- [[doc|misc/001-ms-decisions-model-use-case-and-lessons-learned]] — `Microsoft-Decision-1` design and lessons learned.
-
-<NodeGraph mode="full" />
+- [[system|chat-system]] — Chat orchestration boundary and [[service|chat-api]].
+- [[system|mcp-tools]] — Read-only MCP tool server boundary and [[service|mcp-server]].
+- [[flow|agent-orchestration]] — End-to-end request validation, routing, privacy screening, and agent delegation.
+- [[adr|adr-bw-014-composable-ai-governance]] — Composable validation, PII, and guardrail controls on every AI path.
+- [[doc|misc/001-ms-decisions-model-use-case-and-lessons-learned]] — Single-pass decision routing design and lessons learned.
+- [[doc|arc42/12-glossary]] — Shared conversational and cross-domain terminology.

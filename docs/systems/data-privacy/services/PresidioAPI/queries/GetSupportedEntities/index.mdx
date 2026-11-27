@@ -18,49 +18,53 @@ sidebar:
   badge: "GET"
 ---
 
-`GetSupportedEntities` queries the upstream Presidio Analyzer HTTP service (`GET /supportedentities`) to list the PII entity types the analyzer can detect for a language. This endpoint reports upstream Analyzer capability; BookWorm's runtime PII middleware calls only `POST /analyze` and does not invoke `GET /supportedentities`.
+`GetSupportedEntities` queries the internal [[service|presidio-api]] Analyzer sidecar (`GET /supportedentities`) to list the PII entity types the analyzer can detect for a language. This endpoint reports upstream Analyzer capability; BookWorm's runtime PII middleware calls only `POST /analyze`.
 
 ## Overview
 
-| Property              | Value                                                                                                                                                     |
-| :-------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Owner**             | Data privacy external integration (**Presidio**, Aspire resource `presidio-analyzer`)                                                                     |
-| **Source**            | `src/Integrations/BookWorm.Hosting.Presidio/PresidioResourceBuilderExtensions.cs`, `src/BuildingBlocks/BookWorm.Chassis/AI/Presidio/PresidioContracts.cs` |
-| **Protocol / format** | HTTP `GET /supportedentities`, JSON response (`application/json`)                                                                                         |
-| **Network & TLS**     | Internal sidecar on container port `3000` (HTTPS with developer certificate in local Aspire run mode; internal HTTP in Azure Container Apps)              |
-| **Authentication**    | None (internal service-to-service network boundary; not exposed through API Gateway)                                                                      |
-| **Contract version**  | `1.0.0`                                                                                                                                                   |
+| Property                           | Value                                                                   |
+| :--------------------------------- | :---------------------------------------------------------------------- |
+| **Bounded Context**                | Data Privacy (External Integration)                                     |
+| **Owner Service**                  | [[service\|presidio-api]] (`presidio-analyzer`)                         |
+| **Protocol / Format**              | HTTP `GET /supportedentities`, `application/json` response              |
+| **Gateway Endpoint**               | Internal sidecar `GET /supportedentities` (not exposed via API Gateway) |
+| **Authentication & Authorization** | None (internal service-to-service network boundary)                     |
+| **Idempotency / Concurrency**      | Read-only and naturally idempotent                                      |
+| **Rate Limit / Caching**           | None (sidecar)                                                          |
+| **Contract Version**               | `1.0.0`                                                                 |
 
 :::note
-The returned list describes Presidio Analyzer capability rather than a BookWorm allowlist. At runtime, BookWorm's `PresidioService` sends `AnalyzerRequest(text, language: "en")` without an `entities` filter and replaces all detected spans with `"<PII>"` via `POST /anonymize`.
+**Capability discovery only:** The returned list describes Presidio Analyzer capability rather than a BookWorm allowlist. At runtime, BookWorm calls [[command|AnalyzeText]] (`language: "en"`) without an `entities` filter and replaces all detected spans via [[command|AnonymizeText]].
 :::
 
-## Parameters and fields
+## Request & Response Contract
 
-### Query parameters
+### Query Parameters
 
-| Name       | Type     | Required | Default                                                                           | Constraints                                      | Description                                                                     |
-| :--------- | :------- | :------- | :-------------------------------------------------------------------------------- | :----------------------------------------------- | :------------------------------------------------------------------------------ |
-| `language` | `string` | No       | Configured supported languages; the stock Presidio Analyzer configuration is `en` | Two-character ISO 639-1 code (for example, `en`) | Filters returned PII entity types to those supported for the specified language |
+| Name       | Type     | Required | Constraints                               | Description                                                                     |
+| :--------- | :------- | :------- | :---------------------------------------- | :------------------------------------------------------------------------------ |
+| `language` | `string` | No       | Two-character ISO 639-1 code (e.g., `en`) | Filters returned PII entity types to those supported for the specified language |
 
-The upstream OpenAPI marks `language` optional but defines no default. The current upstream [Analyzer API](https://github.com/data-privacy-stack/presidio/blob/main/presidio-analyzer/app.py) passes an omitted value through to the engine, which uses its configured supported languages; the stock [analyzer configuration](https://github.com/data-privacy-stack/presidio/blob/main/presidio-analyzer/presidio_analyzer/conf/default_analyzer.yaml) configures `en`. The mutable `latest` image may use different configuration. Pass `language` explicitly when deterministic selection is required.
+### Success Response (`200 OK`)
 
-### Response schema
+| Name       | Type       | Required | Constraints                                | Description                                                                                     |
+| :--------- | :--------- | :------- | :----------------------------------------- | :---------------------------------------------------------------------------------------------- |
+| Root value | `string[]` | Yes      | Array of uppercase entity type identifiers | PII entity types Presidio Analyzer can detect (e.g., `EMAIL_ADDRESS`, `PERSON`, `PHONE_NUMBER`) |
 
-The `200 OK` response body is a JSON array of strings (`GetSupportedEntitiesResponse`).
+## Behavior & Side Effects
 
-| Field      | Type       | Required | Constraints                                | Description                                                                                                                       |
-| :--------- | :--------- | :------- | :----------------------------------------- | :-------------------------------------------------------------------------------------------------------------------------------- |
-| Root value | `string[]` | Yes      | Array of uppercase entity type identifiers | PII entity types Presidio Analyzer can detect for the requested language (for example, `EMAIL_ADDRESS`, `PERSON`, `PHONE_NUMBER`) |
+- **Read-only discovery:** Returns supported entity type identifiers from the sidecar without mutating state.
 
-## Error responses
+## Error Responses
 
-The upstream [Presidio OpenAPI contract](https://raw.githubusercontent.com/data-privacy-stack/presidio/refs/heads/main/docs/api-docs/api-docs.yml) documents `200 OK` only for `GET /supportedentities`; it does not define non-200 status codes or error payloads. The upstream [Analyzer API tests](https://github.com/data-privacy-stack/presidio/blob/main/e2e-tests/tests/test_api_analyzer.py) currently assert `500` with `{"error":"No matching recognizers were found to serve the request."}` for an unsupported language (`he`). This is upstream test behavior, not a guarantee for BookWorm's mutable `latest` image.
+| Status / Code               | Condition                                                                                              | Client Recovery Action                                  |
+| :-------------------------- | :----------------------------------------------------------------------------------------------------- | :------------------------------------------------------ |
+| `500 Internal Server Error` | Unsupported `language` (`"No matching recognizers were found to serve the request."`) or sidecar error | Supply a supported ISO 639-1 language code (e.g., `en`) |
 
-## Related documentation
+## Related Documentation
 
 - [[service|presidio-api]] — Service overview and privacy middleware integration.
-- [[command|AnalyzeText]] — Runtime `POST /analyze` command used by Chat API and Rating API.
+- [[command|AnalyzeText]] — Runtime `POST /analyze` command used by [[service|chat-api]] and [[service|rating-api]].
 - [[query|GetRecognizers]] — List available PII recognizers in Presidio Analyzer.
 - [[query|GetAnonymizers]] — List built-in anonymization operators in Presidio Anonymizer.
 
@@ -68,7 +72,7 @@ The upstream [Presidio OpenAPI contract](https://raw.githubusercontent.com/data-
 
 <SchemaViewer
 	file="schema.json"
-	title="GetSupportedEntities response JSON Schema"
+	title="Get supported entities schema"
 	maxHeight="500"
 	search="true"
 />
