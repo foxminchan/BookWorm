@@ -224,13 +224,11 @@ public sealed class McpSkillsTests
             await Client.DisposeAsync();
             await _cts.CancelAsync();
 
-            try
+            await _serverTask.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
+
+            if (_serverTask.IsFaulted)
             {
                 await _serverTask;
-            }
-            catch (OperationCanceledException)
-            {
-                // Expected on shutdown.
             }
 
             await _server.DisposeAsync();
