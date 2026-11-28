@@ -1,4 +1,6 @@
 using BookWorm.Chassis.AI.Presidio;
+using BookWorm.Chassis.Caching;
+using BookWorm.Chassis.Caching.Semantic;
 using BookWorm.Chat.Domain.Services;
 using BookWorm.Chat.Infrastructure.Governance;
 
@@ -11,6 +13,12 @@ internal static class Extensions
         public void AddAIInfrastructure()
         {
             var services = builder.Services;
+
+            builder
+                .AddRedisClientBuilder(Components.Redis, o => o.DisableAutoActivation = false)
+                .WithAzureAuthentication();
+
+            builder.AddCaching().WithSemanticCache();
 
             builder.AddAIProject().WithLlmModels().WithDecisionModels().WithAITelemetry();
             builder.AddPresidio();

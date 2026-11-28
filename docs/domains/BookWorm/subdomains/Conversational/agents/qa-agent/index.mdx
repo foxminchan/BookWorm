@@ -16,6 +16,12 @@ sends:
 flows:
   - id: agent-orchestration
     version: 1.0.0
+readsFrom:
+  - id: chat-cache
+    version: 1.0.0
+writesTo:
+  - id: chat-cache
+    version: 1.0.0
 tools:
   - name: load_skill
     type: function
@@ -69,7 +75,7 @@ QA Agent has **no database access, no Catalog MCP tools, and no account or order
 
 ## Data, Messaging & Handoff Boundaries
 
-- **Data Stores:** QA Agent reads no business databases, caches, or external APIs. Conversation sessions are persisted by [[service|chat-api]] in [[container|chat-session-blob]].
+- **Data Stores:** QA Agent reads no business databases or external APIs. Conversation sessions are persisted by [[service|chat-api]] in [[container|chat-session-blob]], and standalone policy responses/embeddings use [[container|chat-cache]] (L2 exact result cache + Redis semantic similarity cache).
 - **Messages:** Every input prompt and buffered streaming output is screened via [[service|presidio-api]] using [[command|AnalyzeText]] and [[command|AnonymizeText]].
 - **Delegation & Handoffs:** Receives routed support turns or handoffs from [[agent|book-agent]], and hands book-specific follow-ups back to [[agent|book-agent]] via `handoff_to_book`. It never calls [[agent|rating-agent]] directly.
 

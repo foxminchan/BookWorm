@@ -8,7 +8,7 @@ public sealed class CatalogCacheKeysTests
     public void GivenGuid_WhenBookDetailCalled_ThenShouldFormatKeyWithBookTag()
     {
         // Arrange
-        var id = Guid.NewGuid();
+        var id = Guid.CreateVersion7();
 
         // Act
         var key = CatalogCacheKeys.BookDetail(id);
@@ -34,7 +34,7 @@ public sealed class CatalogCacheKeysTests
     public void GivenGuidAndBookId_WhenBookSummaryCalled_ThenShouldFormatKeyWithBookTagAndSummaryPrefix()
     {
         // Arrange
-        var guid = Guid.NewGuid();
+        var guid = Guid.CreateVersion7();
         var bookId = BookId.From(Guid.CreateVersion7());
 
         // Act

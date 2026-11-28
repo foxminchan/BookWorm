@@ -14,6 +14,8 @@ services:
 containers:
   - id: chat-session-blob
     version: 1.0.0
+  - id: chat-cache
+    version: 1.0.0
 flows:
   - id: agent-orchestration
     version: 1.0.0
@@ -55,13 +57,13 @@ All conversational inputs and outputs pass through fail-closed PII detection and
 
 ## Contained Capabilities
 
-| Service / Agent                           | Role in System                                                                                       | Primary Data Store               | Interaction Style (Sync / Async) |
-| :---------------------------------------- | :--------------------------------------------------------------------------------------------------- | :------------------------------- | :------------------------------- |
-| [[service\|chat-api]]                     | Hosts the interactive AG-UI conversational workflow, routing, safety validation, and agent discovery | [[container\|chat-session-blob]] | Sync (HTTP / Streaming)          |
-| [[agent\|qa-agent]]                       | Answers store policy and general service questions from approved policy context                      | [[container\|chat-session-blob]] | Sync (In-process)                |
-| [[agent\|book-agent]]                     | Coordinates book search, catalog details, recommendations, and feedback discussions                  | [[container\|chat-session-blob]] | Sync (In-process + MCP / A2A)    |
-| [[agent\|book-catalog-researcher]]        | Investigates catalog-backed book, author, and category facts                                         | None (Stateless)                 | Sync (In-process + MCP)          |
-| [[agent\|book-recommendation-researcher]] | Builds catalog-backed book shortlists tailored to stated reader preferences                          | None (Stateless)                 | Sync (In-process + MCP)          |
+| Service / Agent                           | Role in System                                                                                       | Primary Data Store                                          | Interaction Style (Sync / Async) |
+| :---------------------------------------- | :--------------------------------------------------------------------------------------------------- | :---------------------------------------------------------- | :------------------------------- |
+| [[service\|chat-api]]                     | Hosts the interactive AG-UI conversational workflow, routing, safety validation, and agent discovery | [[container\|chat-session-blob]], [[container\|chat-cache]] | Sync (HTTP / Streaming)          |
+| [[agent\|qa-agent]]                       | Answers store policy and general service questions from approved policy context                      | [[container\|chat-session-blob]], [[container\|chat-cache]] | Sync (In-process)                |
+| [[agent\|book-agent]]                     | Coordinates book search, catalog details, recommendations, and feedback discussions                  | [[container\|chat-session-blob]]                            | Sync (In-process + MCP / A2A)    |
+| [[agent\|book-catalog-researcher]]        | Investigates catalog-backed book, author, and category facts                                         | None (Stateless)                                            | Sync (In-process + MCP)          |
+| [[agent\|book-recommendation-researcher]] | Builds catalog-backed book shortlists tailored to stated reader preferences                          | None (Stateless)                                            | Sync (In-process + MCP)          |
 
 ## External Interactions & Trust Boundaries
 

@@ -1,0 +1,56 @@
+---
+id: chat-cache
+name: Chat Cache
+version: 1.0.0
+summary: Non-authoritative Redis caching and semantic vector-similarity layer owned by the Chat bounded context for QA Agent result and semantic caching.
+owners:
+  - ai-capabilities-team
+container_type: cache
+badges:
+  - content: Cache
+    backgroundColor: orange
+    textColor: orange
+technology: azure-managed-redis
+authoritative: false
+access_mode: readWrite
+classification: internal
+retention: transient
+residency: eastasia
+purpose: Non-authoritative L1/L2 result cache and Redis vector-similarity semantic cache used by Chat API for QA Agent responses.
+styles:
+  icon: /icons/database/redis.svg
+---
+
+## Purpose & Ownership Boundary
+
+Chat Cache is the non-authoritative, multi-level caching tier owned by [[service|chat-api]] in the [[domain|conversational]] domain, scoped specifically to [[agent|qa-agent]]. It pairs FusionCache + `IDistributedCache` (`RedisCache`) for exact-match result and embedding caching with `CommunityToolkit.VectorData.Redis` (`RedisHashSetCollection`) for cosine-similarity semantic caching of standalone store-policy queries.
+
+## Data Store Profile
+
+| Property                            | Value                                                                  |
+| :---------------------------------- | :--------------------------------------------------------------------- |
+| **Bounded Context / Owner**         | Conversational — [[team\|ai-capabilities-team]]                        |
+| **Engine / Technology**             | Redis + FusionCache + RediSearch (`CommunityToolkit.VectorData.Redis`) |
+| **Store Type**                      | Cache & Vector Similarity Index                                        |
+| **Primary Writer(s)**               | [[service\|chat-api]] ([[agent\|qa-agent]])                            |
+| **Primary Reader(s)**               | [[service\|chat-api]] ([[agent\|qa-agent]])                            |
+| **Authoritative / Source of Truth** | Derived Cache (Ephemeral)                                              |
+| **Data Classification**             | Internal                                                               |
+| **Retention / TTL Policy**          | Transient (30-minute default TTL via `Caching:Expiration`)             |
+
+## Logical Data Layout & Key Patterns
+
+| Key / Collection Pattern       | Stored Data                                                                                                          | TTL / Eviction                              | Notes                                                                               |
+| :----------------------------- | :------------------------------------------------------------------------------------------------------------------- | :------------------------------------------ | :---------------------------------------------------------------------------------- |
+| `BookWorm.Chat:*`              | Exact-match `DistributedCachingChatClient` and `DistributedCachingEmbeddingGenerator`                                | `30 minutes` (`Caching:Expiration` default) | Keyed by hashed prompt/options or embedding input.                                  |
+| `data-bookworm-semantic-cache` | `SemanticCacheEntry` (prompt, response text, model ID, `expires_at_unix_seconds`, `1536`-dim Cohere Embed v4 vector) | `30 minutes` (`Caching:Expiration` default) | Searched via cosine similarity (`Caching:SemanticCacheSimilarityThreshold = 0.92`). |
+
+## Consistency, Isolation & Security Guardrails
+
+- **PII & Guardrail ordering:** `UseSemanticCache()` is registered _after_ `UsePIIMiddleware` and `UseGuardrailMiddleware` on [[agent|qa-agent]], ensuring prompt-injection checks and Presidio PII redaction run before any cache lookup or write.
+- **Standalone turns only:** Semantic caching skips multi-turn histories (`User` messages > 1), `ChatRole.Tool` turns, and intermediate `FunctionCallContent` responses.
+- **Agent isolation:** [[agent|book-agent]] and [[agent|rating-agent]] do not use semantic or chat result caching so personalized memory and live catalog/rating data stay fresh.
+
+:::warning
+**Shared Redis Instance:** Chat Cache shares the `redis` instance with [[container|catalog-cache]], [[container|basket-database]], [[container|order-cache]], and [[container|rating-cache]]. Never run `FLUSHALL`/`FLUSHDB` on the shared instance.
+:::

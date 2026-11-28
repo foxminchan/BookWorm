@@ -1,6 +1,8 @@
 using BookWorm.Chassis.Utilities.Configurations;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.StackExchangeRedis;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -20,15 +22,15 @@ public static class CachingExtensions
     extension(IHostApplicationBuilder builder)
     {
         /// <summary>
-        ///     Registers FusionCache (L1 + L2 + Backplane) with the dependency injection container,
-        ///     reusing the <see cref="IConnectionMultiplexer" /> registered by Aspire's Redis client
-        ///     for both the distributed cache and the Redis backplane.
+        ///     Registers FusionCache (L1 + L2 + Backplane) and <see cref="IDistributedCache" />
+        ///     with the dependency injection container, reusing the <see cref="IConnectionMultiplexer" />
+        ///     registered by Aspire's Redis client (or falling back to an in-memory distributed cache).
         /// </summary>
         /// <param name="configure">
         ///     An optional delegate to further configure the <see cref="IFusionCacheBuilder" />
         ///     after the defaults derived from <see cref="CachingOptions" /> have been applied.
         /// </param>
-        public void AddCaching(Action<IFusionCacheBuilder>? configure = null)
+        public IHostApplicationBuilder AddCaching(Action<IFusionCacheBuilder>? configure = null)
         {
             var services = builder.Services;
             var servicePrefix = builder.Environment.ApplicationName;
@@ -80,13 +82,15 @@ public static class CachingExtensions
 
             if (services.Any(d => d.ServiceType == typeof(IConnectionMultiplexer)))
             {
-                fusionBuilder.WithDistributedCache(sp => new RedisCache(
+                services.TryAddSingleton<IDistributedCache>(sp => new RedisCache(
                     new RedisCacheOptions
                     {
                         ConnectionMultiplexerFactory = () =>
                             Task.FromResult(sp.GetRequiredService<IConnectionMultiplexer>()),
                     }
                 ));
+
+                fusionBuilder.WithRegisteredDistributedCache();
 
                 fusionBuilder.WithBackplane(sp => new RedisBackplane(
                     new RedisBackplaneOptions
@@ -96,6 +100,10 @@ public static class CachingExtensions
                     }
                 ));
             }
+            else
+            {
+                services.AddDistributedMemoryCache();
+            }
 
             services
                 .AddOpenTelemetry()
@@ -103,6 +111,8 @@ public static class CachingExtensions
                 .WithTracing(tracing => tracing.AddFusionCacheInstrumentation());
 
             configure?.Invoke(fusionBuilder);
+
+            return builder;
         }
 
         /// <summary>

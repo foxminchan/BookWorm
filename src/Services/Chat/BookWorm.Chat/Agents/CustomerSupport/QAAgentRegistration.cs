@@ -1,3 +1,4 @@
+using BookWorm.Chassis.Caching.Semantic;
 using BookWorm.Chat.Orchestration;
 
 namespace BookWorm.Chat.Agents.CustomerSupport;
@@ -23,6 +24,7 @@ internal static class QAAgentRegistration
                     )
                     .UsePIIMiddleware(sp)
                     .UseGuardrailMiddleware()
+                    .UseSemanticCache()
                     .UseAIContextProviders(compactionProvider)
                     .Build(sp);
 

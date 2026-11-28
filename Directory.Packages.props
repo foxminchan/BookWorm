@@ -36,7 +36,7 @@
     <PackageVersion Include="Aspire.Azure.AI.Projects" Version="$(AspireUnstableVersion)" />
     <PackageVersion
       Include="Aspire.Microsoft.Azure.StackExchangeRedis"
-      Version="$(AspireUnstableVersion)"
+      Version="$(AspireVersion)"
     />
     <PackageVersion Include="Aspire.Qdrant.Client" Version="$(AspireVersion)" />
     <!-- Community Toolkit -->
@@ -81,6 +81,7 @@
       Version="$(DotnetPackagesVersion)"
     />
     <PackageVersion Include="CommunityToolkit.VectorData.Qdrant" Version="1.0.1" />
+    <PackageVersion Include="CommunityToolkit.VectorData.Redis" Version="1.0.0" />
     <!-- Observability -->
     <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.21.0" />
     <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.21.0" />

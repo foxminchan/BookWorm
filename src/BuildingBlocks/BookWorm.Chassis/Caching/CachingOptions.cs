@@ -11,4 +11,9 @@ public sealed partial class CachingOptions : IValidateOptions<CachingOptions>
     [Required]
     [Range(typeof(TimeSpan), "00:00:01", "365.00:00:00")]
     public TimeSpan Expiration { get; set; } = TimeSpan.FromMinutes(30);
+
+    public bool SemanticCacheEnabled { get; set; } = true;
+
+    [Range(0.0, 1.0)]
+    public float SemanticCacheSimilarityThreshold { get; set; } = 0.92f;
 }

@@ -18,4 +18,4 @@ app.UseRateLimiter();
 
 app.MapMcp("/mcp").RequireAuthorization();
 
-app.Run();
+await app.RunAsync();

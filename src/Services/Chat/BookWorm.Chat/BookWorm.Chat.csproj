@@ -11,6 +11,7 @@
   </ItemGroup>
   <ItemGroup Label="Core Dependencies">
     <PackageReference Include="Aspire.Azure.Storage.Blobs" />
+    <PackageReference Include="Aspire.Microsoft.Azure.StackExchangeRedis" />
     <PackageReference Include="Microsoft.Agents.AI.Foundry" />
     <PackageReference Include="Microsoft.Agents.AI.Hosting.AzureStorage" />
     <PackageReference Include="Microsoft.Agents.AI.Hosting.AGUI.AspNetCore" />
