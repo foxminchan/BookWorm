@@ -26,8 +26,10 @@ public sealed class McpSkillsTests
 
         // Assert
         supportsSkills.ShouldBeTrue();
-        skills.Count.ShouldBe(2);
-        skills.Select(s => s.Name).ShouldBe(["book-catalog", "store-policies"], true);
+        skills.Count.ShouldBe(3);
+        skills
+            .Select(s => s.Name)
+            .ShouldBe(["book-catalog", "review-analysis", "store-policies"], true);
 
         var bookCatalog = skills.Single(s => s.Name == "book-catalog");
         bookCatalog.Uri.ShouldBe("skill://book-catalog/SKILL.md");
@@ -58,6 +60,22 @@ public sealed class McpSkillsTests
                 [
                     "skill://store-policies/SKILL.md",
                     "skill://store-policies/references/STORE_FAQ.md",
+                ],
+                true
+            );
+
+        var reviewAnalysis = skills.Single(s => s.Name == "review-analysis");
+        reviewAnalysis.Uri.ShouldBe("skill://review-analysis/SKILL.md");
+        reviewAnalysis.Description.ShouldNotBeNullOrWhiteSpace();
+        reviewAnalysis.License.ShouldBe("MIT");
+        reviewAnalysis.Resources.IsDynamic.ShouldBeFalse();
+        reviewAnalysis.Resources.Entries.ShouldNotBeNull();
+        reviewAnalysis
+            .Resources.Entries.Select(e => e.Uri)
+            .ShouldBe(
+                [
+                    "skill://review-analysis/SKILL.md",
+                    "skill://review-analysis/references/RATING_GUIDE.md",
                 ],
                 true
             );
@@ -110,7 +128,7 @@ public sealed class McpSkillsTests
         var skills = await source.GetSkillsAsync(new(Mock.Of<AIAgent>(), null));
 
         // Assert
-        skills.Count.ShouldBe(2);
+        skills.Count.ShouldBe(3);
 
         var bookCatalog = skills.Single(s => s.Frontmatter.Name == "book-catalog");
         bookCatalog.Frontmatter.Description.ShouldNotBeNullOrWhiteSpace();

@@ -119,6 +119,7 @@ internal static class Extensions
 
                             Skills:
                             - skill://book-catalog/SKILL.md: Search and recommend books from BookWorm's catalog
+                            - skill://review-analysis/SKILL.md: Summarize customer reviews and assess book quality signals
                             - skill://store-policies/SKILL.md: Answer questions about BookWorm store policies and services
                             """;
                     }
