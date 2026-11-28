@@ -43,29 +43,29 @@ model:
 
 QA Agent is the read-only customer support and store-policy specialist hosted in [[service|chat-api]]. It is triggered either when the intent router inside [[flow|agent-orchestration]] classifies a customer prompt as an operational, policy, shipping, returns, account, or billing inquiry, or when [[agent|book-agent]] hands off a non-book support question.
 
-QA Agent has **no database access, no MCP catalog client, and no account or order mutation capabilities**: it provides policy guidance only, cannot look up or modify live orders, and must never invent policy terms or prices.
+QA Agent has **no database access, no Catalog MCP tools, and no account or order mutation capabilities**: it loads curated `store-policies` guidance from [[service|mcp-server]] via the MCP Skills extension, provides policy guidance only, cannot look up or modify live orders, and must never invent policy terms or prices.
 
 ## Agent Profile & Model Governance
 
-| Property                     | Value                                                                                                                                  |
-| :--------------------------- | :------------------------------------------------------------------------------------------------------------------------------------- |
-| **Bounded Context / Domain** | Conversational ([[domain\|bookworm]])                                                                                                  |
-| **Owner Team**               | [[team\|ai-capabilities-team]]                                                                                                         |
-| **Hosting Service**          | [[service\|chat-api]]                                                                                                                  |
-| **LLM Provider & Model**     | Microsoft Foundry `model-router` (`2025-11-18`; `temperature: 0.5`, `maxOutputTokens: 1000`, `reasoningEffort: medium`)                |
-| **Interaction Protocol**     | Streaming AG-UI over HTTP (inbound); in-process handoff (outbound to [[agent\|book-agent]])                                            |
-| **Memory / Context Scope**   | Durable AG-UI session state in [[container\|chat-session-blob]] with lightweight history compaction and `store-policies` skill context |
-| **Fallback Behavior**        | States explicitly when a policy detail is unavailable and directs the customer to support; fails closed on PII errors                  |
+| Property                     | Value                                                                                                                                                                             |
+| :--------------------------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Bounded Context / Domain** | Conversational ([[domain\|bookworm]])                                                                                                                                             |
+| **Owner Team**               | [[team\|ai-capabilities-team]]                                                                                                                                                    |
+| **Hosting Service**          | [[service\|chat-api]]                                                                                                                                                             |
+| **LLM Provider & Model**     | Microsoft Foundry `model-router` (`2025-11-18`; `temperature: 0.5`, `maxOutputTokens: 1000`, `reasoningEffort: medium`)                                                           |
+| **Interaction Protocol**     | Streaming AG-UI over HTTP (inbound); MCP Streamable HTTP (outbound to [[service\|mcp-server]] for `store-policies` skill); in-process handoff (outbound to [[agent\|book-agent]]) |
+| **Memory / Context Scope**   | Durable AG-UI session state in [[container\|chat-session-blob]] with lightweight history compaction and `store-policies` skill context loaded from [[service\|mcp-server]]        |
+| **Fallback Behavior**        | States explicitly when a policy detail is unavailable and directs the customer to support; fails closed on PII errors                                                             |
 
 ## Tools & Capabilities
 
 <AgentTools />
 
-| Capability / Tool                      | Access Level | Target Resource         | Guardrail / Constraint                                                                     |
-| :------------------------------------- | :----------- | :---------------------- | :----------------------------------------------------------------------------------------- |
-| `load_skill`, `read_skill_resource`    | Read         | `store-policies` skill  | Scoped exclusively to curated store-policy guidance; cannot read arbitrary files or stores |
-| `handoff_to_book`                      | Delegate     | [[agent\|book-agent]]   | Transfers book discovery or recommendation follow-ups back to Book Agent                   |
-| Catalog tools (`search_catalog`, etc.) | Denied       | [[service\|mcp-server]] | Explicitly denied at priority `70` as defense-in-depth                                     |
+| Capability / Tool                      | Access Level | Target Resource                                  | Guardrail / Constraint                                                                                     |
+| :------------------------------------- | :----------- | :----------------------------------------------- | :--------------------------------------------------------------------------------------------------------- |
+| `load_skill`, `read_skill_resource`    | Read         | `store-policies` skill ([[service\|mcp-server]]) | Scoped exclusively to curated store-policy guidance served over MCP; cannot read arbitrary files or stores |
+| `handoff_to_book`                      | Delegate     | [[agent\|book-agent]]                            | Transfers book discovery or recommendation follow-ups back to Book Agent                                   |
+| Catalog tools (`search_catalog`, etc.) | Denied       | [[service\|mcp-server]]                          | Explicitly denied at priority `70` as defense-in-depth                                                     |
 
 ## Data, Messaging & Handoff Boundaries
 

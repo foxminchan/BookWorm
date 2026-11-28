@@ -225,7 +225,7 @@ public sealed class ReviewToolTests
         [
             new(Guid.CreateVersion7(), "John", "Doe", null, 5, _validBookId),
             new(Guid.CreateVersion7(), null, null, "Great book!", 4, _validBookId),
-            new(Guid.CreateVersion7(), "", "", "", 3, _validBookId),
+            new(Guid.CreateVersion7(), string.Empty, string.Empty, string.Empty, 3, _validBookId),
         ];
 
         PagedResult<FeedbackDto> pagedResult = [with(feedbackDtos, 1, int.MaxValue, 3)];
@@ -247,7 +247,7 @@ public sealed class ReviewToolTests
         // Verify null values are handled correctly
         deserializedResult.ShouldContain(x => x.Comment == null);
         deserializedResult.ShouldContain(x => x.FirstName == null);
-        deserializedResult.ShouldContain(x => x.FirstName == "");
+        deserializedResult.ShouldContain(x => x.FirstName == string.Empty);
     }
 
     [Test]

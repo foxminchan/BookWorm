@@ -53,11 +53,12 @@ Chat API operates exclusively as an A2A **client** communicating with [[service|
 
 <Accordion title="Multi-Agent Routing & Governance Notes">
 	- **Validation & scope routing:** Empty or suspected prompt-injection inputs are rejected
-	immediately, oversized inputs are truncated safely, and non-English or out-of-scope requests
-	short-circuit before reaching specialist agents. - **Scoped specialists:** [[agent|qa-agent]]
-	answers store-policy questions without catalog tools; [[agent|book-agent]] coordinates
-	[[agent|book-catalog-researcher]] and [[agent|book-recommendation-researcher]] using read-only
-	catalog tools on [[service|mcp-server]]; review insights delegate to [[agent|rating-agent]].
+	immediate, and non-English or out-of-scope requests short-circuit before reaching specialist
+	agents. - **Scoped specialists:** [[agent|qa-agent]] answers store-policy questions using the
+	`store-policies` skill from [[service|mcp-server]] without catalog tools; [[agent|book-agent]]
+	coordinates [[agent|book-catalog-researcher]] and [[agent|book-recommendation-researcher]] using
+	read-only catalog tools and the `book-catalog` skill on [[service|mcp-server]]; review insights
+	delegate to [[agent|rating-agent]].
 </Accordion>
 
 ## Architecture Visualizations & Specifications

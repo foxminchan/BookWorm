@@ -6,6 +6,8 @@ builder.AddApplicationServices();
 
 var app = builder.Build();
 
+app.UseDefaultDiagnostics();
+
 app.MapDefaultEndpoints();
 
 app.UseForwardedHeaders();

@@ -40,7 +40,8 @@ judgments, and say when a requested detail is unavailable.
 
 ## Response Format
 
-- When `showBookCard` or `showBookList` frontend UI tools are available, invoke them to render interactive book cards/lists and keep accompanying prose concise.
+- When `showBookCard` or `showBookList` frontend UI tools are available, invoke them to render interactive book
+  cards/lists and keep accompanying prose concise.
 - Otherwise, present books as a numbered or bulleted list.
 - Include: **Title** — _Author_ — Genre — ⭐ Rating — 💲 Price.
 - If no results, say so and offer to broaden the search.

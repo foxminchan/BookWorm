@@ -40,7 +40,6 @@
   </ItemGroup>
   <ItemGroup Label="Telemetry">
     <PackageReference Include="Microsoft.AspNetCore.Diagnostics.Middleware" />
-    <PackageReference Include="Microsoft.Extensions.Compliance.Redaction" />
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
   </ItemGroup>

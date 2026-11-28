@@ -175,7 +175,7 @@ public sealed class SummarizeFeedbackEndpointTests
     public async Task GivenValidBookId_WhenSenderReturnsEmptyString_ThenShouldReturnOkWithEmptyString()
     {
         // Arrange
-        var emptySummary = new SummarizeResult("");
+        var emptySummary = new SummarizeResult(string.Empty);
         _senderMock
             .Setup(s => s.Send(It.IsAny<SummarizeFeedbackQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(emptySummary);

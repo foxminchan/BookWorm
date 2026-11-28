@@ -74,7 +74,7 @@ public sealed class BuyerAggregateTests
         string ExpectedErrorMessage
     )> InvalidAddressParameters()
     {
-        string?[] invalidValues = [null, "", "  "];
+        string?[] invalidValues = [null, string.Empty, "  "];
 
         foreach (var invalid in invalidValues)
         {

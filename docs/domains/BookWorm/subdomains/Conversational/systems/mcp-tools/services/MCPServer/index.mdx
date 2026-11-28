@@ -4,7 +4,7 @@ name: MCP Server
 version: 1.0.0
 summary: |
   Internal stateless Streamable HTTP MCP service that exposes read-only
-  Catalog lookup tools and reusable AI prompts.
+  Catalog lookup tools, reusable AI prompts, and Agent Skills.
 owners:
   - ai-capabilities-team
 sends:
@@ -36,7 +36,7 @@ badges:
 
 ## Service Responsibility & Boundary
 
-MCP Server is a stateless Model Context Protocol (MCP) adapter within the [[domain|conversational]] domain that exposes read-only catalog lookup tools and reusable AI prompt templates over Streamable HTTP to [[service|chat-api]] and [[service|rating-api]]. It delegates all product queries to [[service|catalog-api]] over gRPC and owns no databases, caches, or messaging channels.
+MCP Server is a stateless Model Context Protocol (MCP) adapter within the [[domain|conversational]] domain that exposes read-only catalog lookup tools, reusable AI prompt templates, and Agent Skills over Streamable HTTP to [[service|chat-api]] and [[service|rating-api]]. It delegates all product queries to [[service|catalog-api]] over gRPC and owns no databases, caches, or messaging channels.
 
 ## Service Profile
 
@@ -52,7 +52,7 @@ MCP Server is a stateless Model Context Protocol (MCP) adapter within the [[doma
 
 ## Contracts & Data Ownership
 
-MCP Server owns no persistent entities or data stores. It translates four read-only catalog tools (`search_catalog`, `get_book`, `list_categories`, `list_authors`) into gRPC queries against [[service|catalog-api]] and serves reusable prompt templates for book recommendations and review summarization.
+MCP Server owns no persistent entities or data stores. It translates four read-only catalog tools (`search_catalog`, `get_book`, `list_categories`, `list_authors`) into gRPC queries against [[service|catalog-api]], serves reusable prompt templates for book recommendations and review summarization, and publishes version-controlled Agent Skills (`skill://book-catalog/SKILL.md` and `skill://store-policies/SKILL.md`) via the MCP Skills extension (`ModelContextProtocol.Extensions.Skills`) for [[service|chat-api]].
 
 :::note
 MCP Server has no upstream dependency on [[service|rating-api]] and exposes no review-fetching tool. [[service|rating-api]] retrieves raw customer feedback in-process while using MCP Server only for book details and review-analysis prompts.

@@ -27,7 +27,7 @@ public sealed class McpSkillsTests
         // Assert
         supportsSkills.ShouldBeTrue();
         skills.Count.ShouldBe(2);
-        skills.Select(s => s.Name).ShouldBe(["book-catalog", "store-policies"], ignoreOrder: true);
+        skills.Select(s => s.Name).ShouldBe(["book-catalog", "store-policies"], true);
 
         var bookCatalog = skills.Single(s => s.Name == "book-catalog");
         bookCatalog.Uri.ShouldBe("skill://book-catalog/SKILL.md");
@@ -43,7 +43,7 @@ public sealed class McpSkillsTests
                     "skill://book-catalog/assets/book-listing-template.md",
                     "skill://book-catalog/references/CATALOG_GUIDE.md",
                 ],
-                ignoreOrder: true
+                true
             );
 
         var storePolicies = skills.Single(s => s.Name == "store-policies");
@@ -59,7 +59,7 @@ public sealed class McpSkillsTests
                     "skill://store-policies/SKILL.md",
                     "skill://store-policies/references/STORE_FAQ.md",
                 ],
-                ignoreOrder: true
+                true
             );
     }
 
@@ -133,7 +133,7 @@ public sealed class McpSkillsTests
     public async Task GivenMcpServerWithoutSkills_WhenGettingSkillsFromSource_ThenShouldReturnEmptyList()
     {
         // Arrange
-        await using var harness = await McpSkillsTestHarness.CreateAsync(skillsDirectory: null);
+        await using var harness = await McpSkillsTestHarness.CreateAsync(null);
         using var source = new McpAgentSkillsSource(harness.Client);
 
         // Act
@@ -163,9 +163,9 @@ public sealed class McpSkillsTests
     private sealed class McpSkillsTestHarness : IAsyncDisposable
     {
         private readonly CancellationTokenSource _cts;
-        private readonly ServiceProvider _serviceProvider;
         private readonly McpServer _server;
         private readonly Task _serverTask;
+        private readonly ServiceProvider _serviceProvider;
 
         private McpSkillsTestHarness(
             McpClient client,
@@ -183,6 +183,23 @@ public sealed class McpSkillsTests
         }
 
         public McpClient Client { get; }
+
+        public async ValueTask DisposeAsync()
+        {
+            await Client.DisposeAsync();
+            await _cts.CancelAsync();
+
+            await _serverTask.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
+
+            if (_serverTask.IsFaulted)
+            {
+                await _serverTask;
+            }
+
+            await _server.DisposeAsync();
+            await _serviceProvider.DisposeAsync();
+            _cts.Dispose();
+        }
 
         public static async Task<McpSkillsTestHarness> CreateAsync(string? skillsDirectory)
         {
@@ -217,23 +234,6 @@ public sealed class McpSkillsTests
             );
 
             return new(client, server, serverTask, serviceProvider, cts);
-        }
-
-        public async ValueTask DisposeAsync()
-        {
-            await Client.DisposeAsync();
-            await _cts.CancelAsync();
-
-            await _serverTask.ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
-
-            if (_serverTask.IsFaulted)
-            {
-                await _serverTask;
-            }
-
-            await _server.DisposeAsync();
-            await _serviceProvider.DisposeAsync();
-            _cts.Dispose();
         }
     }
 }

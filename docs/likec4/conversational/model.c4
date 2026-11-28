@@ -43,10 +43,10 @@ model {
     }
 
     mcp = system 'MCP Tools' {
-      description 'Shared read-only MCP server for Catalog and Rating data and reusable prompts.'
+      description 'Shared read-only MCP server for Catalog and Rating data, reusable prompts, and Agent Skills.'
     }
 
-    chat -> mcp 'retrieves Catalog data through MCP' {
+    chat -> mcp 'retrieves Catalog data and Agent Skills through MCP' {
       technology 'MCP over Streamable HTTP'
     }
 

@@ -81,15 +81,15 @@ Book Agent operates strictly within a **read-only discovery boundary**: it must 
 
 <AgentTools />
 
-| Capability / Tool                                                   | Access Level | Target Resource                                | Guardrail / Constraint                                                                       |
-| :------------------------------------------------------------------ | :----------- | :--------------------------------------------- | :------------------------------------------------------------------------------------------- |
-| `search_catalog`, `get_book`, `list_categories`, `list_authors`     | Read         | [[service\|mcp-server]]                        | Governed by default-deny policy; executes with On-Behalf-Of (OBO) caller identity            |
-| `Book Catalog Researcher`                                           | Delegate     | [[agent\|book-catalog-researcher]]             | Invoked only for multi-part factual lookups; inherits parent PII and guardrail middleware    |
-| `Book Recommendation Researcher`                                    | Delegate     | [[agent\|book-recommendation-researcher]]      | Invoked in parallel for preference-based shortlists; inherits parent middleware              |
-| `handoff_to_rating`                                                 | Delegate     | [[agent\|rating-agent]]                        | Permitted only after resolving a single exact book identifier and title                      |
-| `handoff_to_qa`                                                     | Delegate     | [[agent\|qa-agent]]                            | Transfers store policy, shipping, returns, account, order, or billing questions              |
-| Planning & skill harness (`load_skill`, `todos_*`, `mode_*`)        | Read / Write | Scoped session planning & `book-catalog` skill | Multi-step plans pause in Plan Mode for user approval before switching to Execute Mode       |
-| Storefront UI tools (`showBookCard`, `showBookList`, `addToBasket`) | Delegate     | Storefront AG-UI client                        | Emitted only when advertised by the client; cart actions execute client-side under user auth |
+| Capability / Tool                                                   | Access Level | Target Resource                                                          | Guardrail / Constraint                                                                                                          |
+| :------------------------------------------------------------------ | :----------- | :----------------------------------------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------ |
+| `search_catalog`, `get_book`, `list_categories`, `list_authors`     | Read         | [[service\|mcp-server]]                                                  | Governed by default-deny policy; executes with On-Behalf-Of (OBO) caller identity                                               |
+| `Book Catalog Researcher`                                           | Delegate     | [[agent\|book-catalog-researcher]]                                       | Invoked only for multi-part factual lookups; inherits parent PII and guardrail middleware                                       |
+| `Book Recommendation Researcher`                                    | Delegate     | [[agent\|book-recommendation-researcher]]                                | Invoked in parallel for preference-based shortlists; inherits parent middleware                                                 |
+| `handoff_to_rating`                                                 | Delegate     | [[agent\|rating-agent]]                                                  | Permitted only after resolving a single exact book identifier and title                                                         |
+| `handoff_to_qa`                                                     | Delegate     | [[agent\|qa-agent]]                                                      | Transfers store policy, shipping, returns, account, order, or billing questions                                                 |
+| Planning & skill harness (`load_skill`, `todos_*`, `mode_*`)        | Read / Write | Scoped session planning & `book-catalog` skill ([[service\|mcp-server]]) | Multi-step plans pause in Plan Mode for user approval before switching to Execute Mode; `book-catalog` skill is loaded over MCP |
+| Storefront UI tools (`showBookCard`, `showBookList`, `addToBasket`) | Delegate     | Storefront AG-UI client                                                  | Emitted only when advertised by the client; cart actions execute client-side under user auth                                    |
 
 ## Data, Messaging & Handoff Boundaries
 

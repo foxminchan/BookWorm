@@ -43,7 +43,7 @@ public sealed class RouteDisambiguationTests
     public static IEnumerable<(string?, bool, string)> TryParseTargetCases()
     {
         yield return (null, false, nameof(RouteTarget.Book));
-        yield return ("", false, nameof(RouteTarget.Book));
+        yield return (string.Empty, false, nameof(RouteTarget.Book));
         yield return ("   ", false, nameof(RouteTarget.Book));
         yield return ("unknown-route", false, nameof(RouteTarget.Book));
         yield return ("Book", true, nameof(RouteTarget.Book));
