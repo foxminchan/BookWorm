@@ -36,7 +36,7 @@
     <PackageVersion Include="Aspire.Azure.AI.Projects" Version="$(AspireUnstableVersion)" />
     <PackageVersion
       Include="Aspire.Microsoft.Azure.StackExchangeRedis"
-      Version="$(AspireUnstableVersion)"
+      Version="$(AspireVersion)"
     />
     <PackageVersion Include="Aspire.Qdrant.Client" Version="$(AspireVersion)" />
     <!-- Community Toolkit -->
@@ -59,7 +59,6 @@
   </ItemGroup>
   <ItemGroup Label="Core Packages">
     <!-- Microsoft Extensions -->
-    <PackageVersion Include="Microsoft.Extensions.Compliance.Redaction" Version="$(MsExtVersion)" />
     <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="$(MsExtVersion)" />
     <PackageVersion Include="Microsoft.Extensions.ServiceDiscovery" Version="$(MsExtVersion)" />
     <!-- ASP.NET Core -->
@@ -82,6 +81,7 @@
       Version="$(DotnetPackagesVersion)"
     />
     <PackageVersion Include="CommunityToolkit.VectorData.Qdrant" Version="1.0.1" />
+    <PackageVersion Include="CommunityToolkit.VectorData.Redis" Version="1.0.0" />
     <!-- Observability -->
     <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.21.0" />
     <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.21.0" />
@@ -159,7 +159,8 @@
     <PackageVersion Include="MailKit" Version="5.0.0" />
     <PackageVersion Include="Mjml.Net" Version="4.15.0" />
     <!-- Other Integrations -->
-    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="2.4.0" />
+    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="$(McpVersion)" />
+    <PackageVersion Include="ModelContextProtocol.Extensions.Skills" Version="$(McpVersion)" />
     <PackageVersion
       Include="ZiggyCreatures.FusionCache.Backplane.StackExchangeRedis"
       Version="$(FusionCacheVersion)"

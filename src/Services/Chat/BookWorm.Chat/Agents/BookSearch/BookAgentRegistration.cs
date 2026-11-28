@@ -48,9 +48,9 @@ internal static class BookAgentRegistration
                     .Build(sp);
 
                 var mcpClient = sp.GetRequiredService<McpClient>();
-                var skillsProvider = new AgentSkillsProvider(
-                    Path.Combine(AppContext.BaseDirectory, "Skills", "book-catalog"),
-                    loggerFactory: sp.GetService<ILoggerFactory>()
+                var skillsProvider = mcpClient.CreateSkillsProvider(
+                    new HashSet<string>(["book-catalog"], StringComparer.OrdinalIgnoreCase),
+                    sp.GetService<ILoggerFactory>()
                 );
 
                 var fileMemoryRoot = sp.GetRequiredService<IConfiguration>()

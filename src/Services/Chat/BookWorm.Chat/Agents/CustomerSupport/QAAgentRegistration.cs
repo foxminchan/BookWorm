@@ -1,3 +1,4 @@
+using BookWorm.Chassis.Caching.Semantic;
 using BookWorm.Chat.Orchestration;
 
 namespace BookWorm.Chat.Agents.CustomerSupport;
@@ -23,12 +24,14 @@ internal static class QAAgentRegistration
                     )
                     .UsePIIMiddleware(sp)
                     .UseGuardrailMiddleware()
+                    .UseSemanticCache()
                     .UseAIContextProviders(compactionProvider)
                     .Build(sp);
 
-                var skillsProvider = new AgentSkillsProvider(
-                    Path.Combine(AppContext.BaseDirectory, "Skills", "store-policies"),
-                    loggerFactory: sp.GetService<ILoggerFactory>()
+                var mcpClient = sp.GetRequiredService<McpClient>();
+                var skillsProvider = mcpClient.CreateSkillsProvider(
+                    new HashSet<string>(["store-policies"], StringComparer.OrdinalIgnoreCase),
+                    sp.GetService<ILoggerFactory>()
                 );
 
                 var (options, _) = AgentDefinitionLoader.Load(DefinitionFile, key);

@@ -106,7 +106,7 @@ public sealed class FeedbackSpecExpressionTests
         var bookId = Guid.CreateVersion7();
 
         // Act
-        var spec = new FeedbackFilterSpec(bookId, "", false);
+        var spec = new FeedbackFilterSpec(bookId, string.Empty, false);
 
         // Assert
         spec.OrderExpressions.ShouldBeEmpty();

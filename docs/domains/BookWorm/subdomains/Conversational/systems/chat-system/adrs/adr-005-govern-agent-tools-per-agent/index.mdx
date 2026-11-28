@@ -62,7 +62,7 @@ Capabilities are assigned per agent role and paired with an explicit governance 
 
 - **Target scope:** [[system|chat-system]] / [[service|chat-api]] covering `book-agent`, `qa-agent`, `book-catalog-researcher`, and `book-recommendation-researcher`.
 - **Per-agent MCP tool assignments:**
-  - `qa-agent`: No Catalog MCP tools; answers only from supplied context and instructions.
+  - `qa-agent`: No Catalog MCP tools; loads only the `store-policies` skill from [[service|mcp-server]] and answers from supplied policy context and instructions.
   - `book-agent`, `book-catalog-researcher`, and `book-recommendation-researcher`: Restricted to four read-only Catalog MCP tools: `search_catalog`, `get_book`, `list_categories`, and `list_authors`.
 - **Delegation configuration:** `book-agent`'s researcher delegation is configured separately from its direct MCP tools; researchers inherit `book-agent`'s approved read capabilities.
 - **Server-side governance:** Client-side allow-lists complement server authentication, authorization filters, and server-side governance documented in [[adr|adr-005-authenticate-and-govern-mcp-calls]].

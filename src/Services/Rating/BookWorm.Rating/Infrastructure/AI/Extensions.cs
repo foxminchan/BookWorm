@@ -56,12 +56,17 @@ internal static class Extensions
 
                     var reviewPlugin = sp.GetRequiredService<ReviewTool>();
                     var mcpClient = sp.GetRequiredService<McpClient>();
+                    var skillsProvider = mcpClient.CreateSkillsProvider(
+                        new HashSet<string>(["review-analysis"], StringComparer.OrdinalIgnoreCase),
+                        sp.GetService<ILoggerFactory>()
+                    );
 
                     var (options, toolNames) = AgentDefinitionLoader.Load(DefinitionFile, key);
                     var mcpTools = mcpClient.GetAgentTools(toolNames);
 
                     options.AllowConcurrentInvocation = true;
                     options.ChatOptions?.Tools = [.. reviewPlugin.AsAITools(), .. mcpTools];
+                    options.AIContextProviders = [skillsProvider];
 
                     var agent = new ChatClientAgent(chatClient, options);
 

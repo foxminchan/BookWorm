@@ -37,7 +37,7 @@ public sealed class UpdateBasketValidatorTests
     public void GivenItemWithEmptyId_WhenValidating_ThenShouldHaveValidationError()
     {
         // Arrange
-        var command = new UpdateBasketCommand([new("", 1)]);
+        var command = new UpdateBasketCommand([new(string.Empty, 1)]);
 
         // Act
         var result = _validator.TestValidate(command);

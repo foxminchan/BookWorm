@@ -3,8 +3,8 @@ id: mcp-tools
 name: MCP Tools
 version: 1.0.0
 summary: |
-  Internal stateless MCP server that exposes read-only Catalog tools and
-  reusable AI prompts to BookWorm AI clients.
+  Internal stateless MCP server that exposes read-only Catalog tools,
+  reusable AI prompts, and Agent Skills to BookWorm AI clients.
 scope: internal
 owners:
   - ai-capabilities-team
@@ -33,7 +33,7 @@ badges:
 
 ## System Purpose & Boundary
 
-MCP Tools provides a stateless, read-only Model Context Protocol (MCP) integration layer within the [[domain|conversational]] domain for BookWorm's internal AI clients ([[system|chat-system]] and [[system|rating-system]]). It exposes curated catalog lookup tools and reusable AI prompt templates while keeping all product and review data owned by their source systems. Mutating catalog or review records, storing conversation state, and serving public storefront traffic are explicitly out of scope.
+MCP Tools provides a stateless, read-only Model Context Protocol (MCP) integration layer within the [[domain|conversational]] domain for BookWorm's internal AI clients ([[system|chat-system]] and [[system|rating-system]]). It exposes curated catalog lookup tools, reusable AI prompt templates, and Agent Skills (`book-catalog` and `store-policies`) while keeping all product and review data owned by their source systems. Mutating catalog or review records, storing conversation state, and serving public storefront traffic are explicitly out of scope.
 
 :::note
 MCP Tools is completely stateless and owns no databases, caches, or messaging channels. Server-side authorization and default-deny governance policies enforce read-only access regardless of which tools a client chooses to load.
@@ -41,9 +41,9 @@ MCP Tools is completely stateless and owns no databases, caches, or messaging ch
 
 ## Contained Capabilities
 
-| Service / Agent         | Role in System                                                                               | Primary Data Store | Interaction Style (Sync / Async) |
-| :---------------------- | :------------------------------------------------------------------------------------------- | :----------------- | :------------------------------- |
-| [[service\|mcp-server]] | Exposes read-only Catalog lookup tools and reusable AI prompt templates over Streamable HTTP | None (Stateless)   | Sync (Streamable HTTP / gRPC)    |
+| Service / Agent         | Role in System                                                                                              | Primary Data Store | Interaction Style (Sync / Async) |
+| :---------------------- | :---------------------------------------------------------------------------------------------------------- | :----------------- | :------------------------------- |
+| [[service\|mcp-server]] | Exposes read-only Catalog lookup tools, reusable AI prompt templates, and Agent Skills over Streamable HTTP | None (Stateless)   | Sync (Streamable HTTP / gRPC)    |
 
 ## External Interactions & Trust Boundaries
 
@@ -53,10 +53,12 @@ MCP Tools is completely stateless and owns no databases, caches, or messaging ch
 
 <Accordion title="Capability Selection & Governance Notes">
 	- **Selective client loading:** [[system|chat-system]] loads only the catalog search, book detail,
-	category, and author tools; [[system|rating-system]] uses the book detail tool alongside
-	review-summarization and quality-analysis prompts while reading raw reviews in-process. -
-	**Fail-explicitly:** Upstream catalog errors or missing records return explicit error or not-found
-	responses without mutating state.
+	category, and author tools for [[agent|book-agent]] and its researchers, and loads scoped Agent
+	Skills (`book-catalog` for [[agent|book-agent]], `store-policies` for [[agent|qa-agent]]) over
+	MCP; [[system|rating-system]] uses the book detail tool alongside review-summarization and
+	quality-analysis prompts while reading raw reviews in-process. - **Fail-explicitly:** Upstream
+	catalog errors or missing records return explicit error or not-found responses without mutating
+	state.
 </Accordion>
 
 ## System Visualizations

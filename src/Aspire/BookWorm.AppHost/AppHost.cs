@@ -146,6 +146,8 @@ var orderingApi = builder
 var chatApi = builder
     .AddDotnetProject(Services.Chatting, RepositoryPaths.ServiceProjectPath("Chat"))
     .WithReference(project)
+    .WithReference(redis)
+    .WaitFor(redis)
     .WithReference(mcp)
     .WaitFor(mcp)
     .WithEntraId(entraId)

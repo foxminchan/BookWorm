@@ -37,7 +37,7 @@ public sealed class CreateBasketValidatorTests
     public void GivenItemWithEmptyId_WhenValidating_ThenShouldHaveValidationError()
     {
         // Arrange
-        var command = new CreateBasketCommand([new("", 1)]);
+        var command = new CreateBasketCommand([new(string.Empty, 1)]);
 
         // Act
         var result = _validator.TestValidate(command);
@@ -67,7 +67,7 @@ public sealed class CreateBasketValidatorTests
     public void GivenMultipleValidationErrors_WhenValidating_ThenShouldHaveAllValidationErrors()
     {
         // Arrange
-        var command = new CreateBasketCommand([new("", 0), new("item2", -1)]);
+        var command = new CreateBasketCommand([new(string.Empty, 0), new("item2", -1)]);
 
         // Act
         var result = _validator.TestValidate(command);

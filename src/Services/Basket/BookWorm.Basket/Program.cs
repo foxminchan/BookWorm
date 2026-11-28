@@ -16,6 +16,8 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
+app.UseDefaultDiagnostics();
+
 app.UseExceptionHandler();
 
 app.UseStatusCodePages();
@@ -41,4 +43,4 @@ app.MapDefaultEndpoints();
 
 app.UseDefaultOpenApi();
 
-app.Run();
+await app.RunAsync();

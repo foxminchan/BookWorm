@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <NoWarn>$(NoWarn);EXTEXP0003;OPENAI001</NoWarn>
+    <NoWarn>$(NoWarn);EXTEXP0003;MAAI001;MCPEXP005;OPENAI001</NoWarn>
   </PropertyGroup>
   <ItemGroup Label="Framework">
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
@@ -25,6 +25,7 @@
     <PackageReference Include="ZiggyCreatures.FusionCache.Locking.Distributed.Redis" />
     <PackageReference Include="ZiggyCreatures.FusionCache.Serialization.SystemTextJson" />
     <PackageReference Include="CommunityToolkit.VectorData.Qdrant" />
+    <PackageReference Include="CommunityToolkit.VectorData.Redis" />
   </ItemGroup>
   <ItemGroup Label="AI">
     <PackageReference Include="A2A.Grpc.AspNetCore" />
@@ -36,10 +37,10 @@
     <PackageReference Include="Microsoft.AgentGovernance.Extensions.Microsoft.Agents" />
     <PackageReference Include="Microsoft.AgentGovernance.Extensions.ModelContextProtocol" />
     <PackageReference Include="ModelContextProtocol.AspNetCore" />
+    <PackageReference Include="ModelContextProtocol.Extensions.Skills" />
   </ItemGroup>
   <ItemGroup Label="Telemetry">
     <PackageReference Include="Microsoft.AspNetCore.Diagnostics.Middleware" />
-    <PackageReference Include="Microsoft.Extensions.Compliance.Redaction" />
     <PackageReference Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" />
     <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
   </ItemGroup>

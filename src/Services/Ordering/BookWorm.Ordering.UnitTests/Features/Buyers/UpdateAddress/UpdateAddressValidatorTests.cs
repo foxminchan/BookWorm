@@ -25,7 +25,7 @@ public sealed class UpdateAddressValidatorTests
     public void GivenEmptyStreet_WhenValidating_ThenShouldHaveValidationError()
     {
         // Arrange
-        var command = new UpdateAddressCommand("", "New York", "NY");
+        var command = new UpdateAddressCommand(string.Empty, "New York", "NY");
 
         // Act
         var result = _validator.TestValidate(command);
@@ -38,7 +38,7 @@ public sealed class UpdateAddressValidatorTests
     public void GivenEmptyCity_WhenValidating_ThenShouldHaveValidationError()
     {
         // Arrange
-        var command = new UpdateAddressCommand("123 Main St", "", "NY");
+        var command = new UpdateAddressCommand("123 Main St", string.Empty, "NY");
 
         // Act
         var result = _validator.TestValidate(command);
@@ -51,7 +51,7 @@ public sealed class UpdateAddressValidatorTests
     public void GivenEmptyProvince_WhenValidating_ThenShouldHaveValidationError()
     {
         // Arrange
-        var command = new UpdateAddressCommand("123 Main St", "New York", "");
+        var command = new UpdateAddressCommand("123 Main St", "New York", string.Empty);
 
         // Act
         var result = _validator.TestValidate(command);

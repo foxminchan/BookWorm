@@ -10,8 +10,12 @@ owners:
 readsFrom:
   - id: chat-session-blob
     version: 1.0.0
+  - id: chat-cache
+    version: 1.0.0
 writesTo:
   - id: chat-session-blob
+    version: 1.0.0
+  - id: chat-cache
     version: 1.0.0
 styles:
   icon: /icons/languages/dotnet.svg
@@ -33,15 +37,15 @@ Chat API is the interactive conversational host within the [[domain|conversation
 
 ## Service Profile
 
-| Property                                  | Value                                                                                                                               |
-| :---------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------- |
-| **Bounded Context / Domain**              | [[domain\|conversational]]                                                                                                          |
-| **Owner Team**                            | [[team\|ai-capabilities-team]]                                                                                                      |
-| **Runtime Style**                         | REST / Streaming API (AG-UI & Agent Discovery)                                                                                      |
-| **Public / Gateway Exposure**             | Yes via API Gateway                                                                                                                 |
-| **Authentication & Authorization Policy** | Microsoft Entra ID JWT (`customer` or `admin` role + chat scopes) and Entra Agent Identities with On-Behalf-Of (OBO) token exchange |
-| **Owned Data Store(s)**                   | [[container\|chat-session-blob]] (conversation transcripts and agent memory)                                                        |
-| **Key Resilience / Idempotency Pattern**  | Fail-closed PII screening, per-user rate limiting, and prompt-injection/scope gating                                                |
+| Property                                  | Value                                                                                                                                        |
+| :---------------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Bounded Context / Domain**              | [[domain\|conversational]]                                                                                                                   |
+| **Owner Team**                            | [[team\|ai-capabilities-team]]                                                                                                               |
+| **Runtime Style**                         | REST / Streaming API (AG-UI & Agent Discovery)                                                                                               |
+| **Public / Gateway Exposure**             | Yes via API Gateway                                                                                                                          |
+| **Authentication & Authorization Policy** | Microsoft Entra ID JWT (`customer` or `admin` role + chat scopes) and Entra Agent Identities with On-Behalf-Of (OBO) token exchange          |
+| **Owned Data Store(s)**                   | [[container\|chat-session-blob]] (conversation transcripts and agent memory), [[container\|chat-cache]] (QA Agent result and semantic cache) |
+| **Key Resilience / Idempotency Pattern**  | Fail-closed PII screening, per-user rate limiting, and prompt-injection/scope gating                                                         |
 
 ## Contracts & Data Ownership
 
@@ -53,11 +57,12 @@ Chat API operates exclusively as an A2A **client** communicating with [[service|
 
 <Accordion title="Multi-Agent Routing & Governance Notes">
 	- **Validation & scope routing:** Empty or suspected prompt-injection inputs are rejected
-	immediately, oversized inputs are truncated safely, and non-English or out-of-scope requests
-	short-circuit before reaching specialist agents. - **Scoped specialists:** [[agent|qa-agent]]
-	answers store-policy questions without catalog tools; [[agent|book-agent]] coordinates
-	[[agent|book-catalog-researcher]] and [[agent|book-recommendation-researcher]] using read-only
-	catalog tools on [[service|mcp-server]]; review insights delegate to [[agent|rating-agent]].
+	immediate, and non-English or out-of-scope requests short-circuit before reaching specialist
+	agents. - **Scoped specialists:** [[agent|qa-agent]] answers store-policy questions using the
+	`store-policies` skill from [[service|mcp-server]] without catalog tools; [[agent|book-agent]]
+	coordinates [[agent|book-catalog-researcher]] and [[agent|book-recommendation-researcher]] using
+	read-only catalog tools and the `book-catalog` skill on [[service|mcp-server]]; review insights
+	delegate to [[agent|rating-agent]].
 </Accordion>
 
 ## Architecture Visualizations & Specifications
@@ -76,5 +81,6 @@ Chat API operates exclusively as an A2A **client** communicating with [[service|
 - [[agent|book-agent]] — Primary catalog and recommendation specialist.
 - [[agent|qa-agent]] — Store-policy specialist.
 - [[container|chat-session-blob]] — Conversation session storage.
+- [[container|chat-cache]] — QA Agent result and semantic cache.
 - [[service|presidio-api]] — PII detection and anonymization sidecars.
 - [[service|mcp-server]] — Read-only Catalog MCP server.

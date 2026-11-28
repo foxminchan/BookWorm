@@ -53,6 +53,17 @@ public static class Extensions
                 )
                 .ShortCircuit();
         }
+
+        /// <summary>
+        ///     Configures the default HTTP request diagnostics middleware pipeline, including
+        ///     request checkpoints, HTTP logging, and request latency telemetry.
+        /// </summary>
+        public void UseDefaultDiagnostics()
+        {
+            app.UseRequestCheckpoint();
+            app.UseHttpLogging();
+            app.UseRequestLatencyTelemetry();
+        }
     }
 
     extension(IHostApplicationBuilder builder)
@@ -60,14 +71,16 @@ public static class Extensions
         private void AddLogging()
         {
             var logger = builder.Logging;
+            var services = builder.Services;
             var loggerSection = builder.Configuration.GetSection("Logging");
 
             logger.EnableEnrichment();
             builder.AddApplicationEnricher();
 
-            builder.Services.AddRequestCheckpoint();
-            builder.Services.AddRequestLatencyTelemetry();
-            builder.Services.AddHttpServerLatencyTelemetry();
+            services.AddHttpLogging();
+            services.AddRequestCheckpoint();
+            services.AddRequestLatencyTelemetry();
+            services.AddHttpServerLatencyTelemetry();
 
             logger.AddGlobalBuffer(loggerSection);
             logger.AddPerIncomingRequestBuffer(loggerSection);

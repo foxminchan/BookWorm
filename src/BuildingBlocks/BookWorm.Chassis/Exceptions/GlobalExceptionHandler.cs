@@ -10,7 +10,7 @@ namespace BookWorm.Chassis.Exceptions;
 
 internal sealed class GlobalExceptionHandler(
     ILogger<GlobalExceptionHandler> logger,
-    GlobalLogBuffer logBuffer
+    PerRequestLogBuffer logBuffer
 ) : IExceptionHandler
 {
     public async ValueTask<bool> TryHandleAsync(

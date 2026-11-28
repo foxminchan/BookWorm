@@ -47,7 +47,7 @@ license: MIT
 
 ## Handoff Rules
 
-- Book search or recommendation queries → hand off to BookAgent.
+- Book search, recommendation, or review/rating analysis queries → hand off to BookAgent.
 - Book feedback or book-related complaints → hand off to BookAgent.
 - Resolve the current policy inquiry before any handoff.
 

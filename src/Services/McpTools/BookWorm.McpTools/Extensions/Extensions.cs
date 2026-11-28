@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Options;
 using Microsoft.Identity.Web;
 using ModelContextProtocol.AspNetCore;
+using ModelContextProtocol.Extensions.Skills;
 using ModelContextProtocol.Protocol;
 
 namespace BookWorm.McpTools.Extensions;
@@ -70,7 +71,8 @@ internal static class Extensions
                 .AddAuthorizationFilters()
                 .WithToolsFromAssembly()
                 .WithPromptsFromAssembly()
-                .WithResourcesFromAssembly();
+                .WithResourcesFromAssembly()
+                .WithSkillsFromSubdirectories(Path.Combine(AppContext.BaseDirectory, "Skills"));
 
             builder.Configure<ServerInfoOptions>(ServerInfoOptions.ConfigurationSection);
 
@@ -114,6 +116,11 @@ internal static class Extensions
                             - summarize_rating: Summarize book review content for rating analysis
                             - reduce_rating_summaries: Merge partial review summaries into one summary
                             - analyze_book_quality: Assess dominant negative review patterns for application classification
+
+                            Skills:
+                            - skill://book-catalog/SKILL.md: Search and recommend books from BookWorm's catalog
+                            - skill://review-analysis/SKILL.md: Summarize customer reviews and assess book quality signals
+                            - skill://store-policies/SKILL.md: Answer questions about BookWorm store policies and services
                             """;
                     }
                 );

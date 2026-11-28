@@ -39,6 +39,11 @@ rules:
     action: allow
     priority: 50
 
+  - name: allow-skill-tools
+    condition: "tool_name == 'load_skill' or tool_name == 'read_skill_resource'"
+    action: allow
+    priority: 50
+
   # ── Rate limiting (priority 30) ─────────────────────────────────
   - name: rate-limit-review-reads
     condition: "tool_name == 'GetCustomerReviews'"

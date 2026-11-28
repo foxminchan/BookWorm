@@ -6,6 +6,8 @@ builder.AddApplicationServices();
 
 var app = builder.Build();
 
+app.UseDefaultDiagnostics();
+
 app.MapDefaultEndpoints();
 
 app.UseForwardedHeaders();
@@ -16,4 +18,4 @@ app.UseRateLimiter();
 
 app.MapMcp("/mcp").RequireAuthorization();
 
-app.Run();
+await app.RunAsync();

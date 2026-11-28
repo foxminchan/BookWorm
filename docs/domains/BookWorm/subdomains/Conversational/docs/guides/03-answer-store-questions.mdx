@@ -27,7 +27,7 @@ If a conversational agent blends general policy guidance with live transactional
 
 When the decision router classifies an in-scope English request as a support or policy question—or when [[agent|book-agent]] transfers a policy question—[[agent|qa-agent]] executes under strict policy grounding and tool isolation.
 
-The visual below shows how [[agent|qa-agent]] loads policy context from the store-policies skill, enforces governance and privacy middleware, and hands off mixed book requests to [[agent|book-agent]].
+The visual below shows how [[agent|qa-agent]] loads policy context from the `store-policies` skill served by [[service|mcp-server]], enforces governance and privacy middleware, and hands off mixed book requests to [[agent|book-agent]].
 
 <MermaidFileLoader file="mermaids/03-answer-store-questions-diagram-1.mmd" />
 
@@ -45,11 +45,11 @@ The visual below shows how [[agent|qa-agent]] loads policy context from the stor
 <AccordionGroup>
 <Accordion title="Design trade-offs and alternatives considered">
 
-| Decision                                                                | Benefits                                                                                     | Costs and limits                                                                         |
-| :---------------------------------------------------------------------- | :------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------- |
-| **Policy-only skill grounding without live Ordering or Basket clients** | Eliminates unauthorized account lookups, order mutations, and false confirmations            | Customers asking for real-time order tracking must use Commerce or contact human support |
-| **Explicit catalog-tool denial on [[agent\|qa-agent]]**                 | Enforces separation of concerns and prevents ungrounded book searches                        | Mixed support-and-book messages incur an extra handoff hop to [[agent\|book-agent]]      |
-| **Version-controlled Markdown policy skills**                           | Policy updates go through Git review and deploy deterministically with [[service\|chat-api]] | Policy changes require a [[service\|chat-api]] redeployment rather than live CMS edits   |
+| Decision                                                                | Benefits                                                                                       | Costs and limits                                                                         |
+| :---------------------------------------------------------------------- | :--------------------------------------------------------------------------------------------- | :--------------------------------------------------------------------------------------- |
+| **Policy-only skill grounding without live Ordering or Basket clients** | Eliminates unauthorized account lookups, order mutations, and false confirmations              | Customers asking for real-time order tracking must use Commerce or contact human support |
+| **Explicit catalog-tool denial on [[agent\|qa-agent]]**                 | Enforces separation of concerns and prevents ungrounded book searches                          | Mixed support-and-book messages incur an extra handoff hop to [[agent\|book-agent]]      |
+| **Version-controlled Markdown policy skills**                           | Policy updates go through Git review and deploy deterministically with [[service\|mcp-server]] | Policy changes require a [[service\|mcp-server]] redeployment rather than live CMS edits |
 
 **Rejected alternatives:**
 

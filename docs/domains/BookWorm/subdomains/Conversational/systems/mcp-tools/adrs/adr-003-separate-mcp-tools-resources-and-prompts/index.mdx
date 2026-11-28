@@ -63,4 +63,5 @@ Even when a lookup, a reference item, and a task template refer to the same book
   - **Tools** (explicit, parameterized read requests): `get_book`, `get_book_reviews`
   - **Resources** (stable URI-addressed JSON context): `bookworm://catalog/books/{id}`, `bookworm://ratings/{bookId}/reviews`
   - **Prompts** (reusable task instructions): `recommend_books`, `summarize_rating`, `analyze_book_quality`
+  - **Skills** (version-controlled agent skill packages via `ModelContextProtocol.Extensions.Skills`): `skill://book-catalog/SKILL.md`, `skill://store-policies/SKILL.md`
 - **Contract governance**: Tool schemas, resource URIs, and prompt names/arguments are distinct compatibility surfaces and remain separate from domain events and commands. Prompts structure model tasks but do not execute operations or replace application-side policy checks.
