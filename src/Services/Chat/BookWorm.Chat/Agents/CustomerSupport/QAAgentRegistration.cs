@@ -26,9 +26,10 @@ internal static class QAAgentRegistration
                     .UseAIContextProviders(compactionProvider)
                     .Build(sp);
 
-                var skillsProvider = new AgentSkillsProvider(
-                    Path.Combine(AppContext.BaseDirectory, "Skills", "store-policies"),
-                    loggerFactory: sp.GetService<ILoggerFactory>()
+                var mcpClient = sp.GetRequiredService<McpClient>();
+                var skillsProvider = mcpClient.CreateSkillsProvider(
+                    new HashSet<string>(["store-policies"], StringComparer.OrdinalIgnoreCase),
+                    sp.GetService<ILoggerFactory>()
                 );
 
                 var (options, _) = AgentDefinitionLoader.Load(DefinitionFile, key);

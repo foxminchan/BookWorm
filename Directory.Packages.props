@@ -159,7 +159,8 @@
     <PackageVersion Include="MailKit" Version="5.0.0" />
     <PackageVersion Include="Mjml.Net" Version="4.15.0" />
     <!-- Other Integrations -->
-    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="2.4.0" />
+    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="$(McpVersion)" />
+    <PackageVersion Include="ModelContextProtocol.Extensions.Skills" Version="$(McpVersion)" />
     <PackageVersion
       Include="ZiggyCreatures.FusionCache.Backplane.StackExchangeRedis"
       Version="$(FusionCacheVersion)"

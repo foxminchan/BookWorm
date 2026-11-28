@@ -1,5 +1,7 @@
+using BookWorm.Chassis.AI.Skills;
 using BookWorm.Chassis.Security.TokenExchange;
 using BookWorm.Chassis.Utilities;
+using Microsoft.Agents.AI;
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -48,6 +50,39 @@ public static class McpClientExtensions
             }
 
             return tools;
+        }
+
+        /// <summary>
+        ///     Creates an <see cref="AgentSkillsProvider" /> backed by the MCP server's Skills extension (SEP-2640).
+        /// </summary>
+        /// <param name="skillNames">
+        ///     Optional set of allowed skill names to expose to the agent. When <see langword="null" />, all skills
+        ///     published by the MCP server are exposed.
+        /// </param>
+        /// <param name="loggerFactory">Optional logger factory for skill discovery and loading diagnostics.</param>
+        /// <returns>An <see cref="AgentSkillsProvider" /> that loads and verifies skills over MCP.</returns>
+        public AgentSkillsProvider CreateSkillsProvider(
+            IReadOnlySet<string>? skillNames = null,
+            ILoggerFactory? loggerFactory = null
+        )
+        {
+            ArgumentNullException.ThrowIfNull(mcpClient);
+
+            var builder = new AgentSkillsProviderBuilder().UseSource(
+                new McpAgentSkillsSource(mcpClient, loggerFactory)
+            );
+
+            if (skillNames is { Count: > 0 })
+            {
+                builder.UseFilter((skill, _) => skillNames.Contains(skill.Frontmatter.Name));
+            }
+
+            if (loggerFactory is not null)
+            {
+                builder.UseLoggerFactory(loggerFactory);
+            }
+
+            return builder.Build();
         }
     }
 

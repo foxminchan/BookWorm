@@ -15,11 +15,6 @@
     <PackageReference Include="Microsoft.Agents.AI.Hosting.AzureStorage" />
     <PackageReference Include="Microsoft.Agents.AI.Hosting.AGUI.AspNetCore" />
   </ItemGroup>
-  <ItemGroup Label="Agent Skills">
-    <None Include="Skills\**\*.*">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-  </ItemGroup>
   <ItemGroup Label="Governance Policies">
     <Content Include="Policies\*.yaml">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
