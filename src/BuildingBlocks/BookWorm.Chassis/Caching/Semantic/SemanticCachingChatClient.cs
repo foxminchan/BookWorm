@@ -20,7 +20,7 @@ internal sealed class SemanticCachingChatClient(
 
     public override async Task<ChatResponse> GetResponseAsync(
         IEnumerable<ChatMessage> messages,
-        ChatOptions? options1 = null,
+        ChatOptions? chatOptions = null,
         CancellationToken cancellationToken = default
     )
     {
@@ -28,7 +28,7 @@ internal sealed class SemanticCachingChatClient(
 
         if (!TryGetCacheablePrompt(messageList, out var prompt))
         {
-            return await base.GetResponseAsync(messageList, options1, cancellationToken);
+            return await base.GetResponseAsync(messageList, chatOptions, cancellationToken);
         }
 
         var (cachedResponse, embedding) = await TryGetCachedResponseAsync(
@@ -41,7 +41,7 @@ internal sealed class SemanticCachingChatClient(
             return cachedResponse;
         }
 
-        var response = await base.GetResponseAsync(messageList, options1, cancellationToken);
+        var response = await base.GetResponseAsync(messageList, chatOptions, cancellationToken);
 
         if (IsCacheableResponse(response))
         {
@@ -53,7 +53,7 @@ internal sealed class SemanticCachingChatClient(
 
     public override async IAsyncEnumerable<ChatResponseUpdate> GetStreamingResponseAsync(
         IEnumerable<ChatMessage> messages,
-        ChatOptions? options1 = null,
+        ChatOptions? chatOptions = null,
         [EnumeratorCancellation] CancellationToken cancellationToken = default
     )
     {
@@ -64,7 +64,7 @@ internal sealed class SemanticCachingChatClient(
             await foreach (
                 var update in base.GetStreamingResponseAsync(
                     messageList,
-                    options1,
+                    chatOptions,
                     cancellationToken
                 )
             )
@@ -93,7 +93,11 @@ internal sealed class SemanticCachingChatClient(
         List<ChatResponseUpdate> updates = [];
 
         await foreach (
-            var update in base.GetStreamingResponseAsync(messageList, options1, cancellationToken)
+            var update in base.GetStreamingResponseAsync(
+                messageList,
+                chatOptions,
+                cancellationToken
+            )
         )
         {
             updates.Add(update);
